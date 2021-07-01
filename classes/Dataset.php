@@ -19,9 +19,8 @@ class Dataset {
     protected $properties; // list of all properties available in the dataset
     public $locations; // list of all locations from json file (array) (new id as key)
     public $location_info; // location info from dataset file (associative array)
-    protected $location_list; // array of id => name (id (from id_prop)) (dataset)
+    protected $location_list; // array of id => name (dataset)
 
-    public $id_prop; // id property
     public $name_prop; // name property
     public $legend_text; // text for the legend description
     public $legend_alt;
@@ -61,33 +60,22 @@ class Dataset {
                 if (empty($datasets)) return;
                 foreach ($datasets as $dataset) {
                     if ($dataset['file'] === $json_name) {
-                        $this->id_prop = $dataset['id_prop'];
                         $this->name_prop = $dataset['name_prop'];
                     }
                 }
             }
             // Check if id and name property are set. If not, set sensible defaults
-            $id = $this->id_prop;
             $name = $this->name_prop;
-            if (!empty($id) && !empty($name)) return;
-            if (!empty($id)) $name = $id;
-            else if (!empty($name)) $id = $name;
-            else {
+            if (empty($name)) {
                 // set sensible defaults based on available properties
                 foreach ($this->properties as $prop) {
-                    if (strcasecmp($prop, 'id') == 0) $id = $prop;
-                    else if (strcasecmp($prop, 'name') == 0) $name = $prop;
-                    else if (empty($id) && preg_match('/^(.*id|id.*)$/i', $prop)) $id = $prop;
+                    //if (strcasecmp($prop, 'id') == 0) $id = $prop;
+                    if (strcasecmp($prop, 'name') == 0) $name = $prop;
+                    //else if (empty($id) && preg_match('/^(.*id|id.*)$/i', $prop)) $id = $prop;
                     else if (empty($name) && preg_match('/^(.*name|name.*)$/i', $prop)) $name = $prop;
                 }
                 // deal with no matches found
-                if (empty($id)) {
-                    if (!empty($name)) $id = $name;
-                    else $id = $this->properties[0];
-                }
-                if (empty($name)) $name = $id;
-                // set properties
-                $this->id_prop = $id;
+                if (empty($name)) $name = $this->properties[0];
                 $this->name_prop = $name;
             }
         } catch (Exception $e) {
@@ -97,12 +85,9 @@ class Dataset {
     
     protected function buildLocationList() {
         $locations = [];
-        // if (empty($this->id_prop)) return;
         foreach ($this->locations as $id => $loc) {
-            // $id = $loc['properties'][$this->id_prop];
             $name = $loc['properties'][$this->name_prop];
-            $set = $this->name;
-            $locations[$id] = $name.' ('.$set.')';
+            if (!empty($name)) $locations[$id] = $name.' ('.$this->name.')';
         }
         $this->location_list = $locations;
     }
@@ -113,7 +98,6 @@ class Dataset {
             $this->dataset_route = $route;
             $data = new Data((array)($file->header()));
             
-            if (!empty($data->get('id_prop'))) $this->id_prop = $data->get('id_prop');
             if (!empty($data->get('name_prop'))) $this->name_prop = $data->get('name_prop');
             $this->legend_text = $data->get('legend.text');
             $this->legend_alt = $data->get('legend.alt');
@@ -142,7 +126,6 @@ class Dataset {
     public function getDatasetInfo() {
         $info = [
             ['name' => $this->name],
-            ['idProp' => $this->id_prop],
             ['nameProp' => $this->name_prop],
             ['iconAlt' => $this->icon_alt ?: $this->legend_alt ?: $this->legend_text],
             ['name' => $this->name]

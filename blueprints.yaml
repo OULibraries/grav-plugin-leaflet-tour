@@ -74,14 +74,11 @@ form:
                   data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasets'
                   validate:
                     required: true
-                .id_prop:
-                  type: text
-                  label: Location ID Property
-                  description: The property in the data file that will serve as the location identifier. Must be unique for all values in the dataset.
                 .name_prop:
                   type: text
                   label: Location Name Property
-                  description: The property in the data file that will serve as the location name. Can be the same as the ID property, but does not have to be.
+                  description: The property in the data file that will serve as the location name.
+                  # Can be the same as the ID property, but does not have to be.
             
             markers:
               type: section

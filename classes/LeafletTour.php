@@ -24,7 +24,7 @@ class LeafletTour {
     /**
      * Returns list with basemaps, datasets, locations, views, legend, popups, and attribution
      * basemaps - [image, bounds, minZoom, maxZoom]
-     * datasets - [json_name => idProp, nameProp, iconOptions, iconAlt, legendAlt] TODO: which of legend/icon alt text?
+     * datasets - [json_name => nameProp, iconOptions, iconAlt, legendAlt] TODO: which of legend/icon alt text?
      * locations = [type, properties (name, id, dataSource, hasPopup), geometry (json geometry)]
      * views - [id (view id) => center, zoom, locations, basemaps, onlyViewLocs, removeDefaultBasemap, noTourBasemaps]
      * legend - [data_src, legend_text, icon_alt, icon_file, height, width]
@@ -114,7 +114,6 @@ class LeafletTour {
             if (empty($dataset)) return[];
             if (empty($dataset->locations)) return [];
             // start building info to return
-            //$tour_dataset = ['idProp'=>$dataset->id_prop, 'nameProp'=>$dataset->name_prop];
             $tour_dataset = [];
             // deal with legend alt text override
             $legend_alt = $header_dataset->get('legend.alt') ?: $header_dataset->get('legend.text') ?: $dataset->legend_alt ?: $dataset->legend_text;
@@ -168,8 +167,6 @@ class LeafletTour {
             }
             // set $locations, modify $tour_views, set $popups
             foreach ($dataset->locations as $id => $loc) {
-                // get id
-                // $id = $loc['properties'][$dataset->id_prop].'_'.$dataset->name;
                 // check if the location is a view center
                 $keys = array_keys($view_centers, $id);
                 if (!empty($keys)) {
