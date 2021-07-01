@@ -1,0 +1,297 @@
+name: Leaflet Tour
+slug: leaflet-tour
+type: plugin
+version: 0.1.0
+description: In development
+icon: map-signs
+author:
+  name: Theo Acker/University of Oklahoma Libraries
+  email: theoacker@ou.edu
+  url: https://libraries.ou.edu/users/theo-acker
+homepage: https://github.com/TheoAcker12/grav-plugin-leaflet-tour
+demo:
+keywords:
+bugs: https://github.com/TheoAcker12/grav-plugin-leaflet-tour/issues
+docs: https://github.com/TheoAcker12/grav-plugin-leaflet-tour/blob/main/README.md
+license: MIT
+
+dependencies:
+  - { name: grav, version: '>=1.7.0' }
+
+form:
+  validation: loose
+  fields:
+    tabs:
+      type: tabs
+      fields:
+        general:
+          type: tab
+          title: General
+          fields:
+
+            enabled:
+              type: toggle
+              label: PLUGIN_ADMIN.PLUGIN_STATUS
+              highlight: 1
+              default: 0
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+              
+            leaflet-tour:
+              type: hidden
+              default: true
+
+            data:
+              type: section
+              title: Data
+              underline: true
+            
+            # TODO: Data instructions
+
+            data_files:
+              type: file
+              label: Data Files
+              description: Upload Javascript (GeoJSON) files created by Qgis2Web
+              style: vertical
+              destination: 'user://data/leaflet-tour/datasets/uploads'
+              multiple: true
+              accept:
+                - '.js'
+            
+            datasets:
+              type: list
+              label: Dataset Information
+              # description: TODO
+              style: vertical
+              btnLabel: Add Dataset Info
+              fields:
+                .file:
+                  type: select
+                  label: Select the Dataset
+                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasets'
+                  validate:
+                    required: true
+                .id_prop:
+                  type: text
+                  label: Location ID Property
+                  description: The property in the data file that will serve as the location identifier. Must be unique for all values in the dataset.
+                .name_prop:
+                  type: text
+                  label: Location Name Property
+                  description: The property in the data file that will serve as the location name. Can be the same as the ID property, but does not have to be.
+            
+            markers:
+              type: section
+              text: Upload images to use as marker icons for tours. You can also upload shadows, though you do not need shadows to use the icons.
+
+            markers.icon_files:
+              type: file
+              label: Markers
+              style: vertical
+              destination: 'user://data/leaflet-tour/images/markers'
+              multiple: true
+              accept:
+                - image/*
+
+            markers.shadow_files:
+              type: file
+              label: Marker Shadows
+              style: vertical
+              destination: 'user://data/leaflet-tour/images/markerShadows'
+              multiple: true
+              accept:
+                - image/*
+
+            advanced:
+              type: fieldset
+              title: Advanced
+              icon: cog
+              collapsed: true
+              collapsible: true
+              fields:
+                
+                header.wide_column:
+                  type: toggle
+                  label: Wide Narrative Column
+                  description: "If toggled, will change the narrative width from 33% to 40% of the page width."
+                  highlight: 1
+                  default: 0
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+
+                reveal_location:
+                  type: toggle
+                  label: Show Map Location in URL
+                  description: "Includes the zoom level and center coordinates of the map location in the URL, allowing users to share a link of exactly where they are looking."
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+        
+        basemaps:
+          type: tab
+          title: Basemaps
+          fields:
+
+            tileserver_section:
+              type: section
+              title: Default Basemap (Tile Server)
+              underline: true
+
+            tileserver.url:
+              type: text
+              label: Default Basemap URL
+              default: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+              validate:
+                required: true
+            
+            tileserver.attribution_text:
+              type: text
+              label: Default Basemap Attribution
+              description: This text will be displayed in the footer.
+              default: "ArcGIS World"
+            
+            tileserver.attribution_url:
+              type: text
+              label: Default Basemap Attribution URL
+              description: If provided, the attribution will become a link to this URL.
+              default: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer"
+
+            # additional basemap images
+            basemap_images:
+              type: section
+              title: Additional Basemap Images
+              underline: true
+            
+            basemap_files:
+              type: file
+              label: Custom Basemap Images
+              description: Upload any custom basemap images here to use in tours/views. If you need to upload a basemap manually you can add it to the theme basemaps folder. You will need to provide additional information in the list below before you will be able to use an uploaded image.
+              style: vertical
+              destination: 'user://data/leaflet-tour/images/basemaps'
+              multiple: true
+              accept:
+                - image/*
+            
+            basemaps:
+              type: list
+              label: Basemap Information
+              style: vertical
+              collapsed: true
+              btnLabel: Add Basemap Info
+              fields:
+                .image:
+                  type: filepicker
+                  label: Select the Basemap Image
+                  preview_images: true
+                  folder: 'user://data/leaflet-tour/images/basemaps'
+                  # TODO: accept: - image/* ?
+                  validate:
+                    required: true
+                .bounds_section:
+                  type: section
+                  title: Bounds
+                  underline: false
+                # TODO: Cannot currently use columns in a list in a blueprint... weird
+                # .bounds_cols:
+                #   type: columns
+                #   fields:
+                #     .bounds_col1:
+                #       type: column
+                #       fields:
+                .bounds.north:
+                  type: number
+                  label: North
+                  validate:
+                    required: true
+                    min: -90
+                    max: 90
+                    step: .00000000001
+                .bounds.south:
+                  type: number
+                  label: South
+                  validate:
+                    required: true
+                    min: -90
+                    max: 90
+                    step: .00000000001
+                    # .bounds_col2:
+                    #   type: column
+                    #   fields:
+                .bounds.east:
+                  type: number
+                  label: East
+                  validate:
+                    required: true
+                    min: -180
+                    max: 180
+                    step: .00000000001
+                .bounds.west:
+                  type: number
+                  label: West
+                  validate:
+                    required: true
+                    min: -180
+                    max: 180
+                    step: .00000000001
+                .zoom_section:
+                  type: section
+                  title: "Zoom Level"
+                  underline: false
+                # .zoom_cols:
+                #   type: columns
+                #   fields:
+                #     .zoom_col1:
+                #       type: column
+                #       fields:
+                .zoom_max:
+                  type: number
+                  label: Max Zoom
+                  description: Higher zoom levels will go back to the default map.
+                  default: 16
+                  validate:
+                    min: 0
+                    max: 28
+                    step: 1
+                    # .zoom_col2:
+                    #   type: column
+                    #   fields:
+                .zoom_min:
+                  type: number
+                  label: Min Zoom
+                  description: Lower zoom levels will go back to the default map.
+                  default: 8
+                  validate:
+                    min: 0
+                    max: 28
+                    step: 1
+                .attribution_section:
+                  type: section
+                  title: Attribution
+                  underline: false
+                # .attribution_cols:
+                #   type: columns
+                #   fields:
+                #     .attribution_col1:
+                #       type: column
+                #       fields:
+                .attribution_text:
+                  type: text
+                  label: Attribution
+                  description: This text will be displayed in the footer.
+                    # .attribution_col2:
+                    #   type: column
+                    #   fields:
+                .attribution_url:
+                  type: text
+                  label: Attribution URL
+                  description: If provided, the attribution will become a link to this URL.

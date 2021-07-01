@@ -1,0 +1,199 @@
+{% extends 'partials/base.html.twig' %}
+
+{% set plugin_config = config.plugins['leaflet-tour'] %}
+{% set tour_data = leafletTour.getTourInfo(page) %}
+
+{# Add CSS #}
+{% block stylesheets %}
+    {% do assets.addCss('plugin://leaflet-tour/assets/qgis2web/leaflet.css') %}
+    {{ parent() }}
+    {% do assets.addCss('plugin://leaflet-tour/assets/tour.css') %}
+{% endblock stylesheets %}
+
+{# Add Javascript #}
+{% block javascripts %}
+    {{ parent() }}
+    {# JS to add after page HTML #}
+    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/js_expressions.js', {group:'bottom'}) %}
+    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.js', {group:'bottom'}) %}
+    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.rotatedMarker.js', {group:'bottom'}) %}
+    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.pattern.js', {group:'bottom'}) %}
+    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet-hash.js', {group:'bottom'}) %}
+    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/Autolinker.min.js', {group:'bottom'}) %}
+    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/rbush.min.js', {group:'bottom'}) %}
+    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/labelgun.min.js', {group:'bottom'}) %}
+    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/labels.js', {group:'bottom'}) %}
+    {# TODO: Download these? #}
+    {% do assets.addJs('https://unpkg.com/intersection-observer', {group:'bottom'}) %}
+    {% do assets.addJs('https://unpkg.com/scrollama', {group:'bottom'}) %}
+    {% do assets.addJs('plugin://leaflet-tour/assets/tour.js', {group:'bottom'}) %}
+
+    <script>
+        // set important map data
+        var tourOptions = {
+            center: [{{ header.start.lat ?? 0 }}, {{ header.start.long ?? 0 }}],
+            zoom: {{ header.start.zoom ?? 10 }},
+            maxZoom: {{ header.zoom.max ?? 16 }},
+            minZoom: {{ header.zoom.min ?? 8 }},
+            tileServer: "{{ header.tileserver.url ?? plugin_config.tileserver.url  ?? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }}",
+            basemaps: {{ tour_data['basemaps']|json_encode|raw }}, // all basemap info
+            removeDefaultBasemap: {{ header.default_basemap.remove ? 'true' : 'false' }},
+            tourMaps: [ {% for item in header.basemaps %} "{{ item.file }}", {% endfor %}], // list of all tour basemaps
+            datasets: {{ tour_data['datasets']|json_encode|raw }},
+            wideCol: {{ header.wide_column is defined ? (header.wide_column ? 'true' : 'false') : plugin_config.wide_column is defined ? (plugin_config.wide_column ? 'true' : 'false') : 'false' }},
+            revealLocation: {{ header.reveal_location is defined ? (header.reveal_location ? 'true' : 'false') : plugin_config.reveal_location is defined ? (plugin_config.reveal_location ? 'true' : 'false') : 'true' }},
+        };
+        {% if header.bounds|length == 4 %}
+        tourOptions['bounds'] = [[{{ header.bounds.south }}, {{ header.bounds.west }}], [{{ header.bounds.north }}, {{ header.bounds.east}}]];
+        {% endif %}
+        {# TODO: Should I use three equals signs? #}
+        {# TODO: Better view id #}
+        var tourViews = {{ tour_data['views']|json_encode|raw }};
+        var geoJson = {{ tour_data['locations']|json_encode|raw }};
+    </script>
+    
+{% endblock javascripts %}
+
+{% block header %}
+<div id="header-wrapper">
+    <div class="mobile-row">
+        {{ parent() }}
+        <button id="header-toggle" aria-expanded="true" class="mobile-only hamburger-btn expanded">
+            <i class="fas fa-minus" aria-hidden="true"></i>
+            <i class="fas fa-bars" aria-hidden="true"></i>
+            <span class="sr-only">Toggle Menu</span>
+        </button>
+    </div>
+    <div id="header-options-wrapper" class="mobile-row">
+        <div role="region" aria-label="Map and Content Toggle" id="toggle-list" class="mobile-only">
+            <ul class="list-unstyled" role="list">
+                <li>
+                    {# TODO: aria-current?? #}
+                    <button id="scrolly-toggle" class="btn btn-disabled" aria-current="true" aria-disabled="true" data-toggle="scrolly">Content</button>
+                </li>
+                <li>
+                    <button id="map-toggle" class="btn" data-toggle="map">Map</button>
+                </li>
+                <li>
+                    <button id="popups-toggle" class="btn" data-toggle="popups">Popups</button>
+                </li>
+            </ul>
+        </div>
+        <button id="open-settings-btn" class="icon-btn">
+            <i class="fa fas fa-cog" aria-hidden="true"></i>
+            <span class="sr-only">Open settings</span>
+        </button>
+    </div>
+</div>
+<nav id="main-nav" aria-label="Primary" class="main-nav">
+    <div class="nav-menu-btn">
+        <button id="toggle-nav-btn" class="nav-item dd-btn dd-caret-btn" aria-expanded="false" data-toggle="main-nav-list">
+            <span>Menu</span>
+            <i class="fas fa-caret-up" aria-hidden="true"></i>
+            <i class="fas fa-caret-down" aria-hidden="true"></i>
+        </button>
+    </div>
+    <ul id="main-nav-list" class="hide" role="list">
+        {% import 'partials/nav_macro.html.twig' as nav_macro %}
+        {{ nav_macro.loop(pages)}}
+    </ul>
+</nav>
+{# TODO: Settings #}
+{% endblock header %}
+
+{% block navigation %}{% endblock navigation %} {# clear navigation block - already included in header #}
+
+{% block main %}
+<div id="scrolly">
+    <div class="scroll-top">
+        <h1>{{ page.title }}</h1>
+        <div></div>
+        <button id="all-popups-btn" class="btn mobile-only">See All Popup Content</button>
+        <div id="scrolly-content">
+            {{ content|raw }}
+        </div>
+    </div>
+    <div id="scroll-text">
+    {% for view in page.collection() if view.template == 'modular/view' %}
+        {% set view_id = leafletTour.getViewId(view) %}
+        <div class="step" id="{{ view_id }}">
+            <h2>{{ view.header.title }}</h2>
+            <button data-view="{{ view_id }}" class="btn show-view-btn">Show View</button>
+            {{ view.content|raw }}
+            {% set view_locations = tour_data['views'][view_id]['locations'] %}
+            {% if view_locations|length > 0 %}
+            <ul class="list-unstyled">
+                {% for loc in view_locations %}
+                {% set loc = tour_data['popups'][loc] %}
+                {# set loc_id = loc.id|regex_replace('/(?!-)\\W/', '') #}
+                {# TODO: Deal with potential id issues #}
+                {% if loc %}
+                <li><button id="{{ view_id }}_{{ loc.id }}_btn" data-location="{{ loc.id }}" class="btn view-popup-btn">View {{ loc.name }} popup</button></li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+    {% endfor %}
+    </div>
+    {% include 'partials/bits/back_to_top.html.twig' %}
+</div>
+<div id="map-wrapper" role="region" aria-label="Map">
+    <a href="#footer" id="skip-map-link" class="skip-link">Skip to Footer</a>
+    {# Legend #}
+    {% if (header.legend ?? true) %}{% set legendList = tour_data['legend'] %}{% endif %}
+    {% if legendList %}
+    <div class="legend">
+        <div class="legend-top">
+            <h2>Legend</h2>
+            <button id="legend-toggle-btn" aria-expanded="true" class="icon-btn">
+                <i class="fas fa-minus" aria-hidden="true"></i>
+                <div class="toggle sr-only">Legend</div>
+                <i class="fas fa-plus" aria-hidden="true"></i>
+            </button>
+        </div>
+        <ul class="list-unstyled" role="list">
+        {% for item in legendList %}
+            <li>
+                {% if header.legend_toggles %}
+                <label>
+                    <input type="checkbox" class="legend-checkbox" value="{{ item.data_src }}" checked>
+                {% else %}
+                <div>
+                {% endif %}
+                    {# TODO: item.icon_alt #}
+                    <img class="legend-icon" src="{{ item.icon_file }}" alt="" style="height: {{ item.height }}px; width: {{ item.width }}px;">
+                    <span>{{ item.legend_text }}</span>
+                {% if header.legend_toggles %}</label>
+                {% else %}</div>
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    <div id="map">
+    </div>
+</div>
+<div id="popup-list-wrapper" class="show-all">
+{% for loc in tour_data['popups'] %}
+    <div class="popup" id="{{ loc.id }}-popup">
+        <div class="popup-top">
+            <h3 tabindex="-1">{{ loc.name }}</h3>
+            <button id="{{ loc.id }}-popup-close-btn" class="popup-btn popup-close-btn icon-btn desktop-only">
+                <i class="fas fa-times" aria-hidden="true"></i>
+                <span class="sr-only">Close popup</span>
+            </button>
+        </div>
+        <div class="popup-content">
+            {{ loc.popup|markdown }}
+        </div>
+        <button id="{{ loc.id }}-popup-back-btn" class="btn popup-btn popup-back-btn">Back</button>
+    </div>
+{% endfor %}
+</div>
+{% endblock main %}
+
+{% block backtotop %}{% endblock backtotop %} {# clear block - already included in main content #}
+
+{# TODO: footer - tour attribution #}

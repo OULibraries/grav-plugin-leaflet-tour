@@ -1,0 +1,416 @@
+title: Tour
+extends@: modular
+
+form:
+  fields:
+    tabs:
+      type: tabs
+      active: 1
+      
+      fields:
+        tour: # new tab
+          type: tab
+          title: Tour
+          ordering@: content
+          fields:
+            
+            header.data_set:
+              type: fieldset
+              title: Tour Data
+              collapsible: true
+              collapsed: false
+              fields:
+
+               header.datasets:
+                  type: list
+                  size: long
+                  style: vertical
+                  collapsed: false
+                  btnLabel: Add Dataset
+                  fields:
+                    .file:
+                      type: select
+                      label: Select the Dataset
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasets'
+                      validate:
+                        required: true
+                    .show_all:
+                      type: toggle
+                      label: Show All Locations
+                      description: "Show all locations, even if they aren't included in the tour config list."
+                      # TODO: Specify the config list of this page better
+                      highlight: 1
+                      default: 1
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
+                    .legend:
+                      type: fieldset
+                      title: Legend Overrides
+                      collapsed: true
+                      collapsible: true
+                      fields:
+                        .legend.text:
+                          type: text
+                          label: Description for Legend
+                        .legend.alt:
+                          type: text
+                          label: Legend Alt Text
+                    .icon:
+                      type: fieldset
+                      title: Icon Overrides
+                      text: "Note that only some of the options provided in the dataset configuration are present. You can still override any options not shown by directly modifying the page header in expert mode."
+                      collapsed: true
+                      collapsible: true
+                      fields:
+                        .icon.file:
+                          type: filepicker
+                          label: Icon Marker
+                          description: If not set, the default Leaflet marker will be used.
+                          preview_images: true
+                          folder: 'user://data/leaflet-tour/images/markers'
+                        .icon.width:
+                          type: number
+                          label: Icon Width (pixels)
+                          description: Defaults to 14.
+                          default: 14
+                          validate:
+                            min: 0
+                        .icon.height:
+                          type: number
+                          label: Icon Height (pixels)
+                          description: Defaults to 14.
+                          default: 14
+                          validate:
+                            min: 0
+                        .icon.use_defaults:
+                          type: toggle
+                          label: Use Default Values
+                          description: Will override any options set in the dataset configuration but not for this page with default values.
+                          highlight: 1
+                          default: 0
+                          options:
+                            1: PLUGIN_ADMIN.ENABLED
+                            0: PLUGIN_ADMIN.DISABLED
+                          validate:
+                            type: bool
+            
+            header.start_section:
+              type: section
+              title: Starting Position
+              underline: true
+              text: This will be the default center of the map when not in a specific view. You can choose a location or set the latitude and longitude manually.
+            
+            header.start.location:
+              type: select
+              label: Central Location
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourLocations'
+            
+            header.start.lat:
+              type: number
+              label: Center Latitude
+              validate:
+                min: -90
+                max: 90
+                step: .00000000001
+            
+            header.start.long:
+              type: number
+              label: Center Longitude
+              validate:
+                min: -180
+                max: 180
+                step: .00000000001
+            
+            header.start.zoom:
+              type: number
+              label: Starting Zoom Level
+              description: Choose an integer between 0 and 28 inclusive. Defaults to 10.
+              size: long
+              default: 10
+              validate:
+                min: 0
+                max: 28
+                step: 1
+
+            header.options_section:
+              type: section
+              title: General Options
+              underline: true
+            
+            header.legend:
+              type: toggle
+              label: Include Legend
+              description: "Adds a legend to the map, assuming at least one legend description is set."
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+                
+            header.legend_toggles:
+              type: toggle
+              label: Allow Toggling Datasets in Legend
+              description: "Adds a checkbox for each dataset in the legend that can be used to show/hide locations on the map. (Requires including a legend)"
+              highlight: 1
+              default: 0
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.only_show_view_locations:
+              type: toggle
+              label: Only Show Current View Locations
+              description: "When in a specific view, only the locations associated with that view will be shown on the map. This setting can be overriden by individual view settings."
+              highlight: 1
+              default: 0
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.list_popup_btns:
+              type: toggle
+              label: List View Popup Buttons
+              description: Buttons to go to all view location popups will be added at the end of each view. Uncheck this option if you are going to manually determine where the buttons will be located using shortcodes. Can be set in the view configuration, too.
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.default_basemap.remove:
+              type: toggle
+              label: Remove Default Basemap
+              description: If toggled, will remove the default basemap when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area.
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.basemaps:
+              type: list
+              label: Additional Basemap Images
+              style: vertical
+              btnLabel: Add Basemap
+              fields:
+                # TODO: replace filepicker with a function that only provides basemaps whose data has been set
+                .file:
+                  type: filepicker
+                  label: Select the basemap
+                  folder: 'user://data/leaflet-tour/basemaps'
+                  preview_images: true
+                  validate:
+                    required: true
+                    
+            header.locations_set:
+              type: fieldset
+              title: Location Info/Overrides
+              icon: map-marker
+              collapsed: true
+              collapsible: true
+              fields:
+
+                # TODO: Toggle for autofilling locations if show_all has been selected for any datasets (could even make conditional??)
+
+                # TODO: Select properties to automatically add to popups (dataset override)?
+
+                header.locations:
+                  type: list
+                  label: Locations
+                  description: A list (in order) of all locations included in the tour. This is not necessary if the "show all" options has been selected. Location information can also be edited directly from the dataset page configuration.
+                  style: vertical
+                  collapsed: true
+                  btnLabel: Add Location
+                  controls: both
+                  fields:
+                    .id:
+                      type: select
+                      label: Location Name
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourLocations'
+                      validate:
+                        required: true
+                    .custom_name:
+                      type: text
+                      label: Custom Name
+                      description: Optional. This name will be displayed instead of the default location name above.
+                    .remove_popup:
+                      type: toggle
+                      label: Remove Location Popup
+                      description: Will prevent default popup (as set in dataset configuration) from being displayed, even if no popup content is provided to override it.
+                      # TODO: Should this also override the popup_content field below? That is, if someone wanted to save some popup info, but not show it yet, could they use this? Leaning towards no...
+                      highlight: 1
+                      default: 0
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
+                    .popup_content:
+                      type: editor
+                      label: Popup Content
+                      description: Leave blank for no popup window. Current content may not show up until you click inside the text area.
+                      validate:
+                        type: textarea
+            
+            header.advanced_set:
+              type: fieldset
+              title: Advanced
+              # TODO: icon
+              collapsed: true
+              collapsible: true
+              fields:
+
+                header.bounds_section:
+                  type: section
+                  title: Maximum Map Bounds
+                  text: These will define how far the map can be panned. All four values must be provided or map bounds will be ignored.
+                
+                header.bounds_cols:
+                  type: columns
+                  fields:
+                    header.bounds_col_1:
+                      type: column
+                      fields:
+                        
+                        header.bounds.north:
+                          type: number
+                          label: North
+                          description: Latitude for the Northern (top) boundary of the map.
+                          validate:
+                            min: -90
+                            max: 90
+                            step: .00000000001
+                        
+                        header.bounds.south:
+                          type: number
+                          label: South
+                          description: Latitude for the Southern (bottom) boundary of the map.
+                          validate:
+                            min: -90
+                            max: 90
+                            step: .00000000001
+                    
+                    header.bounds_col_2:
+                      type: column
+                      fields:
+                        
+                        header.bounds.east:
+                          type: number
+                          label: East
+                          description: Longitude for the Eastern (right) boundary of the map.
+                          validate:
+                            min: -180
+                            max: 180
+                            step: .00000000001
+                        
+                        header.bounds.west:
+                          type: number
+                          label: West
+                          description: Longitude for the Western (left) boundary of the map.
+                          validate:
+                            min: -180
+                            max: 180
+                            step: .00000000001
+                
+                header.zoom_section:
+                  type: section
+                  title: Zoom
+                  underline: false
+                
+                header.zoom_cols:
+                  type: columns
+                  fields:
+                    header.zoom_col_1:
+                      type: column
+                      fields:
+                        
+                        header.zoom.min:
+                          type: number
+                          label: Minimum Zoom
+                          description: The map will not zoom out further than this level. Defaults to 8.
+                          default: 8
+                          validate:
+                            min: 0
+                            max: 28
+                            step: 1
+                    
+                    header.zoom_col_2:
+                      type: column
+                      fields:
+                        
+                        header.zoom.max:
+                          type: number
+                          label: Maximum Zoom
+                          description: The map will not zoom in further than this level. Defaults to 16.
+                          default: 16
+                          validate:
+                            min: 0
+                            max: 28
+                            step: 1
+            
+            header.overrides_set:
+              type: fieldset
+              title: Overrides
+              # TODO: Icon
+              # TODO: Text: overriding stuff?
+              collapsed: true
+              collapsible: true
+              fields:
+                
+                header.wide_column:
+                  type: toggle
+                  toggleable: true
+                  label: Wide Narrative Column
+                  description: "If toggled, will change the narrative width from 33% to 40% of the page width. Overrides plugin setting."
+                  highlight: 1
+                  default: 0
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+
+                header.reveal_location:
+                  type: toggle
+                  toggleable: true
+                  label: Show Map Location in URL
+                  description: "Includes the zoom level and center coordinates of the map location in the URL, allowing users to share a link of exactly where they are looking. Overrides plugin settings."
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+                
+                header.tileserver_section:
+                  type: section
+                  title: Default Basemap Tile Server
+                  underline: true
+                
+                header.tileserver.url:
+                  type: text
+                  label: Default Basemap URL
+                
+                header.tileserver.attribution_text:
+                  type: text
+                  label: Default Basemap Attribution
+                  description: This text will be displayed in the footer.
+                
+                header.tileserver.attribution_url:
+                  type: text
+                  label: Default Basemap Attribution Link
+                  description: If provided, the attribution will become a link to this URL.

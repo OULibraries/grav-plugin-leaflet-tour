@@ -1,0 +1,150 @@
+title: View
+extends@: default
+
+form:
+  fields:
+    tabs:
+      type: tabs
+      active: 1
+      fields:
+        view: # new tab
+          type: tab
+          title: View
+          ordering@: content
+          fields:
+
+            header.start_section:
+              type: section
+              title: Starting Position
+              text: "Choose a location to center the view on, or set the latitude and longitude manually. Leave all fields blank if you don't want the map to zoom."
+              underline: true
+            
+            header.start.location:
+              type: select
+              label: Central Location
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourLocationsForView'
+            
+            header.start.lat:
+              type: number
+              label: Center Latitude
+              validate:
+                min: -90
+                max: 90
+                step: .00000000001
+            
+            header.start.long:
+              type: number
+              label: Center Longitude
+              validate:
+                min: -180
+                max: 180
+                step: .00000000001
+            
+            header.start.zoom:
+              type: number
+              label: Starting Zoom Level
+              description: Choose an integer between 0 and 28 inclusive. Defaults to 12.
+              size: long
+              default: 10
+              validate:
+                min: 0
+                max: 28
+                step: 1
+            
+            header.locations_set:
+              type: fieldset
+              title: Locations
+              icon: map-marker
+              collapsed: true
+              collapsible: true
+              fields:
+                
+                header.locations:
+                  type: list
+                  label: Location List
+                  description: A list (in order) of all locations included in the view.
+                  # TODO: Add usage info: Why should the list be in order? Adding popup buttons, only show view locations...
+                  style: vertical
+                  btnLabel: Add Location
+                  controls: both
+                  fields:
+                    .id:
+                      type: select
+                      label: Location Name
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourLocationsForView'
+                      validate:
+                        required: true
+            
+            header.advanced_set:
+              type: fieldset
+              title: Advanced
+              # TODO: icon
+              collapsed: true
+              collapsible: true
+              fields:
+                
+                header.only_show_view_locations:
+                  type: toggle
+                  toggleable: true
+                  label: Only Show Current View Locations
+                  description: "When in a specific view, only the locations associated with that view will be shown on the map. Overrides the tour setting."
+                  highlight: 1
+                  default: 0
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+                
+                header.default_basemap.remove:
+                  type: toggle
+                  toggleable: true
+                  label: Remove Default Basemap
+                  description: If toggled, will remove the default basemap when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. Overrides the tour setting.
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+                
+                header.no_tour_basemaps:
+                  type: toggle
+                  label: Hide Tour Basemaps
+                  description: By default, both basemaps set in the tour configuration and basemaps set in the view configuration will be shown in the view. Check this option to only show basemaps from the view configuration.
+                  highlight: 1
+                  default: 0
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+                
+                header.basemaps:
+                  type: list
+                  label: Additional Basemap Images
+                  style: vertical
+                  btnLabel: Add Basemap
+                  fields:
+                    .file:
+                      # TODO: Replace filepicker with a function that only provides basemaps whose data has been set
+                      type: filepicker
+                      label: Select the basemap
+                      folder: 'user://data/leaflet-tour/basemaps'
+                      preview_images: true
+                      validate:
+                        required: true
+
+                header.list_popup_btns:
+                  type: toggle
+                  toggleable: true
+                  label: List View Popup Buttons
+                  description: Buttons to go to all view location popups will be added at the end of each view. Uncheck this option if you are going to manually determine where the buttons will be located using shortcodes. Overrides the tour setting.
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
