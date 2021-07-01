@@ -51,7 +51,7 @@ layer_basemap = L.tileLayer(tourOptions.tileServer, {
 map.addLayer(layer_basemap);
 
 // set up additional image basemaps
-for (let [key, basemap] of tourOptions.basemaps) {
+for (let [key, basemap] of Object.entries(tourOptions.basemaps)) {
     map.createPane('pane_' + key);
     map.getPane('pane_' + key).style.zIndex = 400;
     basemap.layer = new L.imageOverlay(basemap.image, basemap.bounds, {pange: 'pane_' + key});
@@ -160,13 +160,19 @@ scroller.setup({
     // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
     tourState.tmpView = e.element.getAttribute("id");
     setTimeout(function(id) {
-        if (tourState.tmpView === id) enterView(id);
+        if (tourState.tmpView === id) {
+            enterView(id);
+            tourState.mapNeedsAdjusting = true;
+        }
     }, 500, tourState.tmpView);
 }).onStepExit(function(e) {
     // use timeout function to ensure that exitView is only called when a view is exited but no new view is entered
     tourState.tmpView = null;
     setTimeout(function(id) {
-        if (!tourState.tmpView) exitView();
+        if (!tourState.tmpView) {
+            exitView();
+            tourState.mapNeedsAdjusting = true;
+        }
     }, 600, e.element.getAttribute("id"));
 });
 
@@ -274,14 +280,7 @@ $(".leaflet-marker-pane .leaflet-marker.no-popup").on("click keydown", function(
         setActiveTooltip(id);
     }
 });
-/** active tooltips and icons
- * the tooltip should be active when:
- *  - its icon is being hovered over
- *  - the icon has focus
- *  - its icon is otherwise active
- * the icon should be active when:
- *  - its popup is open
- */
+
 // make tooltip active when focusing/hovering over icon
 $(".leaflet-marker-pane .leaflet-marker").on("focus mouseover", function(e) {
     setActiveTooltip($(this).attr("data-location"));
@@ -397,7 +396,6 @@ function enterView(id) {
     // TODO: either wrap this in "if (animate)" clause or add { animate: boolean } to flyTo args
     if (zoom && coords) {
         map.flyTo(coords, zoom);
-        // TODO: should I indicate that the map will need to be adjusted?
         // TODO: If zoom doesn't change, does onZoomEnd function still get called and checkBasemaps()? And if it does, should I do something to prevent it?
     }
     // adjust basemaps - call here because we need setBasemaps(), not just checkBasemaps()
@@ -440,7 +438,8 @@ function checkBasemaps() {
     // make list of which basemaps should be active
     let newBasemaps = [];
     for (let basemap of tourState.basemaps) {
-        if (map.getZoom() >= tourOptions.minZoom && map.getZoom() <= tourOptions.maxZoom) newBasemaps.push(basemap);
+        let basemap_info = tourOptions.basemaps[basemap];
+        if (map.getZoom() >= basemap_info.minZoom && map.getZoom() <= basemap_info.maxZoom) newBasemaps.push(basemap);
     }
     // remove basemaps if necessary
     for (let basemap of tourState.activeBasemaps) {

@@ -129,10 +129,9 @@ form:
                   fields:
                     .file:
                       # TODO: Replace filepicker with a function that only provides basemaps whose data has been set
-                      type: filepicker
+                      type: select
                       label: Select the basemap
-                      folder: 'user://data/leaflet-tour/basemaps'
-                      preview_images: true
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getBasemaps'
                       validate:
                         required: true
 

@@ -46,7 +46,6 @@
         {% if header.bounds|length == 4 %}
         tourOptions['bounds'] = [[{{ header.bounds.south }}, {{ header.bounds.west }}], [{{ header.bounds.north }}, {{ header.bounds.east}}]];
         {% endif %}
-        {# TODO: Should I use three equals signs? #}
         {# TODO: Better view id #}
         var tourViews = {{ tour_data['views']|json_encode|raw }};
         var geoJson = {{ tour_data['locations']|json_encode|raw }};

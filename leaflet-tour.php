@@ -84,7 +84,7 @@ class LeafletTourPlugin extends Plugin
     }
 
     public function onTwigSiteVariables() {
-        $this->grav['twig']->twig_vars['leafletTour'] = new LeafletTour($this->config->get('themes.qgis-2-leaflet'));
+        $this->grav['twig']->twig_vars['leafletTour'] = new LeafletTour($this->config->get('plugins.leaflet-tour'));
     }
     
     /**
@@ -162,7 +162,7 @@ class LeafletTourPlugin extends Plugin
         return $route;
     }
     
-    public function getTourLocations() {
+    public static function getTourLocations() {
         // which tour are we on?
         $key = Grav::instance()['page']->header()->controller['key']; // get page route (sort of)
         $keys = explode("/", $key); // break key into sub-components
@@ -212,5 +212,12 @@ class LeafletTourPlugin extends Plugin
         } else {
             return [];
         }
+    }
+
+    // returns list of basemap files from the plugin config instead of from the uploads folder
+    public static function getBasemaps() {
+        $basemaps = Grav::instance()['config']->get('plugins.leaflet-tour')['basemaps'];
+        if (!empty($basemaps)) return array_column($basemaps, 'image', 'image');
+        else return ['empty'];
     }
 }

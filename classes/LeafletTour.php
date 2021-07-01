@@ -70,30 +70,29 @@ class LeafletTour {
                 if (!empty($v_head['basemaps'])) {
                     foreach ($v_head['basemaps'] as $map) {
                         $view['basemaps'][] = $map['file'];
-                        $basemaps[$map['file']] = [];
+                        $basemaps[$map['file']] = [1];
                     }
                 }
                 $view['onlyViewLocs'] = $v_head['only_show_view_locations'] ?? $header->get('only_show_view_locations') ?? false;
                 // TODO: See if I actually need the ": null" below
                 $view['removeDefaultBasemap'] = (!empty($v_head['default_basemap']) ? $v_head['default_basemap']['remove'] : null) ?? $header->get('default_basemap.remove');
                 $view['noTourBasemaps'] = $v_head['no_tour_basemaps'];
-                // TODO: Make sure this is actually good as an associative array
                 $tour_views[$v->getCacheKey()] = $view;
             }
         }
         // get list of tour basemaps - add to $basemaps
         if (!empty($header->get('basemaps'))) {
             foreach ($header->get('basemaps') as $map) {
-                $basemaps[$map['file']] = [];
+                $basemaps[$map['file']] = [1];
             }
         }
         // loop through basemaps - set $basemaps, set $attribution
         if (!empty($basemaps) && !empty($this->config->get('basemaps'))) {
             foreach ($this->config->get('basemaps') as $map) {
-                if (isset($basemaps[$map['image']])) {
+                if (!empty($basemaps[$map['image']])) {
                     // set basemap data
                     try {
-                        $basemaps[$file] = [
+                        $basemaps[$map['image']] = [
                             'image' => 'user/data/leaflet-tour/images/basemaps/'.$map['image'],
                             'bounds' => [[$map['bounds']['south'], $map['bounds']['west']],[$map['bounds']['north'], $map['bounds']['east']]],
                             'minZoom' => $map['zoom_min'] ?? 8,
