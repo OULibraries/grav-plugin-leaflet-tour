@@ -196,4 +196,22 @@
 
 {% block backtotop %}{% endblock backtotop %} {# clear block - already included in main content #}
 
-{# TODO: footer - tour attribution #}
+{% block footer %}
+    {% if tour_data['attribution'] %}
+    <div id="attribution-section" class="footer-section">
+        Resources used:
+        <ul class="attribution-list list-unstyled" role="list">
+            {% for item in tour_data['attribution'] %}
+                <li>
+                {% if item.url %}
+                    <a href="{{ item.url }}" target="_blank" class="attribution">{{ item.name }}<span class="sr-only"> Opens in new tab</span></a>
+                {% else %}
+                    <span class="attribution">{{ item.name }}</span>
+                {% endif %}
+                {% if not item.isLast %} <i aria-hidden="true" class="fas fa-circle"></i>{% endif %}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    {{ parent() }}
+{% endblock footer %}

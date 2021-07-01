@@ -549,6 +549,33 @@ footer {
         width: 33%; // column size
     }
 }
+#attribution-section {
+    text-align: left;
+    .attribution-list {
+        text-align: center;
+        margin-top: .5rem;
+        li {
+            display: inline;
+        }
+        .attribution {
+            text-decoration: none;
+            background-color: #ddd;
+            border-radius: 2rem;
+            padding: .2rem .9rem;
+            border: 2px solid transparent;
+            color: #000;
+            white-space: nowrap;
+        }
+        a.attribution:hover, a.attribution:focus {
+            text-decoration: underline;
+            border-color: #000;
+        }
+        .fa-circle {
+            font-size: 1rem;
+            padding: 0 .5rem;
+        }
+    }
+}
 
 /* Other mobile vs. desktop */
 @media(max-width: $tablet - 1) {

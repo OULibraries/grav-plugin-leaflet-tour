@@ -39,7 +39,11 @@ class LeafletTour {
         $tour_views = [];
         $legend = [];
         $popups = [];
-        $attribution = [];
+        $attribution = [
+            ['name'=>'Leaflet', 'url'=>'https://leafletjs.com'],
+            ['name'=>'qgis2web', 'url'=>'https://github.com/tomchadwin/qgis2web'],
+            ['name'=>'QGIS', 'url'=>'https://qgis.org'],
+        ];
         // set up data
         $header = new Data((array)$page->header());
         if (empty($header->get('datasets'))) return []; // quick check
@@ -49,7 +53,6 @@ class LeafletTour {
         if (!empty($header->get('locations'))) $tour_locations = array_column($header['locations'], null, 'id'); // make associative array for tour header locations
         // tmp variables
         $view_centers = [];
-        // TODO: initial attribution data
         // loop through views - set $tour_views, add to $basemaps
         if (!empty($views)) {
             foreach ($views as $v) {

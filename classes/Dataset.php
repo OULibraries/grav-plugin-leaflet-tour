@@ -40,14 +40,6 @@ class Dataset {
             $data = new Data($file->content());
             $this->name = $data->get('name');
             $this->properties = array_keys((array)($data->get('features.0.properties')));
-            //$this->locations = (array)($data->get('features'));
-            $locations = [];
-            $count = 0;
-            foreach (((array)($data->get('features'))) as $loc) {
-                $locations[$this->name.'_'.$count] = $loc;
-                $count++;
-            }
-            $this->locations = $locations;
             
             // check for dataset file
             $route = Datasets::getDatasetRoute($json_name);
@@ -64,20 +56,28 @@ class Dataset {
                     }
                 }
             }
-            // Check if id and name property are set. If not, set sensible defaults
+            // Check name property is set. If not, set sensible default
             $name = $this->name_prop;
             if (empty($name)) {
                 // set sensible defaults based on available properties
                 foreach ($this->properties as $prop) {
-                    //if (strcasecmp($prop, 'id') == 0) $id = $prop;
                     if (strcasecmp($prop, 'name') == 0) $name = $prop;
-                    //else if (empty($id) && preg_match('/^(.*id|id.*)$/i', $prop)) $id = $prop;
                     else if (empty($name) && preg_match('/^(.*name|name.*)$/i', $prop)) $name = $prop;
                 }
                 // deal with no matches found
                 if (empty($name)) $name = $this->properties[0];
                 $this->name_prop = $name;
             }
+            // set locations
+            $locations = [];
+            $count = 0;
+            foreach (((array)($data->get('features'))) as $loc) {
+                if(!empty($loc['properties'][$this->name_prop])) {
+                    $locations[$this->name.'_'.$count] = $loc;
+                    $count++;
+                }
+            }
+            $this->locations = $locations;
         } catch (Exception $e) {
             // TODO: Error handling?
         }
