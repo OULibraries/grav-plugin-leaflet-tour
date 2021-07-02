@@ -221,9 +221,9 @@ header {
 
 /* Content */
 main {
-    // TODO: reduce margin-top for main for desktop
     padding: 0;
     margin: 0 !important;
+    z-index: 0;
     @media (min-width: $tablet) {
         width: 33%; // column size
     }

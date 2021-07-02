@@ -1,0 +1,25 @@
+<!-- Code derived from WAI ARIA example modal dialog - https://www.w3.org/TR/wai-aria-practices-1.1/examples/dialog-modal/dialog.html -->
+<button id="open-settings-btn" class="icon-btn" onClick="openDialog('settings-dialog', this)">
+    <i class="fa fas fa-cog" aria-hidden="true"></i>
+    <span class="sr-only">Open settings</span>
+</button>
+<div role="dialog" id="settings-dialog" aria-labelledby="settings-dialog-label" aria-modal="true" class="hidden">
+    <div class="dialog-top">
+        <h2 id="settings-dialog-label" class="dialog-label">Settings</h2>
+        <button id="close-settings-btn" class="icon-btn" onClick="closeDialog(this)">
+            <i class="fas fa-times" aria-hidden="true"></i>
+            <span class="sr-only">Close</span>
+        </button>
+    </div>
+    <div>
+        <div id="settings-animation-toggle">
+            <label class="checkbox-label">
+                <input type="checkbox" id="map-animation-toggle" name="map-animation-toggle" value="on" checked>
+                <span>Scrolling Map Animation</span>
+            </label>
+        </div>
+        <div>
+            <button id="reset-view-btn" class="btn">Reset View</button>
+        </div>
+    </div>
+</div>
