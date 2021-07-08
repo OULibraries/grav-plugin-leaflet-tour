@@ -1,3 +1,14 @@
+/* Notes from tmp.css
+
+A couple of header logo styles - probably mostly a note that I need to work on the header:
+header .logo {
+    max-width: 100%;
+}
+header .logo a {
+    padding: 0;
+}
+*/
+
 $link-blue: #004fa3;
 $main-light: #fff;
 $main-dark: #333;
@@ -7,8 +18,8 @@ $accent-color-1: #fff;
 $nav-border: darkgray;
 
 $tablet: 600px;
-/* Temporary: Move these to theme.css */
 
+/* Temporary: Move these to theme.css */
 .skip-link:visited {
     color: $link-blue;
     // TODO: check hover and focus, too
@@ -51,8 +62,8 @@ $tablet: 600px;
 header a:hover:not(:focus) {
     outline: 1px solid;
 }
-
 // TODO: icon button on focus - not darker inside
+/* end temporary */
 
 @mixin font-size($val) {
     font-size: 1px * $val;
