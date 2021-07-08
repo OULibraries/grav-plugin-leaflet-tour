@@ -33,14 +33,14 @@ form:
               type: toggle
               label: PLUGIN_ADMIN.PLUGIN_STATUS
               highlight: 1
-              default: 0
+              default: 1
               options:
                 1: PLUGIN_ADMIN.ENABLED
                 0: PLUGIN_ADMIN.DISABLED
               validate:
                 type: bool
               
-            leaflet-tour:
+            leaflet_tour:
               type: hidden
               default: true
 
@@ -71,20 +71,19 @@ form:
                 .file:
                   type: select
                   label: Select the Dataset
-                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasets'
+                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetFiles'
                   validate:
                     required: true
                 .name_prop:
                   type: text
-                  label: Location Name Property
-                  description: The property in the data file that will serve as the location name.
-                  # Can be the same as the ID property, but does not have to be.
+                  label: Feature Name Property
+                  description: The property in the data file that will serve as the feature name.
             
             markers:
               type: section
               text: Upload images to use as marker icons for tours. You can also upload shadows, though you do not need shadows to use the icons.
 
-            markers.icon_files:
+            marker_icon_files:
               type: file
               label: Markers
               style: vertical
@@ -93,7 +92,7 @@ form:
               accept:
                 - image/*
 
-            markers.shadow_files:
+            marker_shadow_files:
               type: file
               label: Marker Shadows
               style: vertical
@@ -110,7 +109,7 @@ form:
               collapsible: true
               fields:
                 
-                header.wide_column:
+                wide_column:
                   type: toggle
                   label: Wide Narrative Column
                   description: "If toggled, will change the narrative width from 33% to 40% of the page width."
@@ -122,7 +121,7 @@ form:
                   validate:
                     type: bool
 
-                reveal_location:
+                show_map_location_in_url:
                   type: toggle
                   label: Show Map Location in URL
                   description: "Includes the zoom level and center coordinates of the map location in the URL, allowing users to share a link of exactly where they are looking."
@@ -186,7 +185,7 @@ form:
               collapsed: true
               btnLabel: Add Basemap Info
               fields:
-                .image:
+                .file:
                   type: filepicker
                   label: Select the Basemap Image
                   preview_images: true

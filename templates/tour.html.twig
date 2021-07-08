@@ -1,7 +1,7 @@
 {% extends 'partials/base.html.twig' %}
 
-{% set plugin_config = config.plugins['leaflet-tour'] %}
-{% set tour_data = leafletTour.getTourInfo(page) %}
+{% set pluginConfig = config.plugins['leaflet-tour'] %}
+{% set tourData = leafletTour.getTourData(page) %}
 
 {# Add CSS #}
 {% block stylesheets %}
@@ -33,22 +33,21 @@
         var tourOptions = {
             center: [{{ header.start.lat ?? 0 }}, {{ header.start.long ?? 0 }}],
             zoom: {{ header.start.zoom ?? 10 }},
-            maxZoom: {{ header.zoom.max ?? 16 }},
-            minZoom: {{ header.zoom.min ?? 8 }},
-            tileServer: "{{ header.tileserver.url ?? plugin_config.tileserver.url  ?? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }}",
-            basemaps: {{ tour_data['basemaps']|json_encode|raw }}, // all basemap info
-            removeDefaultBasemap: {{ header.default_basemap.remove ? 'true' : 'false' }},
+            maxZoom: {{ header.zoom_max ?? 16 }},
+            minZoom: {{ header.zoom_min ?? 8 }},
+            tileServer: "{{ header.tileserver.url ?? pluginConfig.tileserver.url  ?? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }}",
+            basemaps: {{ tourData['basemaps']|json_encode|raw }}, // all basemap info
+            removeDefaultBasemap: {{ header.remove_default_basemap ? 'true' : 'false' }},
             tourMaps: [ {% for item in header.basemaps %} "{{ item.file }}", {% endfor %}], // list of all tour basemaps
-            datasets: {{ tour_data['datasets']|json_encode|raw }},
-            wideCol: {{ header.wide_column is defined ? (header.wide_column ? 'true' : 'false') : plugin_config.wide_column is defined ? (plugin_config.wide_column ? 'true' : 'false') : 'false' }},
-            revealLocation: {{ header.reveal_location is defined ? (header.reveal_location ? 'true' : 'false') : plugin_config.reveal_location is defined ? (plugin_config.reveal_location ? 'true' : 'false') : 'true' }},
+            datasets: {{ tourData['datasets']|json_encode|raw }},
+            wideCol: {{ header.wide_column is defined ? (header.wide_column ? 'true' : 'false') : pluginConfig.wide_column is defined ? (pluginConfig.wide_column ? 'true' : 'false') : 'false' }},
+            showMapLocationInUrl: {{ header.show_map_location_in_url is defined ? (header.show_map_location_in_url ? 'true' : 'false') : pluginConfig.show_map_location_in_url is defined ? (pluginConfig.show_map_location_in_url ? 'true' : 'false') : 'true' }},
         };
         {% if header.bounds|length == 4 %}
         tourOptions['bounds'] = [[{{ header.bounds.south }}, {{ header.bounds.west }}], [{{ header.bounds.north }}, {{ header.bounds.east}}]];
         {% endif %}
-        {# TODO: Better view id #}
-        var tourViews = {{ tour_data['views']|json_encode|raw }};
-        var geoJson = {{ tour_data['locations']|json_encode|raw }};
+        var tourViews = {{ tourData['views']|json_encode|raw }};
+        var geoJson = {{ tourData['features']|json_encode|raw }};
     </script>
     
 {% endblock javascripts %}
@@ -115,21 +114,16 @@
     </div>
     <div id="scroll-text">
     {% for view in page.collection() if view.template == 'modular/view' %}
-        {% set view_id = leafletTour.getViewId(view) %}
-        <div class="step" id="{{ view_id }}">
+        {% set viewId = leafletTour.getViewId(view) %}
+        <div class="step" id="{{ viewId }}">
             <h2>{{ view.header.title }}</h2>
-            <button data-view="{{ view_id }}" class="btn show-view-btn">Show View</button>
+            <button data-view="{{ viewId }}" class="btn show-view-btn">Show View</button>
             {{ view.content|raw }}
-            {% set view_locations = tour_data['views'][view_id]['locations'] %}
-            {% if view_locations|length > 0 %}
+            {% set viewPopups = leafletTour.getViewPopups(tourData['views'][viewId]['features'], tourData['popups']) %}
+            {% if viewPopups|length > 0 %}
             <ul class="list-unstyled">
-                {% for loc in view_locations %}
-                {% set loc = tour_data['popups'][loc] %}
-                {# set loc_id = loc.id|regex_replace('/(?!-)\\W/', '') #}
-                {# TODO: Deal with potential id issues #}
-                {% if loc %}
-                <li><button id="{{ view_id }}_{{ loc.id }}_btn" data-location="{{ loc.id }}" class="btn view-popup-btn">View {{ loc.name }} popup</button></li>
-                {% endif %}
+                {% for feature in viewPopups %}
+                <li><button id="{{ viewId }}_{{ feature.id }}_btn" data-feature="{{ feature.id }}" class="btn view-popup-btn">View {{ feature.name }} popup</button></li>
                 {% endfor %}
             </ul>
             {% endif %}
@@ -141,7 +135,7 @@
 <div id="map-wrapper" role="region" aria-label="Map">
     <a href="#footer" id="skip-map-link" class="skip-link">Skip to Footer</a>
     {# Legend #}
-    {% if (header.legend ?? true) %}{% set legendList = tour_data['legend'] %}{% endif %}
+    {% if (header.legend ?? true) %}{% set legendList = tourData['legend'] %}{% endif %}
     {% if legendList %}
     <div class="legend">
         <div class="legend-top">
@@ -157,13 +151,13 @@
             <li>
                 {% if header.legend_toggles %}
                 <label>
-                    <input type="checkbox" class="legend-checkbox" value="{{ item.data_src }}" checked>
+                    <input type="checkbox" class="legend-checkbox" value="{{ item.dataSource }}" checked>
                 {% else %}
                 <div>
                 {% endif %}
-                    {# TODO: item.icon_alt #}
-                    <img class="legend-icon" src="{{ item.icon_file }}" alt="" style="height: {{ item.height }}px; width: {{ item.width }}px;">
-                    <span>{{ item.legend_text }}</span>
+                    {# TODO: item.iconAlt #}
+                    <img class="legend-icon" src="{{ item.iconFile }}" alt="" style="height: {{ item.iconHeight }}px; width: {{ item.iconWidth }}px;">
+                    <span>{{ item.legendText }}</span>
                 {% if header.legend_toggles %}</label>
                 {% else %}</div>
                 {% endif %}
@@ -176,19 +170,19 @@
     </div>
 </div>
 <div id="popup-list-wrapper" class="show-all">
-{% for loc in tour_data['popups'] %}
-    <div class="popup" id="{{ loc.id }}-popup">
+{% for feature in tourData['popups'] %}
+    <div class="popup" id="{{ feature.id }}-popup">
         <div class="popup-top">
-            <h3 tabindex="-1">{{ loc.name }}</h3>
-            <button id="{{ loc.id }}-popup-close-btn" class="popup-btn popup-close-btn icon-btn desktop-only">
+            <h3 tabindex="-1">{{ feature.name }}</h3>
+            <button id="{{ feature.id }}-popup-close-btn" class="popup-btn popup-close-btn icon-btn desktop-only">
                 <i class="fas fa-times" aria-hidden="true"></i>
                 <span class="sr-only">Close popup</span>
             </button>
         </div>
         <div class="popup-content">
-            {{ loc.popup|markdown }}
+            {{ feature.popup|markdown }}
         </div>
-        <button id="{{ loc.id }}-popup-back-btn" class="btn popup-btn popup-back-btn">Back</button>
+        <button id="{{ feature.id }}-popup-back-btn" class="btn popup-btn popup-back-btn">Back</button>
     </div>
 {% endfor %}
 </div>
@@ -197,11 +191,11 @@
 {% block backtotop %}{% endblock backtotop %} {# clear block - already included in main content #}
 
 {% block footer %}
-    {% if tour_data['attribution'] %}
+    {% if tourData['attribution'] %}
     <div id="attribution-section" class="footer-section">
         Resources used:
         <ul class="attribution-list list-unstyled" role="list">
-            {% for item in tour_data['attribution'] %}
+            {% for item in tourData['attribution'] %}
                 <li>
                 {% if item.url %}
                     <a href="{{ item.url }}" target="_blank" class="attribution">{{ item.name }}<span class="sr-only"> Opens in new tab</span></a>

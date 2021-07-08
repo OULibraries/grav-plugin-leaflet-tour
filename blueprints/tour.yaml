@@ -31,14 +31,13 @@ form:
                     .file:
                       type: select
                       label: Select the Dataset
-                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasets'
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetFiles'
                       validate:
                         required: true
                     .show_all:
                       type: toggle
-                      label: Show All Locations
-                      description: "Show all locations, even if they aren't included in the tour config list."
-                      # TODO: Specify the config list of this page better
+                      label: Show All Features
+                      description: "If this is checked, all features in the dataset will be included. If not, only features in the features list (further down) will be included."
                       highlight: 1
                       default: 1
                       options:
@@ -47,17 +46,15 @@ form:
                       validate:
                         type: bool
                     .legend:
-                      type: fieldset
+                      type: section
                       title: Legend Overrides
-                      collapsed: true
-                      collapsible: true
-                      fields:
-                        .legend.text:
-                          type: text
-                          label: Description for Legend
-                        .legend.alt:
-                          type: text
-                          label: Legend Alt Text
+                      underline: false
+                    .legend_text:
+                      type: text
+                      label: Description for Legend
+                    .legend_alt:
+                      type: text
+                      label: Legend Alt Text
                     .icon:
                       type: fieldset
                       title: Icon Overrides
@@ -75,16 +72,14 @@ form:
                           type: number
                           label: Icon Width (pixels)
                           description: Defaults to 14.
-                          default: 14
                           validate:
-                            min: 0
+                            min: 1
                         .icon.height:
                           type: number
                           label: Icon Height (pixels)
                           description: Defaults to 14.
-                          default: 14
                           validate:
-                            min: 0
+                            min: 1
                         .icon.use_defaults:
                           type: toggle
                           label: Use Default Values
@@ -155,7 +150,7 @@ form:
             header.legend_toggles:
               type: toggle
               label: Allow Toggling Datasets in Legend
-              description: "Adds a checkbox for each dataset in the legend that can be used to show/hide locations on the map. (Requires including a legend)"
+              description: "Adds a checkbox for each dataset in the legend that can be used to show/hide features on the map. (Requires including a legend)"
               highlight: 1
               default: 0
               options:
@@ -164,10 +159,10 @@ form:
               validate:
                 type: bool
             
-            header.only_show_view_locations:
+            header.only_show_view_features:
               type: toggle
-              label: Only Show Current View Locations
-              description: "When in a specific view, only the locations associated with that view will be shown on the map. This setting can be overriden by individual view settings."
+              label: Only Show Current View Features
+              description: "When in a specific view, only the features associated with that view will be shown on the map. This setting can be overriden by individual view settings."
               highlight: 1
               default: 0
               options:
@@ -176,10 +171,10 @@ form:
               validate:
                 type: bool
             
-            header.list_popup_btns:
+            header.list_popup_buttons:
               type: toggle
               label: List View Popup Buttons
-              description: Buttons to go to all view location popups will be added at the end of each view. Uncheck this option if you are going to manually determine where the buttons will be located using shortcodes. Can be set in the view configuration, too.
+              description: Buttons to go to all view feature popups will be added at the end of each view. Uncheck this option if you are going to manually determine where the buttons will be located using shortcodes. Can be overriden by individual view settings.
               highlight: 1
               default: 1
               options:
@@ -188,7 +183,7 @@ form:
               validate:
                 type: bool
             
-            header.default_basemap.remove:
+            header.remove_default_basemap:
               type: toggle
               label: Remove Default Basemap
               description: If toggled, will remove the default basemap when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area.
@@ -213,42 +208,40 @@ form:
                   validate:
                     required: true
                     
-            header.locations_set:
+            header.features_set:
               type: fieldset
-              title: Location Info/Overrides
+              title: Feature Info/Overrides
               icon: map-marker
               collapsed: true
               collapsible: true
               fields:
 
-                # TODO: Toggle for autofilling locations if show_all has been selected for any datasets (could even make conditional??)
-
                 # TODO: Select properties to automatically add to popups (dataset override)?
 
-                header.locations:
+                header.features:
                   type: list
-                  label: Locations
-                  description: A list (in order) of all locations included in the tour. This is not necessary if the "show all" options has been selected. Location information can also be edited directly from the dataset page configuration.
+                  label: Features
+                  description: A list (in order) of all features included in the tour. This is not necessary for a given dataset if the "show all" option has been selected. Feature information can also be edited directly from the dataset page configuration.
                   style: vertical
                   collapsed: true
-                  btnLabel: Add Location
+                  btnLabel: Add Feature
                   controls: both
                   fields:
                     .id:
                       type: select
-                      label: Location Name
-                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourLocations'
+                      label: Feature
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourFeatures'
                       validate:
                         required: true
                     .custom_name:
                       type: text
                       label: Custom Name
-                      description: Optional. This name will be displayed instead of the default location name above.
+                      description: Optional. This name will be displayed instead of the default feature name above.
                     .remove_popup:
                       type: toggle
-                      label: Remove Location Popup
-                      description: Will prevent default popup (as set in dataset configuration) from being displayed, even if no popup content is provided to override it.
-                      # TODO: Should this also override the popup_content field below? That is, if someone wanted to save some popup info, but not show it yet, could they use this? Leaning towards no...
+                      label: Remove Default Popup
+                      description: Will prevent default popup (as set in dataset configuration) from being displayed, even if no popup content is provided to override it. It is not necessary if popup content is provided below, as this will automatically override the default popup.
+                      # TODO: Still needs better wording, especially if automatically adding properties to a popup becomes a thing
                       highlight: 1
                       default: 0
                       options:
@@ -266,7 +259,7 @@ form:
             header.advanced_set:
               type: fieldset
               title: Advanced
-              # TODO: icon
+              icon: cog
               collapsed: true
               collapsible: true
               fields:
@@ -335,7 +328,7 @@ form:
                       type: column
                       fields:
                         
-                        header.zoom.min:
+                        header.zoom_min:
                           type: number
                           label: Minimum Zoom
                           description: The map will not zoom out further than this level. Defaults to 8.
@@ -349,7 +342,7 @@ form:
                       type: column
                       fields:
                         
-                        header.zoom.max:
+                        header.zoom_max:
                           type: number
                           label: Maximum Zoom
                           description: The map will not zoom in further than this level. Defaults to 16.
@@ -362,7 +355,7 @@ form:
             header.overrides_set:
               type: fieldset
               title: Overrides
-              # TODO: Icon
+              icon: flag
               # TODO: Text: overriding stuff?
               collapsed: true
               collapsible: true
@@ -381,7 +374,7 @@ form:
                   validate:
                     type: bool
 
-                header.reveal_location:
+                header.show_map_location_in_url:
                   type: toggle
                   toggleable: true
                   label: Show Map Location in URL

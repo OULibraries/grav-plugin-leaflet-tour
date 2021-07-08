@@ -16,7 +16,7 @@ form:
             header.start_section:
               type: section
               title: Starting Position
-              text: "Choose a location to center the view on, or set the latitude and longitude manually. Leave all fields blank if you don't want the map to zoom."
+              text: "Choose a location/feature to center the view on, or set the latitude and longitude manually. Leave all fields blank or set the zoom to -1 if you don't want the map to zoom."
               underline: true
             
             header.start.location:
@@ -47,47 +47,46 @@ form:
               size: long
               default: 10
               validate:
-                min: 0
+                min: -1
                 max: 28
                 step: 1
             
-            header.locations_set:
+            header.features_set:
               type: fieldset
-              title: Locations
+              title: Features
               icon: map-marker
               collapsed: true
               collapsible: true
               fields:
                 
-                header.locations:
+                header.features:
                   type: list
-                  label: Location List
-                  description: A list (in order) of all locations included in the view.
-                  # TODO: Add usage info: Why should the list be in order? Adding popup buttons, only show view locations...
+                  label: Feature List
+                  description: A list of all locations/features included in the view.
                   style: vertical
-                  btnLabel: Add Location
+                  btnLabel: Add Feature
                   controls: both
                   fields:
                     .id:
                       type: select
-                      label: Location Name
-                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourLocationsForView'
+                      label: Feature
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourFeaturesForView'
                       validate:
                         required: true
             
             header.advanced_set:
               type: fieldset
               title: Advanced
-              # TODO: icon
+              icon: cog
               collapsed: true
               collapsible: true
               fields:
                 
-                header.only_show_view_locations:
+                header.only_show_view_features:
                   type: toggle
                   toggleable: true
-                  label: Only Show Current View Locations
-                  description: "When in a specific view, only the locations associated with that view will be shown on the map. Overrides the tour setting."
+                  label: Only Show Current View Features
+                  description: "When in this view, only the features provided in the Feature List (above) will be shown on the map. Overrides the tour setting."
                   highlight: 1
                   default: 0
                   options:
@@ -96,7 +95,7 @@ form:
                   validate:
                     type: bool
                 
-                header.default_basemap.remove:
+                header.remove_default_basemap:
                   type: toggle
                   toggleable: true
                   label: Remove Default Basemap
@@ -128,18 +127,17 @@ form:
                   btnLabel: Add Basemap
                   fields:
                     .file:
-                      # TODO: Replace filepicker with a function that only provides basemaps whose data has been set
                       type: select
                       label: Select the basemap
                       data-options@: 'Grav\Plugin\LeafletTourPlugin::getBasemaps'
                       validate:
                         required: true
 
-                header.list_popup_btns:
+                header.list_popup_buttons:
                   type: toggle
                   toggleable: true
                   label: List View Popup Buttons
-                  description: Buttons to go to all view location popups will be added at the end of each view. Uncheck this option if you are going to manually determine where the buttons will be located using shortcodes. Overrides the tour setting.
+                  description: Buttons to go to all view feature popups will be added at the end of each view. Uncheck this option if you are going to manually determine where the buttons will be located using shortcodes. Overrides the tour setting.
                   highlight: 1
                   default: 1
                   options:

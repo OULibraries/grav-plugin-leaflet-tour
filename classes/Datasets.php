@@ -1,7 +1,6 @@
 <?php
 namespace Grav\Plugin\LeafletTour;
 
-// TODO: Is this necessary?
 require_once __DIR__ . '/Dataset.php';
 
 use Grav\Common\Grav;
@@ -16,7 +15,7 @@ class Datasets {
     
     protected static $instance;
     
-    public $datasets;
+    protected $datasets;
     protected $grav;
     protected $config;
     
@@ -30,28 +29,11 @@ class Datasets {
     protected function __construct() {
         $this->grav = Grav::instance();
         $this->config = new Data($this->grav['config']->get('plugins.leaflet-tour'));
-        $datasets = [];
-        foreach(array_keys(self::getDatasets()) as $json_name) {
-            $datasets[$json_name] = new Dataset($json_name, $this->config);
+        $this->datasets = [];
+        foreach(self::getDatasetFiles() as $jsonFilename => $name) {
+            $this->datasets[$jsonFilename] = new Dataset($jsonFilename, $name, $this->config);
         }
-        $this->datasets = $datasets;
     }
-
-    /**
-     * TODO: Ensure the json file has all required characteristics
-     * TODO: ensure type is point? ensure geometry has lat and long with appropriate values?
-     * @return bool
-     */
-    protected function validateJson($data) {
-        if ($data->get('type') !== 'FeatureCollection') return false;
-        if (empty($data->get('name'))) return false;
-        if (empty($data->get('features'))) return false;
-        if (empty($data->get('features.0.properties'))) return false;
-        if (empty($data->get('features.0.geometry'))) return false;
-        return true;
-    }
-    
-    // static methods
     
     /**
      * Handle a file upload and create a new dataset
@@ -59,35 +41,70 @@ class Datasets {
      * @param array $file - the yaml for the uploaded file
      * @return Dataset
      */
-    public static function createDataset($file) {
+    public function createDataset($fileData) {
+        $tmpNameArray = explode('/', preg_replace('/.js$/', '.json', $fileData['name']));
+        $jsonFilename = $tmpNameArray[count($tmpNameArray)-1];
+
         // check file type and pass to appropriate handler
-        if ($file['type'] === 'text/javascript') {
-            $json_data = self::readJSFile($file['name']);
+        if ($fileData['type'] === 'text/javascript') {
+            $jsonArray = $this->readJSFile($fileData['name']);
+            $jsonData = new Data($jsonArray);
         }
-        // TODO: validate json
-        $name = $json_data['name'];
-        if ($name) {
-            try {
-                $json_file = CompiledJsonFile::instance(Grav::instance()['locator']->findResource('user://').'/data/leaflet-tour/datasets/'.$name.'.json');
-                $json_file->content($json_data);
-                $json_file->save();
-                // update metadata
-                $meta_file = CompiledYamlFile::instance(Grav::instance()['locator']->findResource('user://').'/data/leaflet-tour/datasets/meta.yaml');
-                $content = $meta_file->content();
-                $filename = $name.'.json';
-                if (empty($content) || empty($content['datasets'])) $content = ['datasets'=>[$filename=>'']];
-                else {
-                    if ($content['datasets'][$filename]) return;
-                    $content['datasets'][$filename] = '';
-                }
-                $meta_file->content($content);
-                $meta_file->save();
-                // TODO: add to $this->datasets?
-                // TODO: Return statement?
-            } catch (Exception $e) {
-                return; // TODO: Return null?
+        // some basic json validation
+        if (empty($jsonData->get('features'))) return false; // TODO: remove?
+        if (empty($jsonData->get('features.0.properties'))) return false;
+        if (empty($jsonData->get('features.0.geometry'))) return false;
+
+        // set dataset name
+        $name = $jsonData['name'];
+        if (empty($name)) {
+            $name = str_replace('.json', '', $jsonFilename);
+            $jsonArray['name'] = $name;
+        }
+
+        // set default name property
+        $nameProperty = '';
+        $propertyList = array_keys($jsonData->get('features.0.properties'));
+        foreach ($propertyList as $prop) {
+            if (strcasecmp($prop, 'name') == 0) $nameProperty = $prop;
+            else if (empty($nameProperty) && preg_match('/^(.*name|name.*)$/i', $prop)) $nameProperty = $prop;
+        }
+        if (empty($nameProperty)) $nameProperty = $propertyList[0];
+        $jsonArray['nameProperty'] = $nameProperty;
+
+        // set feature ids
+        $count = 0;
+        // TODO: needs array cast?
+        $features = [];
+        foreach ($jsonData->get('features') as $feature) {
+            $feature['id'] = $name.'_'.$count;
+            $features[] = $feature;
+            $count++;
+        }
+        $jsonArray['features'] = $features;
+
+        // try saving the file
+        try {
+            $jsonFile = CompiledJsonFile::instance($this->grav['locator']->findResource('user://').'/data/leaflet-tour/datasets/'.$jsonFilename);
+            $jsonFile->content($jsonArray);
+            $jsonFile->save();
+            // update metadata
+            Dataset::updateMetadata($jsonFilename, $name);
+            /*$metaFile = CompiledYamlFile::instance($this->grav['locator']->findResource('user://').'/data/leaflet-tour/datasets/meta.yaml');
+            $content = $metaFile->content();
+            if (empty($content) || empty($content['datasets'])) $content = ['datasets'=>[$jsonFilename=>$name]];
+            else {
+                $content['datasets'][$jsonFilename] = $name;
             }
+            $metaFile->content($content);
+            $metaFile->save();*/
+        } catch (Exception $e) {
+            return false;
         }
+        
+        // add to datasets
+        $this->datasets[] = new Dataset($jsonFilename, $name, $this->config);
+        return true;
     }
     
     /**
@@ -95,11 +112,12 @@ class Datasets {
      * 
      * @return array/null
      */
-    protected static function readJSFile($filename) {
-        $file = File::instance(Grav::instance()['locator']->findResource('user://').'/data/leaflet-tour/datasets/uploads/'.$filename);
+    protected function readJSFile($filename) {
+        $file = File::instance($this->grav['locator']->findResource('user://').'/data/leaflet-tour/datasets/uploads/'.$filename);
         // find and remove the initial json variable
         $count = 0;
-        $str = preg_replace('/^(.)*var(\s)+json_(\w)*(\s)+=(\s)+/', '', $file->content(), 1, $count);
+        // TODO: Document file requirements - json file must have a variable beginning with 'json_'
+        $jsonRegex = preg_replace('/^(.)*var(\s)+json_(\w)*(\s)+=(\s)+/', '', $file->content(), 1, $count);
         // if a match was found (and removed), try converting the file contents to json
         if ($count == 1) {
             // fix php's bad json handling
@@ -107,13 +125,17 @@ class Datasets {
             	ini_set( 'serialize_precision', -1 );
             }
             try {
-                $json_data = json_decode($str, true);
-                return $json_data;
+                $jsonData = json_decode($jsonRegex, true);
+                return $jsonData;
             } catch (Exception $e) {
                 return null;
             }
         }
         return null;
+    }
+
+    public function getDatasets() {
+        return $this->datasets;
     }
     
     /*protected function updateMetadata($filename) {
@@ -128,25 +150,11 @@ class Datasets {
         $file->save();
     }*/
 
-    // returns a list of all datasets included in the yaml meta file
-    public static function getDatasets() {
+    // returns a list of all datasets included in the yaml meta file [jsonFilename => dataset name]
+    public static function getDatasetFiles() {
         $file = CompiledYamlFile::instance(Grav::instance()['locator']->findResource('user://').'/data/leaflet-tour/datasets/meta.yaml');
         $content = $file->content();
         if (empty($content) || empty($content['datasets'])) return [];
-        else {
-            $datasets = [];
-            foreach (array_keys($content['datasets']) as $dataset) {
-                $datasets[$dataset] = preg_replace('/\.json$/', '', $dataset);
-            }
-            return $datasets;
-        }
+        else return $content['datasets'];
     }
-    
-    public static function getDatasetRoute($json_name) {
-        $file = CompiledYamlFile::instance(Grav::instance()['locator']->findResource('user://').'/data/leaflet-tour/datasets/meta.yaml');
-        $content = $file->content();
-        if (empty($content) || empty($content['datasets'])) return '';
-        return $content['datasets'][$json_name];
-    }
-    
 }

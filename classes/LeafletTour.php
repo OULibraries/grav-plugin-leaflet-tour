@@ -4,8 +4,8 @@ namespace Grav\Plugin\LeafletTour;
 //require_once __DIR__ . '/Dataset.php';
 require_once __DIR__ . '/Datasets.php';
 
-use Grav\Common\Grav;
-use Grav\Common\Page\Page;
+//use Grav\Common\Grav;
+//use Grav\Common\Page\Page;
 use Grav\Plugin\LeafletTour\Datasets;
 use Grav\Common\Data\Data;
 //use Grav\Common\File\CompiledJsonFile;
@@ -13,6 +13,25 @@ use Grav\Common\Data\Data;
 
 // this is just the class for referencing via twig
 class LeafletTour {
+
+    // default values if the default marker icon is used
+    const DEFAULT_MARKER_OPTIONS = [
+        'iconAnchor' => [12, 41],
+        'iconRetinaUrl' => 'user/plugins/leaflet-tour/images/marker-icon-2x.png',
+        'iconSize' => [25, 41],
+        'iconUrl' => 'user/plugins/leaflet-tour/images/marker-shadow.png',
+        'shadowSize' => [41, 41],
+        'shadowUrl' => 'user/plugins/leaflet-tour/images/marker-shadow.png',
+        'className' => 'leaflet-marker',
+        'tooltipAnchor' => [-12, 20]
+    ];
+    // default values if the default marker icon is not used
+    const MARKER_FALLBACKS = [
+        'iconSize' => [14, 14],
+        'shadowSize' => [],
+        'tooltipAnchor' => [-5, 5],
+        'iconAnchor' => [],
+    ];
     
     //protected $datasets;
     protected $config;
@@ -24,194 +43,169 @@ class LeafletTour {
     /**
      * Returns list with basemaps, datasets, locations, views, legend, popups, and attribution
      * basemaps - [image, bounds, minZoom, maxZoom]
-     * datasets - [json_name => nameProp, iconOptions, iconAlt, legendAlt] TODO: which of legend/icon alt text?
-     * locations = [type, properties (name, id, dataSource, hasPopup), geometry (json geometry)]
-     * views - [id (view id) => center, zoom, locations, basemaps, onlyViewLocs, removeDefaultBasemap, noTourBasemaps]
-     * legend - [data_src, legend_text, icon_alt, icon_file, height, width]
+     * datasets - [jsonFilename => nameProperty, iconOptions, legendAltText]
+     * features = [type, properties (name, id, dataSource, hasPopup), geometry (json geometry)]
+     * views - [id => center, zoom, features, basemaps, onlyShowViewFeatures, removeDefaultBasemap, noTourBasemaps]
+     * legend - [dataSource, legendText, iconAltText, iconFile, iconHeight, iconWidth]
      * popups - [id => id, name, popup]
      * attribution - [name, url]
      */
-    public function getTourInfo($page) {
-        // set up variables to return
-        $basemaps = [];
-        $tour_datasets = [];
-        $locations = [];
-        $tour_views = [];
-        $legend = [];
-        $popups = [];
+    public function getTourData($page) {
+        // set up
+        $data = ['basemaps'=>[], 'datasets'=>[], 'features'=>[], 'views'=>[], 'legend'=>[], 'popups'=>[], 'attribution'=>[]];
+        $header = new Data((array)$page->header());
+        if (empty($header->get('datasets'))) return []; // quick check
+        $modules = $page->children()->modules();
+        $datasets = Datasets::instance()->getDatasets();
+        $headerFeatures = [];
+        if (!empty($header->get('features'))) $headerFeatures = array_column($header['features'], null, 'id'); // make associative array for tour header features
+        $viewCenters = [];
+        // loop through views - set views and add to basemaps
+        if (!empty($modules)) {
+            foreach ($modules as $module) {
+                // TODO: use viewPage->template() === 'view' or 'modules/view' or something to make sure these are views
+                $viewHeader = new Data((array)$module->header());
+                $view = [
+                    'basemaps'=>[],
+                    'onlyShowViewFeatures'=>$viewHeader->get('only_show_view_features') ?? $header->get('only_show_view_features'),
+                    'removeDefaultBasemap'=>$viewHeader->get('remove_default_basemap') ?? $header->get('remove_default_basemap'),
+                    'noTourBasemaps'=>$viewHeader->get('to_tour_basemaps')
+                ];
+                $zoom = $viewHeader->get('start.zoom');
+                if (is_numeric($zoom) && $zoom >= 0) {
+                    // check for start location - will need to use list of features to verify that the location exists and to grab the coordinates
+                    if (!empty($viewHeader->get('start.location'))) $viewCenters[$module->getCacheKey()] = $viewHeader->get('start.location');
+                    if (!empty($viewHeader->get('start.lat')) && !empty($viewHeader->get('start.long'))) $view['center'] = [$viewHeader->get('start.lat'), $viewHeader->get('start.long')];
+                    $view['zoom'] = $zoom;
+                }
+                if (!empty($viewHeader['features'])) $view['features'] = array_column($viewHeader['features'], 'id');
+                // loop through basemaps to add to both view basemaps and to the full basemap collection
+                if (!empty($viewHeader['basemaps'])) {
+                    foreach ($viewHeader['basemaps'] as $basemap) {
+                        $view['basemaps'][] = $basemap['file'];
+                        $data['basemaps'][$basemap['file']] = [1];
+                    }
+                }
+                $data['views'][$module->getCacheKey()] = $view;
+            }
+        }
+        // get list of tour basemaps and add to basemaps
+        if (!empty($header->get('basemaps'))) {
+            foreach ($header->get('basemaps') as $basemap) {
+                $data['basemaps'][$basemap['file']] = [1];
+            }
+        }
+        // set initial attribution TODO: only add attribution items based on configuration
         $attribution = [
             ['name'=>'Leaflet', 'url'=>'https://leafletjs.com'],
             ['name'=>'qgis2web', 'url'=>'https://github.com/tomchadwin/qgis2web'],
             ['name'=>'QGIS', 'url'=>'https://qgis.org'],
         ];
-        // set up data
-        $header = new Data((array)$page->header());
-        if (empty($header->get('datasets'))) return []; // quick check
-        $views = $page->children()->modules();
-        $datasets = Datasets::instance()->datasets;
-        $tour_locations = [];
-        if (!empty($header->get('locations'))) $tour_locations = array_column($header['locations'], null, 'id'); // make associative array for tour header locations
-        // tmp variables
-        $view_centers = [];
-        // loop through views - set $tour_views, add to $basemaps
-        if (!empty($views)) {
-            foreach ($views as $v) {
-                $v_head = (array)$v->header();
-                $view = [];
-                // use list of locations to verify that location exists and grab the coordinates
-                $start = $v_head['start'];
-                if ($start) {
-                    if ($start['location']) $view_centers[$v->getCacheKey()] = $start['location'];
-                    if ($start['lat'] && $start['long']) $view['center'] = [$start['lat'], $start['long']];
-                    if ($start['zoom']) $view['zoom'] = $start['zoom'];
-                }
-                if (!empty($v_head['locations'])) $view['locations'] = array_column($v_head['locations'], 'id');
-                $view['basemaps'] = [];
-                if (!empty($v_head['basemaps'])) {
-                    foreach ($v_head['basemaps'] as $map) {
-                        $view['basemaps'][] = $map['file'];
-                        $basemaps[$map['file']] = [1];
-                    }
-                }
-                $view['onlyViewLocs'] = $v_head['only_show_view_locations'] ?? $header->get('only_show_view_locations') ?? false;
-                // TODO: See if I actually need the ": null" below
-                $view['removeDefaultBasemap'] = (!empty($v_head['default_basemap']) ? $v_head['default_basemap']['remove'] : null) ?? $header->get('default_basemap.remove');
-                $view['noTourBasemaps'] = $v_head['no_tour_basemaps'];
-                $tour_views[$v->getCacheKey()] = $view;
-            }
-        }
-        // get list of tour basemaps - add to $basemaps
-        if (!empty($header->get('basemaps'))) {
-            foreach ($header->get('basemaps') as $map) {
-                $basemaps[$map['file']] = [1];
-            }
-        }
         // loop through basemaps - set $basemaps, set $attribution
-        if (!empty($basemaps) && !empty($this->config->get('basemaps'))) {
-            foreach ($this->config->get('basemaps') as $map) {
-                if (!empty($basemaps[$map['image']])) {
+        if (!empty($data['basemaps']) && !empty($this->config->get('basemaps'))) {
+            foreach ($this->config->get('basemaps') as $basemap) {
+                if (!empty($data['basemaps'][$basemap['file']])) {
                     // set basemap data
                     try {
-                        $basemaps[$map['image']] = [
-                            'image' => 'user/data/leaflet-tour/images/basemaps/'.$map['image'],
-                            'bounds' => [[$map['bounds']['south'], $map['bounds']['west']],[$map['bounds']['north'], $map['bounds']['east']]],
-                            'minZoom' => $map['zoom_min'] ?? 8,
-                            'maxZoom' => $map['zoom_max'] ?? 16
+                        $data['basemaps'][$basemap['file']] = [
+                            'file' => 'user/data/leaflet-tour/images/basemaps/'.$basemap['file'],
+                            'bounds' => [[$basemap['bounds']['south'], $basemap['bounds']['west']],[$basemap['bounds']['north'], $basemap['bounds']['east']]],
+                            'minZoom' => $basemap['zoom_min'] ?? 8,
+                            'maxZoom' => $basemap['zoom_max'] ?? 16
                         ];
                     } catch (Exception $e) {
-                        unset($basemaps[$file]);
+                        unset($data['basemaps'][$basemap['file']]);
                         continue;
                     }
                     // set attribution data
-                    $attribution[] = ['name' => $map['attribution_text'], 'url' => $map['attribution_url']];
+                    $attribution[] = ['name' => $basemap['attribution_text'], 'url' => $basemap['attribution_url']];
                 }
             }
         }
-        // loop through datasets - set $tour_datasets, set $legend, set $locations, modify $tour_views, set $popups
-        foreach ($header->get('datasets') as $header_dataset) {
-            $header_dataset = new Data($header_dataset);
+        $data['attribution'] = $attribution;
+        // loop through datasets - set datasets, legend, features and popups, modify views
+        foreach ($header->get('datasets') as $headerDataset) {
+            $headerDataset = new Data($headerDataset);
             // get the correct dataset to access important information (json file, dataset config, etc.)
-            $dataset = Datasets::instance()->datasets[$header_dataset['file']];
+            $dataset = Datasets::instance()->getDatasets()[$headerDataset['file']];
             // quick checks
             if (empty($dataset)) return[];
-            if (empty($dataset->locations)) return [];
+            if (empty($dataset->features)) return [];
             // start building info to return
-            $tour_dataset = [];
-            // deal with legend alt text override
-            $legend_alt = $header_dataset->get('legend.alt') ?: $header_dataset->get('legend.text') ?: $dataset->legend_alt ?: $dataset->legend_text;
+            $datasetData = [];
             // icon overrides
-            if ($dataset->icon_settings) $icon = $dataset->icon_settings;
-            if ($header_dataset['icon']) {
-                if ($icon && !$header_dataset->get('icon.use_defaults')) $icon = array_merge($icon, $header_dataset['icon']);
-                else $icon = $header_dataset['icon'];
-            }
-            // format icon options, add options to $tour_dataset
-            if ($icon && $icon['file']) {
-                $options = [
-                    'iconUrl' => 'user/data/leaflet-tour/images/markers/'.$icon['file'],
-                    'iconSize' => [$icon['width'] ?? 14, $icon['height'] ?? 14],
-                    'className' => 'leaflet-marker',
+            $datasetData['iconOptions'] = self::setIconOptions($headerDataset->get('icon') ?? [], $dataset->iconOptions ?? []);
+            // legend
+            $legendText = $headerDataset->get('legend_text') ?? $dataset->legendText;
+            $iconAltText = $headerDataset->get('icon_alt') ?? $dataset->iconAlt;
+            if (!empty($legendText)) {
+                // set alt text for map icons (legend alt text)
+                $datasetData['legendAltText'] = $headerDataset->get('legend_alt') ?? $headerDataset->get('legend_text') ?? $dataset->legendAltText ?? $dataset->legendText;
+                // set legend
+                $legend = [
+                    'dataSource'=>$headerDataset['file'],
+                    'legendText'=>$legendText,
                 ];
-                if ($icon['class']) $options['className'] .= ' '.$icon['class'];
-                if ($icon['retina']) $options['iconRetinaUrl'] = 'user/data/leaflet-tour/images/markers/'.$icon['retina'];
-                if (isset($icon['anchor_x']) && isset($icon['anchor_y'])) $options['iconAnchor'] = [$icon['anchor_x'], $icon['anchor_y']];
-                $options['tooltipAnchor'] = [$icon['tooltip_anchor_x'] ?? -5, $icon['tooltip_anchor_y'] ?? 5];
-                if ($icon['shadow']) {
-                    $options['shadowUrl'] = 'user/data/leaflet-tour/images/markerShadows/'.$icon['shadow'];
-                    $options['shadowSize'] = [$icon['shadow_width'] ?? $icon['width'] ?? 14, $icon['shadow_height'] ?? $icon['height'] ?? 14];
-                    if (isset($icon['shadow_anchor_x']) && isset($icon['shadow_anchor_y'])) $options['shadowAnchor'] = [$icon['shadow_anchor_x'], $icon['shadow_anchor_y']];
-                }
-                $tour_dataset['iconOptions'] = $options;
-                $tour_dataset['iconAlt'] = $icon['icon_alt'] ?: $legend_alt;
-                $tour_dataset['legendAlt'] = $legend_alt;
+                // legend icon
+                if (!empty($iconAlt)) $legend['iconAltText'] = $iconAlt;
+                $legend['iconFile'] = $datasetData['iconOptions']['iconUrl'];
+                $legend['iconWidth'] = $datasetData['iconOptions']['iconSize'][0];
+                $legend['iconHeight'] = $datasetData['iconOptions']['iconSize'][1];
+                // add legend
+                $data['legend'][] = $legend;
+            } else if (!empty($iconAltText)) {
+                $datasetData['legendAltText'] = $iconAltText;
             }
-            // set $tour_datasets
-            $tour_datasets[$header_dataset['file']] = $tour_dataset;
-            // set $legend
-            $legend_text = $header_dataset->get('legend.text') ?? $dataset->legend_text;
-            if ($legend_text) {
-                $data_legend = [
-                    'data_src'=>$header_dataset['file'],
-                    'legend_text'=>$legend_text,
-                ];
-                if ($icon) {
-                    $data_legend['icon_alt'] = $icon['icon_alt'] ?: $legend_alt;
-                    $data_legend['icon_file'] = $options['iconUrl'];
-                    $data_legend['width'] = $icon['width'] ?? 14;
-                    $data_legend['height'] = $icon['height'] ?? 14;
-                } else {
-                    // TODO: icon alt??
-                    $data_legend['icon_file'] = 'user/themes/qgis-2-leaflet/images/default/marker-icon.png';
-                    $data_legend['width'] = 41;
-                    $data_legend['height'] = 12;
-                }
-                $legend[] = $data_legend;
-            }
-            // set $locations, modify $tour_views, set $popups
-            foreach ($dataset->locations as $id => $loc) {
+            // add dataset
+            $data['datasets'][$headerDataset['file']] = $datasetData;
+            // set features, modify views, set popups
+            foreach ($dataset->features as $featureId => $feature) {
                 // check if the location is a view center
-                $keys = array_keys($view_centers, $id);
-                if (!empty($keys)) {
-                    foreach ($keys as $key) {
+                $viewIds = array_keys($viewCenters, $featureId);
+                if (!empty($viewIds)) {
+                    foreach ($viewIds as $viewId) {
                         try {
-                            $lat = $loc['geometry']['coordinates'][1];
-                            $long = $loc['geometry']['coordinates'][0];
-                            if ($lat && $long) $tour_views[$key]['center'] = [$lat, $long];
+                            $lat = $feature['geometry']['coordinates'][1];
+                            $long = $feature['geometry']['coordinates'][0];
+                            if ($lat && $long) $data['views'][$viewId]['center'] = [$lat, $long];
                         } catch (Exception $e) {
                             continue;
                         }
                     }
                 }
-                // check if it should be included - show all or in tour location list
-                if (!$header_dataset['show_all'] && !$tour_locations[$id]) continue;
-                $name = $dataset->location_info[$id]['custom_name'] ?: $loc['properties'][$dataset->name_prop];
-                $popup = $dataset->location_info[$id]['popup_content'];
+                // doublecheck that a given feature should be included - has to be a tour location
+                if (!$headerDataset['show_all'] && !$data['features'][$featureId]) continue;
+                $name = $dataset->features[$featureId]['customName'] ?? $feature['properties'][$dataset->nameProperty];
+                $popup = $dataset->features[$featureId]['popupContent'];
                 $hasPopup = !empty($popup);
-                $header_loc = $tour_locations[$id];
-                if ($header_loc) {
+                $featureOverride = $headerFeatures[$featureId];
+                if ($featureOverride) {
                     // overwrite as needed
-                    if ($header_loc['custom_name']) $name = $header_loc['custom_name'];
-                    if ($header_loc['popup_content']) {
+                    $name = $featureOverride['custom_name'] ?? $name;
+                    if (!empty($featureOverride['popup_content'])) {
                         $hasPopup = true;
-                        $popup = $header_loc['popup_content'];
+                        $popup = $featureOverride['popup_content'];
                     }
-                    else if ($header_loc['remove_popup']) $hasPopup = false;
+                    else if ($featureOverride['remove_popup']) {
+                        $hasPopup = false;
+                        $popup = null;
+                    }
                 }
-                $location = [
+                $featureData = [
                     'type' => 'Feature',
                     'properties' => [
                         'name' => $name,
-                        'id' => $id,
-                        'dataSource' => $dataset->json_name,
+                        'id' => $featureId,
+                        'dataSource' => $dataset->jsonFilename,
                         'hasPopup' => $hasPopup
                     ],
-                    'geometry' => $loc['geometry'],
+                    'geometry' => $feature['geometry'],
                 ];
-                $locations[] = $location;
+                $data['features'][] = $featureData;
                 // popups
                 if ($hasPopup) {
-                    $popups[$id] = [
-                        'id' => $id,
+                    $data['popups'][$featureId] = [
+                        'id' => $featureId,
                         'name' => $name,
                         'popup' => $popup
                     ];
@@ -219,32 +213,61 @@ class LeafletTour {
             }
         }
         // return everything
-        return [
-            'basemaps'=>$basemaps,
-            'datasets'=>$tour_datasets,
-            'locations'=>$locations,
-            'views'=>$tour_views,
-            'legend'=>$legend,
-            'popups'=>$popups,
-            'attribution'=>$attribution
-        ];
+        return $data;
+    }
+
+    protected static function setIconOptions(array $headerOptions, array $datasetOptions) {
+        if (empty($headerOptions) && empty($datasetOptions)) return self::DEFAULT_MARKER_OPTIONS; // no icon options
+        else if ($headerOptions['use_defaults']) $datasetOptions = []; // ignore icon options from dataset file
+        $options = array_merge($datasetOptions, $headerOptions);
+        // determine which set of default values to use
+        if (!empty($options['file'])) $defaults = self::MARKER_FALLBACKS;
+        else $defaults = self::DEFAULT_MARKER_OPTIONS;
+        $iconOptions = [];
+        $iconOptions['iconUrl'] = !empty($options['file']) ? 'user/data/leaflet-tour/images/markers/'.$options['file'] : $defaults['iconUrl'];
+        $iconOptions['iconSize'] =[$options['height'] ?? $defaults['iconSize'][0], $options['width'] ?? $defaults['iconSize'][1]];
+        // iconAnchor is all or nothing unless default marker is used
+        if (isset($options['anchor_x']) && isset($options['anchor_y']) || empty($options['file'])) $iconOptions['iconAnchor'] = [$options['anchor_x'] ?? $defaults['iconAnchor'][0], $options['anchor_y'] ?? $defaults['iconAnchor'][1]];
+        $retinaUrl = $options['retina'] ? 'user/data/leaflet-tour/images/markers/'.$options['retina'] : $defaults['iconRetinaUrl'];
+        if (!empty($retinaUrl)) $iconOptions['iconRetinaUrl'] = $retinaUrl;
+        $iconOptions['className'] = 'leaflet-marker '.($options['class'] ?? '');
+        $iconOptions['tooltipAnchor'] = [$options['tooltip_anchor_x'] ?? $defaults['tooltipAnchor'][0], $options['tooltip_anchor_y'] ?? $defaults['tooltipAnchor'][1]];
+        if (!empty($options['shadow']) || empty($options['file'])) {
+            $iconOptions['shadowUrl'] = $options['shadow'] ? 'user/data/leaflet-tour/images/markerShadows/'.$options['shadow'] : $defaults['shadowUrl'];
+            $iconOptions['shadowSize'] = [$options['shadow_width'] ?? $defaults['shadowSize'][0], $options['shadow_height'] ?? $defaults['shadowSize'][1]];
+            if (isset($options['shadow_anchor_x']) && isset($options['shadow_anchor_y'])) $iconOptions['shadowAnchor'] = [$options['shadow_anchor_x'], $options['shadow_anchor_y']];
+        }
+        return $iconOptions;
     }
     
     public function getViewId($view) {
         return $view->getCacheKey();
     }
+
+    public function getViewPopups($viewFeatures, $popupList) {
+        if (empty($viewFeatures) or empty($popupList)) return [];
+        //return 'viewFeatures: '.count($viewFeatures).'<br />popupList: '.count($popupList);
+        $viewPopups = [];
+        foreach ($viewFeatures as $featureId) {
+            $popup = $popupList[$featureId];
+            if (!empty($popup)) {
+                $viewPopups[] = ['id'=>$popup['id'], 'name'=>$popup['name']];
+            }
+        }
+        return $viewPopups;
+    }
     
-    public function getPopupBtns($view_id, $tour_data) {
-        $view = $tour_data['views'][$view_id];
-        return gettype($tour_data);
+    /*public function getPopupBtns($viewId, $tourData) {
+        $view = $tourData['views'][$viewId];
+        return gettype($tourData);
         $locations = [];
-        if (empty($view['locations'])) return [];
-        foreach ($view['locations'] as $loc) {
-            if ($tour_data['locations'][$loc['id']]['hasPopup']) {
+        if (empty($view['features'])) return [];
+        foreach ($view['features'] as $loc) {
+            if ($tour_data['features'][$loc['id']]['hasPopup']) {
                 $locations[] = ['id'=>$loc['id'], 'name'=>$loc['name']];
             }
         }
         return $locations;
-    }
+    }*/
     
 }

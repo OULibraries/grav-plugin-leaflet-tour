@@ -25,18 +25,9 @@ var map = L.map('map', {
     maxZoom: tourOptions.maxZoom,
     minZoom: tourOptions.minZoom,
     attributionControl: false,
-})
+});
 
-
-var locationList = new Map();
-
-$(document).ready(function() {
-
-    $('body').addClass("scrolly-active");
-
-    if (tourOptions.wideCol) $("body").addClass("wide-column");
-
-if (tourOptions.revealLocation) var hash = new L.Hash(map);
+if (tourOptions.showMapLocationInHurl) var hash = new L.Hash(map);
 
 // Basemaps - Tile Server
 map.createPane('pane_basemap');
@@ -54,7 +45,7 @@ map.addLayer(layer_basemap);
 for (let [key, basemap] of Object.entries(tourOptions.basemaps)) {
     map.createPane('pane_' + key);
     map.getPane('pane_' + key).style.zIndex = 400;
-    basemap.layer = new L.imageOverlay(basemap.image, basemap.bounds, {pange: 'pane_' + key});
+    basemap.layer = new L.imageOverlay(basemap.file, basemap.bounds, {pange: 'pane_' + key});
 }
 setBasemaps();
 
@@ -62,10 +53,11 @@ setBasemaps();
 map.createPane('pane_tour');
 map.getPane('pane_tour').style.zIndex = 401;
 map.getPane('pane_tour').style['mix-blend-mode'] = 'normal';
+
 // set up data layer
 layer_tour = new L.geoJson(geoJson, {
-    pointToLayer: function(location, latlng) {
-        return L.marker(latlng, { icon: styleMarker(location)});
+    pointToLayer: function(feature, latlng) {
+        return L.marker(latlng, { icon: L.icon(tourOptions.datasets[feature.properties.dataSource].iconOptions)});
     },
     pane: 'pane_tour',
     attribution: '',
@@ -73,7 +65,7 @@ layer_tour = new L.geoJson(geoJson, {
     dataVar: 'geoJson',
     layerName: 'layer_tour',
 });
-function styleMarker(location) {
+/*function styleMarker(location) {
     let options = tourOptions.datasets[location.properties.dataSource].iconOptions;
     // TODO: What happens if options is null?
     if (options) return L.icon(options);
@@ -87,17 +79,25 @@ function styleMarker(location) {
         className: "leaflet-marker",
         tooltipAnchor: [-12, 20]
     });
-}
+}*/
 map.addLayer(layer_tour);
 
 // max bounds
 if (tourOptions['bounds']) map.setMaxBounds(tourOptions['bounds']);
 
+var featureList = new Map();
+
+$(document).ready(function() {
+
+    $('body').addClass("scrolly-active");
+
+    if (tourOptions.wideCol) $("body").addClass("wide-column");
+
 // set up labels/deal with locations
 layer_tour.eachLayer(function(layer) {
     let props = layer.feature.properties;
     let id = props.id;
-    locationList.set(id, { layer: layer });
+    featureList.set(id, { layer: layer });
     // labels
     layer.bindTooltip((props.name !== null?String('<div aria-hidden="true">' + props.name) + '</div>':''), {
         permanent: true,
@@ -110,21 +110,21 @@ layer_tour.eachLayer(function(layer) {
     totalMarkers++;
     // icons
     let icon = layer._icon;
-    $(icon).attr('data-location', id);
+    $(icon).attr('data-feature', id);
     $(icon).attr('id', id + '-marker-icon');
-    let iconAlt = props.name;
+    let iconAltText = props.name;
     if (tourOptions.legend) {
-        let legendAlt = tourOptions.datasets[props.dataSource].legendAlt;
-        if (legendAlt) iconAlt = iconAlt + ", " + legendAlt;
+        let legendAltText = tourOptions.datasets[props.dataSource].legendAltText;
+        if (legendAltText) iconAltText = iconAltText + ", " + legendAltText;
     }
     if (props.hasPopup) {
-        iconAlt = iconAlt + ", open popup";
+        iconAltText = iconAltText + ", open popup";
         $(icon).attr("role", "button");
         $(icon).addClass("has-popup");
     } else {
         $(icon).addClass("no-popup");
     }
-    $(icon).attr("alt", iconAlt);
+    $(icon).attr("alt", iconAltText);
 });
 resetLabels([layer_tour]);
 
@@ -240,12 +240,13 @@ if (window.localStorage.getItem("mapAnimation") === "false") $("#map-animation-t
 // legend checkboxes
 $(".legend-checkbox").on("input", function(e) {
     let dataset = $(this).attr("value");
-    for (let location of locationList.values()) {
-        if (location.layer.feature.properties.dataSource === dataset) {
-            location['hideDataSource'] = !this.checked;
-            toggleHideFeature(location);
+    for (let feature of featureList.values()) {
+        if (feature.layer.feature.properties.dataSource === dataset) {
+            feature['hideDataSource'] = !this.checked;
+            toggleHideFeature(feature);
         }
     }
+    // TODO: Is this good to have, or no?
     resetLabels([layer_tour]);
 });
 
@@ -260,6 +261,7 @@ $("#close-settings-btn").on("click", function(e) {
 // other buttons
 $("#reset-view-btn").on("click", exitView);
 
+// TODO: how do I want to do storing focus?
 $(".show-view-btn").on("click", function(e) {
     if (window.innerWidth < mobileWidth) { // constant from theme
         // on mobile, store button focus and toggle content
@@ -275,19 +277,19 @@ $(".show-view-btn").on("click", function(e) {
 // allow focusing on map icons that aren't buttons
 $(".leaflet-marker-pane .leaflet-marker.no-popup").on("click keydown", function(e) {
     if (e.type === "click" || e.which === 32 || e.which === 13) {
-        let id = $(this).attr("data-location");
-        locationList.get(id).layer._icon.focus();
+        let id = $(this).attr("data-feature");
+        featureList.get(id).layer._icon.focus();
         setActiveTooltip(id);
     }
 });
 
 // make tooltip active when focusing/hovering over icon
 $(".leaflet-marker-pane .leaflet-marker").on("focus mouseover", function(e) {
-    setActiveTooltip($(this).attr("data-location"));
+    setActiveTooltip($(this).attr("data-feature"));
 });
 // make tooltip inactive when ending focus/hover over icon
 $(".leaflet-marker-pane .leaflet-marker").on("blur mouseout", function(e) {
-    if (!(this === document.activeElement)) endActiveTooltip($(this).attr("data-location"));
+    if (!(this === document.activeElement)) endActiveTooltip($(this).attr("data-feature"));
 });
 
 // popups
@@ -296,12 +298,12 @@ $("#all-popups-btn").on("click", function(e) {
     toggleContent('popups');
 });
 $(".view-popup-btn").on("click", function(e) {
-    openPopup($(this).attr("data-location"));
+    openPopup($(this).attr("data-feature"));
 });
 // make icons open popups from map
 $(".leaflet-marker-pane .leaflet-marker.has-popup").on("click keydown", function(e) {
     if (e.type === "click" || e.which === 32 || e.which === 13) {
-        openPopup($(this).attr("data-location"));
+        openPopup($(this).attr("data-feature"));
     }
 });
 // popups
@@ -312,11 +314,11 @@ $(".popup-close-btn").on("click", closePopup);
 
 // functions for setting and ending active tooltip/icon
 function setActiveTooltip(id) {
-    locationList.get(id).layer.getTooltip().getElement().classList.add("active");
+    featureList.get(id).layer.getTooltip().getElement().classList.add("active");
 }
 function endActiveTooltip(id) {
     if (window.innerWidth >= mobileWidth && tourState.popup === id) return;
-    locationList.get(id).layer.getTooltip().getElement().classList.remove("active");
+    featureList.get(id).layer.getTooltip().getElement().classList.remove("active");
 }
 
 // popup functions
@@ -377,10 +379,10 @@ function toggleHideFeature(feature) {
 
 function toggleHideNonViewFeatures(viewId, hide) {
     let view = tourViews[viewId];
-    for (let [featureId, feature] of locationlist) {
-        if (!view.locations.includes(featureId)) {
+    for (let [featureId, feature] of featureList) {
+        if (!view.features.includes(featureId)) {
             // toggle
-            location['hideNonView'] = hide;
+            feature['hideNonView'] = hide;
             toggleHideFeature(feature);
         }
     }
@@ -389,7 +391,7 @@ function toggleHideNonViewFeatures(viewId, hide) {
 function enterView(id) {
     tourState.view = id;
     let view = tourViews[id];
-    if (view.onlyViewLocs) toggleHideNonViewFeatures(true);
+    if (view.onlyShowViewFeatures) toggleHideNonViewFeatures(true);
     // TODO: should map animation toggle the animation of flyTo or should it toggle changing the zoom at all?
     let zoom = (view.zoom > tourOptions.maxZoom ? tourOptions.maxZoom : (view.zoom < tourOptions.minZoom ? tourOptions.minZoom : view.zoom));
     let coords = (view.center ? L.latLng(view.center) : null);
@@ -405,7 +407,7 @@ function enterView(id) {
 // should only really be used when exiting views completely - not entering a new view
 function exitView() {
     if (!tourState.view) return; // already no view
-    if (tourViews[tourState.view].onlyViewLocs) toggleHideNonViewFeatures(false);
+    if (tourViews[tourState.view].onlyShowViewFeatures) toggleHideNonViewFeatures(false);
     tourState.view = null;
     closePopup();
     // TODO: do this only if animate or pass animate as an option
@@ -438,8 +440,8 @@ function checkBasemaps() {
     // make list of which basemaps should be active
     let newBasemaps = [];
     for (let basemap of tourState.basemaps) {
-        let basemap_info = tourOptions.basemaps[basemap];
-        if (map.getZoom() >= basemap_info.minZoom && map.getZoom() <= basemap_info.maxZoom) newBasemaps.push(basemap);
+        let basemapInfo = tourOptions.basemaps[basemap];
+        if (map.getZoom() >= basemapInfo.minZoom && map.getZoom() <= basemapInfo.maxZoom) newBasemaps.push(basemap);
     }
     // remove basemaps if necessary
     for (let basemap of tourState.activeBasemaps) {
