@@ -8,7 +8,6 @@ use Grav\Common\Data\Data;
 use Grav\Common\File\CompiledJsonFile;
 use Grav\Common\File\CompiledYamlFile;
 use RocketTheme\Toolbox\File\MarkdownFile;
-//use Grav\Plugin\LeafletTour\Datasets;
 
 class Dataset {
     
@@ -31,55 +30,48 @@ class Dataset {
     
     function __construct($jsonFilename, $name, $config) {
         $this->config = $config;
-        try {
-            // read json file and get data
-            $jsonFile = CompiledJsonFile::instance(Grav::instance()['locator']->findResource('user://').'/data/leaflet-tour/datasets/'.$jsonFilename);
-            $jsonData = new Data($jsonFile->content());
+        // read json file and get data
+        $jsonFile = CompiledJsonFile::instance(Grav::instance()['locator']->findResource('user://').'/data/leaflet-tour/datasets/'.$jsonFilename);
+        if (!$jsonFile->exists()) return;
+        $jsonData = new Data($jsonFile->content());
 
-            // set basic properties
-            $this->name = $name;
-            $this->jsonFilename = $jsonFilename;
-            $this->id = preg_replace('/.json$/', '', $jsonFilename);
-            $this->nameProperty = $jsonData->get('nameProperty');
-            $this->datasetFileRoute = $jsonData->get('datasetFileRoute');
-            $this->properties = array_keys((array)($jsonData->get('features.0.properties')));
-            $this->features = array_column(((array)($jsonData->get('features'))), null, 'id');
+        // set basic properties
+        $this->name = $name;
+        $this->jsonFilename = $jsonFilename;
+        $this->id = preg_replace('/.json$/', '', $jsonFilename);
+        $this->nameProperty = $jsonData->get('nameProperty');
+        $this->datasetFileRoute = $jsonData->get('datasetFileRoute');
+        $this->properties = array_keys((array)($jsonData->get('features.0.properties')));
+        $this->features = array_column(((array)($jsonData->get('features'))), null, 'id');
 
-            // remove unnamed features
-            foreach ($this->features as $id => $feature) {
-                if (empty($feature['properties'][$this->nameProperty])) unset($this->features[$id]);
-            }
-
-            // check for dataset file to add legend, icon, and popup options
-            if (!empty($this->datasetFileRoute)) $this->addDatasetFileInfo();
-            
-        } catch (Exception $e) {
-            // TODO: Error handling?
+        // remove unnamed features
+        foreach ($this->features as $id => $feature) {
+            if (empty($feature['properties'][$this->nameProperty])) unset($this->features[$id]);
         }
+
+        // check for dataset file to add legend, icon, and popup options
+        if (!empty($this->datasetFileRoute)) $this->addDatasetFileInfo();
     }
     
     protected function addDatasetFileInfo() {
-        try {
-            $file = MarkdownFile::instance($this->datasetFileRoute);
-            $header = new Data((array)($file->header()));
-            
-            $this->legendText = $header->get('legend_text');
-            $this->legendAltText = $header->get('legend_alt');
-            $this->iconFilename = $header->get('icon.file');
-            $this->iconAltText = $header->get('icon_alt');
-            //$this->autoPopupProperties = $data->get('popup_props');
-            $this->iconOptions = $header->get('icon') ?? [];
-            // feature list - popupContent and customName
-            if (empty($header->get('features'))) return;
-            foreach ($header->get('features') as $headerFeature) {
-                $feature = $this->features[$headerFeature['id']];
-                if (empty($feature)) continue;
-                $feature['popupContent'] = $headerFeature['popup_content'];
-                $feature['customName'] = $headerFeature['custom_name'];
-                $this->features[$headerFeature['id']] = $feature;
-            }
-        } catch (Exception $e) {
-            // TODO: error handling?
+        $file = MarkdownFile::instance($this->datasetFileRoute);
+        if (!$file->exists()) return;
+        $header = new Data((array)($file->header()));
+        
+        $this->legendText = $header->get('legend_text');
+        $this->legendAltText = $header->get('legend_alt');
+        $this->iconFilename = $header->get('icon.file');
+        $this->iconAltText = $header->get('icon_alt');
+        //$this->autoPopupProperties = $data->get('popup_props');
+        $this->iconOptions = $header->get('icon') ?? [];
+        // feature list - popupContent and customName
+        if (empty($header->get('features'))) return;
+        foreach ($header->get('features') as $headerFeature) {
+            $feature = $this->features[$headerFeature['id']];
+            if (empty($feature)) continue;
+            $feature['popupContent'] = $headerFeature['popup_content'];
+            $feature['customName'] = $headerFeature['custom_name'];
+            $this->features[$headerFeature['id']] = $feature;
         }
     }
 
@@ -88,7 +80,6 @@ class Dataset {
         // check if file already exists (don't overwrite)
         if ($file->exists()) return;
         // build header array
-        // TODO: can I use false instead of 0?
         $header = [
             'routable'=>0,
             'visible'=>0,
@@ -135,7 +126,6 @@ class Dataset {
         $this->addDatasetFileInfo();
     }
 
-    // TODO: move this to Datasets.php
     public static function updateMetadata($jsonFilename, $name) {
         $metaFile = CompiledYamlFile::instance(Grav::instance()['locator']->findResource('user://').'/data/leaflet-tour/datasets/meta.yaml');
         $metaData = $metaFile->content();

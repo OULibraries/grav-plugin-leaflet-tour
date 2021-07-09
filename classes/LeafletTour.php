@@ -63,7 +63,8 @@ class LeafletTour {
         // loop through views - set views and add to basemaps
         if (!empty($modules)) {
             foreach ($modules as $module) {
-                // TODO: use viewPage->template() === 'view' or 'modules/view' or something to make sure these are views
+                // make sure these are views
+                if ($module->template() !== 'modular/view') return;
                 $viewHeader = new Data((array)$module->header());
                 $view = [
                     'basemaps'=>[],

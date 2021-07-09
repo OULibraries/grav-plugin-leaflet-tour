@@ -19,7 +19,6 @@ form:
           fields:
 
             # hidden fields - routable, visible?
-            # TODO: can I use false instead?
             header.routable:
               type: hidden
               default: 0

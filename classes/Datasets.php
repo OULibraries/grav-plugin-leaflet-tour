@@ -9,7 +9,6 @@ use Grav\Common\File\CompiledJsonFile;
 use Grav\Common\File\CompiledYamlFile;
 use RocketTheme\Toolbox\File\File;
 use Grav\Plugin\LeafletTour\Dataset;
-//use RocketTheme\Toolbox\File\MarkdownFile;
 
 class Datasets {
     
@@ -52,7 +51,7 @@ class Datasets {
             $jsonData = new Data($jsonArray);
         }
         // some basic json validation
-        if (empty($jsonData->get('features'))) return false; // TODO: remove?
+        //if (empty($jsonData->get('features'))) return false; // TODO: remove?
         if (empty($jsonData->get('features.0.properties'))) return false;
         if (empty($jsonData->get('features.0.geometry'))) return false;
 
@@ -81,7 +80,6 @@ class Datasets {
 
         // set feature ids
         $count = 0;
-        // TODO: needs array cast?
         $features = [];
         foreach ($jsonData->get('features') as $feature) {
             $feature['id'] = $id.'_'.$count;
@@ -97,14 +95,6 @@ class Datasets {
             $jsonFile->save();
             // update metadata
             Dataset::updateMetadata($jsonFilename, $name);
-            /*$metaFile = CompiledYamlFile::instance($this->grav['locator']->findResource('user://').'/data/leaflet-tour/datasets/meta.yaml');
-            $content = $metaFile->content();
-            if (empty($content) || empty($content['datasets'])) $content = ['datasets'=>[$jsonFilename=>$name]];
-            else {
-                $content['datasets'][$jsonFilename] = $name;
-            }
-            $metaFile->content($content);
-            $metaFile->save();*/
         } catch (Exception $e) {
             return false;
         }
@@ -126,7 +116,6 @@ class Datasets {
         $file = File::instance($this->grav['locator']->findResource('user://').'/data/leaflet-tour/datasets/uploads/'.$filename);
         // find and remove the initial json variable
         $count = 0;
-        // TODO: Document file requirements - json file must have a variable beginning with 'json_'
         $jsonRegex = preg_replace('/^(.)*var(\s)+json_(\w)*(\s)+=(\s)+/', '', $file->content(), 1, $count);
         // if a match was found (and removed), try converting the file contents to json
         if ($count == 1) {
@@ -147,18 +136,6 @@ class Datasets {
     public function getDatasets() {
         return $this->datasets;
     }
-    
-    /*protected function updateMetadata($filename) {
-        $file = CompiledYamlFile::instance($this->grav['locator']->findResource('user://').'/data/leaflet-tour/datasets/meta.yaml');
-        $content = $file->content();
-        if (empty($content) || empty($content['datasets'])) $content = ['datasets'=>[$filename=>'']];
-        else {
-            if ($content['datasets'][$filename]) return;
-            $content['datasets'][$filename] = '';
-        }
-        $file->content($content);
-        $file->save();
-    }*/
 
     // returns a list of all datasets included in the yaml meta file [jsonFilename => dataset name]
     public static function getDatasetFiles() {

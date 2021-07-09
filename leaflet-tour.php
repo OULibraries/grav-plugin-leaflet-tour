@@ -243,6 +243,10 @@ class LeafletTourPlugin extends Plugin
             if (!empty($features)) $featureList = array_merge($featureList, $features);
             else $featureList = [];
         }
+        if ($onlyPoints) {
+            // list of point locations are for start location - should have a default null value
+            $featureList = array('default' => 'None') + $featureList;
+        }
         return $featureList;
     }
 
@@ -262,6 +266,10 @@ class LeafletTourPlugin extends Plugin
                 // TODO: check for show all - if not show all, only include features that are included in the $data->get('features')
             }
             if (!empty($features)) $featureList = array_merge($featureList, $features);
+        }
+        if ($onlyPoints) {
+            // list of point locations are for start location - should have a default null value
+            $featureList = array('default' => 'None') + $featureList;
         }
         return $featureList;
     }
