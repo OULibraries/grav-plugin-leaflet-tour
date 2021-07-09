@@ -1,0 +1,341 @@
+title: Dataset
+extends@: default
+
+form:
+  fields:
+    tabs:
+      type: tabs
+      active: 1
+      fields:
+      # Unset default fields - we don't need most of them because this isn't really a page
+        content:
+          unset@: true
+        advanced:
+          unset@: true
+        options:
+          unset@: true
+          type: tab
+          title: Options
+          fields:
+
+            # hidden fields - routable, visible?
+            # TODO: can I use false instead?
+            header.routable:
+              type: hidden
+              default: 0
+            header.visible:
+              type: hidden
+              default: 0
+
+            cols:
+              type: columns
+              fields:
+                col1:
+                  type: column
+                  fields:
+
+                    header.settings:
+                      type: section
+                      title: PLUGIN_ADMIN.SETTINGS
+                      underline: true
+
+                    header.dataset_file:
+                      type: text
+                      readonly: true
+                      label: Dataset File
+                      validate:
+                        required: true
+
+                    header.title:
+                      type: text
+                      label: Dataset Name
+                  
+                    # TODO: customize dataset id?
+
+                    # TODO: select or readonly feature type?
+
+                    folder:
+                      type: folder-slug
+                      label: PLUGIN_ADMIN.FOLDER_NAME
+                      validate:
+                        rule: slug
+
+                    route:
+                      type: parents
+                      label: PLUGIN_ADMIN.PARENT
+                      classes: fancy
+
+                    name:
+                      type: select
+                      classes: fancy
+                      label: PLUGIN_ADMIN.PAGE_FILE
+                      help: PLUGIN_ADMIN.PAGE_FILE_HELP
+                      default: default
+                      data-options@: '\Grav\Common\Page\Pages::pageTypes'
+                
+                col2:
+                  type: column
+                  fields:
+
+                    info_section:
+                      type: section
+                      title: Info
+                      underline: true
+                    
+                    info:
+                      type: display
+                      markdown: true
+                      content: 'TODO: Information should go here.'
+        
+        features:
+          type: tab
+          title: Features
+          fields:
+
+            header.name_prop:
+              type: select
+              label: Name Property
+              description: "The property in the data file that contains features' names."
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getPropertyList'
+
+            # TODO: auto add properties?
+
+            header.features:
+              type: list
+              collapsed: true
+              style: vertical
+              label: Features
+              btnLabel: 'Ignore: Do not click'
+              # TODO: ability to add a feature
+              fields:
+                .id:
+                  type: hidden
+                  validate:
+                    required: true
+                .name:
+                  type: text
+                  label: Name
+                  readonly: true
+                .custom_name:
+                  type: text
+                  label: Custom Name
+                  
+                # TODO: custom id?
+
+                # TODO: feature type?
+
+                # TODO: coordinates?
+
+                # TODO: property list?
+
+                # TODO: hide feature option?
+
+                .popup_content:
+                  type: editor
+                  label: Popup Content
+                  description: Leave blank for no popup window. Current content may not show up until you click inside the text area.
+                  validate:
+                    type: textarea
+        
+        icon:
+          type: tab
+          title: Icon
+          fields:
+
+            legend_section:
+              type: display
+              content: "## Legend"
+              markdown: true
+              style: vertical
+            
+            header.legend_text:
+              type: text
+              label: Description for Legend
+            
+            header.legend_alt:
+              type: text
+              label: Legend Alt text
+              description: Optional shorter version of the legend description that will be included as alt text for icons on the map. If empty, the legend description will be used.
+            
+            header.icon_alt:
+              type: text
+              label: Icon Alt Text
+              description: A brief description of the image. Will be included as alt text for the icon within the legend.
+
+            markers_section:
+              type: display
+              content: "## Map Markers"
+              style: vertical
+              markdown: true
+            
+            icon_display:
+              type: display
+              content: "### Icon"
+              style: vertical
+              markdown: true
+
+            header.icon.file:
+              type: filepicker
+              label: Icon Image File
+              description: If not set, the default Leaflet marker will be used.
+              preview_images: true
+              folder: 'user://data/leaflet-tour/images/markers'
+            
+            icon_size_section:
+              type: display
+              markdown: true
+              style: vertical
+              content: "Icon width and height default to 14 (pixels) for custom icons."
+            iconsizecol:
+              type: columns
+              fields:
+                iconsizecol1:
+                  type: column
+                  fields:
+                    header.icon.width:
+                      type: number
+                      label: Width
+                      description: Defaults to 14
+                      validate:
+                        min: 1
+                iconsizecol2:
+                  type: column
+                  fields:
+                    header.icon.height:
+                      type: number
+                      label: Height
+                      description: Defaults to 14
+                      validate:
+                        min: 1
+
+            icon_anchor_section:
+              type: display
+              content: "#### Icon Anchor
+
+              The coordinates of the 'tip' of the icon (relative to its top left corner). The icon will be aligned so that this point is at the marker's geographical location. Centered by default."
+              markdown: true
+              style: vertical
+            iconanchcols:
+              type: columns
+              fields:
+                iconanchcol1:
+                  type: column
+                  fields:
+                    header.icon.anchor_x:
+                      type: number
+                      label: Icon Anchor X
+                      # TODO: doublecheck accuracy of descriptions
+                      #description: Moves icon up
+                iconanchcol2:
+                  type: column
+                  fields:
+                    header.icon.anchor_y:
+                      type: number
+                      label: Icon Anchor Y
+                      #description: Moves icon right
+
+            icon_tooltip_section:
+              type: display
+              content: "### Icon Tooltip Anchor
+
+              The coordinates of the point from which tooltips will open, relative to the icon anchor. (The tooltips are the labels with feature names.)"
+              markdown: true
+              style: vertical
+            icontooltipcols:
+              type: columns
+              fields:
+                icontooltipocol1:
+                  type: column
+                  fields:
+                    header.icon.tooltip_anchor_x:
+                      type: number
+                      label: Tooltip Anchor X
+                      # TODO: doublecheck accuracy of descriptions
+                      #description: Moves icon up
+                icontooltipcol2:
+                  type: column
+                  fields:
+                    header.icon.tooltip_anchor_y:
+                      type: number
+                      label: Tooltip Anchor Y
+                      #description: Moves icon right
+                
+            icon_shadow_section:
+              type: display
+              content: "### Icon Shadow"
+              markdown: true
+              style: vertical
+            
+            header.icon.shadow:
+              type: filepicker
+              label: Shadow Image File
+              description: Defaults to the default Leaflet marker shadow if the default Leaflet marker is used. Otherwise defaults to none.
+              preview_images: true
+              folder: 'user://data/leaflet-tour/images/markerShadows'
+              
+            icon_shadow_size_display:
+              type: display
+              style: vertical
+              content: "Shadow width and height default to 14 (pixels) for custom icons."
+            iconshadowcols:
+              type: columns
+              fields:
+                iconshadowocol1:
+                  type: column
+                  fields:
+                    header.icon.shadow_width:
+                      type: number
+                      label: Shadow Width
+                      validate:
+                        min: 1
+                iconshadowcol2:
+                  type: column
+                  fields:
+                    header.icon.shadow_height:
+                      type: number
+                      label: Shadow Height
+                      validate:
+                        min: 1
+            
+            icon_shadow_anchor_display:
+              type: display
+              content: "#### Shadow Anchor
+              
+              The coordinates of the 'tip' of the shadow (relative to its top left corner). If not set, uses the same values as icon anchor."
+              markdown: true
+              style: vertical
+            iconshadowanchcols:
+              type: columns
+              fields:
+                iconshadowanchocol1:
+                  type: column
+                  fields:
+                    header.icon.shadow_anchor_x:
+                      type: number
+                      label: Shadow Anchor X
+                iconshadowanchcol2:
+                  type: column
+                  fields:
+                    header.icon.shadow_anchor_y:
+                      type: number
+                      label: Shadow Anchor Y
+            
+            extra_options_display:
+              type: display
+              content: "### Additional Icon Options"
+              markdown: true
+              style: vertical
+            
+            header.icon.class:
+              type: text
+              label: Class Name
+              description: A class name that can be used to select the icon when adding custom CSS
+              validate:
+                pattern: '[a-zA-Zа-яA-Я0-9_-]+'
+
+            header.icon.retina:
+              type: filepicker
+              label: Retina Icon Image
+              description: Optional. Used for Retina screen devices
+              preview_images: true
+              folder: 'user://data/leaflet-tour/images/markers'

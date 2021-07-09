@@ -107,6 +107,7 @@ class LeafletTourPlugin extends Plugin
      * Handle page and plugin metadata on save
      */
     public function onAdminSave(Event $event) {
+        //self::testSaveFile();
         $obj = $event['object'];
         // handle plugin config data
         if (method_exists($obj, 'get') && $obj->get('leaflet_tour')) {
@@ -119,7 +120,9 @@ class LeafletTourPlugin extends Plugin
                     Datasets::instance()->createDataset($data);
                 }
             }
-        } else if (method_exists($obj, 'template') && $obj->template() === 'tour') {
+        }
+        // handle tour config data
+        else if (method_exists($obj, 'template') && $obj->template() === 'tour') {
             // handle fieldsets inside lists
             $header = $obj->header();
             $datasets = [];
@@ -133,7 +136,31 @@ class LeafletTourPlugin extends Plugin
                 }
                 $header->set('datasets', $datasets);
             }
-        } // TODO: handle dataset file on save
+        }
+        // handle dataset config data
+        else if (method_exists($obj, 'template') && $obj->template() === 'dataset') {
+            $header = $obj->header();
+            $original = $obj->getOriginal()->header();
+            $datasetFileRoute = self::getDatasetRoute();
+            if ($header->get('name_prop') !== $original->get('name_prop')) $nameProperty = $header->get('name_prop');
+            if ($header->get('title') !== $original->get('title')) $name = $header->get('title');
+            // reconcile features
+            if (count($header->get('features') ?? []) < count($original->get('features') ?? [])) {
+                if (empty($header->get('features'))) $header->set('features', $original->get('features'));
+                else {
+                    $features = $header->get('features');
+                    $featureIds = array_column($features, 'id');
+                    foreach ($original->get('features') as $feature) {
+                        if (!in_array($feature['id'], $featureIds)) {
+                            $features[] = $feature;
+                        }
+                    }
+                    $header->set('features', $features);
+                }
+            }
+            // update dataset
+            Datasets::instance()->getDatasets()[$header->get('dataset_file')]->updateDataset($datasetFileRoute, $name ?? null, $nameProperty ?? null);
+        }
     }
     
     public static function getDatasetFiles() {
@@ -144,16 +171,34 @@ class LeafletTourPlugin extends Plugin
     public static function getPageRoute($keys) {
         $route = Grav::instance()['locator']->findResource('page://').'/';
         for ($i = 0; $i < count($keys); $i++) {
-            $glob = glob($route.$keys[$i].'*');
-            if (count($glob) === 0) {
-                $glob = glob($route.'??.'.$keys[$i]);
-                if (count($glob) === 0) {
-                    // last ditch effort
-                    $glob = glob($route.'*.'.$keys[$i]);
-                    if (count($glob) === 0) return [];
+            $glob = glob($route.'*');
+            $match = '';
+            foreach ($glob as $item) {
+                if (strtolower($item) === $route.$keys[$i]) {
+                    $match = $item;
+                    continue;
                 }
             }
-            $route = $glob[0].'/';
+            // check for folder numeric prefix
+            if (empty($match)) {
+                foreach ($glob as $item) {
+                    if (preg_match('/^[0-9][0-9]\.'.$keys[$i].'$/', strtolower(str_replace($route, '', $item)))) {
+                        $match = $item;
+                        continue;
+                    }
+                }
+            }
+            // last ditch effort
+            if (empty($match)) {
+                foreach ($glob as $item) {
+                    if (preg_match('/^..\.'.$keys[$i].'$/', strtolower(str_replace($route, '', $item)))) {
+                        $match = $item;
+                        continue;
+                    }
+                }
+            }
+            if (empty($match)) return implode(',', $glob);
+            $route = $match.'/';
         }
         return $route;
     }
@@ -165,6 +210,12 @@ class LeafletTourPlugin extends Plugin
         $file = MarkdownFile::instance($route);
         if ($file->exists()) return new Data((array)$file->header());
         else return null;
+    }
+
+    public static function getDatasetRoute() {
+        $key = Grav::instance()['page']->header()->controller['key']; // current page - the reason why this function only works when called from dataset.yaml
+        $keys = explode("/", $key); // break key into sub-components
+        return self::getPageRoute($keys).'dataset.md';
     }
 
     public static function getTourFromView() {
@@ -228,5 +279,15 @@ class LeafletTourPlugin extends Plugin
         $basemaps = Grav::instance()['config']->get('plugins.leaflet-tour')['basemaps'];
         if (!empty($basemaps)) return array_column($basemaps, 'file', 'file');
         else return ['empty'];
+    }
+
+    // list of properties for the dataset associated with the dataset config file
+    public static function getPropertyList() {
+        $route = self::getDatasetRoute();
+        $file = MarkdownFile::instance($route);
+        if (!$file->exists()) return [];
+        // get dataset
+        $dataset = Datasets::instance()->getDatasets()[((array)$file->header())['dataset_file']];
+        return array_combine($dataset->properties, $dataset->properties);
     }
 }

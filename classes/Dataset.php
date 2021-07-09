@@ -14,6 +14,7 @@ class Dataset {
     
     public $name;
     public $jsonFilename;
+    public $id; // jsonFilename is often used for id, but this is the id used to develop location ids and folder name for dataset page
     public $nameProperty;
     public $datasetFileRoute;
     public $properties;
@@ -23,7 +24,6 @@ class Dataset {
     public $legendAltText;
     public $iconFilename;
     public $iconOptions;
-    public $hasPopup;
     
     public $autoPopupProperties; // list of all properties to automatically add to popups
 
@@ -39,6 +39,7 @@ class Dataset {
             // set basic properties
             $this->name = $name;
             $this->jsonFilename = $jsonFilename;
+            $this->id = preg_replace('/.json$/', '', $jsonFilename);
             $this->nameProperty = $jsonData->get('nameProperty');
             $this->datasetFileRoute = $jsonData->get('datasetFileRoute');
             $this->properties = array_keys((array)($jsonData->get('features.0.properties')));
@@ -57,15 +58,6 @@ class Dataset {
         }
     }
     
-    /*protected function buildLocationList() {
-        $locations = [];
-        foreach ($this->locations as $id => $loc) {
-            $name = $loc['properties'][$this->name_prop];
-            if (!empty($name)) $locations[$id] = $name.' ('.$this->name.')';
-        }
-        $this->location_list = $locations;
-    }*/
-    
     protected function addDatasetFileInfo() {
         try {
             $file = MarkdownFile::instance($this->datasetFileRoute);
@@ -76,11 +68,46 @@ class Dataset {
             $this->iconFilename = $header->get('icon.file');
             $this->iconAltText = $header->get('icon_alt');
             //$this->autoPopupProperties = $data->get('popup_props');
-            $this->hasPopup = (!empty($header->get('popup_content')));
             $this->iconOptions = $header->get('icon') ?? [];
+            // feature list - popupContent and customName
+            if (empty($header->get('features'))) return;
+            foreach ($header->get('features') as $headerFeature) {
+                $feature = $this->features[$headerFeature['id']];
+                if (empty($feature)) continue;
+                $feature['popupContent'] = $headerFeature['popup_content'];
+                $feature['customName'] = $headerFeature['custom_name'];
+                $this->features[$headerFeature['id']] = $feature;
+            }
         } catch (Exception $e) {
             // TODO: error handling?
         }
+    }
+
+    public function createDatasetPage($datasetFileRoute): void {
+        $file = MarkdownFile::instance($datasetFileRoute);
+        // check if file already exists (don't overwrite)
+        if ($file->exists()) return;
+        // build header array
+        // TODO: can I use false instead of 0?
+        $header = [
+            'routable'=>0,
+            'visible'=>0,
+            'dataset_file'=>$this->jsonFilename,
+            'title'=>$this->name,
+            'name_prop'=>$this->nameProperty,
+        ];
+        // add feature list
+        $features = [];
+        foreach ($this->features as $id => $feature) {
+            $features[$id] = [
+                'id'=>$id,
+                'name'=>$feature['properties'][$this->nameProperty]
+            ];
+        }
+        $header['features'] = $features;
+        // save
+        $file->header($header);
+        $file->save();
     }
 
     // called when dataset config is saved - updates info in the json file - nameProperty, datasetFileRoute - also updates dataset name in the metadata file
@@ -95,11 +122,20 @@ class Dataset {
         $jsonData['datasetFileRoute'] = $datasetFileRoute;
         if (!empty($nameProperty) && in_array($nameProperty, $this->properties)) {
             $jsonData['nameProperty'] = $nameProperty;
+            $this->nameProperty = $nameProperty;
+        }
+        if (!empty($name)) {
+            $jsonData['name'] = $name;
+            $this->name = $name;
         }
         $jsonFile->content($jsonData);
         $jsonFile->save();
+        // update dataset
+        $this->$datasetFileRoute = $datasetFileRoute;
+        $this->addDatasetFileInfo();
     }
 
+    // TODO: move this to Datasets.php
     public static function updateMetadata($jsonFilename, $name) {
         $metaFile = CompiledYamlFile::instance(Grav::instance()['locator']->findResource('user://').'/data/leaflet-tour/datasets/meta.yaml');
         $metaData = $metaFile->content();

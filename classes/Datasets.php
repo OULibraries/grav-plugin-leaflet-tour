@@ -44,6 +44,7 @@ class Datasets {
     public function createDataset($fileData) {
         $tmpNameArray = explode('/', preg_replace('/.js$/', '.json', $fileData['name']));
         $jsonFilename = $tmpNameArray[count($tmpNameArray)-1];
+        $id = preg_replace('/.json$/', '', $jsonFilename);
 
         // check file type and pass to appropriate handler
         if ($fileData['type'] === 'text/javascript') {
@@ -58,7 +59,7 @@ class Datasets {
         // set dataset name
         $name = $jsonData['name'];
         if (empty($name)) {
-            $name = str_replace('.json', '', $jsonFilename);
+            $name = $id;
             $jsonArray['name'] = $name;
         }
 
@@ -72,12 +73,18 @@ class Datasets {
         if (empty($nameProperty)) $nameProperty = $propertyList[0];
         $jsonArray['nameProperty'] = $nameProperty;
 
+        // set dataset file route
+        // TODO: should I really be checking this?
+        if (empty($jsonData->get('datasetFileRoute'))) {
+            $jsonArray['datasetFileRoute'] = $this->grav['locator']->findResource('page://').'/datasets/'.$id.'/dataset.md';
+        }
+
         // set feature ids
         $count = 0;
         // TODO: needs array cast?
         $features = [];
         foreach ($jsonData->get('features') as $feature) {
-            $feature['id'] = $name.'_'.$count;
+            $feature['id'] = $id.'_'.$count;
             $features[] = $feature;
             $count++;
         }
@@ -103,7 +110,10 @@ class Datasets {
         }
         
         // add to datasets
-        $this->datasets[] = new Dataset($jsonFilename, $name, $this->config);
+        $newDataset = new Dataset($jsonFilename, $name, $this->config);
+        $this->datasets[] = $newDataset;
+
+        $newDataset->createDatasetPage($jsonArray['datasetFileRoute']);
         return true;
     }
     
