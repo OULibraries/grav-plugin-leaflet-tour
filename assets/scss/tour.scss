@@ -566,7 +566,10 @@ footer {
         text-align: center;
         margin-top: .5rem;
         li {
-            display: inline;
+            display: inline-block;
+            &:last-child .fa-circle {
+                display: none;
+            }
         }
         .attribution {
             text-decoration: none;
@@ -582,7 +585,7 @@ footer {
             border-color: #000;
         }
         .fa-circle {
-            font-size: 1rem;
+            @include font-size(8);
             padding: 0 .5rem;
         }
     }

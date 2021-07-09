@@ -56,7 +56,6 @@ class LeafletTour {
         $header = new Data((array)$page->header());
         if (empty($header->get('datasets'))) return []; // quick check
         $modules = $page->children()->modules();
-        $datasets = Datasets::instance()->getDatasets();
         $headerFeatures = [];
         if (!empty($header->get('features'))) $headerFeatures = array_column($header['features'], null, 'id'); // make associative array for tour header features
         $viewCenters = [];
@@ -96,12 +95,14 @@ class LeafletTour {
                 $data['basemaps'][$basemap['file']] = [1];
             }
         }
-        // set initial attribution TODO: only add attribution items based on configuration
-        $attribution = [
-            ['name'=>'Leaflet', 'url'=>'https://leafletjs.com'],
-            ['name'=>'qgis2web', 'url'=>'https://github.com/tomchadwin/qgis2web'],
-            ['name'=>'QGIS', 'url'=>'https://qgis.org'],
-        ];
+        // set initial attribution
+        $attribution = [];
+        foreach ($this->config->get('attribution_list') ?? [] as $attr) {
+            if (!empty($attr['text'])) $attribution[] = ['name'=>$attr['text'], 'url'=>$attr['url']];
+        }
+        if (!empty($header->get('tileserver.url'))) $tileserver = $header->get('tileserver');
+        else $tileserver = $this->config->get('tileserver');
+        if ($tileserver['attribution_text']) $attribution[] = ['name'=>$tileserver['attribution_text'], 'url'=>$tileserver['attribution_url']];
         // loop through basemaps - set $basemaps, set $attribution
         if (!empty($data['basemaps']) && !empty($this->config->get('basemaps'))) {
             foreach ($this->config->get('basemaps') as $basemap) {
@@ -119,7 +120,7 @@ class LeafletTour {
                         continue;
                     }
                     // set attribution data
-                    $attribution[] = ['name' => $basemap['attribution_text'], 'url' => $basemap['attribution_url']];
+                    if (!empty($basemap['attribution_text'])) $attribution[] = ['name' => $basemap['attribution_text'], 'url' => $basemap['attribution_url']];
                 }
             }
         }

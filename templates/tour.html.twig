@@ -35,6 +35,7 @@
             zoom: {{ header.start.zoom ?? 10 }},
             maxZoom: {{ header.zoom_max ?? 16 }},
             minZoom: {{ header.zoom_min ?? 8 }},
+            // todo: move default tileserver into leaflet-tour.yaml
             tileServer: "{{ header.tileserver.url ?? pluginConfig.tileserver.url  ?? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }}",
             basemaps: {{ tourData['basemaps']|json_encode|raw }}, // all basemap info
             removeDefaultBasemap: {{ header.remove_default_basemap ? 'true' : 'false' }},

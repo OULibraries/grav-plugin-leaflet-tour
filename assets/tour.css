@@ -1,3 +1,13 @@
+/* Notes from tmp.css
+
+A couple of header logo styles - probably mostly a note that I need to work on the header:
+header .logo {
+    max-width: 100%;
+}
+header .logo a {
+    padding: 0;
+}
+*/
 /* Temporary: Move these to theme.css */
 .skip-link:visited {
   color: #004fa3;
@@ -39,6 +49,7 @@ header a:hover:not(:focus) {
   outline: 1px solid;
 }
 
+/* end temporary */
 /* Header */
 header {
   position: sticky;
@@ -485,7 +496,10 @@ footer > div {
   margin-top: 0.5rem;
 }
 #attribution-section .attribution-list li {
-  display: inline;
+  display: inline-block;
+}
+#attribution-section .attribution-list li:last-child .fa-circle {
+  display: none;
 }
 #attribution-section .attribution-list .attribution {
   text-decoration: none;
@@ -501,7 +515,8 @@ footer > div {
   border-color: #000;
 }
 #attribution-section .attribution-list .fa-circle {
-  font-size: 1rem;
+  font-size: 8px;
+  font-size: 0.8rem;
   padding: 0 0.5rem;
 }
 

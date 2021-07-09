@@ -132,6 +132,42 @@ form:
                     0: PLUGIN_ADMIN.DISABLED
                   validate:
                     type: bool
+
+                # TODO: mention default list items and why they are there
+                footer_attribution_section:
+                  type: display
+                  content: "### Footer Attribution"
+                  markdown: true
+                  style: vertical
+
+                attribution_toggle:
+                  type: toggle
+                  label: Include Attribution in Footer
+                  description: Uncheck this if you want to manually add attribution for leaflet/basemaps/etc.
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+
+                attribution_list:
+                  type: list
+                  label: Additional Resources
+                  description: Provide non-basemap references here.
+                  btnLabel: Add Resource
+                  collapsed: true
+                  style: vertical
+                  fields:
+                    .text:
+                      type: text
+                      label: Attribution Text
+                      validate:
+                        required: true
+                    .url:
+                      type: text
+                      label: Attribution Link
         
         basemaps:
           type: tab
