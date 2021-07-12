@@ -370,7 +370,7 @@ function toggleContent(id) {
 }
 
 function toggleHideFeature(feature) {
-    let hide = (feature.hideDataSource || feature.hideView);
+    let hide = (feature.hideDataSource || feature.hideNonView);
     let tooltip = feature.layer.getTooltip().getElement();
     let icon = feature.layer._icon;
     let shadow = feature.layer._shadow;
@@ -379,6 +379,8 @@ function toggleHideFeature(feature) {
 
 function toggleHideNonViewFeatures(viewId, hide) {
     let view = tourViews[viewId];
+    // ignore if feature list is empty
+    if (!view.features) return;
     for (let [featureId, feature] of featureList) {
         if (!view.features.includes(featureId)) {
             // toggle
@@ -389,9 +391,10 @@ function toggleHideNonViewFeatures(viewId, hide) {
 }
 
 function enterView(id) {
+    if (tourState.view && tourViews[tourState.view].onlyShowViewFeatures) toggleHideNonViewFeatures(tourState.view, false);
     tourState.view = id;
     let view = tourViews[id];
-    if (view.onlyShowViewFeatures) toggleHideNonViewFeatures(true);
+    if (view.onlyShowViewFeatures) toggleHideNonViewFeatures(id, true);
     // TODO: should map animation toggle the animation of flyTo or should it toggle changing the zoom at all?
     let zoom = (view.zoom > tourOptions.maxZoom ? tourOptions.maxZoom : (view.zoom < tourOptions.minZoom ? tourOptions.minZoom : view.zoom));
     let coords = (view.center ? L.latLng(view.center) : null);
@@ -407,7 +410,7 @@ function enterView(id) {
 // should only really be used when exiting views completely - not entering a new view
 function exitView() {
     if (!tourState.view) return; // already no view
-    if (tourViews[tourState.view].onlyShowViewFeatures) toggleHideNonViewFeatures(false);
+    if (tourViews[tourState.view].onlyShowViewFeatures) toggleHideNonViewFeatures(tourState.view, false);
     tourState.view = null;
     closePopup();
     // TODO: do this only if animate or pass animate as an option

@@ -21,6 +21,7 @@ class Dataset {
 
     public $legendText;
     public $legendAltText;
+    public $iconAltText;
     public $iconFilename;
     public $iconOptions;
     

@@ -55,6 +55,11 @@ form:
                     .legend_alt:
                       type: text
                       label: Legend Alt Text
+                      description: Optional shorter version of the legend description that will be included as alt text for icons on the map. If empty, the legend description will be used.
+                    .icon_alt:
+                      type: text
+                      label: Icon Alt Text
+                      description: A brief description of the image. Will be included as alt text for the icon within the legend.
                     .icon:
                       type: fieldset
                       title: Icon Overrides

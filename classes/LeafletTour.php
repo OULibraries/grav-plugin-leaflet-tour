@@ -139,7 +139,7 @@ class LeafletTour {
             $datasetData['iconOptions'] = self::setIconOptions($headerDataset->get('icon') ?? [], $dataset->iconOptions ?? []);
             // legend
             $legendText = $headerDataset->get('legend_text') ?? $dataset->legendText;
-            $iconAltText = $headerDataset->get('icon_alt') ?? $dataset->iconAlt;
+            $iconAltText = $headerDataset->get('icon_alt') ?? $dataset->iconAltText;
             if (!empty($legendText)) {
                 // set alt text for map icons (legend alt text)
                 $datasetData['legendAltText'] = $headerDataset->get('legend_alt') ?? $headerDataset->get('legend_text') ?? $dataset->legendAltText ?? $dataset->legendText;
@@ -149,15 +149,15 @@ class LeafletTour {
                     'legendText'=>$legendText,
                 ];
                 // legend icon
-                if (!empty($iconAlt)) $legend['iconAltText'] = $iconAlt;
+                if (!empty($iconAltText)) $legend['iconAltText'] = $iconAltText;
                 $legend['iconFile'] = $datasetData['iconOptions']['iconUrl'];
                 $legend['iconWidth'] = $datasetData['iconOptions']['iconSize'][0];
                 $legend['iconHeight'] = $datasetData['iconOptions']['iconSize'][1];
                 // add legend
                 $data['legend'][] = $legend;
-            } else if (!empty($iconAltText)) {
+            }/* else if (!empty($iconAltText)) {
                 $datasetData['legendAltText'] = $iconAltText;
-            }
+            }*/
             // add dataset
             $data['datasets'][$headerDataset['file']] = $datasetData;
             // set features, modify views, set popups
