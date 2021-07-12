@@ -65,13 +65,15 @@ class Dataset {
         //$this->autoPopupProperties = $data->get('popup_props');
         $this->iconOptions = $header->get('icon') ?? [];
         // feature list - popupContent and customName
-        if (empty($header->get('features'))) return;
-        foreach ($header->get('features') as $headerFeature) {
-            $feature = $this->features[$headerFeature['id']];
-            if (empty($feature)) continue;
-            $feature['popupContent'] = $headerFeature['popup_content'];
-            $feature['customName'] = $headerFeature['custom_name'];
-            $this->features[$headerFeature['id']] = $feature;
+        if (!empty($header->get('features'))) {
+            foreach ($header->get('features') as $headerFeature) {
+                $feature = $this->features[$headerFeature['id']];
+                if (!empty($feature)) {
+                    $feature['popupContent'] = $headerFeature['popup_content'];
+                    $feature['customName'] = $headerFeature['custom_name'];
+                    $this->features[$headerFeature['id']] = $feature;
+                }
+            }
         }
     }
 
@@ -140,7 +142,7 @@ class Dataset {
     public function getPointList() {
         $points = [];
         foreach ($this->features as $id => $feature) {
-            if ($feature['geometry']['type'] === 'Point') $points[$id] = $feature['properties'][$this->nameProperty].' ('.$this->name.')';
+            if ($feature['geometry']['type'] === 'Point') $points[$id] = ($feature['customName'] ?? $feature['properties'][$this->nameProperty]).' ('.$this->name.')';
         }
         return $points;
     }
@@ -148,7 +150,7 @@ class Dataset {
     public function getFeatureList() {
         $features = [];
         foreach ($this->features as $id => $feature) {
-            $features[$id] = $feature['properties'][$this->nameProperty].'('.$this->name.')';
+            $features[$id] = ($feature['customName'] ?? $feature['properties'][$this->nameProperty]).' ('.$this->name.')';
         }
         return $features;
     }
