@@ -7,6 +7,24 @@ form:
       type: tabs
       active: 1
       fields:
+        content:
+          type: tab
+          fields:
+            shortcodes_section:
+              type: fieldset
+              title: View Popup Button Shortcodes
+              ordering@: header.title
+              text: "This is a list of shortcodes for all features added to the view. Copy and paste these codes into your content to manually add the view popup buttons where you want them. (Ignore this if you are using List View Popup Buttons). The text inside the shortcode (the feature name) does not affect anything. It is purely for your convenience when reading your content and can be removed or modified as desired. If you add or remove features from the view features list, please save the page to update this list."
+              collapsed: true
+              collapsible: true
+              fields:
+                header.shortcodes_list:
+                  type: textarea
+                  readonly: true
+                  rows: 12
+                  style: vertical
+                  default: 'There is nothing here. Add some features to the view first.'
+
         view: # new tab
           type: tab
           title: View

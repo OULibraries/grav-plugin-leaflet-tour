@@ -65,14 +65,15 @@ class LeafletTourPlugin extends Plugin
             $this->enable([
                 'onGetPageTemplates' => ['onGetPageTemplates', 0],
                 'onGetPageBlueprints' => ['onGetPageBlueprints', 0],
-                'onAdminSave' => ['onAdminSave', 0]
+                'onAdminSave' => ['onAdminSave', 0],
+                'onShortcodeHandlers' => ['onShortcodeHandlers', 0] // TODO: which
             ]);
             return;
         }
 
         // Enable the main events we are interested in
         $this->enable([
-            //
+            'onShortcodeHandlers' => ['onShortcodeHandlers', 0]
         ]);
     }
     
@@ -137,6 +138,30 @@ class LeafletTourPlugin extends Plugin
                 $header->set('datasets', $datasets);
             }
         }
+        // handle view config data
+        else if (method_exists($obj, 'template') && $obj->template() === 'modular/view') {
+            // update shortcodes_list as needed
+            if ($obj->header()->get('features') != $obj->getOriginal()->header()->get('features')) {
+                $features = array_fill_keys(array_column($obj->header()->get('features'), 'id'), '');
+                // loop through datasets to get all the needed information
+                foreach (Datasets::instance()->getDatasets() as $dataset) {
+                    foreach (array_keys($features) as $id) {
+                        $feature = $dataset->features[$id];
+                        if ($feature) {
+                            $features[$id] = $feature['customName'] ?? $feature['properties'][$dataset->nameProperty];
+                        }
+                    }
+                }
+                // loop through all view features to generate shortcodes
+                $shortcodeList = [];
+                foreach ($features as $id=>$name) {
+                    if (!empty($name)) {
+                        $shortcodeList[] = '[view-popup id="'.$id.'"]'.$name.'[/view-popup]';
+                    }
+                }
+                $obj->header()->set('shortcodes_list', implode("\r\n", $shortcodeList));
+            }
+        }
         // handle dataset config data
         else if (method_exists($obj, 'template') && $obj->template() === 'dataset') {
             $header = $obj->header();
@@ -161,6 +186,10 @@ class LeafletTourPlugin extends Plugin
             // update dataset
             Datasets::instance()->getDatasets()[$header->get('dataset_file')]->updateDataset($datasetFileRoute, $name ?? null, $nameProperty ?? null);
         }
+    }
+
+    public function onShortcodeHandlers() {
+        $this->grav['shortcode']->registerAllShortcodes(__DIR__.'/shortcodes');
     }
     
     public static function getDatasetFiles() {
