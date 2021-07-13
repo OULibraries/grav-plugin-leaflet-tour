@@ -493,14 +493,6 @@ main {
     @media (max-width: $tablet - 1) {
         display: none;
         padding: 1px 1rem;
-        &.show-all {
-            .popup {
-                display: block;
-            }
-            .popup-back-btn {
-                display: none;
-            }
-        }
     }
     // tablet/desktop
     @media (min-width: $tablet) {
@@ -624,8 +616,16 @@ footer {
             display: block;
         }
     }
-    .popups-active #popup-list-wrapper {
-        display: block;
+    .popups-active {
+        #header-wrapper {
+            height: 50px;
+        }
+        #header-toggle, #header-options-wrapper, #main-nav, footer {
+            display: none;
+        }
+        #popup-list-wrapper {
+            display: block;
+        }
     }
 }
 @media (min-width: $tablet) {

@@ -6,7 +6,7 @@ var tourState = {
     activeBasemaps: [],
     mapAnimation: true,
     content: 'scrolly',
-    storedFocus: null,
+    contentFocus: null,
     scrollyPos: 0,
     mapNeedsAdjusting: true,
 };
@@ -216,15 +216,21 @@ if (window.localStorage.getItem('headerExpanded') === 'false') $("#header-toggle
 $("#scrolly-toggle").on("click", function(e) {
     toggleContent("scrolly");
     window.scrollTo(0, tourState.scrollyPos);
+    if (tourState.contentFocus) {
+        tourState.contentFocus.focus();
+        tourState.contentFocus = null;
+    }
+    // TODO: If no contentFocus, do I need to explicitly put focus somewhere? (e.g. used map toggle button to go to map)
 });
 $("#map-toggle").on("click", function(e) {
     toggleContent("map");
+    // TODO: explicitly set focus to map?
     adjustMap();
 });
-$("#popups-toggle").on("click", function(e) {
+/*$("#popups-toggle").on("click", function(e) {
     toggleContent("popups");
     window.scrollTo(0, 0);
-});
+});*/
 $("#legend-toggle-btn").on("click", function(e) {
     $(".legend").toggleClass("minimized");
     $(e).attr("aria-expanded", ($(e).attr("aria-expanded")==="true"));
@@ -250,27 +256,17 @@ $(".legend-checkbox").on("input", function(e) {
     resetLabels([layer_tour]);
 });
 
-// TODO: settings/modal - https://www.w3.org/TR/wai-aria-practices-1.1/examples/dialog-modal/dialog.html
-$("#open-settings-btn").on("click", function(e) {
-    // TODO:
-});
-$("#close-settings-btn").on("click", function(e) {
-    // TODO:
-});
-
 // other buttons
 $("#reset-view-btn").on("click", exitView);
 
-// TODO: how do I want to do storing focus?
 $(".show-view-btn").on("click", function(e) {
+    tourState.contentFocus = document.activeElement;
     if (window.innerWidth < mobileWidth) { // constant from theme
-        // on mobile, store button focus and toggle content
-        let tmpFocus = document.activeElement;
-        tourState.storedFocus = null;
+        // TODO: Is the change of focus to map expected? Should I also change focus on desktop?
         toggleContent("map");
+        $("#map").focus();
     }
     enterView($(this).attr("data-view"));
-    if (typeof tmpFocus !== "undefined") tourState.storedFocus = tmpFocus;
 });
 
 // map icon focus and active tooltips
@@ -323,8 +319,7 @@ function endActiveTooltip(id) {
 
 // popup functions
 function openPopup(id) {
-    let tmpFocus = document.activeElement;
-    current.storedFocus = null;
+    tourState.popupFocus = document.activeElement;
     if (!tourState.popup || tourState.popup !== id) {
         closePopup(false);
         tourState.popup = id;
@@ -333,16 +328,17 @@ function openPopup(id) {
     }
     if (window.innerWidth < mobileWidth) {
         toggleContent('popups');
-        $("#popup-list-wrapper").removeClass("show-all");
     }
     // can't use returnFocus, need to focus specifically on the popup
-    $("#" + id + "-popup h3").focus();
-    tourState.storedFocus = tmpFocus;
+    $("#" + id + "-popup .popup-header").focus();
 }
 function leavePopup() {
-    // while map vs. scrolly isn't important for desktop, calling toggleContent() will also call returnFocus()
-    if ($(tourState.storedFocus).parents("#map-wrapper").length > 0) toggleContent("map");
-    else toggleContent("scrolly");
+    if (window.innerWidth < mobileWidth) {
+        if ($(tourState.popupFocus).parents("#map-wrapper").length > 0) toggleContent("map");
+        else toggleContent("scrolly");
+    }
+    if (tourState.popupFocus) tourState.popupFocus.focus();
+    tourState.popupFocus = null;
 }
 function closePopup(leave=true) {
     if (tourState.popup) {
@@ -365,7 +361,7 @@ function toggleContent(id) {
     $("#"+id + "-toggle").addClass("btn-disabled").attr("aria-disabled", "true").attr("aria-current", "true");
     $("body").removeClass("scrolly-active map-active popups-active").addClass(id+"-active");
     tourState.content = id;
-    returnFocus();
+    //returnFocus();
     // TODO: should prev element be stored for each section, or just most recent?
 }
 
@@ -405,6 +401,8 @@ function enterView(id) {
     }
     // adjust basemaps - call here because we need setBasemaps(), not just checkBasemaps()
     setBasemaps();
+    // just in case
+    if (tourState.mapNeedsAdjusting) adjustMap();
 }
 
 // should only really be used when exiting views completely - not entering a new view
@@ -476,7 +474,7 @@ function adjustMap() {
     }
 }
 
-function returnFocus() {
+/*function returnFocus() {
     if (!tourState.storedFocus || tourState.content === 'popups') return;
     let content = "#scrolly";
     if (tourState.content === "map") content = "#map-wrapper";
@@ -484,4 +482,4 @@ function returnFocus() {
         tourState.storedFocus.focus();
         tourState.storedFocus = null;
     }
-}
+}*/

@@ -68,13 +68,11 @@
             <ul class="list-unstyled" role="list">
                 <li>
                     {# TODO: aria-current?? #}
+                    {# TODO: Make this just one button, since it only switches between map and content #}
                     <button id="scrolly-toggle" class="btn btn-disabled" aria-current="true" aria-disabled="true" data-toggle="scrolly">Content</button>
                 </li>
                 <li>
                     <button id="map-toggle" class="btn" data-toggle="map">Map</button>
-                </li>
-                <li>
-                    <button id="popups-toggle" class="btn" data-toggle="popups">Popups</button>
                 </li>
             </ul>
         </div>
@@ -107,8 +105,8 @@
 <div id="scrolly">
     <div class="scroll-top">
         <h1>{{ page.title }}</h1>
-        <div></div>
-        <button id="all-popups-btn" class="btn mobile-only">See All Popup Content</button>
+        <!-- TODO: This might still be useful for linking to another page -->
+        <!--button id="all-popups-btn" class="btn mobile-only">See All Popup Content</button-->
         <div id="scrolly-content">
             {{ content|raw }}
         </div>
@@ -170,11 +168,11 @@
     <div id="map">
     </div>
 </div>
-<div id="popup-list-wrapper" class="show-all">
+<div id="popup-list-wrapper">
 {% for feature in tourData['popups'] %}
     <div class="popup" id="{{ feature.id }}-popup">
         <div class="popup-top">
-            <h3 tabindex="-1">{{ feature.name }}</h3>
+            <h2 class="popup-header" tabindex="-1">{{ feature.name }}</h2>
             <button id="{{ feature.id }}-popup-close-btn" class="popup-btn popup-close-btn icon-btn desktop-only">
                 <i class="fas fa-times" aria-hidden="true"></i>
                 <span class="sr-only">Close popup</span>

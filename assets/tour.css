@@ -420,12 +420,6 @@ main {
     display: none;
     padding: 1px 1rem;
   }
-  #popup-list-wrapper.show-all .popup {
-    display: block;
-  }
-  #popup-list-wrapper.show-all .popup-back-btn {
-    display: none;
-  }
 }
 @media (min-width: 600px) {
   #popup-list-wrapper .popup {
@@ -550,6 +544,12 @@ footer > div {
     display: block;
   }
 
+  .popups-active #header-wrapper {
+    height: 50px;
+  }
+  .popups-active #header-toggle, .popups-active #header-options-wrapper, .popups-active #main-nav, .popups-active footer {
+    display: none;
+  }
   .popups-active #popup-list-wrapper {
     display: block;
   }
