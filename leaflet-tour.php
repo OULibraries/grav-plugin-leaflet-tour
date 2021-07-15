@@ -118,7 +118,7 @@ class LeafletTourPlugin extends Plugin
                 // TODO: temporarily always true for testing. Will ultimately need to check if the particular file has been uploaded before, and perhaps if so if it is being updated (future goals?)
                 if (!$this->config->get('plugins.leaflet-tour.data_files') || true) {
                     // new upload - save as json (if possible)
-                    Datasets::instance()->createDataset($data);
+                    Datasets::instance()->parseDatasetUpload($data);
                 }
             }
         }
@@ -167,8 +167,10 @@ class LeafletTourPlugin extends Plugin
             $header = $obj->header();
             $original = $obj->getOriginal()->header();
             $datasetFileRoute = self::getDatasetRoute();
-            if ($header->get('name_prop') !== $original->get('name_prop')) $nameProperty = $header->get('name_prop');
-            if ($header->get('title') !== $original->get('title')) $name = $header->get('title');
+            if ($header->get('title') !== $original->get('title')) Datasets::instance()->updateMetadata($header->get('dataset_file'), $header->get('title'));
+            $headerFeatures = Datasets::instance()->getDatasets()[$header->get('dataset_file')]->updateDataset($header, $datasetFileRoute, $original->get('features'));
+            $header->set('features', $headerFeatures);
+
             // reconcile features
             if (count($header->get('features') ?? []) < count($original->get('features') ?? [])) {
                 if (empty($header->get('features'))) $header->set('features', $original->get('features'));

@@ -23,7 +23,7 @@
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/rbush.min.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/labelgun.min.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/labels.js', {group:'bottom'}) %}
-    {# TODO: Download these? #}
+    {# Question: Download these? #}
     {% do assets.addJs('https://unpkg.com/intersection-observer', {group:'bottom'}) %}
     {% do assets.addJs('https://unpkg.com/scrollama', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/tour.js', {group:'bottom'}) %}
@@ -96,7 +96,6 @@
         {{ nav_macro.loop(pages)}}
     </ul>
 </nav>
-{# TODO: Settings #}
 {% endblock header %}
 
 {% block navigation %}{% endblock navigation %} {# clear navigation block - already included in header #}
@@ -154,8 +153,7 @@
                 {% else %}
                 <div>
                 {% endif %}
-                    {# TODO: item.iconAlt #}
-                    <img class="legend-icon" src="{{ item.iconFile }}" alt="" style="height: {{ item.iconHeight }}px; width: {{ item.iconWidth }}px;">
+                    <img class="legend-icon" src="{{ item.iconFile }}" alt="{{ item.iconAltText }}" style="height: {{ item.iconHeight }}px; width: {{ item.iconWidth }}px;">
                     <span>{{ item.legendText }}</span>
                 {% if header.legend_toggles %}</label>
                 {% else %}</div>
@@ -173,7 +171,8 @@
     <div class="popup" id="{{ feature.id }}-popup">
         <div class="popup-top">
             <h2 class="popup-header" tabindex="-1">{{ feature.name }}</h2>
-            <button id="{{ feature.id }}-popup-close-btn" class="popup-btn popup-close-btn icon-btn desktop-only">
+            <!-- TODO: Turn this button into a back button for mobile (still closes popup, though) -->
+            <button id="{{ feature.id }}-popup-close-btn" class="popup-btn popup-close-btn icon-btn">
                 <i class="fas fa-times" aria-hidden="true"></i>
                 <span class="sr-only">Close popup</span>
             </button>
@@ -181,7 +180,9 @@
         <div class="popup-content">
             {{ feature.popup|markdown }}
         </div>
-        <button id="{{ feature.id }}-popup-back-btn" class="btn popup-btn popup-back-btn">Back</button>
+        <button id="{{ feature.id }}-popup-back-btn" class="btn popup-btn popup-back-btn desktop-only">Back</button>
+        <!-- TODO: Add back to top button -->
+        <!-- Question: Should this button be mobile only, or also included on desktop? -->
     </div>
 {% endfor %}
 </div>

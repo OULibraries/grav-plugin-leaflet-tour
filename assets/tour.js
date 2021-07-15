@@ -1,3 +1,6 @@
+// TODO:
+// - don't allow main content to scroll at all when hovering over popup content
+
 var tourState = {
     view: null,
     tmpView: null,
@@ -11,7 +14,7 @@ var tourState = {
     mapNeedsAdjusting: true,
 };
 
-// TODO - potential customization options
+// Question - potential customization options
 var scrollamaOptions = {
     debug: false,
     offset: 0.33,
@@ -65,21 +68,6 @@ layer_tour = new L.geoJson(geoJson, {
     dataVar: 'geoJson',
     layerName: 'layer_tour',
 });
-/*function styleMarker(location) {
-    let options = tourOptions.datasets[location.properties.dataSource].iconOptions;
-    // TODO: What happens if options is null?
-    if (options) return L.icon(options);
-    else return L.icon({
-        iconAnchor: [12, 41],
-        iconRetinaUrl: "user/plugins/leaflet-tour/images/marker-icon-2x.png",
-        iconSize: [25, 41],
-        iconUrl: "user/plugins/leaflet-tour/images/marker-icon.png",
-        shadowSize: [41, 41],
-        shadowUrl: "user/plugins/leaflet-tour/images/marker-shadow.png",
-        className: "leaflet-marker",
-        tooltipAnchor: [-12, 20]
-    });
-}*/
 map.addLayer(layer_tour);
 
 // max bounds

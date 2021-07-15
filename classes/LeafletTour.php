@@ -4,12 +4,13 @@ namespace Grav\Plugin\LeafletTour;
 //require_once __DIR__ . '/Dataset.php';
 require_once __DIR__ . '/Datasets.php';
 
-//use Grav\Common\Grav;
+use Grav\Common\Grav;
 //use Grav\Common\Page\Page;
 use Grav\Plugin\LeafletTour\Datasets;
 use Grav\Common\Data\Data;
-//use Grav\Common\File\CompiledJsonFile;
+use Grav\Common\File\CompiledJsonFile;
 //use RocketTheme\Toolbox\File\MarkdownFile;
+use Symfony\Component\Yaml\Yaml;
 
 // this is just the class for referencing via twig
 class LeafletTour {
@@ -258,6 +259,36 @@ class LeafletTour {
         }
         return $viewPopups;
     }
+
+    // temp
+    public function getDatasetsTest() {
+        foreach ($this->config->get('data_files') as $fileData) {
+            $tmp = [
+                'id1'=>['name'=>'name1', 'file'=>'file1'],
+                'id2'=>['name'=>'name2', 'file'=>'file2'],
+            ];
+            $tmp2 = array_column($tmp, null);
+            return implode(",", array_keys($tmp2));
+            //return Grav::instance()['uri']->rootUrl(true);
+            $route1 = Grav::instance()['locator']->findResource('user://').'/data/leaflet-tour/datasets/uploads/'.$fileData['name'];
+            $file1 = CompiledJsonFile::instance($route1);
+            $route2 = Grav::instance()['locator']->getBase().'/'.$fileData['path'];
+            $file2 = CompiledJsonFile::instance($route2);
+            //return Grav::instance()['locator']->getBase();
+            return "Route 1: ".$file1->exists()."\r\n\r\nRoute 2:".$file2->exists()."\r\n";
+            return Yaml::dump($fileData);
+        }
+    }
+
+    // URI Notes
+    // Use Grav::instance()['uri']
+    // On tour page:
+    // ->paths() returns tour-1
+    // ->path() -- /tour-1
+    // ->route() -- /tour-1
+    // ->route(true) -- /wyman-travels/tour-1
+    // ->route(true, true) -- http://testing.digischolar.oucreate.com/wyman-travels/tour-1
+    // ->host() -- testing.digischolar.oucreate.com
     
     /*public function getPopupBtns($viewId, $tourData) {
         $view = $tourData['views'][$viewId];
