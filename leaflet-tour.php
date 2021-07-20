@@ -13,9 +13,9 @@ use Grav\Common\Data\Data;
 use Grav\Common\Config\Config;
 use RocketTheme\Toolbox\Event\Event;
 use RocketTheme\Toolbox\File\MarkdownFile;
-//use Grav\Plugin\LeafletTour\Dataset;
-use Grav\Plugin\LeafletTour\Datasets;
+use Grav\Plugin\LeafletTour\Dataset;
 use Grav\Plugin\LeafletTour\LeafletTour;
+use Grav\Plugin\LeafletTour\Utils;
 
 /**
  * Class LeafletTourPlugin
@@ -108,17 +108,16 @@ class LeafletTourPlugin extends Plugin
      * Handle page and plugin metadata on save
      */
     public function onAdminSave(Event $event) {
-        //self::testSaveFile();
         $obj = $event['object'];
         // handle plugin config data
         if (method_exists($obj, 'get') && $obj->get('leaflet_tour')) {
-            // TODO: if statement first?
             // check for new data files
-            foreach ($obj->get('data_files') as $key=>$data) {
+            foreach ($obj->get('data_files') ?? [] as $key=>$fileData) {
                 // TODO: temporarily always true for testing. Will ultimately need to check if the particular file has been uploaded before, and perhaps if so if it is being updated (future goals?)
                 if (!$this->config->get('plugins.leaflet-tour.data_files') || true) {
                     // new upload - save as json (if possible)
-                    Datasets::instance()->parseDatasetUpload($data);
+                    $jsonData = Utils::parseDatasetUpload($fileData);
+                    Dataset::createNewDataset($jsonData[0], $jsonData[1]);
                 }
             }
         }
@@ -142,7 +141,7 @@ class LeafletTourPlugin extends Plugin
         else if (method_exists($obj, 'template') && $obj->template() === 'modular/view') {
             // update shortcodes_list as needed
             if ($obj->header()->get('features') != $obj->getOriginal()->header()->get('features')) {
-                $features = array_fill_keys(array_column($obj->header()->get('features'), 'id'), '');
+                /*$features = array_fill_keys(array_column($obj->header()->get('features'), 'id'), '');
                 // loop through datasets to get all the needed information
                 foreach (Datasets::instance()->getDatasets() as $dataset) {
                     foreach (array_keys($features) as $id) {
@@ -159,15 +158,19 @@ class LeafletTourPlugin extends Plugin
                         $shortcodeList[] = '[view-popup id="'.$id.'"]'.$name.'[/view-popup]';
                     }
                 }
-                $obj->header()->set('shortcodes_list', implode("\r\n", $shortcodeList));
+                $obj->header()->set('shortcodes_list', implode("\r\n", $shortcodeList));*/
+                $obj->header()->set('shortcodes_list', Utils::generateShortcodeList($obj->header()->get('features'), Dataset::getDatasets()));
             }
         }
         // handle dataset config data
         else if (method_exists($obj, 'template') && $obj->template() === 'dataset') {
-            $header = $obj->header();
-            $original = $obj->getOriginal()->header();
+            $datasetFileRoute = Utils::getDatasetRoute();
+            $header = Dataset::getDatasets()[$obj->header()->get('dataset_file')]->updateDataset($obj->header(), Utils::getDatasetRoute());
+            $obj->header($header);
+
+            /**$original = $obj->getOriginal()->header();
             $datasetFileRoute = self::getDatasetRoute();
-            if ($header->get('title') !== $original->get('title')) Datasets::instance()->updateMetadata($header->get('dataset_file'), $header->get('title'));
+
             $headerFeatures = Datasets::instance()->getDatasets()[$header->get('dataset_file')]->updateDataset($header, $datasetFileRoute, $original->get('features'));
             $header->set('features', $headerFeatures);
 
@@ -186,55 +189,23 @@ class LeafletTourPlugin extends Plugin
                 }
             }
             // update dataset
-            Datasets::instance()->getDatasets()[$header->get('dataset_file')]->updateDataset($datasetFileRoute, $name ?? null, $nameProperty ?? null);
+            Datasets::instance()->getDatasets()[$header->get('dataset_file')]->updateDataset($datasetFileRoute, $name ?? null, $nameProperty ?? null);*/
         }
     }
 
     public function onShortcodeHandlers() {
         $this->grav['shortcode']->registerAllShortcodes(__DIR__.'/shortcodes');
     }
+
+    // yaml functions
+    
+    // TODO: temp - see if possible to call directly
     
     public static function getDatasetFiles() {
-        return Datasets::getDatasetFiles();
-    }
-    
-    // takes an array of folder/page names and returns a route
-    public static function getPageRoute($keys) {
-        $route = Grav::instance()['locator']->findResource('page://').'/';
-        for ($i = 0; $i < count($keys); $i++) {
-            $glob = glob($route.'*');
-            $match = '';
-            foreach ($glob as $item) {
-                if (strtolower($item) === $route.$keys[$i]) {
-                    $match = $item;
-                    continue;
-                }
-            }
-            // check for folder numeric prefix
-            if (empty($match)) {
-                foreach ($glob as $item) {
-                    if (preg_match('/^[0-9][0-9]\.'.$keys[$i].'$/', strtolower(str_replace($route, '', $item)))) {
-                        $match = $item;
-                        continue;
-                    }
-                }
-            }
-            // last ditch effort
-            if (empty($match)) {
-                foreach ($glob as $item) {
-                    if (preg_match('/^..\.'.$keys[$i].'$/', strtolower(str_replace($route, '', $item)))) {
-                        $match = $item;
-                        continue;
-                    }
-                }
-            }
-            if (empty($match)) return implode(',', $glob);
-            $route = $match.'/';
-        }
-        return $route;
+        return Dataset::getDatasetList();
     }
 
-    public static function getTourFromTour() {
+    /*public static function getTourFromTour() {
         $key = Grav::instance()['page']->header()->controller['key']; // current page - the reason why this function only works when called from tour.yaml
         $keys = explode("/", $key); // break key into sub-components
         $route = self::getPageRoute($keys).'tour.md';
@@ -257,31 +228,35 @@ class LeafletTourPlugin extends Plugin
             if ($file->exists()) return new Data((array)$file->header());
         }
         return null;
-    }
+    }*/
     
     // only return points, have separate for all features
-    public static function getTourFeatures($onlyPoints=false) {
-        $data = self::getTourFromTour();
-        if (!$data) return [];
-        // get list of datasets
-        $datasets = $data->get('datasets');
-        if (empty($datasets)) return [];
+    public static function getTourFeatures($onlyPoints=false, $fromView=false) {
         $featureList = [];
-        foreach ($datasets as $dataset) {
-            $dataset = Datasets::instance()->getDatasets()[$dataset['file']];
-            if ($onlyPoints) $features = $dataset->getPointList();
-            else $features = $dataset->getFeatureList();
-            if (!empty($features)) $featureList = array_merge($featureList, $features);
-            else $featureList = [];
-        }
-        if ($onlyPoints) {
-            // list of point locations are for start location - should have a default null value
-            $featureList = array('default' => 'None') + $featureList;
+        if ($fromView) $file = MarkdownFile::instance(Utils::getTourRouteFromViewConfig());
+        else $file = MarkdownFile::instance(Utils::getTourRouteFromTourConfig());
+        if ($file->exists()) {
+            $data = new Data((array)$file->header());
+            foreach ($data->get('datasets') ?? [] as $dataset) {
+                $dataset = Dataset::getDatasets()[$dataset['file']];
+                if (!$onlyPoints || $dataset->getFeatureType()==='Point') {
+                    $featureList = array_merge($featureList, Feature::buildConfigList($dataset->getFeatures(), $dataset->getNameProperty()));
+                }
+            }
+            if ($onlyPoints) {
+                // list of point locations are for start location - should have a default null value
+                $featureList = array('default' => 'None') + $featureList;
+            }
         }
         return $featureList;
     }
 
-    public static function getTourFeaturesForView($onlyPoints=false) {
+    /*public static function getTourFeaturesForView($onlyPoints=false) {
+        $featureList = [];
+        $file = MarkdownFile::instance(Utils::getTourRouteFromViewConfig());
+        if ($file->exists()) {
+            $data = new Data((array)$file->header());
+        }
         $data = self::getTourFromView();
         if (!$data) return [];
         // get list of datasets - check for show all
@@ -303,6 +278,9 @@ class LeafletTourPlugin extends Plugin
             $featureList = array('default' => 'None') + $featureList;
         }
         return $featureList;
+    }*/
+    public static function getTourFeaturesForView($onlyPoints=false) {
+        return getTourFeatures($onlyPoints, true);
     }
 
     public static function getTourLocations() {
@@ -322,11 +300,11 @@ class LeafletTourPlugin extends Plugin
 
     // list of properties for the dataset associated with the dataset config file
     public static function getPropertyList() {
-        $route = self::getDatasetRoute();
-        $file = MarkdownFile::instance($route);
-        if (!$file->exists()) return [];
-        // get dataset
-        $dataset = Datasets::instance()->getDatasets()[((array)$file->header())['dataset_file']];
-        return array_combine($dataset->properties, $dataset->properties);
+        $file = MarkdownFile::instance(Utils::getDatasetRoute());
+        if ($file->exists()) {
+            $dataset = Dataset::getDatasets()[((array)$file->header())['dataset_file']];
+            return $dataset->getProperties();
+        }
+        return [];
     }
 }
