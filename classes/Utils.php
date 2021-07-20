@@ -17,7 +17,7 @@ class Utils {
         'polygon'=>'Polygon',
         'multipolygon'=>'MultiPolygon'
     ];
-    const JSON_VAR_REGEX = '/^(.)*var(\s)+json_(\w)*(\s)+=(\s)+/';
+    const JSON_VAR_REGEX = '/^(.)*var(\s)+json_(\w)*(\s)+=(\s)+/s';
 
     // default values if the default marker icon is used
     const DEFAULT_MARKER_OPTIONS = [
@@ -139,7 +139,7 @@ class Utils {
 
     public static function setBounds($bounds): array {
         if (is_array($bounds) && count($bounds) === 4) {
-            $bounds = [[$bounds['south'], $bounds['west']], $bounds['north'], $bounds['east']];
+            $bounds = [[$bounds['south'], $bounds['west']], [$bounds['north'], $bounds['east']]];
             if (self::isValidPoint($bounds[0], true) && self::isValidPoint($bounds[1], true)) return $bounds;
         }
         return [];
@@ -211,9 +211,10 @@ class Utils {
         $jsonFilename = preg_replace('/.js$/', '.json', $fileData['name']);
         $jsonArray = [];
         if ($fileData['type'] === 'text/javascript') {
-            $jsonArray = self::readJSFile($fileData['name']);
+            $jsonArray = self::readJSFile($fileData['path']);
         }
         // TODO: Check for other file types
+        if (empty($jsonArray)) return [];
         return [$jsonArray, $jsonFilename];
     }
     
@@ -223,8 +224,9 @@ class Utils {
      * @param array $fileData - the yaml array for the uploaded file from plugin config data_files [name, type, size, path]
      * @return array - returns array with json data on success, null on failure
      */
-    protected static function readJSFile(array $fileData): array {
-        $file = File::instance(Grav::instance()['locator']->getBase().'/'.$fileData['path']);
+    protected static function readJSFile(string $filePath): array {
+        $file = File::instance(Grav::instance()['locator']->getBase().'/'.$filePath);
+        if (!$file->exists()) return [];
         // find and remove the initial json variable
         $count = 0;
         $jsonRegex = preg_replace(self::JSON_VAR_REGEX, '', $file->content(), 1, $count);
@@ -236,7 +238,7 @@ class Utils {
             }
             try {
                 $jsonData = json_decode($jsonRegex, true);
-                return $jsonData;
+                return $jsonData ?? [];
             } catch (Exception $e) {
                 return [];
             }

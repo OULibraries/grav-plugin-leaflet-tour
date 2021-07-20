@@ -68,7 +68,7 @@ class Test {
                     $result['text'] = $this->$methodName();
                     $result['success'] = true;
                 } catch (\Throwable $t) {
-                    $result['error'] = $t->getMessage();
+                    $result['error'] = "Test ".$this->count.": ".$t->getMessage();
                     $this->errors++;
                 } finally {
                     $this->results[] = $result;
@@ -89,15 +89,15 @@ class Test {
 
     public function checkString(string $expected, string $result) {
         $this->count++;
-        if ($expected !== $result) throw new \Exception("Test ".$this->count.": String match failed: Expected '$expected', received '$result'");
+        if ($expected !== $result) throw new \Exception("String match failed: Expected '$expected', received '$result'");
     }
     public function checkBool(bool $expected, bool $result) {
         $this->count++;
-        if ($expected !== $result) throw new \Exception("Test ".$this->count.": Expected ".var_export($expected, true).", received ".var_export($result, true));
+        if ($expected !== $result) throw new \Exception("Expected ".var_export($expected, true).", received ".var_export($result, true));
     }
     public function checkNum($expected, $result) {
         $this->count++;
-        if ($expected !== $result) throw new \Exception("Test ".$this->count.": Int match failed: Expected '$expected', received '$result'");
+        if ($expected !== $result) throw new \Exception("Int match failed: Expected '$expected', received '$result'");
     }
 
     public function isTrue(bool $result) {
@@ -105,6 +105,16 @@ class Test {
     }
     public function isFalse(bool $result) {
         return $this->checkBool(false, $result);
+    }
+
+    public function isEmpty($item) {
+        $this->count++;
+        if (!empty($item)) throw new \Exception("Expected empty argument, received non-empty ".gettype($item));
+    }
+
+    public function isNotEmpty($item) {
+        $this->count++;
+        if (empty($item)) throw new \Exception("Received empty argument of type ".gettype($item));
     }
 }
 ?>

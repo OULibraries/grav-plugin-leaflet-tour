@@ -133,15 +133,15 @@ class UtilsTest extends Test {
 
     function testSetBounds() {
         // 1 valid bounds
-        $this->isTrue(!empty(Utils::setBounds(['south' => 87, 'west' => -100, 'north'=> -0.1, 'east'=> 50])));
+        $this->isNotEmpty(Utils::setBounds(['south' => 87, 'west' => -100, 'north'=> -0.1, 'east'=> 50]));
         // 2 invalid bounds
-        $this->isTrue(empty(Utils::setBounds(['south'=>-100,'west'=> 87, 'north'=>-0.1,'east'=> 50])));
+        $this->isEmpty(Utils::setBounds(['south'=>-100,'west'=> 87, 'north'=>-0.1,'east'=> 50]));
         // 3 only three points
-        $this->isTrue(empty(Utils::setBounds(['south'=>87,'west'=> -100, 'north'=>-0.1])));
+        $this->isEmpty(Utils::setBounds(['south'=>87,'west'=> -100, 'north'=>-0.1]));
         // 4 not an array
-        $this->isTrue(empty(Utils::setBounds('87')));
+        $this->isEmpty(Utils::setBounds('87'));
         // 5 array without the necessary keys
-        $this->isTrue(empty(Utils::setBounds([87, -100, -0.1, 50])));
+        $this->isEmpty(Utils::setBounds([87, -100, -0.1, 50]));
     }
 
     function testGetPageRoute() {

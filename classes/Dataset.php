@@ -45,8 +45,9 @@ class Dataset {
      * @param string $jsonFilename - the name of the json file (not the route to it), also serves as the dataset identifier
      * @param Data $config
      */
-    function __construct($jsonFilename, $config) {
+    function __construct($jsonFilename, $config=null) {
         $this->jsonFilename = $jsonFilename;
+        if (empty($config)) $config = new Data(Grav::instance()['config']->get('plugins.leaflet-tour'));
         $this->config = $config;
 
         // read json file
@@ -135,14 +136,14 @@ class Dataset {
         return $header;
     }
 
-    public function saveDataset(string $datasetFileRoute = ''): void {
+    public function saveDataset(string $datasetFileRoute = null): void {
         $this->saveDatasetPage($datasetFileRoute ?? $this->datasetFileRoute);
         $jsonFile = self::getJsonFile($this->jsonFilename);
         $jsonFile->content($this->asJson());
         $jsonFile->save();
     }
 
-    public function saveDatasetPage(string $datasetFileRoute = ''): void {
+    public function saveDatasetPage(string $datasetFileRoute = null): void {
         $mdFile = MarkdownFile::instance($datasetFileRoute ?? $this->datasetFileRoute);
         $mdFile->header($this->asYaml());
         $mdFile->save();
@@ -211,7 +212,7 @@ class Dataset {
         else {
             // merge options from dataset and tour header
             if ($dataset->get('use_defaults')) $options = $dataset->get('icon');
-            else $options = array_merge($this->iconOptions, $dataset->get('icon'));
+            else $options = array_merge($this->iconOptions ?? [], $dataset->get('icon') ?? []);
             // determine appropriate defaults to reference
             if (!empty($options['file'])) $defaults = Utils::MARKER_FALLBACKS;
             else $defaults = Utils::DEFAULT_MARKER_OPTIONS;
@@ -228,7 +229,7 @@ class Dataset {
             if (!empty($retinaUrl)) $iconOptions['iconRetinaUrl'] = $retinaUrl;
             if (!empty($options['shadow']) || empty($options['file'])) {
                 $iconOptions['shadowUrl'] = $options['shadow'] ? Utils::IMAGE_ROUTE.'markerShadows/'.$options['shadow'] : $defaults['shadowUrl'];
-                $iconOptions['shadowSize'] = [$options['shadow_width'] ?? $defaults['shadowSize'][0], $options['shadow_height'] ?? $defaults['shadowSize'][1]];
+                $iconOptions['shadowSize'] = [$options['shadow_width'] ?? $defaults['shadowSize'][0] ?? $iconOptions['iconSize'][0], $options['shadow_height'] ?? $defaults['shadowSize'][1]] ?? $iconOptions['iconSize'][1];
                 if (is_numeric($options['shadow_anchor_x']) && is_numeric($options['shadow_anchor_y'])) $iconOptions['shadowAnchor'] = [$options['shadow_anchor_x'], $options['shadow_anchor_y']];
             }
         }
@@ -309,28 +310,33 @@ class Dataset {
         $jsonArray['nameProperty'] = $nameProperty;
         // set dataset file route
         $jsonArray['datasetFileRoute'] = Grav::instance()['locator']->findResource('page://').'/datasets/'.$jsonArray['name'].'/dataset.md';
+        // set feature type
+        $featureType = Utils::setValidType($jsonData->get('features.0.geometry.type'));
+        $jsonArray['featureType'] = $featureType;
         // set feature ids
         $count = 0;
         $features = [];
         foreach ($jsonData->get('features') as $feature) {
-            $feature['id'] = $id.'_'.$count;
-            $features[] = $feature;
-            $count++;
+            if ($feature['geometry'] && Utils::areValidCoordinates($feature['geometry']['coordinates'], $featureType)) {
+                $feature['id'] = $id.'_'.$count;
+                $features[] = $feature;
+                $count++;
+            }
         }
         $jsonArray['features'] = $features;
         // save the file
         $jsonFile = self::getJsonFile($jsonFilename);
-        $jsonFile->conent($jsonArray);
+        $jsonFile->content($jsonArray);
         $jsonFile->save();
         // create the dataset
         $dataset = new Dataset($jsonFilename, Grav::instance()['config']->get('plugins.leaflet-tour'));
         $dataset->saveDatasetPage();
-        self::$datasets[] = $dataset;
+        self::$datasets[$jsonFilename] = $dataset;
     }
 
     public static function getDatasetList(): array {
         $datasetList = [];
-        foreach(self::$datasets as $id=>$dataset) {
+        foreach(self::getDatasets() as $id=>$dataset) {
             $datasetList[$id] = $dataset->getName();
         }
         return $datasetList;
