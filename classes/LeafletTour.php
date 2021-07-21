@@ -2,15 +2,14 @@
 namespace Grav\Plugin\LeafletTour;
 
 //require_once __DIR__ . '/Dataset.php';
-require_once __DIR__ . '/Datasets.php';
 
-// use Grav\Common\Grav;
-// use Grav\Common\Page\Page;
-// use Grav\Plugin\LeafletTour\Datasets;
-// use Grav\Common\Data\Data;
-// use Grav\Common\File\CompiledJsonFile;
-// use RocketTheme\Toolbox\File\MarkdownFile;
-// use Symfony\Component\Yaml\Yaml;
+use Grav\Common\Grav;
+//use Grav\Common\Page\Page;
+use Grav\Common\Data\Data;
+use Grav\Common\File\CompiledJsonFile;
+//use RocketTheme\Toolbox\File\MarkdownFile;
+use Symfony\Component\Yaml\Yaml;
+use Grav\Plugin\LeafletTour\Test;
 
 // this is just the class for referencing via twig
 class LeafletTour {
@@ -20,7 +19,10 @@ class LeafletTour {
     }
     
     public function getTestResults() {
-        return Test::getResults();
+        $text = '';
+        $text .= TourTest::getResults();
+        $text .= DatasetTest::getResults(false, false).UtilsTest::getResults().FeatureTest::getResults(false, false);
+        return $text;
     }
 
     // URI Notes

@@ -3,7 +3,6 @@ namespace Grav\Plugin;
 
 // TODO: Is this necessary?
 //require_once __DIR__ . '/classes/Dataset.php';
-require_once __DIR__ . '/classes/Datasets.php';
 require_once __DIR__ . '/classes/LeafletTour.php';
 
 use Composer\Autoload\ClassLoader;
