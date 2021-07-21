@@ -53,19 +53,23 @@ class Dataset {
         // read json file
         $jsonFile = self::getJsonFile($jsonFilename);
         if (!$jsonFile->exists()) return;
-        $jsonData = new Data($jsonFile->content());
-
-        // add fields from json file
-        $this->name = $jsonData->get('name');
-        $this->datasetFileRoute = $jsonData->get('datasetFileRoute');
-        $this->crs = $jsonData->get('crs');
-        $this->nameProperty = $jsonData->get('nameProperty');
-        $this->properties = array_keys((array)($jsonData->get('features.0.properties')));
-        $this->featureType = $jsonData->get('featureType');
-        $this->features = Feature::buildFeatureList((array)$jsonData->get('features'), $this->nameProperty, $this->featureType);
-
-        // check dataset file to add legend, icon, and popup options
-        if (!empty($this->datasetFileRoute)) $this->addDatasetFileInfo();
+        try {
+            $jsonData = new Data($jsonFile->content());
+    
+            // add fields from json file
+            $this->name = $jsonData->get('name');
+            $this->datasetFileRoute = $jsonData->get('datasetFileRoute');
+            $this->crs = $jsonData->get('crs');
+            $this->nameProperty = $jsonData->get('nameProperty');
+            $this->properties = array_keys((array)($jsonData->get('features.0.properties')));
+            $this->featureType = $jsonData->get('featureType');
+            $this->features = Feature::buildFeatureList((array)$jsonData->get('features'), $this->nameProperty, $this->featureType);
+    
+            // check dataset file to add legend, icon, and popup options
+            if (!empty($this->datasetFileRoute)) $this->addDatasetFileInfo();
+        } catch (\Throwable $t) {
+            return;
+        }
     }
 
     public static function getJsonFile($jsonFilename): CompiledJsonFile {
@@ -280,6 +284,7 @@ class Dataset {
         }
         $data['features'] = $features;
         $data['hiddenFeatures'] = $hiddenFeatures;
+        if (!empty($data['legend']) && empty($data['features'])) unset($data['legend']);
         return new Data($data);
     }
 
@@ -293,6 +298,7 @@ class Dataset {
      * Used to build a new dataset from a json file, including validating the json and setting sensible defaults
      */
     public static function createNewDataset(array $jsonArray, string $jsonFilename): void {
+        $jsonFilename = str_replace(' ', '-', $jsonFilename);
         $jsonData = new Data($jsonArray);
         $id = str_replace('.json', '', $jsonFilename);
         // some basic json validation
@@ -347,14 +353,19 @@ class Dataset {
         return self::$datasets;
     }
 
+    public static function resetDatasets(): void {
+        self::$datasets = self::buildDatasets();
+    }
+
     protected static function buildDatasets(): array {
         $datasets = [];
         $route = Grav::instance()['locator']->findResource('user-data://')."/leaflet-tour/datasets/";
         $files = glob($route."*.json");
         $config = new Data(Grav::instance()['config']->get('plugins.leaflet-tour'));
         foreach ($files as $file) {
-            $jsonFilename = str_replace('.json', '', str_replace($route, '', $file));
-            $datasets[] = new Dataset($jsonFilename, $config);
+            $jsonFilename = str_replace($route, '', $file);
+            $dataset = new Dataset($jsonFilename, $config);
+            if (!empty($dataset->getName())) $datasets[$jsonFilename] = $dataset;
         }
         return $datasets;
     }

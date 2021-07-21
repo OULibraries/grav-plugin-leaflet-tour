@@ -8,10 +8,11 @@ use Grav\Common\Data\Data;
  */
 class Tour {
 
-    public $header; // Data
-    public $views; // [id => header]
-    public $datasets; // [id => Data]
-    public $basemaps; // [file => [file, bounds, minZoom, maxZoom]]
+    protected $header; // Data
+    protected $views; // [id => header]
+    protected $datasets; // [id => Data]
+    protected $basemaps; // [file => [file, bounds, minZoom, maxZoom]]
+    protected $features;
 
     protected $config;
 
@@ -23,40 +24,56 @@ class Tour {
             if ($module->template() === 'modular/view') $this->views[$module->getCacheKey()] = new Data((array)$module->header());
         }
         $this->datasets = [];
-        foreach ($this->header->get('datasets') as $dataset) {
+        foreach ($this->header->get('datasets') ?? [] as $dataset) {
             $id = $dataset['file'];
             $features = $this->header->get('features') ?? [];
             $this->datasets[$id] = Dataset::getDatasets()[$id]->mergeTourData(new Data($dataset), $features);
         }
         $this->basemaps = $this->setBasemaps();
+        $this->features = $this->setFeatures();
     }
 
+    // [file => [file, bounds, minZoom, maxZoom]]
     protected function setBasemaps(): array {
-        $basemaps = $this->header->get('basemaps');
+        $tourBasemaps = array_column($this->header->get('basemaps') ?? [], 'file');
         // from views
         foreach (array_values($this->views) as $view) {
-            $basemaps = array_merge($basemaps, $view->get('basemaps'));
+            $viewBasemaps = array_column($view->get('basemaps') ?? [], 'file');
+            $tourBasemaps = array_merge($tourBasemaps, $viewBasemaps);
         }
-        if (!empty($basemaps) && !empty($this->config->get('basemaps'))) {
-            $basemaps = array_column($basemaps, null, 'file');
-            foreach ($this->config->get('basemaps') as $basemap) {
-                $file = $basemap['file'];
-                if ($basemaps[$file]) {
-                    if (!empty($basemap['bounds'])) {
+        $configBasemaps = array_column($this->config->get('basemaps') ?? [], null, 'file');
+        if (!empty($tourBasemaps) && !empty($configBasemaps)) {
+            $basemaps = [];
+            foreach ($tourBasemaps as $file) {
+                if (empty($basemaps[$file]) && !empty($configBasemaps[$file])) {
+                    // we do have data for the basemap, but it hasn't been added yet
+                    $basemap = $configBasemaps[$file];
+                    $bounds = Utils::setBounds($basemap['bounds'] ?? []);
+                    if (!empty($bounds)) {
                         $basemaps[$file] = [
                             'file' => Utils::BASEMAP_ROUTE.$file,
-                            'bounds' => Utils::setBounds($basemap['bounds'] ?? []),
+                            'bounds' => $bounds,
                             'minZoom' => $basemap['zoom_min'] ?? 8,
                             'maxZoom' => $basemap['zoom_max'] ?? 16
                         ];
-                    } else {
-                        unset($basemaps[$file]);
                     }
                 }
             }
             return $basemaps;
         }
         return [];
+    }
+
+    protected function setFeatures(): array {
+        $features = [];
+        foreach ($this->datasets as $datasetId => $dataset) {
+            foreach ($dataset->get('features') as $featureId => $feature) {
+                $features[$featureId] = $feature['geojson'];
+                $features[$featureId]['properties']['hasPopup'] = !empty($feature['popupContent']);
+                $features[$featureId]['properties']['dataSource'] = $datasetId;
+            }
+        }
+        return $features;
     }
 
     // [file => [file, bounds, minZoom, maxZoom]]
@@ -69,14 +86,19 @@ class Tour {
         $attribution = [];
         // get attribution from config
         // TODO: allow adding attribution in tour config, too
-        foreach (array_merge($this->config->get('attribution_list') ?? [], $this->header->get('attribution_list') ?? []) as $attr) {
+        $configAttribution = array_column($this->config->get('attribution_list') ?? [], null, 'text');
+        $tourAttribution = array_column($this->header->get('attribution_list') ?? [], null, 'text');
+        foreach (array_values(array_merge($configAttribution, $tourAttribution)) as $attr) {
             if (!empty($attr['text'])) $attribution[] = ['name'=>$attr['text'], 'url'=>$attr['url']];
         }
         $tileserver = $this->header->get('tileserver');
         if (empty($tileserver['url'])) $tileserver = $this->config->get('tileserver');
         if (!empty($tileserver['attribution_text'])) $attribution[] = ['name'=>$tileserver['attribution_text'], 'url'=>$tileserver['attribution_url']];
         // basemap attribution
-        foreach ($this->basemaps as $basemap) {
+        $configBasemaps = array_column($this->config->get('basemaps') ?? [], null, 'file');
+        foreach (array_keys($this->getBasemaps()) as $file) {
+            $basemap = $configBasemaps[$file];
+//            $attribution[] = ['name' => 'test', 'url' => $basemap['attribution_url']];
             if (!empty($basemap['attribution_text'])) $attribution[] = ['name' => $basemap['attribution_text'], 'url' => $basemap['attribution_url']];
         }
         return $attribution;
@@ -89,18 +111,30 @@ class Tour {
         foreach ($this->views as $viewId => $view) {
             $v = [
                 'basemaps'=>[],
-                'onlyShowViewFeatures'=>$view->get('only_show_view_features') ?? $this->header->get('only_show_view_features'),
-                'removeDefaultBasemap'=>$view->get('remove_default_basemap') ?? $this->header->get('remove_default_basemap'),
-                'noTourBasemaps'=>$view->get('to_tour_basemaps')
+                'features'=>[],
+                'onlyShowViewFeatures'=>$view->get('only_show_view_features') ?? $this->header->get('only_show_view_features') ?? false,
+                'removeDefaultBasemap'=>$view->get('remove_default_basemap') ?? $this->header->get('remove_default_basemap') ?? true,
+                'noTourBasemaps'=>$view->get('no_tour_basemaps') ?? false,
             ];
             $zoom = $view->get('start.zoom');
             if (is_numeric($zoom) && $zoom >= 0) {
                 // check for start location - will need to use list of features to verify that the location exists and to grab the coordinates
                 if (!empty($view->get('start.location'))) $viewCenters[$viewId] = $view->get('start.location');
-                if (!empty($view->get('start.lat')) && !empty($view->get('start.long'))) $v['center'] = [$view->get('start.lat'), $view->get('start.long')];
+                $long = $view->get('start.long');
+                $lat = $view->get('start.lat');
+                if (Utils::isValidPoint([$long, $lat])) $v['center'] = [$long, $lat];
                 $v['zoom'] = $zoom;
             }
-            if (!empty($view['features'])) $v['features'] = array_column($view['features'], 'id');
+            if (!empty($view['features'])) {
+                foreach (array_column($view['features'], 'id') as $featureId) {
+                    if ($this->features[$featureId]) $v['features'][] = $featureId;
+                }
+            }
+            if (empty($v['features'])) $v['onlyShowViewFeatures'] = false;
+            // basemaps
+            foreach (array_column($view->get('basemaps') ?? [], 'file') as $file) {
+                if (!empty($this->getBasemaps()[$file])) $v['basemaps'][] = $file;
+            }
             $views[$viewId] = $v;
         }
         // check for view centers
@@ -118,7 +152,7 @@ class Tour {
                         try {
                             $lat = $feature['geometry']['coordinates'][1];
                             $long = $feature['geometry']['coordinates'][0];
-                            if (is_numeric($lat) && is_numeric($long)) $views[$viewId]['center'] = [$lat, $long];
+                            if (is_numeric($lat) && is_numeric($long)) $views[$viewId]['center'] = [$long, $lat];
                         } catch (\Exception $e) {
                             continue;
                         }
@@ -141,17 +175,9 @@ class Tour {
         return $datasets;
     }
 
-    // [[type, properties (name, id, dataSource, hasPopup) geometry (type, coordinates)]]
+    // [id => [type, properties (name, id, dataSource, hasPopup) geometry (type, coordinates)]]
     public function getFeatures(): array {
-        $features = [];
-        foreach ($this->datasets as $datasetId => $dataset) {
-            foreach ($dataset->get('features') as $featureId => $feature) {
-                $features[$featureId] = $feature['geojson'];
-                $feature[$featureId]['properties']['hasPopup'] = !empty($feature['popupContent']);
-                $feature[$featureId]['properties']['dataSource'] = $datasetId;
-            }
-        }
-        return $features;
+        return $this->features;
     }
 
     // [[dataSource, legendText, iconFile, iconWidth, iconHeight, iconAltText]]
@@ -163,11 +189,12 @@ class Tour {
         return $legend;
     }
 
+    // [id => [id, name, popup]]
     public function getPopups(): array {
         $popups = [];
         foreach ($this->datasets as $datasetId => $dataset) {
             foreach ($dataset->get('features') as $featureId => $feature) {
-                if (!empty($feature['popupContent'])) {
+                if ($this->features[$featureId] && !empty($feature['popupContent'])) {
                     $popups[$featureId] = [
                         'id' => $featureId,
                         'name' => $feature['name'],
@@ -186,8 +213,10 @@ class Tour {
 
     // returns popups for the list of view popup buttons
     public function getViewPopups(string $viewId): array {
+        $view = $this->views[$viewId];
+        if (empty($view) || empty($view->get('features')) || empty($this->getPopups())) return [];
         $viewPopups = [];
-        foreach ($this->views[$viewId]->get('features') as $featureId) {
+        foreach (array_column($view->get('features'), 'id') as $featureId) {
             $popup = $this->getPopups()[$featureId];
             if (!empty($popup)) $viewPopups[] = [
                 'id' => $popup['id'],

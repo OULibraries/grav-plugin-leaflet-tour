@@ -75,9 +75,10 @@ class Feature {
         // TODO: consider ensuring customName is set to null when a customName is not provided (current custom_name=>null does nothing)
         if ($this->customName) $this->name = $this->customName;
         $coords = $featureData['coordinates'];
+        // TODO: Fix coordinates - doesn't actually work with yaml format
         if ($coords && $coords !== $this->coordinates && Utils::areValidCoordinates($coords, $this->type)) $this->coordinates = $coords;
         $props = $featureData['properties'];
-        if ($props && $props !== $this->properties) $this->properties = $props;
+        if (!empty($props) && $props !== $this->properties) $this->properties = $props;
         // everything not stored in json file
         $this->setDatasetFields($featureData);
     }
@@ -138,7 +139,7 @@ class Feature {
         ];
         // coordinates
         if ($this->type === 'Point') {
-            $yaml['coordinates'] = ['long'=>$this->coords[0], 'lat'=>$this->coords[1]];
+            $yaml['coordinates'] = ['long'=>$this->coordinates[0], 'lat'=>$this->coordinates[1]];
         } else if ($this->type === 'MultiPoint' || $this->type === 'LineString' || ($this->type === 'Polygon' && Utils::isValidSimplePolygon($this->coords))) {
             $coords = [];
             foreach ($this->coords as $point) {

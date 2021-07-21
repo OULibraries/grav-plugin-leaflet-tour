@@ -214,6 +214,7 @@ class DatasetTest extends Test {
         $this->checkNum(14, $d->mergeTourData($dataset, [])->get('iconOptions.shadowSize')[0]);
         // 10 test legend text from dataset
         $update->set('legend_text', "My Test Legend");
+        $dataset->set('show_all', true);
         $d->updateDataset($update, $d->asJson()['datasetFileRoute']);
         $this->checkString('My Test Legend', $d->mergeTourData($dataset, [])->get('legend.legendText'));
         // 11 test legend text from tour overrides dataset
