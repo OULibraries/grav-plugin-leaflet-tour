@@ -185,7 +185,6 @@ header .main-nav ul ul .nav-item {
 main {
   padding: 0;
   margin: 0 !important;
-  z-index: 0;
 }
 @media (min-width: 600px) {
   main {
@@ -201,11 +200,6 @@ main {
 }
 #scrolly .step {
   padding: 1rem 0;
-}
-@media (max-width: 599px) {
-  #scrolly {
-    display: none;
-  }
 }
 @media (min-width: 600px) {
   #scrolly #back-to-top {
@@ -533,11 +527,7 @@ footer > div {
     height: 100%;
   }
 
-  .scrolly-active #scrolly {
-    display: block;
-  }
-
-  .map-active nav, .map-active footer {
+  .map-active nav, .map-active footer, .map-active #scrolly {
     display: none;
   }
   .map-active #map-wrapper {
@@ -571,3 +561,14 @@ footer > div {
 }
 
 /*# sourceMappingURL=tour.css.map */
+::-webkit-scrollbar {
+  display: none;
+}
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.dialog-backdrop.active {
+  z-index: 900;
+}

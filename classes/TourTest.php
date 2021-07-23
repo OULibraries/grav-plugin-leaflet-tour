@@ -239,5 +239,24 @@ class TourTest extends Test {
         $this->checkNum(1, count($this->tour5->getViewPopups($v5)));
     }
 
+    function testGetOptions() {
+        // 1 maxZoom - set in header
+        // 2 minZoom - default
+        // 3 tour center - feature set
+        // 4 tour center - coordinates set
+        // 5 tour center - feature and coordinates set
+        // 6 tour center - invalid feature set
+        // 7 tour center - invalid coordinates set
+        // 8 tour bounds - valid bounds
+        // 9 tour bounds - invalid bounds
+    }
+
+    function testHasPopup() {
+        // 1 feature that has a popup, null tourFeatures
+        // 2 feature with popup set in tourFeatures
+        // 3 feature with remove_popup
+        // 4 feature with remove_popup and popup_content
+    }
+
 }
 ?>

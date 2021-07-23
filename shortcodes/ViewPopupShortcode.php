@@ -1,8 +1,11 @@
 <?php
 namespace Grav\Plugin\Shortcodes;
 
-use Grav\Common\Grav;
-use Grav\Plugin\LeafletTour\Datasets;
+// TODO: Move some of this to method somewhere I can test it properly?
+
+//use Grav\Common\Grav;
+use Grav\Plugin\LeafletTour\Dataset;
+use Grav\Plugin\LeafletTour\Tour;
 use Thunder\Shortcode\Shortcode\ShortcodeInterface;
 
 class ViewPopupShortcode extends Shortcode
@@ -21,26 +24,9 @@ class ViewPopupShortcode extends Shortcode
             $id = $sc->getParameter('id');
             // loop through datasets to find feature
             foreach ($header['datasets'] as $dataset) {
-                $dataset = Datasets::instance()->getDatasets()[$dataset['file']];
-                $feature = $dataset->features[$id];
-                if ($feature) {
-                    $name = $feature['customName'] ?? $feature['properties'][$dataset->nameProperty];
-                    $hasPopup = !empty($feature['popup_content']);
-                    // Check tour for customName and pooup content
-                    $tourFeatures = $header['features'];
-                    if (!empty($tourFeatures)) {
-                        $tourFeatures = array_column($tourFeatures, null, 'id');
-                        if ($tourFeatures[$id]) {
-                            $feature = $tourFeatures[$id];
-                            $name = $feature['custom_name'] ?? $name;
-                            if (!empty($feature['popup_content'])) $hasPopup = true;
-                            else if ($feature['remove_popup']) $hasPopup = false;
-                        }
-                    }
-                    if (!$hasPopup) return '';
-                    // return
-                    return '<button id="'.$buttonId.'" data-feature="'.$id.'" class="btn view-popup-btn">View '.$name.' popup</button>';
-                }
+                $dataset = Dataset::getDatasets()[$dataset['file']];
+                $feature = $dataset->getFeatures()[$id];
+                if ($feature && Tour::hasPopup($feature, $header['features'])) return Tour::getViewPopup($id, $buttonId, $feature->getName());
             }
             return ''; // in case nothing is found
         });

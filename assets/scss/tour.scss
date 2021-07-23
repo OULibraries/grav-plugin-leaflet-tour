@@ -9,6 +9,20 @@ header .logo a {
 }
 */
 
+// TODO: Is hiding the scrollbar bad for accessibility?
+::-webkit-scrollbar {
+    display: none;
+}
+body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+// tmp
+.dialog-backdrop.active {
+    z-index: 900;
+}
+
 // TODO
 // - make mobile back button sticky
 // - ensure desktop back button is hidden on mobile
@@ -239,7 +253,7 @@ header {
 main {
     padding: 0;
     margin: 0 !important;
-    z-index: 0;
+    // z-index: 0; interfering with popups
     @media (min-width: $tablet) {
         width: 33%; // column size
     }
@@ -251,9 +265,6 @@ main {
     }
     .step {
         padding: 1rem 0;
-    }
-    @media (max-width: $tablet - 1) {
-        display: none;
     }
     @media (min-width: $tablet) {
         #back-to-top {
@@ -610,25 +621,11 @@ footer {
             }
         }
     }
-    .scrolly-active #scrolly {
-        display: block;
-    }
     .map-active {
-        nav, footer {
+        nav, footer, #scrolly {
             display: none;
         }
         #map-wrapper {
-            display: block;
-        }
-    }
-    .popups-active {
-        #header-wrapper {
-            height: 50px;
-        }
-        #header-toggle, #header-options-wrapper, #main-nav, footer {
-            display: none;
-        }
-        #popup-list-wrapper {
             display: block;
         }
     }

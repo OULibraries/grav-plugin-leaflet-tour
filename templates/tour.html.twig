@@ -1,7 +1,7 @@
 {% extends 'partials/base.html.twig' %}
 
 {% set pluginConfig = config.plugins['leaflet-tour'] %}
-{% set tourData = leafletTour.getTourData(page) %}
+{% set tourData = leafletTour.getTour(page) %}
 
 {# Add CSS #}
 {% block stylesheets %}
@@ -30,25 +30,11 @@
 
     <script>
         // set important map data
-        var tourOptions = {
-            center: [{{ header.start.lat ?? 0 }}, {{ header.start.long ?? 0 }}],
-            zoom: {{ header.start.zoom ?? 10 }},
-            maxZoom: {{ header.zoom_max ?? 16 }},
-            minZoom: {{ header.zoom_min ?? 8 }},
-            // todo: move default tileserver into leaflet-tour.yaml
-            tileServer: "{{ header.tileserver.url ?? pluginConfig.tileserver.url  ?? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }}",
-            basemaps: {{ tourData['basemaps']|json_encode|raw }}, // all basemap info
-            removeDefaultBasemap: {{ header.remove_default_basemap ? 'true' : 'false' }},
-            tourMaps: [ {% for item in header.basemaps %} "{{ item.file }}", {% endfor %}], // list of all tour basemaps
-            datasets: {{ tourData['datasets']|json_encode|raw }},
-            wideCol: {{ header.wide_column is defined ? (header.wide_column ? 'true' : 'false') : pluginConfig.wide_column is defined ? (pluginConfig.wide_column ? 'true' : 'false') : 'false' }},
-            showMapLocationInUrl: {{ header.show_map_location_in_url is defined ? (header.show_map_location_in_url ? 'true' : 'false') : pluginConfig.show_map_location_in_url is defined ? (pluginConfig.show_map_location_in_url ? 'true' : 'false') : 'true' }},
-        };
-        {% if header.bounds|length == 4 %}
-        tourOptions['bounds'] = [[{{ header.bounds.south }}, {{ header.bounds.west }}], [{{ header.bounds.north }}, {{ header.bounds.east}}]];
-        {% endif %}
-        var tourViews = {{ tourData['views']|json_encode|raw }};
-        var geoJson = {{ tourData['features']|json_encode|raw }};
+        var tourBasemaps = new Map(Object.entries({{ tourData.getBasemaps()|json_encode|raw }}));
+        var tourViews = new Map(Object.entries({{ tourData.getViews()|json_encode|raw }}));
+        var tourFeaturesJson = {{ tourData.getFeatures()|json_encode|raw }};
+        var tourOptions = {{ tourData.getOptions()|json_encode|raw }};
+        var tourDatasets = new Map(Object.entries({{ tourData.getDatasets()|json_encode|raw }}));
     </script>
     
 {% endblock javascripts %}
@@ -57,29 +43,16 @@
 <div id="header-wrapper">
     <div class="mobile-row">
         {{ parent() }}
-        <button id="header-toggle" aria-expanded="true" class="mobile-only hamburger-btn expanded">
+        <button id="header-toggle-btn" aria-expanded="true" class="mobile-only hamburger-btn expanded">
             <i class="fas fa-minus" aria-hidden="true"></i>
             <i class="fas fa-bars" aria-hidden="true"></i>
             <span class="sr-only">Toggle Menu</span>
         </button>
     </div>
     <div id="header-options-wrapper" class="mobile-row">
-        <div role="region" aria-label="Map and Content Toggle" id="toggle-list" class="mobile-only">
-            <ul class="list-unstyled" role="list">
-                <li>
-                    {# TODO: aria-current?? #}
-                    {# TODO: Make this just one button, since it only switches between map and content #}
-                    <button id="scrolly-toggle" class="btn btn-disabled" aria-current="true" aria-disabled="true" data-toggle="scrolly">Content</button>
-                </li>
-                <li>
-                    <button id="map-toggle" class="btn" data-toggle="map">Map</button>
-                </li>
-            </ul>
-        </div>
-        <!--button id="open-settings-btn" class="icon-btn">
-            <i class="fa fas fa-cog" aria-hidden="true"></i>
-            <span class="sr-only">Open settings</span>
-        </button-->
+        <nav aria-label="Map and Content">
+            <button id="content-toggle-btn" class="btn" data-current="scrolly">View Map</button>
+        </nav>
         {% include 'partials/settings.html.twig' %}
     </div>
 </div>
@@ -112,16 +85,17 @@
     </div>
     <div id="scroll-text">
     {% for view in page.collection() if view.template == 'modular/view' %}
-        {% set viewId = leafletTour.getViewId(view) %}
+        {% set viewId = tourData.getViewId(view) %}
         <div class="step" id="{{ viewId }}">
             <h2>{{ view.header.title }}</h2>
+            <!-- TODO: "Zoom to View" or some other sort of text? -->
             <button data-view="{{ viewId }}" class="btn show-view-btn">Show View</button>
             {{ view.content|raw }}
-            {% set viewPopups = leafletTour.getViewPopups(tourData['views'][viewId]['features'], tourData['popups']) %}
+            {% set viewPopups = tourData.getViewPopups(viewId) %}
             {% if viewPopups|length > 0 %}
             <ul class="list-unstyled">
                 {% for feature in viewPopups %}
-                <li><button id="{{ viewId }}_{{ feature.id }}_btn" data-feature="{{ feature.id }}" class="btn view-popup-btn">View {{ feature.name }} popup</button></li>
+                <li><button id="{{ viewId }}_{{ feature.id }}_btn" class="btn view-popup-btn" onClick="openDialog('{{ feature.id }}-popup', this)">View {{ feature.name }} popup</button></li>
                 {% endfor %}
             </ul>
             {% endif %}
@@ -133,8 +107,8 @@
 <div id="map-wrapper" role="region" aria-label="Map">
     <a href="#footer" id="skip-map-link" class="skip-link">Skip to Footer</a>
     {# Legend #}
-    {% if (header.legend ?? true) %}{% set legendList = tourData['legend'] %}{% endif %}
-    {% if legendList %}
+    {% set legendList = tourData.getLegend() %}
+    {% if legendList|length > 0 %}
     <div class="legend">
         <div class="legend-top">
             <h2>Legend</h2>
@@ -150,6 +124,7 @@
                 {% if header.legend_toggles %}
                 <label>
                     <input type="checkbox" class="legend-checkbox" value="{{ item.dataSource }}" checked>
+                    <!-- TODO: How to announce to screen readers when map content changes due to checkbox change -->
                 {% else %}
                 <div>
                 {% endif %}
@@ -166,36 +141,32 @@
     <div id="map">
     </div>
 </div>
-<div id="popup-list-wrapper">
-{% for feature in tourData['popups'] %}
-    <div class="popup" id="{{ feature.id }}-popup">
-        <div class="popup-top">
-            <h2 class="popup-header" tabindex="-1">{{ feature.name }}</h2>
-            <!-- TODO: Turn this button into a back button for mobile (still closes popup, though) -->
-            <button id="{{ feature.id }}-popup-close-btn" class="popup-btn popup-close-btn icon-btn">
-                <i class="fas fa-times" aria-hidden="true"></i>
-                <span class="sr-only">Close popup</span>
-            </button>
-        </div>
-        <div class="popup-content">
-            {{ feature.popup|markdown }}
-        </div>
-        <button id="{{ feature.id }}-popup-back-btn" class="btn popup-btn popup-back-btn desktop-only">Back</button>
-        <!-- TODO: Add back to top button -->
-        <!-- Question: Should this button be mobile only, or also included on desktop? -->
+{% for feature in tourData.getPopups() %}
+<div role="dialog" id="{{ feature.id }}-popup" aria-labelledby="{{ feature.id }}-popup-label" aria-modal="true" class="hidden">
+    <div class="dialog-top">
+        <h2 id="{{ feature.id }}-popup-label" class="dialog-label">{{ feature.name }}</h2>
+        <button id="{{ feature.id }}-close-btn" class="icon-btn" onClick="closeDialog(this)">
+            <i class="fas fa-times" aria-hidden="true"></i>
+            <span class="sr-only">Close</span>
+        </button>
     </div>
-{% endfor %}
+    <div class="popup-content">
+        {{ feature.popup|markdown }}
+        {% include 'partials/bits/back_to_top.html.twig' %}
+    </div>
 </div>
+{% endfor %}
 {% endblock main %}
 
 {% block backtotop %}{% endblock backtotop %} {# clear block - already included in main content #}
 
 {% block footer %}
-    {% if tourData['attribution'] %}
+    {% set attribution = tourData.getAttribution() %}
+    {% if attribution|length > 0 %}
     <div id="attribution-section" class="footer-section">
         Resources used:
         <ul class="attribution-list list-unstyled" role="list">
-            {% for item in tourData['attribution'] %}
+            {% for item in attribution %}
                 <li>
                 {% if item.url %}
                     <a href="{{ item.url }}" target="_blank" class="attribution">{{ item.name }}<span class="sr-only"> Opens in new tab</span></a>

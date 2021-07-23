@@ -13,6 +13,7 @@ class Tour {
     protected $datasets; // [id => Data]
     protected $basemaps; // [file => [file, bounds, minZoom, maxZoom]]
     protected $features;
+    protected $allFeatures;
 
     protected $config;
 
@@ -31,6 +32,7 @@ class Tour {
         }
         $this->basemaps = $this->setBasemaps();
         $this->features = $this->setFeatures();
+        $this->allFeatures = $this->setAllFeatures();
     }
 
     // [file => [file, bounds, minZoom, maxZoom]]
@@ -76,6 +78,14 @@ class Tour {
         return $features;
     }
 
+    protected function setAllFeatures(): array {
+        $features = [];
+        foreach ($this->datasets as $datasetId => $dataset) {
+            $features = array_merge($features, $dataset->get('features') ?? [], $dataset->get('hiddenFeatures') ?? []);
+        }
+        return $features;
+    }
+
     // [file => [file, bounds, minZoom, maxZoom]]
     public function getBasemaps(): array {
         return $this->basemaps;
@@ -98,7 +108,6 @@ class Tour {
         $configBasemaps = array_column($this->config->get('basemaps') ?? [], null, 'file');
         foreach (array_keys($this->getBasemaps()) as $file) {
             $basemap = $configBasemaps[$file];
-//            $attribution[] = ['name' => 'test', 'url' => $basemap['attribution_url']];
             if (!empty($basemap['attribution_text'])) $attribution[] = ['name' => $basemap['attribution_text'], 'url' => $basemap['attribution_url']];
         }
         return $attribution;
@@ -139,23 +148,12 @@ class Tour {
         }
         // check for view centers
         if (!empty($viewCenters)) {
-            // build list of all features, including hidden ones
-            $features = [];
-            foreach ($this->datasets as $datasetId => $dataset) {
-                $features = array_merge($features, $dataset->get('features') ?? [], $dataset->get('hiddenFeatures') ?? []);
-            }
-            foreach ($features as $featureId => $feature) {
+            foreach ($this->allFeatures as $featureId => $feature) {
                 $viewIds = array_keys($viewCenters, $featureId);
-                if (!empty($viewIds) && $feature['geojson']['geometry']['type'] === 'Point') {
+                if (!empty($viewIds) && $feature['geojson']['geometry']['type'] === 'Point' && Utils::isValidPoint($feature['geojson']['geometry']['coordinates'])) {
                     $feature = $feature['geojson'];
                     foreach ($viewIds as $viewId) {
-                        try {
-                            $lat = $feature['geometry']['coordinates'][1];
-                            $long = $feature['geometry']['coordinates'][0];
-                            if (is_numeric($lat) && is_numeric($long)) $views[$viewId]['center'] = [$long, $lat];
-                        } catch (\Exception $e) {
-                            continue;
-                        }
+                        $views[$viewId]['center'] = [$feature['geometry']['coordinates'][0], $feature['geometry']['coordinates'][1]];
                     }
                 }
             }
@@ -182,6 +180,7 @@ class Tour {
 
     // [[dataSource, legendText, iconFile, iconWidth, iconHeight, iconAltText]]
     public function getLegend(): array {
+        if (!($this->header->get('legend') ?? true)) return [];
         $legend = [];
         foreach ($this->datasets as $dataset) {
             if (!empty($dataset['legend'])) $legend[] = $dataset['legend'];
@@ -206,14 +205,16 @@ class Tour {
         return $popups;
     }
 
-    // TODO: see if this function can be removed
     public function getViewId($view) {
         return $view->getCacheKey();
     }
 
     // returns popups for the list of view popup buttons
+    // [[id, name]]
     public function getViewPopups(string $viewId): array {
         $view = $this->views[$viewId];
+        $showList = $view->get('list_popup_buttons') ?? $this->header->get('list_popup_buttons') ?? true;
+        if (!$showList) return [];
         if (empty($view) || empty($view->get('features')) || empty($this->getPopups())) return [];
         $viewPopups = [];
         foreach (array_column($view->get('features'), 'id') as $featureId) {
@@ -224,6 +225,58 @@ class Tour {
             ];
         }
         return $viewPopups;
+    }
+
+    // TODO: test
+    public function getOptions(): array {
+        $options = [
+            'zoom' => $this->header->get('start.zoom') ?? 10,
+            'maxZoom' => $this->header->get('zoom_max') ?? 16,
+            'minZoom' => $this->header->get('zoom_min') ?? 8,
+            'tileServer' => $this->header->get('tileserver.url') ?? $this->config->get('tileserver.url'),
+            'removeDefaultBasemap' => $this->header->get('remove_default_basemap'),
+            'tourMaps' => array_column($this->header->get('basemaps') ?? [], 'file'),
+            //'datasets' => $this->getDatasets(),
+            'wideCol' => $this->header->get('wide_column') ?? $this->config->get('wide_column') ?? false,
+            'showMapLocationInUrl' => $this->header->get('show_map_location_in_url') ?? $this->config->get('show_map_location_in_url') ?? true,
+        ];
+        // tour center
+        if ($this->header->get('start.location')) {
+            $id = $this->header->get('start.location');
+            foreach ($this->allFeatures as $featureId => $feature) {
+                if ($featureId === $id && $feature['geojson']['geometry']['type'] === 'Point' && Utils::isValidPoint($feature['geojson']['geometry']['coordinates'])) {
+                    $feature = $feature['geojson'];
+                    $options['center'] = [$feature['geometry']['coordinates'][0], $feature['geometry']['coordinates'][1]];
+                }
+            }
+        }
+        if (empty($options['center'])) {
+            $point = [$this->header->get('start.long'), $this->header->get('start.lat')];
+            if (Utils::isValidPoint($point)) $options['center'] = $point;
+            else $options['center'] = [0, 0];
+        }
+        // tour bounds
+        $bounds = Utils::setBounds($this->header->get('bounds') ?? []);
+        if ($bounds) $options['bounds'] = $bounds;
+        return $options;
+    }
+
+    // returns html code for a popup button, referenced by shortcode
+    public static function getViewPopup(string $featureId, string $buttonId, string $featureName): string {
+        return '<button id="'.$buttonId.'" onClick="openDialog(\''.$featureId.'-popup\', this)" class="btn view-popup-btn">View '.$featureName.' popup</button>';
+    }
+
+    // TODO: test
+    public static function hasPopup($feature, $tourFeatures): bool {
+        $hasPopup = !empty($feature->getPopup());
+        $id = $feature->getId();
+        $tourFeatures = array_column($tourFeatures ?? [], null, 'id');
+        $f = $tourFeatures[$id];
+        if ($f) {
+            if (!empty($f['popup_content'])) $hasPopup = true;
+            else if ($f['remove_popup']) $hasPopup = false;
+        }
+        return $hasPopup;
     }
 }
 

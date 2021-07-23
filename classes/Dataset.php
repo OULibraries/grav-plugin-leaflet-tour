@@ -1,13 +1,10 @@
 <?php
 namespace Grav\Plugin\LeafletTour;
 
-//require_once __DIR__ . '/Datasets.php';
-
 use Grav\Common\Grav;
 use Grav\Common\Data\Data;
 use Grav\Common\File\CompiledJsonFile;
 use RocketTheme\Toolbox\File\MarkdownFile;
-// use Grav\Plugin\LeafletTour\Feature;
 
 /**
  * The Dataset class stores and handles all the information for one dataset.
@@ -254,7 +251,7 @@ class Dataset {
             $data['legend'] = $legend;
         }
         //
-        // from tour features - id, custom name?, remove popoup, popup content
+        // from tour features - id, remove popoup, popup content
         $tourFeatures = array_column($features, null, 'id');
         $features = [];
         $hiddenFeatures = [];
@@ -269,7 +266,6 @@ class Dataset {
                 $tourFeature = $tourFeatures[$featureId];
                 if ($tourFeature) {
                     // overwrite as needed
-                    // TODO: Allow for custom name, or no?
                     if (!empty($tourFeature['popup_content'])) {
                         $featArray['popupContent']  = $tourFeature['popup_content'];
                     } else if ($tourFeature['remove_popup']) {

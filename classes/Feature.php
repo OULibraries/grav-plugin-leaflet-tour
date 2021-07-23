@@ -92,6 +92,9 @@ class Feature {
     public function getPopup() {
         return $this->popupContent;
     }
+    public function getId() {
+        return $this->id;
+    }
 
     /**
      * Returns the feature in the format needed for the json file

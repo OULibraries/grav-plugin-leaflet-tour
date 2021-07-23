@@ -15,6 +15,7 @@ use RocketTheme\Toolbox\File\MarkdownFile;
 use Grav\Plugin\LeafletTour\Dataset;
 use Grav\Plugin\LeafletTour\LeafletTour;
 use Grav\Plugin\LeafletTour\Utils;
+use Grav\Plugin\LeafletTour\Feature;
 
 /**
  * Class LeafletTourPlugin
