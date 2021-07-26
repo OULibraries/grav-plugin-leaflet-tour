@@ -319,6 +319,15 @@ window.onscroll = function(e) {
 }
 
 $(document).ready(function() {
+
+    // TODO: Move to theme
+    $(".dialog-backdrop").on("click", function(e) {
+        closeDialog($(this).children()[1])
+    });
+    $(".dialog-backdrop").children().on("click", function(e) {
+        e.stopPropagation();
+    })
+
     if (tourOptions.wideCol) $("body").addClass("wide-column");
     // move map controls for more sensible DOM order
     let controls = $(".leaflet-control-container");
@@ -360,11 +369,12 @@ $(document).ready(function() {
 
     // legend checkboxes
     $(".legend-checkbox").on("input", function(e) {
-        tourDatasets.get(this.getAttribute("value")).eachLayer(function(layer) {
-            let feature = tourFeatures.get(layer.feature.properties.id);
-            feature.hideDataSource = !this.checked;
-            toggleHideFeature(feature);
-        });
+        for (let [featureId, feature] of tourFeatures) {
+            if (feature.dataset === this.value) {
+                feature.hideDataSource = !this.checked;
+                toggleHideFeature(feature);
+            }
+        }
         // TODO: Is this good to have, or no?
         resetAllLabels();
     });

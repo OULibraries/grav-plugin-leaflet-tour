@@ -53,7 +53,10 @@
         <nav aria-label="Map and Content">
             <button id="content-toggle-btn" class="btn" data-current="scrolly">View Map</button>
         </nav>
-        {% include 'partials/settings.html.twig' %}
+        <button id="open-settings-btn" class="icon-btn" onClick="openDialog('settings-dialog', this)">
+            <i class="fa fas fa-cog" aria-hidden="true"></i>
+            <span class="sr-only">Open settings</span>
+        </button>
     </div>
 </div>
 <nav id="main-nav" aria-label="Primary" class="main-nav">
@@ -74,6 +77,7 @@
 {% block navigation %}{% endblock navigation %} {# clear navigation block - already included in header #}
 
 {% block main %}
+{% include 'partials/settings.html.twig' %}
 <div id="scrolly">
     <div class="scroll-top">
         <h1>{{ page.title }}</h1>
@@ -142,17 +146,19 @@
     </div>
 </div>
 {% for feature in tourData.getPopups() %}
-<div role="dialog" id="{{ feature.id }}-popup" aria-labelledby="{{ feature.id }}-popup-label" aria-modal="true" class="hidden">
-    <div class="dialog-top">
-        <h2 id="{{ feature.id }}-popup-label" class="dialog-label">{{ feature.name }}</h2>
-        <button id="{{ feature.id }}-close-btn" class="icon-btn" onClick="closeDialog(this)">
-            <i class="fas fa-times" aria-hidden="true"></i>
-            <span class="sr-only">Close</span>
-        </button>
-    </div>
-    <div class="popup-content">
-        {{ feature.popup|markdown }}
-        {% include 'partials/bits/back_to_top.html.twig' %}
+<div class="dialog-backdrop">
+    <div role="dialog" id="{{ feature.id }}-popup" aria-labelledby="{{ feature.id }}-popup-label" aria-modal="true" class="hidden">
+        <div class="dialog-top">
+            <h2 id="{{ feature.id }}-popup-label" class="dialog-label">{{ feature.name }}</h2>
+            <button id="{{ feature.id }}-close-btn" class="icon-btn" onClick="closeDialog(this)">
+                <i class="fas fa-times" aria-hidden="true"></i>
+                <span class="sr-only">Close</span>
+            </button>
+        </div>
+        <div class="popup-content">
+            {{ feature.popup|markdown }}
+            {% include 'partials/bits/back_to_top.html.twig' %}
+        </div>
     </div>
 </div>
 {% endfor %}

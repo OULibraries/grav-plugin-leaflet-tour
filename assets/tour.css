@@ -8,6 +8,19 @@ header .logo a {
     padding: 0;
 }
 */
+::-webkit-scrollbar {
+  display: none;
+}
+
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.dialog-backdrop.active {
+  z-index: 900;
+}
+
 /* Temporary: Move these to theme.css */
 .skip-link:visited {
   color: #004fa3;
@@ -533,16 +546,6 @@ footer > div {
   .map-active #map-wrapper {
     display: block;
   }
-
-  .popups-active #header-wrapper {
-    height: 50px;
-  }
-  .popups-active #header-toggle, .popups-active #header-options-wrapper, .popups-active #main-nav, .popups-active footer {
-    display: none;
-  }
-  .popups-active #popup-list-wrapper {
-    display: block;
-  }
 }
 @media (min-width: 600px) {
   .wide-column header, .wide-column main, .wide-column footer {
@@ -561,14 +564,3 @@ footer > div {
 }
 
 /*# sourceMappingURL=tour.css.map */
-::-webkit-scrollbar {
-  display: none;
-}
-body {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.dialog-backdrop.active {
-  z-index: 900;
-}
