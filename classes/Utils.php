@@ -3,6 +3,7 @@ namespace Grav\Plugin\LeafletTour;
 
 use Grav\Common\Grav;
 use RocketTheme\Toolbox\File\File;
+use Grav\Common\File\CompiledJsonFile;
 
 /**
  * The Utils class is never instantiated as an object. Instead, it contains various functions that are generally useful for a leaflet tour that should not belong to one particular class.
@@ -17,7 +18,7 @@ class Utils {
         'polygon'=>'Polygon',
         'multipolygon'=>'MultiPolygon'
     ];
-    const JSON_VAR_REGEX = '/^(.)*var(\s)+json_(\w)*(\s)+=(\s)+/s';
+    const JSON_VAR_REGEX = '/^(.)*var(\s)+json_(\w)*(\s)+=(\s)+/';
 
     // default values if the default marker icon is used
     const DEFAULT_MARKER_OPTIONS = [
@@ -75,25 +76,26 @@ class Utils {
         return true;
     }
 
-    /**
-     * Checks that coordinates are either a simple polygon or an array of simple polygons
-     */
-    public static function isValidPolygon($coords): bool {
-        if (!self::isValidSimplePolygon($coords)) {
-            if (!is_array($coords) || count($coords) < 1) return false;
-            foreach ($coords as $polygon) {
-                if (!self::isValidSimplePolygon($polygon)) return false;
-            }
+    public static function isValidLineString($coords): bool {
+        return self::isValidMultiPoint($coords);
+    }
+    public static function isValidMultiLineString($coords): bool {
+        if (!is_array($coords)) return false;
+        foreach ($coords as $line) {
+            if (!self::isValidLineString($line)) return false;
         }
         return true;
     }
 
     /**
-     * Checks that coordinates are an aray with three or more points
+     * Checks that coordinates are an array of linear rings (line strings with four or more positions where the last position and firset position are the same) TODO: Allow for correcting if three or more positions with not same first and last
      */
-    public static function isValidSimplePolygon($coords): bool {
-        if (self::isValidMultiPoint($coords) && count($coords) >= 3) return true;
-        else return false;
+    public static function isValidPolygon($coords): bool {
+        if (!is_array($coords)) return false;
+        foreach ($coords as $polygon) {
+            if (!self::isValidMultiPoint($polygon) || count($polygon) < 4 || ($polygon[0] !== $polygon[count($polygon)-1])) return false;
+        }
+        return true;
     }
 
     /**
@@ -103,17 +105,6 @@ class Utils {
         if (!is_array($coords) || count($coords) < 1) return false;
         foreach ($coords as $polygon) {
             if (!self::isValidPolygon($polygon)) return false;
-        }
-        return true;
-    }
-
-    public static function isValidLineString($coords): bool {
-        return self::isValidMultiPoint($coords);
-    }
-    public static function isValidMultiLineString($coords): bool {
-        if (!is_array($coords)) return false;
-        foreach ($coords as $line) {
-            if (!self::isValidLineString($line)) return false;
         }
         return true;
     }
@@ -208,14 +199,29 @@ class Utils {
     // Dataset Upload Utils
 
     public static function parseDatasetUpload($fileData) {
+        // fix php's bad json handling
+        if (version_compare(phpversion(), '7.1', '>=')) {
+            ini_set( 'serialize_precision', -1 );
+        }
         $jsonFilename = preg_replace('/.js$/', '.json', $fileData['name']);
         $jsonArray = [];
-        if ($fileData['type'] === 'text/javascript') {
-            $jsonArray = self::readJSFile($fileData['path']);
+        try {
+            switch ($fileData['type']) {
+                case 'text/javascript':
+                    $jsonArray = self::readJSFile($fileData['path']);
+                    break;
+                case 'application/json':
+                    $jsonArray = self::readJsonFile($fileData['path']);
+                    break;
+                default:
+                    break;
+            }
+            // TODO: Check for other file types
+            if (empty($jsonArray)) return [];
+            return [$jsonArray, $jsonFilename];
+        } catch (\Throwable $t) {
+            return [];
         }
-        // TODO: Check for other file types
-        if (empty($jsonArray)) return [];
-        return [$jsonArray, $jsonFilename];
     }
     
     /**
@@ -229,21 +235,24 @@ class Utils {
         if (!$file->exists()) return [];
         // find and remove the initial json variable
         $count = 0;
-        $jsonRegex = preg_replace(self::JSON_VAR_REGEX, '', $file->content(), 1, $count);
+        $jsonRegex = preg_replace(self::JSON_VAR_REGEX.'s', '', $file->content(), 1, $count);
+        if ($count !== 1) $jsonRegex = preg_replace(self::JSON_VAR_REGEX, '', $file->content(), 1, $count);
         // if a match was found (and removed), try converting the file contents to json
         if ($count == 1) {
-            // fix php's bad json handling
-            if (version_compare(phpversion(), '7.1', '>=')) {
-            	ini_set( 'serialize_precision', -1 );
-            }
             try {
                 $jsonData = json_decode($jsonRegex, true);
                 return $jsonData ?? [];
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 return [];
             }
         }
         return [];
+    }
+
+    protected static function readJsonFile(string $filePath): array {
+        $file = CompiledJsonFile::instance(Grav::instance()['locator']->getBase().'/'.$filePath);
+        if (!$file->exists()) return [];
+        return $file->content() ?? [];
     }
 
     // Other Utils

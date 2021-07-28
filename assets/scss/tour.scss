@@ -16,17 +16,13 @@ header .logo a {
 body {
     -ms-overflow-style: none;
     scrollbar-width: none;
+    overflow-wrap: break-word;
 }
 
 // tmp
 .dialog-backdrop.active {
     z-index: 900;
 }
-
-// TODO
-// - make mobile back button sticky
-// - ensure desktop back button is hidden on mobile
-// - overflow-wrap: break-word
 
 $link-blue: #004fa3;
 $main-light: #fff;
@@ -83,6 +79,13 @@ header a:hover:not(:focus) {
 }
 // TODO: icon button on focus - not darker inside
 /* end temporary */
+
+// temp - move to modal.css
+@media screen and (min-width: 600px) {
+    [role="alertdialog"], [role="dialog"] {
+        max-height: calc(100% - 4rem);
+    }
+}
 
 @mixin font-size($val) {
     font-size: 1px * $val;
@@ -165,49 +168,39 @@ header {
                 }
             }
         }
+        #header-toggle-btn {
+            margin: 10px;
+        }
         .mobile-row {
             display: flex;
             width: 100%;
             height: 50px;
             justify-content: space-between;
             align-items: center;
-        }
-        #header-toggle {
-            margin: 10px 5px;
-        }
-        #toggle-list {
-            // TODO: make buttons take less height?
-            // decrease margins/etc at very low screen size (<350 etc.)
-            flex-grow: 1;
-            ul {
+            nav {
+                flex-grow: 1;
                 display: flex;
-                justify-content: space-evenly;
-                li {
-                    margin-bottom: 0;
-                    width: 30%;
-                    button {
-                        margin: 5px 0;
-                        width: 100%;
-                        padding: 10px;
-                        border-color: $theme-color-1;
-                        background-color: $accent-color-1;
-                        color: $theme-color-1;
-                        &:hover, &:focus {
-                            background-color: $theme-color-1;
-                            color: $accent-color-1;
-                            //border-color: #e2e2e2;
-                        }
-                        &.btn-disabled {
-                            background-color: #e2e2e2 !important;
-                            color: #333 !important;
-                            &:focus {
-                                box-shadow: none;
-                                //outline: 2px dashed black;
-                                //outline-offset: -5px;
-                            }
-                            //&:hover {
-                                //border-color: $theme-color-1;
-                            //}
+                justify-content: center;
+                button {
+                    margin: 5px 0;
+                    //width: 100%;
+                    min-width: 30%;
+                    padding: 10px;
+                    border-color: $theme-color-1;
+                    background-color: $accent-color-1;
+                    color: $theme-color-1;
+                    &:hover, &:focus {
+                        background-color: $theme-color-1;
+                        color: $accent-color-1;
+                        //border-color: #e2e2e2;
+                    }
+                    &.btn-disabled {
+                        background-color: #e2e2e2 !important;
+                        color: #333 !important;
+                        &:focus {
+                            box-shadow: none;
+                            //outline: 2px dashed black;
+                            //outline-offset: -5px;
                         }
                     }
                 }
@@ -245,6 +238,11 @@ header {
             margin: 5px;
             top: 0;
             right: 0;
+        }
+        #header-options-wrapper {
+            nav {
+                display: none;
+            }
         }
     }
 }
@@ -622,7 +620,7 @@ footer {
         }
     }
     .map-active {
-        nav, footer, #scrolly {
+        #main-nav, footer, #scrolly {
             display: none;
         }
         #map-wrapper {

@@ -143,7 +143,7 @@ class Feature {
         // coordinates
         if ($this->type === 'Point') {
             $yaml['coordinates'] = ['long'=>$this->coordinates[0], 'lat'=>$this->coordinates[1]];
-        } else if ($this->type === 'MultiPoint' || $this->type === 'LineString' || ($this->type === 'Polygon' && Utils::isValidSimplePolygon($this->coords))) {
+        } else if ($this->type === 'MultiPoint' || $this->type === 'LineString') {
             $coords = [];
             foreach ($this->coords as $point) {
                 $coords[] = ['long'=>$point[0], 'lat'=>$point[1]];

@@ -94,53 +94,58 @@ for (let [key, dataset] of tourDatasets) {
 function createMarker(props, latlng, dataset) {
     // handle alt text and popup existence
     let altText = props.name;
+    let options = { ...dataset.iconOptions };
     if (dataset.legendAltText) altText += ", " + dataset.legendAltText;
     if (props.hasPopup) {
         altText += ", open popup";
-        dataset.iconOptions.className += " has-popup";
-        dataset.iconOptions.role = "button";
+        options.className += " has-popup";
+        options.role = "button";
     }
-    else dataset.iconOptions.className += " no-popup";
+    else options.className += " no-popup";
 
-    dataset.iconOptions.id = props.id;
+    options.id = props.id;
     // create marker
     let marker = L.marker(latlng, {
-        icon: modalIcon(dataset.iconOptions),
+        icon: modalIcon(options),
         alt: altText,
         riseOnHover: true,
         id: props.id
     });
-    // allow focusing on map icons that aren't buttons
-    if (!props.hasPopup) {
-        marker.on('click keydown', function(e) {
-            if (e.type === "click" || e.which === 32 || e.which === 13) {
-                let feature = tourFeatures.get(this.options.id);
-                feature.layer._icon.focus();
-                feature.layer.getTooltip().getElement().classList.add("active");
-            }
-        }, marker);
-    } else {
-        // make icons open popups from map
-        marker.on('click keydown', function(e) {
-            if (e.type === "click" || e.which === 32 || e.which === 13) {
-                openDialog(this.options.id+"-popup", document.getElementById(this.options.id));
-            }
-        }, marker);
-    }
-    // make tooltip active when focusing/hovering over icon
-    marker.on('focus mouseover', function(e) {
-        tourFeatures.get(this.options.id).layer.getTooltip().getElement().classList.add("active");
-    }, marker);
-    // make tooltip inactive when ending focus/hover onver icon
-    marker.on('blur mouseout', function(e) {
-        if (!(document.getElementById(this.options.id) === document.activeElement)) tourFeatures.get(this.options.id).layer.getTooltip().getElement().classList.remove("active");
-    }, marker);
     // TODO: Is there any reason I would want easy access to the marker object, rather than just the icon element?
     // tourFeatures.get(props.id).marker = marker;
     return marker;
 }
 function createPath(geoJsonFeature, dataset) {
-    // TODO
+    return {
+
+    "color": "#ff7800",
+    "weight": 5,
+    "opacity": 0.65
+    }
+}
+function setFeatureInteraction() {
+    // because trying to use leaflet's setup was a stupid idea
+    // allow focusing on map icons that aren't buttons
+    $(".has-popup").on("click keypress", function(e) {
+        if (e.type === "click" || e.which === 32 || e.which === 13) {
+            e.stopPropagation();
+            openDialog(this.id+"-popup", document.getElementById(this.id));
+        }
+    });
+    $(".no-popup").on("click keypress", function(e) {
+        if (e.type === "click" || e.which === 32 || e.which === 13) {
+            let feature = tourFeatures.get(this.id);
+            feature.layer._icon.focus();
+            feature.layer.getTooltip().getElement().classList.add("active");
+        }
+    });
+    $(".has-popup, .no-popup").on("focus mouseover", function(e) {
+        // make tooltip active when focusing/hovering over icon
+        tourFeatures.get(this.id).layer.getTooltip().getElement().classList.add("active");
+    }).on("blur mouseout", function(e) {
+        // make tooltip inactive when ending focus/hover onver icon
+        if (!(document.getElementById(this.id) === document.activeElement)) tourFeatures.get(this.id).layer.getTooltip().getElement().classList.remove("active");
+    });
 }
 function setupFeature(geoJsonFeature, layer) {
     let props = geoJsonFeature.properties;
@@ -299,25 +304,6 @@ scroller.setup({
     }, 600);
 });
 
-// this function modified from theme.js - overrides the function there, but relies on variables and function set there
-window.onscroll = function(e) {
-    if (!current.scrollTick) {
-        setTimeout(function () {
-            toggleBackToTop();
-            // adjust header for desktop
-            if (window.innerWidth >= mobileWidth) {
-                let target = document.getElementById("top").scrollHeight+20;
-                if (document.body.scrollTop > target || document.documentElement.scrollTop > target) $("#top").addClass("scrolled");
-                else $("#top").removeClass("scrolled");
-            }
-            // save scrollyPos for mobile
-            else if (tourState.scrolly) tourState.scrollyPos = window.scrollY;
-            current.scrollTick = false;
-        }, 100);
-    }
-    current.scrollTick = true;
-}
-
 $(document).ready(function() {
 
     // TODO: Move to theme
@@ -326,13 +312,34 @@ $(document).ready(function() {
     });
     $(".dialog-backdrop").children().on("click", function(e) {
         e.stopPropagation();
-    })
+    });
+
+    // this function modified from theme.js - overrides the function there, but relies on variables and function set there
+    window.onscroll = function(e) {
+        if (!current.scrollTick) {
+            setTimeout(function () {
+                toggleBackToTop();
+                // adjust header for desktop
+                if (window.innerWidth >= mobileWidth) {
+                    let target = document.getElementById("top").scrollHeight+20;
+                    if (document.body.scrollTop > target || document.documentElement.scrollTop > target) $("#top").addClass("scrolled");
+                    else $("#top").removeClass("scrolled");
+                }
+                // save scrollyPos for mobile
+                else if (tourState.scrolly) tourState.scrollyPos = window.scrollY;
+                current.scrollTick = false;
+            }, 100);
+        }
+        current.scrollTick = true;
+    };
 
     if (tourOptions.wideCol) $("body").addClass("wide-column");
     // move map controls for more sensible DOM order
     let controls = $(".leaflet-control-container");
     controls.remove();
     $("#map").prepend(controls);
+
+    setFeatureInteraction();
 
     // button functions - toggles
     $("#header-toggle-btn").on("click", function(e) {
@@ -350,7 +357,7 @@ $(document).ready(function() {
             // TODO: explicitly set focus to map?
             adjustMap();
         } else {
-           switchToScrolly(this.getAttribute("data-focus"));
+           switchToContent(this.getAttribute("data-focus"));
         }
     });
     
@@ -397,7 +404,8 @@ function switchToMap(focusElement) {
     // TODO: explicitly set focus to map?
     // change button text/value
     // set button data-focus to focusElement
-    $("#toggle-content-btn").attr("data-focus", focusElement).attr("data-current", "map").text("View Content");
+    console.log(focusElement);
+    $("#content-toggle-btn").attr("data-focus", focusElement).attr("data-current", "map").text("View Content");
 }
 function switchToContent(focusElement) {
     $("body").removeClass("map-active");
@@ -406,7 +414,7 @@ function switchToContent(focusElement) {
     // TODO: If no contentFocus, do I need to explicitly put focus somewhere? (e.g. used map toggle button to go to map)
     if (focusElement) document.getElementById(focusElement).focus(); 
     // change button text/value
-    $("#toggle-content-btn").attr("data-focus", "").attr("data-current", "scrolly").text("View Map");
+    $("#content-toggle-btn").attr("data-focus", "").attr("data-current", "scrolly").text("View Map");
 }
 
 function toggleHideFeature(feature) {

@@ -93,7 +93,7 @@
         <div class="step" id="{{ viewId }}">
             <h2>{{ view.header.title }}</h2>
             <!-- TODO: "Zoom to View" or some other sort of text? -->
-            <button data-view="{{ viewId }}" class="btn show-view-btn">Show View</button>
+            <button data-view="{{ viewId }}" id="show-view-{{ viewId }}" class="btn show-view-btn">Show View</button>
             {{ view.content|raw }}
             {% set viewPopups = tourData.getViewPopups(viewId) %}
             {% if viewPopups|length > 0 %}
@@ -157,7 +157,7 @@
         </div>
         <div class="popup-content">
             {{ feature.popup|markdown }}
-            {% include 'partials/bits/back_to_top.html.twig' %}
+            {#% include 'partials/bits/back_to_top.html.twig' %#}
         </div>
     </div>
 </div>

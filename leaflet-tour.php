@@ -112,13 +112,16 @@ class LeafletTourPlugin extends Plugin
         // handle plugin config data
         if (method_exists($obj, 'get') && $obj->get('leaflet_tour')) {
             // check for new data files
+            $update = $this->config->get('plugins.leaflet-tour.data_update');
             foreach ($obj->get('data_files') ?? [] as $key=>$fileData) {
                 // TODO: temporarily always true for testing. Will ultimately need to check if the particular file has been uploaded before, and perhaps if so if it is being updated (future goals?)
-                if (!$this->config->get('plugins.leaflet-tour.data_files') || true) {
+                if ($update || !($this->config->get('plugins.leaflet-tour.data_files') ?? [])[$key]) {
                     // new upload - save as json (if possible)
                     $jsonData = Utils::parseDatasetUpload($fileData);
-                    Dataset::createNewDataset($jsonData[0], $jsonData[1]);
+                    if (!empty($jsonData)) Dataset::createNewDataset($jsonData[0], $jsonData[1]);
                 }
+                // make sure update never stays checked
+                $obj->set('update', false);
             }
         }
         // handle tour config data

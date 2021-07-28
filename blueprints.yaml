@@ -62,6 +62,18 @@ form:
               accept:
                 - '.js'
             
+            data_update:
+              type: toggle
+              label: Update Datasets
+              description: "TODO: Explain exactly what this does. I don't think it will overwrite any of the changes that are currently possible to make. It does recreate the json and the dataset page. At some point there may be more configurable update options."
+              highlight: 1
+              default: 0
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
             datasets:
               type: list
               label: Dataset Information

@@ -15,6 +15,7 @@ header .logo a {
 body {
   -ms-overflow-style: none;
   scrollbar-width: none;
+  overflow-wrap: break-word;
 }
 
 .dialog-backdrop.active {
@@ -63,6 +64,11 @@ header a:hover:not(:focus) {
 }
 
 /* end temporary */
+@media screen and (min-width: 600px) {
+  [role=alertdialog], [role=dialog] {
+    max-height: calc(100% - 4rem);
+  }
+}
 /* Header */
 header {
   position: sticky;
@@ -115,6 +121,9 @@ header .main-nav ul ul .nav-item {
     display: block;
     height: inherit;
   }
+  header #header-toggle-btn {
+    margin: 10px;
+  }
   header .mobile-row {
     display: flex;
     width: 100%;
@@ -122,37 +131,28 @@ header .main-nav ul ul .nav-item {
     justify-content: space-between;
     align-items: center;
   }
-  header #header-toggle {
-    margin: 10px 5px;
-  }
-  header #toggle-list {
+  header .mobile-row nav {
     flex-grow: 1;
-  }
-  header #toggle-list ul {
     display: flex;
-    justify-content: space-evenly;
+    justify-content: center;
   }
-  header #toggle-list ul li {
-    margin-bottom: 0;
-    width: 30%;
-  }
-  header #toggle-list ul li button {
+  header .mobile-row nav button {
     margin: 5px 0;
-    width: 100%;
+    min-width: 30%;
     padding: 10px;
     border-color: #070f4e;
     background-color: #fff;
     color: #070f4e;
   }
-  header #toggle-list ul li button:hover, header #toggle-list ul li button:focus {
+  header .mobile-row nav button:hover, header .mobile-row nav button:focus {
     background-color: #070f4e;
     color: #fff;
   }
-  header #toggle-list ul li button.btn-disabled {
+  header .mobile-row nav button.btn-disabled {
     background-color: #e2e2e2 !important;
     color: #333 !important;
   }
-  header #toggle-list ul li button.btn-disabled:focus {
+  header .mobile-row nav button.btn-disabled:focus {
     box-shadow: none;
   }
 }
@@ -191,6 +191,9 @@ header .main-nav ul ul .nav-item {
     margin: 5px;
     top: 0;
     right: 0;
+  }
+  header #header-options-wrapper nav {
+    display: none;
   }
 }
 
@@ -540,7 +543,7 @@ footer > div {
     height: 100%;
   }
 
-  .map-active nav, .map-active footer, .map-active #scrolly {
+  .map-active #main-nav, .map-active footer, .map-active #scrolly {
     display: none;
   }
   .map-active #map-wrapper {
