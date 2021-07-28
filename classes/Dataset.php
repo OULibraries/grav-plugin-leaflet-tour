@@ -32,6 +32,8 @@ class Dataset {
     protected $legendAltText;
     protected $iconAltText;
     protected $iconOptions;
+    protected $pathOptions;
+    protected $pathActiveOptions;
     
     // other
     protected $autoPopupProperties; // list of all properties to automatically add to popups
@@ -97,6 +99,8 @@ class Dataset {
         $this->legendAltText = $header->get('legend_alt');
         $this->iconAltText = $header->get('icon_alt');
         $this->iconOptions = $header->get('icon') ?? [];
+        $this->pathOptions = $header->get('svg') ?? [];
+        $this->pathActiveOptions = $header->get('svg_active') ?? [];
     }
 
     /**
@@ -163,6 +167,12 @@ class Dataset {
         return $this->featureType;
     }
 
+    # TODO: Require at leaset php 7.4?
+
+    public function setDefaults() {
+        $this->pathActiveOptions ??= ['weight'=>5, 'fillOpacity' => 0.4];
+    }
+
     // for config
     public function getProperties() {
         return array_combine($this->properties, $this->properties);
@@ -200,7 +210,7 @@ class Dataset {
     /**
      * @param Data $dataset - dataset info (yaml) from tour config
      * @param array $features - features list (yaml) from tour config
-     * @return Data - [id, featureType, showAll, features (id => [name, geojson, popupContent], hiddenFeatures (id => [geojson]) legend, iconAltText, iconOptions]
+     * @return Data - [id, featureType, showAll, features (id => [name, geojson, popupContent], hiddenFeatures (id => [geojson]) legend, iconAltText, iconOptions, pathOptions, pathActiveOptions]
      */
     public function mergeTourData(Data $dataset, array $features): Data {
         $data = [
@@ -235,6 +245,7 @@ class Dataset {
             }
         }
         $data['iconOptions'] = $iconOptions;
+        // path options
         // legend
         $legendText = $dataset->get('legend_text') ?? $this->legendText;
         if (!empty($legendText)) {
@@ -250,7 +261,9 @@ class Dataset {
             if (!empty($iconAltText)) $legend['iconAltText'] = $iconAltText;
             $data['legend'] = $legend;
         }
-        //
+        // path options
+        $data['pathOptions'] = array_merge($this->pathOptions ?? [], $dataset->get('svg') ?? []);
+        $data['pathActiveOptions'] = array_merge($this->pathActiveOptions ?? [], $dataset->get('svg_active') ?? []);
         // from tour features - id, remove popoup, popup content
         $tourFeatures = array_column($features, null, 'id');
         $features = [];
@@ -332,6 +345,7 @@ class Dataset {
         $jsonFile->save();
         // create the dataset
         $dataset = new Dataset($jsonFilename, Grav::instance()['config']->get('plugins.leaflet-tour'));
+        $dataset->setDefaults();
         $dataset->saveDatasetPage();
         self::$datasets[$jsonFilename] = $dataset;
     }

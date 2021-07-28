@@ -80,6 +80,11 @@ header a:hover:not(:focus) {
 // TODO: icon button on focus - not darker inside
 /* end temporary */
 
+// TODO: Either move this to theme, or put in proper place in this file
+.btn {
+    white-space: pre-wrap;
+}
+
 // temp - move to modal.css
 @media screen and (min-width: 600px) {
     [role="alertdialog"], [role="dialog"] {
@@ -490,67 +495,6 @@ main {
             left: 33%; // column size
             width: 67%; // column size
             height: 100%;
-        }
-    }
-}
-
-/* Popups */
-
-#popup-list-wrapper {
-    .popup {
-        display: none;
-        &.active {
-            display: block;
-        }
-    }
-    // phone
-    @media (max-width: $tablet - 1) {
-        display: none;
-        padding: 1px 1rem;
-    }
-    // tablet/desktop
-    @media (min-width: $tablet) {
-        .popup {
-            width: 30%;
-            max-height: 30%;
-            background: white;
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            padding: 5px;
-            padding-bottom: 10px;
-            min-height: 200px;
-            border-radius: 5px;
-            border: 2px solid black;
-            overflow-x: scroll;
-            top: 65%;
-            .popup-top {
-                @include flex();
-                justify-content: space-between;
-                align-items: flex-start;
-            }
-            h3 {
-                margin: 1.5rem 0;
-                flex-grow: 1;
-            }
-            .popup-close-btn {
-                margin: 1rem;
-                height: 3rem;
-                width: 3rem;
-                @include font-size(18);
-            }
-            .popup-content {
-                margin: 1rem;
-            }
-        }
-        .popup-back-btn {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .5s linear;
-            &:focus {
-                opacity: 1;
-                pointer-events: auto;
-            }
         }
     }
 }

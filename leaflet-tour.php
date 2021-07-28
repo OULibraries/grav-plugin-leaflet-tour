@@ -283,7 +283,7 @@ class LeafletTourPlugin extends Plugin
         return $featureList;
     }*/
     public static function getTourFeaturesForView($onlyPoints=false) {
-        return getTourFeatures($onlyPoints, true);
+        return self::getTourFeatures($onlyPoints, true);
     }
 
     public static function getTourLocations() {

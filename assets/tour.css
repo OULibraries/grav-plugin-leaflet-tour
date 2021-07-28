@@ -64,6 +64,10 @@ header a:hover:not(:focus) {
 }
 
 /* end temporary */
+.btn {
+  white-space: pre-wrap;
+}
+
 @media screen and (min-width: 600px) {
   [role=alertdialog], [role=dialog] {
     max-height: calc(100% - 4rem);
@@ -415,67 +419,6 @@ main {
     left: 33%;
     width: 67%;
     height: 100%;
-  }
-}
-
-/* Popups */
-#popup-list-wrapper .popup {
-  display: none;
-}
-#popup-list-wrapper .popup.active {
-  display: block;
-}
-@media (max-width: 599px) {
-  #popup-list-wrapper {
-    display: none;
-    padding: 1px 1rem;
-  }
-}
-@media (min-width: 600px) {
-  #popup-list-wrapper .popup {
-    width: 30%;
-    max-height: 30%;
-    background: white;
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-    padding: 5px;
-    padding-bottom: 10px;
-    min-height: 200px;
-    border-radius: 5px;
-    border: 2px solid black;
-    overflow-x: scroll;
-    top: 65%;
-  }
-  #popup-list-wrapper .popup .popup-top {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-  #popup-list-wrapper .popup h3 {
-    margin: 1.5rem 0;
-    flex-grow: 1;
-  }
-  #popup-list-wrapper .popup .popup-close-btn {
-    margin: 1rem;
-    height: 3rem;
-    width: 3rem;
-    font-size: 18px;
-    font-size: 1.8rem;
-  }
-  #popup-list-wrapper .popup .popup-content {
-    margin: 1rem;
-  }
-  #popup-list-wrapper .popup-back-btn {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.5s linear;
-  }
-  #popup-list-wrapper .popup-back-btn:focus {
-    opacity: 1;
-    pointer-events: auto;
   }
 }
 

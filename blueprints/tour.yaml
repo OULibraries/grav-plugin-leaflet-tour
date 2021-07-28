@@ -238,10 +238,6 @@ form:
                       data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourFeatures'
                       validate:
                         required: true
-                    .custom_name:
-                      type: text
-                      label: Custom Name
-                      description: Optional. This name will be displayed instead of the default feature name above.
                     .remove_popup:
                       type: toggle
                       label: Remove Default Popup

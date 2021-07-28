@@ -338,3 +338,182 @@ form:
               description: Optional. Used for Retina screen devices
               preview_images: true
               folder: 'user://data/leaflet-tour/images/markers'
+        
+        svg:
+          type: tab
+          title: SVG
+          fields:
+
+            svg_path:
+              type: display
+              content: "## SVG Style"
+              style: vertical
+              markdown: true
+            
+            svg_path_stroke:
+              type: display
+              content: "### Stroke Options"
+              style: vertical
+              markdown: true
+            
+            # additional options: lineCap, lineJoin, dashArray, dashOffset
+
+            # TODO: Note that descriptions often come from Leaflet documentation verbatim
+
+            header.svg.stroke:
+              type: toggle
+              label: Draw Stroke
+              description: "Whether to draw stroke along the path. Set it to false to disable borders on polygons or circles."
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.svg.color:
+              type: colorpicker
+              label: Stroke Color
+              default: "#3388ff"
+            
+            header.svg.weight:
+              type: number
+              label: Stroke Width (pixels)
+              default: 3
+              validate:
+                min: 1
+            
+            header.svg.opacity:
+              type: number
+              label: Stroke Opacity
+              description: "A number from 0 (completely transparent) to 1 (completely opaque)."
+              default: 1.0
+              validate:
+                min: 0
+                max: 1
+                step: 0.01
+
+            svg_path_fill:
+              type: display
+              content: "### Fill Options"
+              style: vertical
+              markdown: true
+            
+            header.svg.fill:
+              type: toggle
+              label: Use Fill
+              description: "Whether to fill the path with color. Set it to false to disable filling on polygons or circles."
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.svg.fillColor:
+              type: colorpicker
+              label: Fill Color
+              description: Defaults to the stroke color.
+              toggleable: true
+            
+            header.svg.fillOpacity:
+              type: number
+              description: "A number from 0 (completely transparent) to 1 (completely opaque)."
+              default: 0.2
+              validate:
+                min: 0
+                max: 1
+                step: 0.01
+            
+            svg_active:
+              type: display
+              content: "## SVG Active Style
+              
+              Applied when the feature is hovered over or receives focus."
+              style: vertical
+              markdown: true
+            
+            svg_active_stroke:
+              type: display
+              content: "### Stroke Options"
+              style: vertical
+              markdown: true
+            
+            # additional options: lineCap, lineJoin, dashArray, dashOffset
+
+            # TODO: Note that descriptions often come from Leaflet documentation verbatim
+
+            header.svg_active.stroke:
+              type: toggle
+              toggleable: true
+              label: Draw Stroke
+              description: "Whether to draw stroke along the path. Set it to false to disable borders on polygons or circles."
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.svg_active.color:
+              type: colorpicker
+              toggleable: true
+              label: Stroke Color
+              default: "#3388ff"
+            
+            header.svg_active.weight:
+              type: number
+              toggleable: true
+              label: Stroke Width (pixels)
+              default: 3
+              validate:
+                min: 1
+            
+            header.svg_active.opacity:
+              type: number
+              toggleable: true
+              label: Stroke Opacity
+              description: "A number from 0 (completely transparent) to 1 (completely opaque)."
+              default: 1.0
+              validate:
+                min: 0
+                max: 1
+                step: 0.01
+
+            svg_active_fill:
+              type: display
+              content: "### Fill Options"
+              style: vertical
+              markdown: true
+            
+            header.svg_active.fill:
+              type: toggle
+              toggleable: true
+              label: Use Fill
+              description: "Whether to fill the path with color. Set it to false to disable filling on polygons or circles."
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.svg_activev.fillColor:
+              type: colorpicker
+              label: Fill Color
+              description: Defaults to the stroke color.
+              toggleable: true
+            
+            header.svg_active.fillOpacity:
+              type: number
+              toggleable: true
+              description: "A number from 0 (completely transparent) to 1 (completely opaque)."
+              default: 0.2
+              validate:
+                min: 0
+                max: 1
+                step: 0.01

@@ -161,13 +161,15 @@ class Tour {
         return $views;
     }
 
-    // [id => [legendAltText, iconOptions]]
+    // [id => [legendAltText, iconOptions, pathOptions, pathActiveOptions]]
     public function getDatasets(): array {
         $datasets = [];
         foreach ($this->datasets as $datasetId => $dataset) {
             $datasets[$datasetId] = [
                 'legendAltText' => $dataset->get('legendAltText'),
                 'iconOptions' => $dataset->get('iconOptions'),
+                'pathOptions' => $dataset->get('pathOptions'),
+                'pathActiveOptions' => $dataset->get('pathActiveOptions'),
             ];
         }
         return $datasets;

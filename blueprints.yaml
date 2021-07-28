@@ -74,23 +74,23 @@ form:
               validate:
                 type: bool
             
-            datasets:
-              type: list
-              label: Dataset Information
-              # description: TODO
-              style: vertical
-              btnLabel: Add Dataset Info
-              fields:
-                .file:
-                  type: select
-                  label: Select the Dataset
-                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetFiles'
-                  validate:
-                    required: true
-                .name_prop:
-                  type: text
-                  label: Feature Name Property
-                  description: The property in the data file that will serve as the feature name.
+            # datasets:
+            #   type: list
+            #   label: Dataset Information
+            #   # description: TODO
+            #   style: vertical
+            #   btnLabel: Add Dataset Info
+            #   fields:
+            #     .file:
+            #       type: select
+            #       label: Select the Dataset
+            #       data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetFiles'
+            #       validate:
+            #         required: true
+            #     .name_prop:
+            #       type: text
+            #       label: Feature Name Property
+            #       description: The property in the data file that will serve as the feature name.
             
             markers:
               type: section
