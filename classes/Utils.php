@@ -2,8 +2,10 @@
 namespace Grav\Plugin\LeafletTour;
 
 use Grav\Common\Grav;
+use Grav\Common\Data\Data;
 use RocketTheme\Toolbox\File\File;
 use Grav\Common\File\CompiledJsonFile;
+use RocketTheme\Toolbox\File\MarkdownFile;
 
 /**
  * The Utils class is never instantiated as an object. Instead, it contains various functions that are generally useful for a leaflet tour that should not belong to one particular class.
@@ -269,6 +271,51 @@ class Utils {
             }
         }
         return implode("\r\n", $shortcodes);
+    }
+
+    public static function createPopupsPage(string $tourTitle) {
+        $uri = Grav::instance()['uri'];
+        $mdFile = MarkdownFile::instance(Grav::instance()['locator']->findResource('page://').'/popups/'.$uri->basename().'/default.md');
+        if (!$mdFile->exists() || empty($mdFile->markdown())) {
+            $content = "";
+            // add link
+            $content .="<a href='".str_replace("/admin/pages", "", $uri->route(true, true))."' class='btn'>Return to Tour</a>";
+            // add shortcode
+            $content .="\n\n".'[list-tour-popups route="'.self::getTourRouteFromTourConfig().'"][/list-tour-popups]';
+            $mdFile->markdown($content);
+            // set title
+            $mdFile->header(['title'=>"Popup Content for $tourTitle", 'visible'=>0]);
+            $mdFile->save();
+        }
+    }
+
+    // TODO: test
+    public static function getAllPopups(string $tourRoute): array {
+        $tourHeader = new Data((array)(MarkdownFile::instance($tourRoute)->header()));
+        $popups = []; // [id => name, popup]
+        $tourFeatures = array_column($tourHeader->get('features') ?? [], null, 'id');
+        foreach ($tourHeader->get("datasets") ?? [] as $dataset) {
+            $showAll = $dataset['show_all'];
+            $dataset = Dataset::getDatasets()[$dataset['file']];
+            // add all features
+            foreach ($dataset->getFeatures() as $featureId => $feature) {
+                if ($showAll || $tourFeatures[$featureId]) {
+                    $tourFeature = $tourFeatures[$featureId];
+                    $popup = $feature->getPopup();
+                    if ($tourFeature) {
+                        if (!empty($tourFeature['popup_content'])) $popup = $tourFeature['popup_content'];
+                        else if ($tourFeature['remove_popup']) $popup = null;
+                    }
+                    if (!empty($popup)) {
+                        $popups[$featureId] = [
+                            'name' => $feature->getName(),
+                            'popup' => $popup,
+                        ];
+                    }
+                }
+            }
+        }
+        return $popups;
     }
 }
 

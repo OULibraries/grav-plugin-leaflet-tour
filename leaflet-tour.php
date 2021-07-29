@@ -139,6 +139,8 @@ class LeafletTourPlugin extends Plugin
                 }
                 $header->set('datasets', $datasets);
             }
+            // handle popups page
+            Utils::createPopupsPage($header->get('title'));
         }
         // handle view config data
         else if (method_exists($obj, 'template') && $obj->template() === 'modular/view') {
