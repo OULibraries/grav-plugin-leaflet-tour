@@ -125,12 +125,12 @@ class TourTest extends Test {
         $this->isFalse($v['onlyShowViewFeatures']);
         // 3 remove default basemap (true)
         $this->isTrue($v['removeDefaultBasemap']);
-        // 4 starting zoom (12)
-        $this->checkNum(12, $v['zoom']);
-        // 5 starting location (coordinates and feature set)
-        $this->checkNum(30.12, $v['center'][0]);
-        // 6 features (none)
+        // 4 features (none)
         $this->isEmpty($v['features']);
+        // // 4 starting zoom (12)
+        // $this->checkNum(12, $v['zoom']);
+        // // 5 starting location (coordinates and feature set)
+        // $this->checkNum(30.12, $v['center'][0]);
     }
 
     function testViewThree() {
@@ -142,12 +142,12 @@ class TourTest extends Test {
         $this->isTrue($v['onlyShowViewFeatures']);
         // 3 remove default basemap (false)
         $this->isFalse($v['removeDefaultBasemap']);
-        // 4 starting zoom (10)
-        $this->checkNum(10, $v['zoom']);
-        // 5 starting location (only coordinates are set)
-        $this->checkNum(71.2, $v['center'][0]);
-        // 6 features (five)
+        // 4 features (five)
         $this->checkNum(5, count($v['features']));
+        // // 4 starting zoom (10)
+        // $this->checkNum(10, $v['zoom']);
+        // // 5 starting location (only coordinates are set)
+        // $this->checkNum(71.2, $v['center'][0]);
     }
 
     function testOtherViews() {
@@ -155,14 +155,14 @@ class TourTest extends Test {
         $v = $views[array_keys($views)[3]];
         // 1 View four: only show view features (false)
         $this->isFalse($v['onlyShowViewFeatures']);
-        // 2 View four: starting location (coordinates and feature set, feature is only in hiddenFeatures for tour)
-        $this->checkNum(12.3, $v['center'][0]);
-        // 3 View five: starting location (only feature set, feature not in tour)
-        $v = $views[array_keys($views)[4]];
-        $this->isEmpty($v['center']);
-        // 4 View six: starting location (not a point)
-        $v = $views[array_keys($views)[5]];
-        $this->isEmpty($v['center']);
+        // // 2 View four: starting location (coordinates and feature set, feature is only in hiddenFeatures for tour)
+        // $this->checkNum(12.3, $v['center'][0]);
+        // // 3 View five: starting location (only feature set, feature not in tour)
+        // $v = $views[array_keys($views)[4]];
+        // $this->isEmpty($v['center']);
+        // // 4 View six: starting location (not a point)
+        // $v = $views[array_keys($views)[5]];
+        // $this->isEmpty($v['center']);
     }
 
     function testGetDatasets() {

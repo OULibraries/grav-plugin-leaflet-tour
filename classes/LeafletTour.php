@@ -40,6 +40,10 @@ class LeafletTour {
     // ->route(true) -- /wyman-travels/tour-1
     // ->route(true, true) -- http://testing.digischolar.oucreate.com/wyman-travels/tour-1
     // ->host() -- testing.digischolar.oucreate.com
+    // ->basename() -- tour-1 (or /tour-1?)
+    // ->base() -- http://testing.digischolar.oucreate.com
+    // ->rootUrl() -- /wyman-travels
+    // ->rootUrl(true) -- http://testing.digischolar.oucreate.com/wyman-travels
     
     /*public function getPopupBtns($viewId, $tourData) {
         $view = $tourData['views'][$viewId];

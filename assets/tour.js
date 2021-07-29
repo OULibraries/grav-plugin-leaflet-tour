@@ -32,8 +32,6 @@ function modalIcon(options) {
 
 // create map
 var map = L.map('map', {
-    center: L.GeoJSON.coordsToLatLng(tourOptions.center),
-    zoom: tourOptions.zoom,
     zoomControl: true,
     maxZoom: tourOptions.maxZoom,
     minZoom: tourOptions.minZoom,
@@ -262,6 +260,25 @@ for (let [featureId, feature] of Object.entries(tourFeaturesJson)) {
     });
     tourDatasets.get(feature.properties.dataSource).addData(feature);
 }
+
+// set map and view bounds
+if (!tourOptions.bounds) {
+    let tmpFeatureGroup = L.featureGroup(Array.from(tourDatasets.values()));
+    tourOptions.bounds = tmpFeatureGroup.getBounds();
+}
+for (let [viewId, view] of tourViews) {
+    if (!view.bounds && view.features.length > 0) {
+        let tmpFeatureGroup = L.featureGroup();
+        for (let id of view.features) {
+            tmpFeatureGroup.addLayer(tourFeatures.get(id).layer);
+        }
+        view.bounds = tmpFeatureGroup.getBounds();
+    }
+}
+
+// set map bounds
+if (tourOptions.bounds) map.fitBounds(tourOptions.bounds);
+
 resetAllLabels();
 
 // map "on" functions
@@ -370,7 +387,7 @@ scroller.setup({
         }
     }, 500, tourState.tmpView);*/
     setTimeout(function() {
-        if (tourState.tmpView !== tourState.view) {
+        if (tourState.tmpView !== tourState.view && tourState.mapAnimation) {
             enterView(tourState.tmpView);
             tourState.mapNeedsAdjusting = true;
         }
@@ -379,7 +396,7 @@ scroller.setup({
     // use timeout function to ensure that exitView is only called when a view is exited but no new view is entered
     tourState.tmpView = null;
     setTimeout(function() {
-        if (!tourState.tmpView) {
+        if (!tourState.tmpView && tourState.mapAnimation) {
             exitView();
             tourState.mapNeedsAdjusting = true;
         }
@@ -522,17 +539,18 @@ function toggleHideNonViewFeatures(viewId, hide) {
 }
 
 function enterView(id) {
-    if (!tourState.mapAnimation) return;
     if (tourState.view && tourViews.get(tourState.view).onlyShowViewFeatures) toggleHideNonViewFeatures(tourState.view, false);
     if (id) {
         tourState.view = id;
         let view = tourViews.get(id);
         if (view.onlyShowViewFeatures) toggleHideNonViewFeatures(id, true);
-        let zoom = (view.zoom > tourOptions.maxZoom ? tourOptions.maxZoom : (view.zoom < tourOptions.minZoom ? tourOptions.minZoom : view.zoom));
-        let coords = (view.center ? L.GeoJSON.coordsToLatLng(view.center) : null);
-        if (zoom && coords) {
+        // let zoom = (view.zoom > tourOptions.maxZoom ? tourOptions.maxZoom : (view.zoom < tourOptions.minZoom ? tourOptions.minZoom : view.zoom));
+        // let coords = (view.center ? L.GeoJSON.coordsToLatLng(view.center) : null);
+        // if (zoom && coords) {
+        if (view.bounds) {
             // TODO: Any instance where I would want to add { animate: boolean } to flyTo args? (if so, add to else flyTo statement, too)
-            map.flyTo(coords, zoom);
+            // map.flyTo(coords, zoom);
+            map.flyToBounds(view.bounds);
             // TODO: If zoom doesn't change, does onZoomEnd function still get called and checkBasemaps()? And if it does, should I do something to prevent it?
         }
         // adjust basemaps - call here because we need setBasemaps(), not just checkBasemaps()
@@ -543,7 +561,8 @@ function enterView(id) {
         // exit view
         if (!tourState.view) return; // already no view
         tourState.view = null;
-        if (tourState.mapAnimation) map.flyTo(L.GeoJSON.coordsToLatLng(tourOptions.center), tourOptions.zoom);
+        // map.flyTo(L.GeoJSON.coordsToLatLng(tourOptions.center), tourOptions.zoom);
+        if (tourOptions.bounds) map.flyToBounds(tourOptions.bounds);
     }
 }
 

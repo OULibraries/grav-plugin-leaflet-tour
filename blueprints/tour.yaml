@@ -101,7 +101,7 @@ form:
               type: section
               title: Starting Position
               underline: true
-              text: This will be the default center of the map when not in a specific view. You can choose a location or set the latitude and longitude manually.
+              text: By default, the starting bounds will be determined by all included features. You can override this by providing bounds manually in the page header (expert mode) or by choosing a center and a distance (in degrees) from it. You can choose a location for the center or set the latitude and longitude manually.
             
             header.start.location:
               type: select
@@ -124,16 +124,14 @@ form:
                 max: 180
                 step: .00000000001
             
-            header.start.zoom:
+            header.start.distance:
               type: number
-              label: Starting Zoom Level
-              description: Choose an integer between 0 and 28 inclusive. Defaults to 10.
+              label: Distance from Starting Center
               size: long
-              default: 10
+              default: 1
               validate:
                 min: 0
-                max: 28
-                step: 1
+                step: .00000000001
 
             header.options_section:
               type: section
@@ -265,19 +263,19 @@ form:
               collapsible: true
               fields:
 
-                header.bounds_section:
+                header.maxbounds_section:
                   type: section
                   title: Maximum Map Bounds
                   text: These will define how far the map can be panned. All four values must be provided or map bounds will be ignored.
                 
-                header.bounds_cols:
+                header.maxbounds_cols:
                   type: columns
                   fields:
-                    header.bounds_col_1:
+                    header.maxbounds_col_1:
                       type: column
                       fields:
                         
-                        header.bounds.north:
+                        header.maxbounds.north:
                           type: number
                           label: North
                           description: Latitude for the Northern (top) boundary of the map.
@@ -286,7 +284,7 @@ form:
                             max: 90
                             step: .00000000001
                         
-                        header.bounds.south:
+                        header.maxbounds.south:
                           type: number
                           label: South
                           description: Latitude for the Southern (bottom) boundary of the map.
@@ -295,11 +293,11 @@ form:
                             max: 90
                             step: .00000000001
                     
-                    header.bounds_col_2:
+                    header.maxbounds_col_2:
                       type: column
                       fields:
                         
-                        header.bounds.east:
+                        header.maxbounds.east:
                           type: number
                           label: East
                           description: Longitude for the Eastern (right) boundary of the map.
@@ -308,7 +306,7 @@ form:
                             max: 180
                             step: .00000000001
                         
-                        header.bounds.west:
+                        header.maxbounds.west:
                           type: number
                           label: West
                           description: Longitude for the Western (left) boundary of the map.

@@ -116,7 +116,6 @@ class Tour {
     // [viewId => [basemaps, onlyShowViewFeatures, removeDefaultBasemap, noTourBasemaps, zoom, center, features]]
     public function getViews(): array {
         $views = [];
-        $viewCenters = [];
         foreach ($this->views as $viewId => $view) {
             $v = [
                 'basemaps'=>[],
@@ -125,15 +124,8 @@ class Tour {
                 'removeDefaultBasemap'=>$view->get('remove_default_basemap') ?? $this->header->get('remove_default_basemap') ?? true,
                 'noTourBasemaps'=>$view->get('no_tour_basemaps') ?? false,
             ];
-            $zoom = $view->get('start.zoom');
-            if (is_numeric($zoom) && $zoom >= 0) {
-                // check for start location - will need to use list of features to verify that the location exists and to grab the coordinates
-                if (!empty($view->get('start.location'))) $viewCenters[$viewId] = $view->get('start.location');
-                $long = $view->get('start.long');
-                $lat = $view->get('start.lat');
-                if (Utils::isValidPoint([$long, $lat])) $v['center'] = [$long, $lat];
-                $v['zoom'] = $zoom;
-            }
+            $bounds = $this->setStartingBounds($view->get('start'));
+            if (!empty($bounds)) $v['bounds'] = $bounds;
             if (!empty($view['features'])) {
                 foreach (array_column($view['features'], 'id') as $featureId) {
                     if ($this->features[$featureId]) $v['features'][] = $featureId;
@@ -145,18 +137,6 @@ class Tour {
                 if (!empty($this->getBasemaps()[$file])) $v['basemaps'][] = $file;
             }
             $views[$viewId] = $v;
-        }
-        // check for view centers
-        if (!empty($viewCenters)) {
-            foreach ($this->allFeatures as $featureId => $feature) {
-                $viewIds = array_keys($viewCenters, $featureId);
-                if (!empty($viewIds) && $feature['geojson']['geometry']['type'] === 'Point' && Utils::isValidPoint($feature['geojson']['geometry']['coordinates'])) {
-                    $feature = $feature['geojson'];
-                    foreach ($viewIds as $viewId) {
-                        $views[$viewId]['center'] = [$feature['geometry']['coordinates'][0], $feature['geometry']['coordinates'][1]];
-                    }
-                }
-            }
         }
         return $views;
     }
@@ -232,7 +212,6 @@ class Tour {
     // TODO: test
     public function getOptions(): array {
         $options = [
-            'zoom' => $this->header->get('start.zoom') ?? 10,
             'maxZoom' => $this->header->get('zoom_max') ?? 16,
             'minZoom' => $this->header->get('zoom_min') ?? 8,
             'tileServer' => $this->header->get('tileserver.url') ?? $this->config->get('tileserver.url'),
@@ -242,25 +221,40 @@ class Tour {
             'wideCol' => $this->header->get('wide_column') ?? $this->config->get('wide_column') ?? false,
             'showMapLocationInUrl' => $this->header->get('show_map_location_in_url') ?? $this->config->get('show_map_location_in_url') ?? true,
         ];
-        // tour center
-        if ($this->header->get('start.location')) {
-            $id = $this->header->get('start.location');
-            foreach ($this->allFeatures as $featureId => $feature) {
-                if ($featureId === $id && $feature['geojson']['geometry']['type'] === 'Point' && Utils::isValidPoint($feature['geojson']['geometry']['coordinates'])) {
-                    $feature = $feature['geojson'];
-                    $options['center'] = [$feature['geometry']['coordinates'][0], $feature['geometry']['coordinates'][1]];
+        // starting bounds for tour
+        $bounds = $this->setStartingBounds($this->header->get('start'));
+        if (!empty($bounds)) $options['bounds'] = $bounds;
+        // max bounds for tour
+        $maxBounds = Utils::setBounds($this->header->get('maxBounds') ?? []);
+        if ($maxBounds) $options['maxBounds'] = $maxBounds;
+        return $options;
+    }
+
+    // TODO: Test by testing tour/view starting bounds (replacing tests for zoom and center)
+    protected function setStartingBounds($start) {
+        $bounds = Utils::setBounds($start['bounds'] ?? []);
+        if (empty($bounds) && !empty($start['distance'])) {
+            if ($start['location']) {
+                foreach ($this->allFeatures as $featureId => $feature) {
+                    $feature = $feature['geojson']['geometry'];
+                    if ($featureId === $start['location'] && $feature['type'] === 'Point' && Utils::isValidPoint($feature['coordinates'])) {
+                        $long = $feature['coordinates'][0];
+                        $lat = $feature['coordinates'][1];
+                    }
                 }
             }
+            if (empty($lat)) {
+                // either a location was provided that didn't work, or no location was provided
+                $long = $start['long'];
+                $lat = $start['lat'];
+            }
+            if (!empty($long) && !empty($lat)) {
+                $distance = $start['distance'];
+                $bounds = ['north'=>($lat+$distance)%90, 'south'=>($lat-$distance)%90, 'east'=>($long+$distance)%180, 'west'=>($long-$distance)%180];
+                $bounds = Utils::setBounds($bounds);
+            }
         }
-        if (empty($options['center'])) {
-            $point = [$this->header->get('start.long'), $this->header->get('start.lat')];
-            if (Utils::isValidPoint($point)) $options['center'] = $point;
-            else $options['center'] = [0, 0];
-        }
-        // tour bounds
-        $bounds = Utils::setBounds($this->header->get('bounds') ?? []);
-        if ($bounds) $options['bounds'] = $bounds;
-        return $options;
+        return $bounds;
     }
 
     // returns html code for a popup button, referenced by shortcode
