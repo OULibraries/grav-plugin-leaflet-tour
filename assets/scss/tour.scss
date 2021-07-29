@@ -19,7 +19,6 @@ body {
     overflow-wrap: break-word;
 }
 
-// tmp
 .dialog-backdrop.active {
     z-index: 900;
 }
@@ -33,64 +32,6 @@ $accent-color-1: #fff;
 $nav-border: darkgray;
 
 $tablet: 600px;
-
-/* Temporary: Move these to theme.css */
-.skip-link:visited {
-    color: $link-blue;
-    // TODO: check hover and focus, too
-}
-.btn-disabled:hover {
-    box-shadow: none;
-    pointer-events: none;
-    cursor: default;
-}
-// possible nav menu modification
-.main-nav {
-    .nav-item {
-        border: none; // basically remove border
-        margin: 5px 0;
-    }
-    li {
-        border-bottom: 1px solid;
-        border-color: darkgray;
-        &:last-child {
-            border-bottom-style: none;
-            &.expanded {
-                & > .nav-item {
-                    border: none; // basically remove border-bottom-style
-                }
-            }
-        }
-    }
-}
-// back to top button opacity transition
-#back-to-top {
-    display: flex; // can move from .active
-    opacity: 0;
-    transition: opacity linear .5s;
-    pointer-events: none;
-    &.active, &:focus {
-        opacity: 1;
-        pointer-events: auto;
-    }
-}
-header a:hover:not(:focus) {
-    outline: 1px solid;
-}
-// TODO: icon button on focus - not darker inside
-/* end temporary */
-
-// TODO: Either move this to theme, or put in proper place in this file
-.btn {
-    white-space: pre-wrap;
-}
-
-// temp - move to modal.css
-@media screen and (min-width: 600px) {
-    [role="alertdialog"], [role="dialog"] {
-        max-height: calc(100% - 4rem);
-    }
-}
 
 @mixin font-size($val) {
     font-size: 1px * $val;
@@ -376,21 +317,27 @@ main {
                 }
                 &.leaflet-control-zoom-in:hover {
                     border-bottom: none;
+                    &.leaflet-disabled:hover {
+                        border-bottom: 1px solid #ccc;
+                        border-top: none;
+                    }
                 }
                 &.leaflet-control-zoom-out {
                     border-top: 1px solid #ccc;
                     &:hover {
                         border-top: none;
                     }
+                    &.leaflet-disabled:hover {
+                        border-top: 1px solid #ccc;
+                    }
                 }
-            }
-            .leaflet-disabled {
-                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 10 10'> <path d='M10 0 L0 10' fill='none' stroke='%23444444' stroke-width='.5' /></svg>");
-                color: #444;
-                &:hover {
-                    outline: none;
-                    border-top: 1px solid #ccc;
-                    background-color: #f4f4f4;
+                &.leaflet-disabled {
+                    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 10 10'> <path d='M10 0 L0 10' fill='none' stroke='%23444444' stroke-width='.5' /></svg>");
+                    color: #444;
+                    &:hover {
+                        outline: none;
+                        background-color: #f4f4f4;
+                    }
                 }
             }
         }

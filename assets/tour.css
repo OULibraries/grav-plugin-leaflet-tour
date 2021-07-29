@@ -22,57 +22,6 @@ body {
   z-index: 900;
 }
 
-/* Temporary: Move these to theme.css */
-.skip-link:visited {
-  color: #004fa3;
-}
-
-.btn-disabled:hover {
-  box-shadow: none;
-  pointer-events: none;
-  cursor: default;
-}
-
-.main-nav .nav-item {
-  border: none;
-  margin: 5px 0;
-}
-.main-nav li {
-  border-bottom: 1px solid;
-  border-color: darkgray;
-}
-.main-nav li:last-child {
-  border-bottom-style: none;
-}
-.main-nav li:last-child.expanded > .nav-item {
-  border: none;
-}
-
-#back-to-top {
-  display: flex;
-  opacity: 0;
-  transition: opacity linear 0.5s;
-  pointer-events: none;
-}
-#back-to-top.active, #back-to-top:focus {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-header a:hover:not(:focus) {
-  outline: 1px solid;
-}
-
-/* end temporary */
-.btn {
-  white-space: pre-wrap;
-}
-
-@media screen and (min-width: 600px) {
-  [role=alertdialog], [role=dialog] {
-    max-height: calc(100% - 4rem);
-  }
-}
 /* Header */
 header {
   position: sticky;
@@ -328,19 +277,25 @@ main {
 #map-wrapper #map .leaflet-control-zoom a.leaflet-control-zoom-in:hover {
   border-bottom: none;
 }
+#map-wrapper #map .leaflet-control-zoom a.leaflet-control-zoom-in:hover.leaflet-disabled:hover {
+  border-bottom: 1px solid #ccc;
+  border-top: none;
+}
 #map-wrapper #map .leaflet-control-zoom a.leaflet-control-zoom-out {
   border-top: 1px solid #ccc;
 }
 #map-wrapper #map .leaflet-control-zoom a.leaflet-control-zoom-out:hover {
   border-top: none;
 }
-#map-wrapper #map .leaflet-control-zoom .leaflet-disabled {
+#map-wrapper #map .leaflet-control-zoom a.leaflet-control-zoom-out.leaflet-disabled:hover {
+  border-top: 1px solid #ccc;
+}
+#map-wrapper #map .leaflet-control-zoom a.leaflet-disabled {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 10 10'> <path d='M10 0 L0 10' fill='none' stroke='%23444444' stroke-width='.5' /></svg>");
   color: #444;
 }
-#map-wrapper #map .leaflet-control-zoom .leaflet-disabled:hover {
+#map-wrapper #map .leaflet-control-zoom a.leaflet-disabled:hover {
   outline: none;
-  border-top: 1px solid #ccc;
   background-color: #f4f4f4;
 }
 #map-wrapper #map .leaflet-interactive {
