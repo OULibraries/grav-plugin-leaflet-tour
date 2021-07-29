@@ -86,6 +86,7 @@
         <div id="scrolly-content">
             {{ content|raw }}
         </div>
+        <a class="btn" href="{{ pages.url }}popups/{{ page.slug }}">View all popup content</a>
     </div>
     <div id="scroll-text">
     {% for view in page.collection() if view.template == 'modular/view' %}
