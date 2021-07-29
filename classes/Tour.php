@@ -14,6 +14,7 @@ class Tour {
     protected $basemaps; // [file => [file, bounds, minZoom, maxZoom]]
     protected $features;
     protected $allFeatures;
+    protected $tileserver;
 
     protected $config;
 
@@ -33,6 +34,7 @@ class Tour {
         $this->basemaps = $this->setBasemaps();
         $this->features = $this->setFeatures();
         $this->allFeatures = $this->setAllFeatures();
+        $this->tileserver = $this->setTileServer();
     }
 
     // [file => [file, bounds, minZoom, maxZoom]]
@@ -86,6 +88,22 @@ class Tour {
         return $features;
     }
 
+    protected function setTileServer(): array {
+        // check for tileserver selection from tour
+        $server = $this->header->get('tileserver.select');
+        if (!empty($server) && $server !== 'none') return Utils::TILESERVERS[$server];
+        // check for tileserver url from tour
+        $server =  $this->header->get('tileserver.url');
+        if (!empty($server)) return $this->header->get('tileserver');
+        // check for tileserver selection from plugin
+        $server = $this->config->get('tileserver.select');
+        if (!empty($server) && $server !== 'none') return Utils::TILESERVERS[$server];
+        // check for tileserver url from plugin
+        $server = $this->config->get('tileserver');
+        if (!empty($server)) return $this->config->get('tileserver');
+        return [];
+    }
+
     // [file => [file, bounds, minZoom, maxZoom]]
     public function getBasemaps(): array {
         return $this->basemaps;
@@ -101,9 +119,9 @@ class Tour {
         foreach (array_values(array_merge($configAttribution, $tourAttribution)) as $attr) {
             if (!empty($attr['text'])) $attribution[] = ['name'=>$attr['text'], 'url'=>$attr['url']];
         }
-        $tileserver = $this->header->get('tileserver');
-        if (empty($tileserver['url'])) $tileserver = $this->config->get('tileserver');
-        if (!empty($tileserver['attribution_text'])) $attribution[] = ['name'=>$tileserver['attribution_text'], 'url'=>$tileserver['attribution_url']];
+        if ($this->tileserver['url'] && $this->tileserver['attribution_text']) {
+            $attribution[] = ['name'=>$this->tileserver['attribution_text'], 'url'=>$this->tileserver['attribution_url']];
+        }
         // basemap attribution
         $configBasemaps = array_column($this->config->get('basemaps') ?? [], null, 'file');
         foreach (array_keys($this->getBasemaps()) as $file) {
@@ -113,7 +131,13 @@ class Tour {
         return $attribution;
     }
 
-    // [viewId => [basemaps, onlyShowViewFeatures, removeDefaultBasemap, noTourBasemaps, zoom, center, features]]
+    public function getExtraAttribution(): array {
+        $attribution = [];
+        if ($this->tileserver['name']) $attribution[] = $this->tileserver['attribution'];
+        return $attribution;
+    }
+
+    // [viewId => [basemaps, onlyShowViewFeatures, removeTileServer, noTourBasemaps, zoom, center, features]]
     public function getViews(): array {
         $views = [];
         foreach ($this->views as $viewId => $view) {
@@ -121,7 +145,7 @@ class Tour {
                 'basemaps'=>[],
                 'features'=>[],
                 'onlyShowViewFeatures'=>$view->get('only_show_view_features') ?? $this->header->get('only_show_view_features') ?? false,
-                'removeDefaultBasemap'=>$view->get('remove_default_basemap') ?? $this->header->get('remove_default_basemap') ?? true,
+                'removeTileServer'=>$view->get('remove_tileserver') ?? $this->header->get('remove_tileserver') ?? true,
                 'noTourBasemaps'=>$view->get('no_tour_basemaps') ?? false,
             ];
             $bounds = $this->setStartingBounds($view->get('start'));
@@ -215,12 +239,15 @@ class Tour {
             'maxZoom' => $this->header->get('zoom_max') ?? 16,
             'minZoom' => $this->header->get('zoom_min') ?? 8,
             'tileServer' => $this->header->get('tileserver.url') ?? $this->config->get('tileserver.url'),
-            'removeDefaultBasemap' => $this->header->get('remove_default_basemap'),
+            'removeTileServer' => $this->header->get('remove_tileserver'),
             'tourMaps' => array_column($this->header->get('basemaps') ?? [], 'file'),
             //'datasets' => $this->getDatasets(),
             'wideCol' => $this->header->get('wide_column') ?? $this->config->get('wide_column') ?? false,
             'showMapLocationInUrl' => $this->header->get('show_map_location_in_url') ?? $this->config->get('show_map_location_in_url') ?? true,
         ];
+        // tile server
+        if ($this->tileserver['url']) $options['tileServer'] = $this->tileserver['url'];
+        else if ($this->tileserver['type'] === 'stamen') $options['stamenTileServer'] = $this->tileserver['name'];
         // starting bounds for tour
         $bounds = $this->setStartingBounds($this->header->get('start'));
         if (!empty($bounds)) $options['bounds'] = $bounds;

@@ -300,7 +300,7 @@ class LeafletTourPlugin extends Plugin
     public static function getBasemaps() {
         $basemaps = Grav::instance()['config']->get('plugins.leaflet-tour')['basemaps'];
         if (!empty($basemaps)) return array_column($basemaps, 'file', 'file');
-        else return ['empty'];
+        else return [];
     }
 
     // list of properties for the dataset associated with the dataset config file
@@ -311,5 +311,17 @@ class LeafletTourPlugin extends Plugin
             return $dataset->getProperties();
         }
         return [];
+    }
+
+    public static function getTileServers($key = null) {
+        if (empty($key)) {
+            $servers = ['none'=>'None'];
+            foreach (Utils::TILESERVERS as $key=>$tileserver) {
+                $servers[$key] = $tileserver['select'];
+            }
+            return $servers;
+        } else {
+            return Utils::TILESERVERS[$key];
+        }
     }
 }

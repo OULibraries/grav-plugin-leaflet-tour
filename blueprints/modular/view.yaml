@@ -111,11 +111,11 @@ form:
                   validate:
                     type: bool
                 
-                header.remove_default_basemap:
+                header.remove_tileserver:
                   type: toggle
                   toggleable: true
-                  label: Remove Default Basemap
-                  description: If toggled, will remove the default basemap when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. Overrides the tour setting.
+                  label: Remove Tile Server
+                  description: If toggled, will remove the tile server when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. Overrides the tour setting.
                   highlight: 1
                   default: 1
                   options:

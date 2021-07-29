@@ -186,10 +186,10 @@ form:
               validate:
                 type: bool
             
-            header.remove_default_basemap:
+            header.remove_tileserver:
               type: toggle
-              label: Remove Default Basemap
-              description: If toggled, will remove the default basemap when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area.
+              label: Remove Tile Server
+              description: If toggled, will remove the tile server when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area.
               highlight: 1
               default: 1
               options:
@@ -388,19 +388,25 @@ form:
                 
                 header.tileserver_section:
                   type: section
-                  title: Default Basemap Tile Server
+                  title: Tile Server
+                  text: Choose one of the tile servers from the dropdown, or input the URL and attribution info for a tile server.
                   underline: true
+            
+                header.tileserver.select:
+                  type: select
+                  label: Select a Tile Server
+                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServers'
                 
                 header.tileserver.url:
                   type: text
-                  label: Default Basemap URL
+                  label: Tile Server URL
                 
                 header.tileserver.attribution_text:
                   type: text
-                  label: Default Basemap Attribution
+                  label: Tile Server Attribution
                   description: This text will be displayed in the footer.
                 
                 header.tileserver.attribution_url:
                   type: text
-                  label: Default Basemap Attribution Link
+                  label: Tile Server Attribution URL
                   description: If provided, the attribution will become a link to this URL.

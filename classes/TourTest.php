@@ -108,7 +108,7 @@ class TourTest extends Test {
         // 2 only show view features (not set) (tour says false)
         $this->isFalse($v['onlyShowViewFeatures']);
         // 3 remove default basemap (not set) (tour says true)
-        $this->isTrue($v['removeDefaultBasemap']);
+        $this->isTrue($v['removeTileServer']);
         // 4, 5 starting zoom (-1 - no start) (but coords are set)
         $this->isEmpty($v['zoom']);
         $this->isEmpty($v['center']);
@@ -124,7 +124,7 @@ class TourTest extends Test {
         // 2 only show view features (true) (but no features, so should be false)
         $this->isFalse($v['onlyShowViewFeatures']);
         // 3 remove default basemap (true)
-        $this->isTrue($v['removeDefaultBasemap']);
+        $this->isTrue($v['removeTileServer']);
         // 4 features (none)
         $this->isEmpty($v['features']);
         // // 4 starting zoom (12)
@@ -141,7 +141,7 @@ class TourTest extends Test {
         // 2 only show view features (true)
         $this->isTrue($v['onlyShowViewFeatures']);
         // 3 remove default basemap (false)
-        $this->isFalse($v['removeDefaultBasemap']);
+        $this->isFalse($v['removeTileServer']);
         // 4 features (five)
         $this->checkNum(5, count($v['features']));
         // // 4 starting zoom (10)

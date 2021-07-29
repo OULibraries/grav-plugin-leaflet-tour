@@ -44,12 +44,12 @@ if (tourOptions['bounds']) map.setMaxBounds(tourOptions['bounds']);
 // Basemaps - Tile Server
 //map.createPane('tileserverPane');
 //map.getPane('tileserverPane').style.zIndex = 400;
-var tileLayer = L.tileLayer(tourOptions.tileServer, {
+let tileLayerOptions = {
     minZoom: tourOptions.minZoom,
     maxZoom: tourOptions.maxZoom,
-    // TODO: updateWhenZooming: default true
-    // TOOD: bounds: tiles will only be loaded inside bounds provided
-});
+}
+if (tourOptions.stamenTileServer) var tileLayer = new L.StamenTileLayer(tourOptions.stamenTileServer, tileLayerOptions);
+else var tileLayer = L.tileLayer(tourOptions.tileServer, tileLayerOptions);
 map.addLayer(tileLayer);
 
 // set up additional image basemaps
@@ -338,7 +338,7 @@ function checkBasemaps() {
         if (!map.hasLayer(layer)) map.addLayer(layer);
     }
     // check default basemap
-    if (tourState.activeBasemaps.length > 0 && ((tourState.view && tourViews.get(tourState.view).removeDefaultBasemap) || (tourOptions.removeDefaultBasemap))) {
+    if (tourState.activeBasemaps.length > 0 && ((tourState.view && tourViews.get(tourState.view).removeTileServer) || (tourOptions.removeTileServer))) {
         if (map.hasLayer(tileLayer)) map.removeLayer(tileLayer);
     } else {
         if (!map.hasLayer(tileLayer)) map.addLayer(tileLayer);

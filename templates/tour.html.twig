@@ -26,6 +26,7 @@
     {# Question: Download these? #}
     {% do assets.addJs('https://unpkg.com/intersection-observer', {group:'bottom'}) %}
     {% do assets.addJs('https://unpkg.com/scrollama', {group:'bottom'}) %}
+    {% do assets.addJs('https://stamen-maps.a.ssl.fastly.net/js/tile.stamen.js?v1.3.0', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/tour.js', {group:'bottom'}) %}
 
     <script>
@@ -183,6 +184,14 @@
                 {% if not item.isLast %} <i aria-hidden="true" class="fas fa-circle"></i>{% endif %}</li>
             {% endfor %}
         </ul>
+    </div>
+    {% endif %}
+    {% set attribution = tourData.getExtraAttribution() %}
+    {% if attribution|length > 0 %}
+    <div class="footer-section">
+        {% for item in attribution %}
+            {{ item }}
+        {% endfor %}
     </div>
     {% endif %}
     {{ parent() }}
