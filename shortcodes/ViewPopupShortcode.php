@@ -1,8 +1,6 @@
 <?php
 namespace Grav\Plugin\Shortcodes;
 
-// TODO: Move some of this to method somewhere I can test it properly?
-
 //use Grav\Common\Grav;
 use Grav\Plugin\LeafletTour\Dataset;
 use Grav\Plugin\LeafletTour\Tour;
@@ -18,7 +16,6 @@ class ViewPopupShortcode extends Shortcode
             if ($current->template() !== 'tour') return ''; // don't proceed if we are not in a tour
             $header = (array)$current->header();
             if (empty($header['datasets'])) return '';
-            //return Grav::instance()['locator']->findResource('plugin://');
 
             $buttonId = 'sc_btn_'.$this->shortcode->getId($sc);
             $id = $sc->getParameter('id');

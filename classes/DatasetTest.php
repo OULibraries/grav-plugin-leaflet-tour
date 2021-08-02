@@ -99,7 +99,7 @@ class DatasetTest extends Test {
         $file = ['path'=>'/user/data/leaflet-tour/datasets/uploads/LOCI_2.js', 'type'=>'text/javascript', 'name'=>'LOCI_2.js'];
         $json = Utils::parseDatasetUpload($file);
         $this->isNotEmpty($json);
-        // TODO: Other file types
+        // Option: Other file types
     }
 
     function testPointsDatasetOne() {

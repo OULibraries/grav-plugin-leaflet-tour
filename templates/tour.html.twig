@@ -82,8 +82,6 @@
 <div id="scrolly">
     <div class="scroll-top">
         <h1>{{ page.title }}</h1>
-        <!-- TODO: This might still be useful for linking to another page -->
-        <!--button id="all-popups-btn" class="btn mobile-only">See All Popup Content</button-->
         <div id="scrolly-content">
             {{ content|raw }}
         </div>
@@ -94,7 +92,6 @@
         {% set viewId = tourData.getViewId(view) %}
         <div class="step" id="{{ viewId }}">
             <h2>{{ view.header.title }}</h2>
-            <!-- TODO: "Zoom to View" or some other sort of text? -->
             <button data-view="{{ viewId }}" id="show-view-{{ viewId }}" class="btn show-view-btn">Show View</button>
             {{ view.content|raw }}
             {% set viewPopups = tourData.getViewPopups(viewId) %}
@@ -130,7 +127,6 @@
                 {% if header.legend_toggles %}
                 <label>
                     <input type="checkbox" class="legend-checkbox" value="{{ item.dataSource }}" checked>
-                    <!-- TODO: How to announce to screen readers when map content changes due to checkbox change -->
                 {% else %}
                 <div>
                 {% endif %}

@@ -1,7 +1,3 @@
-// TODO: Note that as a matter of standards, since geoJson must be x,y (or long, lat), all coord will be stored as long, lat. While this may be weird in some cases (and may not match the visual display), it will allow for consistency on the backend.
-
-// TODO: Use Leaflet.markerCluster to allow a given dataset to be clustered
-
 var tourState = {
     view: null,
     tmpView: null,
@@ -48,7 +44,10 @@ let tileLayerOptions = {
     minZoom: tourOptions.minZoom,
     maxZoom: tourOptions.maxZoom,
 }
-if (tourOptions.stamenTileServer) var tileLayer = new L.StamenTileLayer(tourOptions.stamenTileServer, tileLayerOptions);
+if (tourOptions.stamenTileServer) {
+    tileLayerOptions.maxNativeZoom = 14;
+    var tileLayer = new L.StamenTileLayer(tourOptions.stamenTileServer, tileLayerOptions);
+}
 else var tileLayer = L.tileLayer(tourOptions.tileServer, tileLayerOptions);
 map.addLayer(tileLayer);
 
@@ -66,18 +65,6 @@ setBasemaps();
 
 // set up datasets (without features, to start with - just creating the list and defining the options)
 for (let [key, dataset] of tourDatasets) {
-    // TODO: temp
-    /*dataset.pathOptions = {
-        color: "#ffffff",
-        weight: 3,
-        opacity: .65,
-        bubblingMouseEvents: false,
-    };
-    dataset.pathActiveOptions = {
-        opacity: 1,
-        fillOpacity: .4,
-        weight: 5
-    };*/
     let layer = L.geoJson(null, {
         // marker icons - for points
         pointToLayer: function(feature, latlng) {
@@ -94,9 +81,6 @@ for (let [key, dataset] of tourDatasets) {
         interactive: true,
         // extra
         dataset: dataset,
-        // TODO: try removing
-        dataVar: 'tourFeaturesJson',
-        layerName: key + 'Layer',
     });
     tourDatasets.set(key, layer);
     map.addLayer(layer);
@@ -123,8 +107,6 @@ function createMarker(props, latlng, dataset) {
         riseOnHover: true,
         id: props.id
     });
-    // TODO: Is there any reason I would want easy access to the marker object, rather than just the icon element?
-    // tourFeatures.get(props.id).marker = marker;
     return marker;
 }
 function setFeatureInteraction() {
@@ -232,15 +214,13 @@ function setupFeature(geoJsonFeature, layer) {
     let feature = tourFeatures.get(featureId);
     feature.layer = layer;
     createTooltip(props.name, props.dataSource, layer);
-    // TODO: May need to move functions from createMarker here when working on path functionality
 }
 function createTooltip(name, datasetId, layer) {
     if (name !== null) { // just in case
         layer.bindTooltip(String('<div aria-hidden="true">' + name) + '</div>', {
             permanent: true,
-            offset: [-0, -16],
             className: datasetId,
-            // TODO: interactive true?
+            // Option: interactive true
         });
         labels.push(layer);
         addLabel(layer, totalMarkers);
@@ -261,6 +241,15 @@ for (let [featureId, feature] of Object.entries(tourFeaturesJson)) {
     tourDatasets.get(feature.properties.dataSource).addData(feature);
 }
 
+// deal with non-point tooltips - without this, tooltips associated with polygons that are much smaller than the starting view may be bound way too far off
+for (let feature of tourFeatures.values()) {
+    if (!feature.point) {
+        map.fitBounds(feature.layer.getBounds());
+        feature.layer.closeTooltip();
+        feature.layer.openTooltip();
+    }
+}
+
 // set map and view bounds
 if (!tourOptions.bounds) {
     let tmpFeatureGroup = L.featureGroup(Array.from(tourDatasets.values()));
@@ -268,7 +257,7 @@ if (!tourOptions.bounds) {
 }
 for (let [viewId, view] of tourViews) {
     if (!view.bounds && view.features.length > 0) {
-        let tmpFeatureGroup = L.featureGroup();
+        let tmpFeatureGroup = new L.FeatureGroup();
         for (let id of view.features) {
             tmpFeatureGroup.addLayer(tourFeatures.get(id).layer);
         }
@@ -277,7 +266,7 @@ for (let [viewId, view] of tourViews) {
 }
 
 // set map bounds
-if (tourOptions.bounds) map.fitBounds(tourOptions.bounds);
+if (tourOptions.bounds) map.fitBounds(tourOptions.bounds, { padding: [10, 10] });
 
 resetAllLabels();
 
@@ -379,13 +368,6 @@ scroller.setup({
 }).onStepEnter(function(e) {
     // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
     tourState.tmpView = e.element.getAttribute("id");
-    // TODO: trying something slightly different
-    /*setTimeout(function(id) {
-        if (tourState.tmpView === id) {
-            enterView(id);
-            tourState.mapNeedsAdjusting = true;
-        }
-    }, 500, tourState.tmpView);*/
     setTimeout(function() {
         if (tourState.tmpView !== tourState.view && tourState.mapAnimation) {
             enterView(tourState.tmpView);
@@ -404,14 +386,6 @@ scroller.setup({
 });
 
 $(document).ready(function() {
-
-    // TODO: Move to theme
-    $(".dialog-backdrop").on("click", function(e) {
-        closeDialog($(this).children()[1])
-    });
-    $(".dialog-backdrop").children().on("click", function(e) {
-        e.stopPropagation();
-    });
 
     // this function modified from theme.js - overrides the function there, but relies on variables and function set there
     window.onscroll = function(e) {
@@ -453,7 +427,7 @@ $(document).ready(function() {
     $("#content-toggle-btn").on("click", function(e) {
         if (this.getAttribute("data-current") === "scrolly") {
             switchToMap(this.getAttribute("id"));
-            // TODO: explicitly set focus to map?
+            // Question: explicitly set focus to map?
             adjustMap();
         } else {
            switchToContent(this.getAttribute("data-focus"));
@@ -467,8 +441,6 @@ $(document).ready(function() {
 
     $("#map-animation-toggle").on("input", function(e) {
         let on = (this.checked);
-        //console.log(on);
-        //$(this).attr("value", (on ? "off" : "on"));
         tourState.mapAnimation = on;
         window.localStorage.setItem("mapAnimation", on);
     });
@@ -482,7 +454,7 @@ $(document).ready(function() {
                 toggleHideFeature(feature);
             }
         }
-        // TODO: Is this good to have, or no?
+        // Question: Info to give screen reader?
         resetAllLabels();
     });
 
@@ -491,7 +463,7 @@ $(document).ready(function() {
 
     $(".show-view-btn").on("click", function(e) {
         if (window.innerWidth < mobileWidth) { // constant from theme
-            // TODO: Is the change of focus to map expected? Should I also change focus on desktop?
+            // Question: Is the change of focus to map expected? Should I also change focus on desktop?
             switchToMap(this.getAttribute("id"));
             $("#map").focus();
         }
@@ -501,7 +473,7 @@ $(document).ready(function() {
 
 function switchToMap(focusElement) {
     $("body").addClass("map-active");
-    // TODO: explicitly set focus to map?
+    // Question: explicitly set focus to map?
     // change button text/value
     // set button data-focus to focusElement
     console.log(focusElement);
@@ -511,7 +483,7 @@ function switchToContent(focusElement) {
     $("body").removeClass("map-active");
     tourState.scrolly = true;
     window.scrollTo(0, tourState.scrollyPos);
-    // TODO: If no contentFocus, do I need to explicitly put focus somewhere? (e.g. used map toggle button to go to map)
+    // Question: If no contentFocus, do I need to explicitly put focus somewhere? (e.g. used map toggle button to go to map)
     if (focusElement) document.getElementById(focusElement).focus(); 
     // change button text/value
     $("#content-toggle-btn").attr("data-focus", "").attr("data-current", "scrolly").text("View Map");
@@ -544,14 +516,9 @@ function enterView(id) {
         tourState.view = id;
         let view = tourViews.get(id);
         if (view.onlyShowViewFeatures) toggleHideNonViewFeatures(id, true);
-        // let zoom = (view.zoom > tourOptions.maxZoom ? tourOptions.maxZoom : (view.zoom < tourOptions.minZoom ? tourOptions.minZoom : view.zoom));
-        // let coords = (view.center ? L.GeoJSON.coordsToLatLng(view.center) : null);
-        // if (zoom && coords) {
         if (view.bounds) {
-            // TODO: Any instance where I would want to add { animate: boolean } to flyTo args? (if so, add to else flyTo statement, too)
-            // map.flyTo(coords, zoom);
-            map.flyToBounds(view.bounds);
-            // TODO: If zoom doesn't change, does onZoomEnd function still get called and checkBasemaps()? And if it does, should I do something to prevent it?
+            // Option: Any instance where I would want to add { animate: boolean } to flyTo args? (if so, add to else flyTo statement, too)
+            map.flyToBounds(view.bounds, { padding: [10, 10] });
         }
         // adjust basemaps - call here because we need setBasemaps(), not just checkBasemaps()
         setBasemaps();
@@ -561,19 +528,10 @@ function enterView(id) {
         // exit view
         if (!tourState.view) return; // already no view
         tourState.view = null;
-        // map.flyTo(L.GeoJSON.coordsToLatLng(tourOptions.center), tourOptions.zoom);
-        if (tourOptions.bounds) map.flyToBounds(tourOptions.bounds);
+        if (tourOptions.bounds) map.flyToBounds(tourOptions.bounds, { padding: [10, 10] });
     }
 }
 
 function exitView() {
     enterView(null);
 }
-
-// TODO: CSS
-// - make minimum height of .scroll-top 33% (scrollamaOptions.offset) + 40px - var
-// - for desktop, var is 100 or 110
-// - for mobile, var is 0
-//
-// - make minimum height of footer 67% (1-scrollamaOptions.offset) + 40px - var
-// - for desktop and mobile, var will need to be determined by using a reasonable minimum for last view height

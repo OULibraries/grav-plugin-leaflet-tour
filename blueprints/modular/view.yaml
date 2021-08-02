@@ -62,7 +62,6 @@ form:
               type: number
               label: Distance from Starting Center
               size: long
-              default: 1
               validate:
                 min: 0
                 step: .00000000001

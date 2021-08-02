@@ -113,7 +113,6 @@ class Tour {
     public function getAttribution(): array {
         $attribution = [];
         // get attribution from config
-        // TODO: allow adding attribution in tour config, too
         $configAttribution = array_column($this->config->get('attribution_list') ?? [], null, 'text');
         $tourAttribution = array_column($this->header->get('attribution_list') ?? [], null, 'text');
         foreach (array_values(array_merge($configAttribution, $tourAttribution)) as $attr) {
@@ -233,7 +232,6 @@ class Tour {
         return $viewPopups;
     }
 
-    // TODO: test
     public function getOptions(): array {
         $options = [
             'maxZoom' => $this->header->get('zoom_max') ?? 16,
@@ -257,10 +255,9 @@ class Tour {
         return $options;
     }
 
-    // TODO: Test by testing tour/view starting bounds (replacing tests for zoom and center)
     protected function setStartingBounds($start) {
         $bounds = Utils::setBounds($start['bounds'] ?? []);
-        if (empty($bounds) && !empty($start['distance'])) {
+        if (empty($bounds) && !empty($start['distance']) && $start['distance'] > 0) {
             if ($start['location']) {
                 foreach ($this->allFeatures as $featureId => $feature) {
                     $feature = $feature['geojson']['geometry'];
@@ -289,7 +286,6 @@ class Tour {
         return '<button id="'.$buttonId.'" onClick="openDialog(\''.$featureId.'-popup\', this)" class="btn view-popup-btn">View '.$featureName.' popup</button>';
     }
 
-    // TODO: test
     public static function hasPopup($feature, $tourFeatures): bool {
         $hasPopup = !empty($feature->getPopup());
         $id = $feature->getId();

@@ -1,15 +1,6 @@
-/* Notes from tmp.css
+@use "sass:color";
 
-A couple of header logo styles - probably mostly a note that I need to work on the header:
-header .logo {
-    max-width: 100%;
-}
-header .logo a {
-    padding: 0;
-}
-*/
-
-// TODO: Is hiding the scrollbar bad for accessibility?
+// Question: Is hiding the scrollbar bad for accessibility?
 ::-webkit-scrollbar {
     display: none;
 }
@@ -23,13 +14,10 @@ body {
     z-index: 900;
 }
 
-$link-blue: #004fa3;
-$main-light: #fff;
-$main-dark: #333;
 $theme-color-1: #070f4e;
 $accent-color-1: #fff;
-// TODO: temp name here:
-$nav-border: darkgray;
+$theme-color-2: #505050;
+$nav-border: color.adjust($theme-color-2, $lightness: 35%);
 
 $tablet: 600px;
 
@@ -70,9 +58,8 @@ header {
     position: sticky;
     top: 0;
     z-index: 1;
-    // TODO: Display logo or not display logo? (and how to deal with logo replacing site title)
     #header-wrapper {
-        overflow: hidden; // TODO: Is this okay/good?
+        overflow: hidden; // Question: Is overflow hidden okay?
     }
     #open-settings-btn {
         margin: 10px;
@@ -168,7 +155,6 @@ header {
                     &.expanded {
                         @include font-size(18);
                     }
-                    // TODO: Is it weird to have the nav font switch back and forth?
                 }
             }
         }
@@ -255,9 +241,6 @@ main {
                 margin: 10px;
             }
         }
-        // TODO: some kind of transition?
-        // TODO: Which side should the plus go on?
-        // TODO: Should legend be on the same level as the show menu button (mobile, menu hidden)?
         &.minimized {
             padding: 5px 0;
             width: 120px;
@@ -416,7 +399,6 @@ main {
             height: calc(100% - 100px);
             left: 0;
             width: 100%;
-            // TODO: change height when header changes height
         }
     }
     // desktop

@@ -170,12 +170,10 @@ class UtilsTest extends Test {
         return $file->exists();
     }
 
-    // TODO: Much more complicated test
     /*function testParseDatasetUpload() {
         //
     }*/
 
-    // TODO: Requires Dataset::getDatasets()
     /*function testGenerateShortcodeList() {
         $keys = array_keys(Dataset::getDatasets());
         $datasets = Dataset::getDatasets();

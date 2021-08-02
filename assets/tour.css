@@ -1,13 +1,3 @@
-/* Notes from tmp.css
-
-A couple of header logo styles - probably mostly a note that I need to work on the header:
-header .logo {
-    max-width: 100%;
-}
-header .logo a {
-    padding: 0;
-}
-*/
 ::-webkit-scrollbar {
   display: none;
 }

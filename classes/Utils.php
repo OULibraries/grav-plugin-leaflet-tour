@@ -37,7 +37,7 @@ class Utils {
     const MARKER_FALLBACKS = [
         'iconSize' => [14, 14],
         'shadowSize' => [],
-        'tooltipAnchor' => [-5, 5],
+        'tooltipAnchor' => [7, 0],
         'iconAnchor' => [],
     ];
 
@@ -111,7 +111,7 @@ class Utils {
     }
 
     /**
-     * Checks that coordinates are an array of linear rings (line strings with four or more positions where the last position and firset position are the same) TODO: Allow for correcting if three or more positions with not same first and last
+     * Checks that coordinates are an array of linear rings (line strings with four or more positions where the last position and firset position are the same)
      */
     public static function isValidPolygon($coords): bool {
         if (!is_array($coords)) return false;
@@ -239,7 +239,7 @@ class Utils {
                 default:
                     break;
             }
-            // TODO: Check for other file types
+            // Option: Check for other file types
             if (empty($jsonArray)) return [];
             return [$jsonArray, $jsonFilename];
         } catch (\Throwable $t) {
@@ -310,7 +310,6 @@ class Utils {
         }
     }
 
-    // TODO: test
     public static function getAllPopups(string $tourRoute): array {
         $tourHeader = new Data((array)(MarkdownFile::instance($tourRoute)->header()));
         $popups = []; // [id => name, popup]

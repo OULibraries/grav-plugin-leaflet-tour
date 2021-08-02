@@ -72,10 +72,9 @@ class Feature {
     public function update($featureData) {
         // everything also stored in json file
         $this->customName = $featureData['custom_name'];
-        // TODO: consider ensuring customName is set to null when a customName is not provided (current custom_name=>null does nothing)
         if ($this->customName) $this->name = $this->customName;
         $coords = $featureData['coordinates'];
-        // TODO: Fix coordinates - doesn't actually work with yaml format
+        // Option: Fix coordinates - doesn't actually work with yaml format (only matters if we're actually adding coordinates as a thing)
         if ($coords && $coords !== $this->coordinates && Utils::areValidCoordinates($coords, $this->type)) $this->coordinates = $coords;
         $props = $featureData['properties'];
         if (!empty($props) && $props !== $this->properties) $this->properties = $props;
@@ -85,8 +84,7 @@ class Feature {
 
     // getters
 
-    // TODO: remove param
-    public function getName($nameProperty='') {
+    public function getName() {
         return $this->name;
     }
     public function getPopup() {
@@ -129,9 +127,8 @@ class Feature {
     /**
      * Returns the feature in the format needed for the dataset page header
      */
-    // TODO: remove param
-    public function asYaml($nameProperty=''): array {
-        // TODO: Change as more options provided in dataset config
+    public function asYaml(): array {
+        // Option: Change as more options provided in dataset config
         $yaml = [
             'id'=>$this->id,
             'name'=>$this->getName(),
@@ -179,8 +176,7 @@ class Feature {
         return $jsonList;
     }
 
-    // TODO: remove param
-    public static function buildYamlList(array $features, string $nameProperty=''): array {
+    public static function buildYamlList(array $features): array {
         $yamlList = [];
         foreach ($features as $id=>$feature) {
             $yamlList[] = $feature->asYaml();
@@ -188,8 +184,7 @@ class Feature {
         return $yamlList;
     }
 
-    // TODO: remove param
-    public static function buildConfigList(array $features, string $nameProperty=''): array {
+    public static function buildConfigList(array $features): array {
         $configList = [];
         foreach ($features as $id=>$feature) {
             $configList[$id] = $feature->getName();

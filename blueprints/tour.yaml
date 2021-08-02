@@ -128,7 +128,6 @@ form:
               type: number
               label: Distance from Starting Center
               size: long
-              default: 1
               validate:
                 min: 0
                 step: .00000000001
@@ -219,7 +218,7 @@ form:
               collapsible: true
               fields:
 
-                # TODO: Select properties to automatically add to popups (dataset override)?
+                # Option: Select properties to automatically add to popups (dataset override)?
 
                 header.features:
                   type: list
@@ -240,7 +239,7 @@ form:
                       type: toggle
                       label: Remove Default Popup
                       description: Will prevent default popup (as set in dataset configuration) from being displayed, even if no popup content is provided to override it. It is not necessary if popup content is provided below, as this will automatically override the default popup.
-                      # TODO: Still needs better wording, especially if automatically adding properties to a popup becomes a thing
+                      # Note: Still needs better wording, especially if automatically adding properties to a popup becomes a thing
                       highlight: 1
                       default: 0
                       options:
@@ -355,7 +354,6 @@ form:
               type: fieldset
               title: Overrides
               icon: flag
-              # TODO: Text: overriding stuff?
               collapsed: true
               collapsible: true
               fields:

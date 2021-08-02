@@ -49,28 +49,15 @@ form:
                       type: text
                       label: Dataset Name
                   
-                    # TODO: customize dataset id?
+                    # Option: customize dataset id
 
-                    # TODO: select or readonly feature type?
+                    # Option: readonly feature type
 
                     folder:
                       type: folder-slug
                       label: PLUGIN_ADMIN.FOLDER_NAME
                       validate:
                         rule: slug
-
-                    route:
-                      type: parents
-                      label: PLUGIN_ADMIN.PARENT
-                      classes: fancy
-
-                    name:
-                      type: select
-                      classes: fancy
-                      label: PLUGIN_ADMIN.PAGE_FILE
-                      help: PLUGIN_ADMIN.PAGE_FILE_HELP
-                      default: default
-                      data-options@: '\Grav\Common\Page\Pages::pageTypes'
                 
                 col2:
                   type: column
@@ -84,7 +71,7 @@ form:
                     info:
                       type: display
                       markdown: true
-                      content: 'TODO: Information should go here.'
+                      content: 'This page was automatically created. Use the Features, Icon, and SVG tabs to customize your dataset. Please do not enter expert mode to change options that are read only, as changing these may break aspects of this plugin.'
         
         features:
           type: tab
@@ -97,15 +84,15 @@ form:
               description: "The property in the data file that contains features' names."
               data-options@: 'Grav\Plugin\LeafletTourPlugin::getPropertyList'
 
-            # TODO: auto add properties?
+            # Option: auto add properties
 
             header.features:
               type: list
               collapsed: true
               style: vertical
               label: Features
+              description: Customize feature name and popup content. While you are currently able to add and delete features, these changes will not be saved.
               btnLabel: 'Ignore: Do not click'
-              # TODO: ability to add a feature
               fields:
                 .id:
                   type: hidden
@@ -119,15 +106,15 @@ form:
                   type: text
                   label: Custom Name
                   
-                # TODO: custom id?
+                # Option: custom id?
 
-                # TODO: feature type? (would be read only)
+                # Option: read only feature type
 
-                # TODO: coordinates?
+                # Option: coordinates
 
-                # TODO: property list?
+                # Option: property list
 
-                # TODO: hide feature option?
+                # Option: hide feature option
 
                 .popup_content:
                   type: editor
@@ -223,15 +210,14 @@ form:
                     header.icon.anchor_x:
                       type: number
                       label: Icon Anchor X
-                      # TODO: doublecheck accuracy of descriptions
-                      #description: Moves icon up
+                      description: Moves icon left
                 iconanchcol2:
                   type: column
                   fields:
                     header.icon.anchor_y:
                       type: number
                       label: Icon Anchor Y
-                      #description: Moves icon right
+                      description: Moves icon up
 
             icon_tooltip_section:
               type: display
@@ -249,15 +235,14 @@ form:
                     header.icon.tooltip_anchor_x:
                       type: number
                       label: Tooltip Anchor X
-                      # TODO: doublecheck accuracy of descriptions
-                      #description: Moves icon up
+                      description: Moves tooltip right
                 icontooltipcol2:
                   type: column
                   fields:
                     header.icon.tooltip_anchor_y:
                       type: number
                       label: Tooltip Anchor Y
-                      #description: Moves icon right
+                      description: Moves tooltip down
                 
             icon_shadow_section:
               type: display
@@ -358,8 +343,6 @@ form:
             
             # additional options: lineCap, lineJoin, dashArray, dashOffset
 
-            # TODO: Note that descriptions often come from Leaflet documentation verbatim
-
             header.svg.stroke:
               type: toggle
               label: Draw Stroke
@@ -442,8 +425,6 @@ form:
               markdown: true
             
             # additional options: lineCap, lineJoin, dashArray, dashOffset
-
-            # TODO: Note that descriptions often come from Leaflet documentation verbatim
 
             header.svg_active.stroke:
               type: toggle

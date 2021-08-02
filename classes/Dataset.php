@@ -118,7 +118,7 @@ class Dataset {
         $name = $header->get('title');
         if ($name !== $this->name) $this->name = $name;
         $nameProperty = $header->get('name_prop');
-        // TODO: Make sure property list is updated first if allowing users to add/remove properties
+        // Option: Make sure property list is updated first if allowing users to add/remove properties
         if ($nameProperty !== $this->nameProperty && in_array($nameProperty, $this->properties)) $this->nameProperty = $nameProperty;
         else $header->set('name_prop', $this->nameProperty);
         if ($datasetFileRoute !== $this->datasetFileRoute) $this->datasetFileRoute = $datasetFileRoute;
@@ -130,11 +130,11 @@ class Dataset {
                     // update
                     $this->features[$feature['id']]->update($feature);
                 }
-                // TODO: potentially allow adding/removing features
+                // Option: potentially allow adding/removing features
             }
         }
         $header->set('features', Feature::buildYamlList($this->features));
-        // TODO: allow add/remove features, add (and remove?) properties
+        // Option: allow add/remove features properties
         // update legend, icon properties
         $this->addDatasetInfo($header);
         $this->saveDataset();
@@ -166,8 +166,6 @@ class Dataset {
     public function getFeatureType() {
         return $this->featureType;
     }
-
-    # TODO: Require at leaset php 7.4?
 
     public function setDefaults() {
         $this->pathActiveOptions ??= ['weight'=>5, 'fillOpacity' => 0.4];
