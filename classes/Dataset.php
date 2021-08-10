@@ -111,12 +111,10 @@ class Dataset {
      * @return array - list of features from header with any needed changes
      */
     public function updateDataset($header, $datasetFileRoute) {
-        // open json file for updating
-        $jsonFile = self::getJsonFile($this->jsonFilename);
-        $jsonData = $jsonFile->content();
         // update basic properties
         $name = $header->get('title');
-        if ($name !== $this->name) $this->name = $name;
+        if (empty($name)) $header->set('title', $this->name);
+        else if ($name !== $this->name) $this->name = $name;
         $nameProperty = $header->get('name_prop');
         // Option: Make sure property list is updated first if allowing users to add/remove properties
         if ($nameProperty !== $this->nameProperty && in_array($nameProperty, $this->properties)) $this->nameProperty = $nameProperty;
@@ -167,17 +165,21 @@ class Dataset {
         return $this->featureType;
     }
 
-    public function setDefaults() {
-        $this->pathActiveOptions ??= ['weight'=>5, 'fillOpacity' => 0.4];
+    public function getFeatures(): array {
+        return $this->features;
+    }
+
+    public function getDatasetRoute(): string {
+        return $this->datasetFileRoute;
     }
 
     // for config
-    public function getProperties() {
+    public function getProperties(): array {
         return array_combine($this->properties, $this->properties);
     }
 
     // get yaml - for saving to dataset page (including creating dataset page)
-    public function asYaml() {
+    public function asYaml(): array {
         return [
             'routable'=>0,
             'visible'=>0,
@@ -189,11 +191,13 @@ class Dataset {
             'legend_alt'=>$this->legendAltText,
             'icon_alt'=>$this->iconAltText,
             'icon'=>$this->iconOptions,
+            'svg'=>$this->pathOptions,
+            'svg_active'=>$this->pathActiveOptions,
         ];
     }
 
     // get json - for saving to json file (including creating json file)
-    public function asJson() {
+    public function asJson(): array {
         return [
             'type'=>'FeatureCollection',
             'name'=>$this->name,
@@ -203,6 +207,10 @@ class Dataset {
             'nameProperty'=>$this->nameProperty,
             'features'=>Feature::buildJsonList($this->features),
         ];
+    }
+
+    public function setDefaults(): void {
+        $this->pathActiveOptions ??= ['weight'=>5, 'fillOpacity' => 0.4];
     }
 
     /**
@@ -220,7 +228,7 @@ class Dataset {
         if (empty($dataset->get('icon')) && empty($this->iconOptions)) $iconOptions = Utils::DEFAULT_MARKER_OPTIONS;
         else {
             // merge options from dataset and tour header
-            if ($dataset->get('use_defaults')) $options = $dataset->get('icon');
+            if ($dataset->get('icon.use_defaults')) $options = $dataset->get('icon');
             else $options = array_merge($this->iconOptions ?? [], $dataset->get('icon') ?? []);
             // determine appropriate defaults to reference
             if (!empty($options['file'])) $defaults = Utils::MARKER_FALLBACKS;
@@ -228,7 +236,7 @@ class Dataset {
             // set up icon options
             $iconOptions = [
                 'iconUrl' => !empty($options['file']) ? Utils::IMAGE_ROUTE.'markers/'.$options['file'] : $defaults['iconUrl'],
-                'iconSize' => [$options['height'] ?? $defaults['iconSize'][0], $options['width'] ?? $defaults['iconSize'][1]],
+                'iconSize' => [$options['width'] ?? $defaults['iconSize'][0], $options['height'] ?? $defaults['iconSize'][1]],
                 'className' => 'leaflet-marker '.($options['class'] ?? ''),
                 'tooltipAnchor' => [$options['tooltip_anchor_x'] ?? $defaults['tooltipAnchor'][0], $options['tooltip_anchor_y'] ?? $defaults['tooltipAnchor'][1]],
             ];
@@ -244,6 +252,17 @@ class Dataset {
         }
         $data['iconOptions'] = $iconOptions;
         // path options
+        $pathKeys = ['stroke', 'weight', 'color', 'opacity', 'fill', 'fillColor', 'fillOpacity'];
+        $pathOptions = [];
+        foreach ($pathKeys as $key) {
+            $pathOptions[$key] = ($dataset->get('svg') ?? [])[$key] ?? ($this->pathOptions ?? [])[$key];
+        }
+        $data['pathOptions'] = $pathOptions;
+        $pathActiveOptions = [];
+        foreach ($pathKeys as $key) {
+            $pathActiveOptions[$key] = ($dataset->get('svg_active') ?? [])[$key] ?? ($this->pathActiveOptions ?? [])[$key];
+        }
+        $data['pathActiveOptions'] = $pathActiveOptions;
         // legend
         $legendText = $dataset->get('legend_text') ?? $this->legendText;
         if (!empty($legendText)) {
@@ -253,16 +272,13 @@ class Dataset {
                 'legendText' => $legendText,
                 'iconFile' => $iconOptions['iconUrl'],
                 'iconWidth' => $iconOptions['iconSize'][0],
-                'iconHeight' => $iconOptions['iconHeight'][1],
+                'iconHeight' => $iconOptions['iconSize'][1],
             ];
             $iconAltText = $dataset->get('icon_alt') ?? $this->iconAltText;
             if (!empty($iconAltText)) $legend['iconAltText'] = $iconAltText;
             $data['legend'] = $legend;
         }
-        // path options
-        $data['pathOptions'] = array_merge($this->pathOptions ?? [], $dataset->get('svg') ?? []);
-        $data['pathActiveOptions'] = array_merge($this->pathActiveOptions ?? [], $dataset->get('svg_active') ?? []);
-        // from tour features - id, remove popoup, popup content
+        // from tour features - id, remove popup, popup content
         $tourFeatures = array_column($features, null, 'id');
         $features = [];
         $hiddenFeatures = [];
@@ -295,17 +311,12 @@ class Dataset {
         return new Data($data);
     }
 
-    public function getFeatures() {
-        return $this->features;
-    }
-
     // utilities
 
     /**
      * Used to build a new dataset from a json file, including validating the json and setting sensible defaults
      */
     public static function createNewDataset(array $jsonArray, string $jsonFilename): void {
-        $jsonFilename = str_replace(' ', '-', $jsonFilename);
         $jsonData = new Data($jsonArray);
         $id = str_replace('.json', '', $jsonFilename);
         // some basic json validation
@@ -330,7 +341,7 @@ class Dataset {
         $count = 0;
         $features = [];
         foreach ($jsonData->get('features') as $feature) {
-            if ($feature['geometry'] && Utils::areValidCoordinates($feature['geometry']['coordinates'], $featureType)) {
+            if (is_array($feature) && $feature['geometry'] && Utils::areValidCoordinates($feature['geometry']['coordinates'], $featureType)) {
                 $feature['id'] = $id.'_'.$count;
                 $features[] = $feature;
                 $count++;

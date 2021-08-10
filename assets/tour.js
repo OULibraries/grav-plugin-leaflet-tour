@@ -476,7 +476,6 @@ function switchToMap(focusElement) {
     // Question: explicitly set focus to map?
     // change button text/value
     // set button data-focus to focusElement
-    console.log(focusElement);
     $("#content-toggle-btn").attr("data-focus", focusElement).attr("data-current", "map").text("View Content");
 }
 function switchToContent(focusElement) {

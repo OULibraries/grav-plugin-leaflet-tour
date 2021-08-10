@@ -17,7 +17,6 @@ license: MIT
 
 dependencies:
   - { name: grav, version: '>=1.7.0' }
-  # TODO: add shortcode core plugin, admin plugin, theme?
 
 form:
   validation: loose
@@ -50,8 +49,6 @@ form:
               title: Data
               underline: true
             
-            # TODO: Data instructions
-
             data_files:
               type: file
               label: Data Files
@@ -59,8 +56,10 @@ form:
               style: vertical
               destination: 'user://data/leaflet-tour/datasets/uploads'
               multiple: true
+              limit: 25
               accept:
                 - '.js'
+                - '.json'
             
             data_update:
               type: toggle
@@ -180,7 +179,7 @@ form:
                         required: true
                     .url:
                       type: text
-                      label: Attribution Link
+                      label: Attribution URL
         
         basemaps:
           type: tab

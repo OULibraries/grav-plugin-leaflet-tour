@@ -14,12 +14,10 @@
 {% block javascripts %}
     {{ parent() }}
     {# JS to add after page HTML #}
-    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/js_expressions.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.rotatedMarker.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.pattern.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet-hash.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/Autolinker.min.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/rbush.min.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/labelgun.min.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/labels.js', {group:'bottom'}) %}

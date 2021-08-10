@@ -108,20 +108,20 @@ form:
               label: Central Location
               data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourLocations'
             
-            header.start.lat:
-              type: number
-              label: Center Latitude
-              validate:
-                min: -90
-                max: 90
-                step: .00000000001
-            
             header.start.long:
               type: number
               label: Center Longitude
               validate:
                 min: -180
                 max: 180
+                step: .00000000001
+            
+            header.start.lat:
+              type: number
+              label: Center Latitude
+              validate:
+                min: -90
+                max: 90
                 step: .00000000001
             
             header.start.distance:
@@ -188,7 +188,7 @@ form:
             header.remove_tileserver:
               type: toggle
               label: Remove Tile Server
-              description: If toggled, will remove the tile server when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area.
+              description: If toggled, will remove the tile server when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. Can be overriden by individual view settings.
               highlight: 1
               default: 1
               options:
@@ -212,7 +212,7 @@ form:
                     
             header.features_set:
               type: fieldset
-              title: Feature Info/Overrides
+              title: Feature Overrides
               icon: map-marker
               collapsed: true
               collapsible: true
@@ -274,7 +274,7 @@ form:
                       type: column
                       fields:
                         
-                        header.maxbounds.north:
+                        header.max_bounds.north:
                           type: number
                           label: North
                           description: Latitude for the Northern (top) boundary of the map.
@@ -283,7 +283,7 @@ form:
                             max: 90
                             step: .00000000001
                         
-                        header.maxbounds.south:
+                        header.max_bounds.south:
                           type: number
                           label: South
                           description: Latitude for the Southern (bottom) boundary of the map.
@@ -296,7 +296,7 @@ form:
                       type: column
                       fields:
                         
-                        header.maxbounds.east:
+                        header.max_bounds.east:
                           type: number
                           label: East
                           description: Longitude for the Eastern (right) boundary of the map.
@@ -305,7 +305,7 @@ form:
                             max: 180
                             step: .00000000001
                         
-                        header.maxbounds.west:
+                        header.max_bounds.west:
                           type: number
                           label: West
                           description: Longitude for the Western (left) boundary of the map.

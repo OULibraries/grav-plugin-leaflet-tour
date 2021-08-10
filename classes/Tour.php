@@ -130,9 +130,16 @@ class Tour {
         return $attribution;
     }
 
+    // [string]
     public function getExtraAttribution(): array {
         $attribution = [];
         if ($this->tileserver['name']) $attribution[] = $this->tileserver['attribution'];
+        foreach ($this->config->get('attribution_long') ?? [] as $attr) {
+            $attribution[] = $attr;
+        }
+        foreach ($this->header->get('attribution_long') ?? [] as $attr) {
+            $attribution[] = $attr;
+        }
         return $attribution;
     }
 
@@ -232,11 +239,12 @@ class Tour {
         return $viewPopups;
     }
 
+    // [maxZoom, minZoom, removeTileServer, tourMaps, wideCol, showMapLocationInUrl, tileServer, stamenTileServer, bounds, maxBounds]
     public function getOptions(): array {
         $options = [
             'maxZoom' => $this->header->get('zoom_max') ?? 16,
             'minZoom' => $this->header->get('zoom_min') ?? 8,
-            'tileServer' => $this->header->get('tileserver.url') ?? $this->config->get('tileserver.url'),
+            //'tileServer' => $this->header->get('tileserver.url') ?? $this->config->get('tileserver.url'),
             'removeTileServer' => $this->header->get('remove_tileserver'),
             'tourMaps' => array_column($this->header->get('basemaps') ?? [], 'file'),
             //'datasets' => $this->getDatasets(),
@@ -250,7 +258,7 @@ class Tour {
         $bounds = $this->setStartingBounds($this->header->get('start'));
         if (!empty($bounds)) $options['bounds'] = $bounds;
         // max bounds for tour
-        $maxBounds = Utils::setBounds($this->header->get('maxBounds') ?? []);
+        $maxBounds = Utils::setBounds($this->header->get('max_bounds') ?? []);
         if ($maxBounds) $options['maxBounds'] = $maxBounds;
         return $options;
     }
@@ -267,14 +275,14 @@ class Tour {
                     }
                 }
             }
-            if (empty($lat)) {
+            if (!is_numeric($lat)) {
                 // either a location was provided that didn't work, or no location was provided
                 $long = $start['long'];
                 $lat = $start['lat'];
             }
-            if (!empty($long) && !empty($lat)) {
+            if (is_numeric($long) && is_numeric($lat)) {
                 $distance = $start['distance'];
-                $bounds = ['north'=>($lat+$distance)%90, 'south'=>($lat-$distance)%90, 'east'=>($long+$distance)%180, 'west'=>($long-$distance)%180];
+                $bounds = ['north'=>Utils::addToLat($lat,$distance), 'south'=>Utils::addToLat($lat, -$distance), 'east'=>Utils::addToLong($long, $distance), 'west'=>Utils::addToLong($long, -$distance)];
                 $bounds = Utils::setBounds($bounds);
             }
         }

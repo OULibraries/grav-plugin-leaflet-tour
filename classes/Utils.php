@@ -4,6 +4,7 @@ namespace Grav\Plugin\LeafletTour;
 use Grav\Common\Grav;
 use Grav\Common\Data\Data;
 use RocketTheme\Toolbox\File\File;
+use Grav\Common\Filesystem\Folder;
 use Grav\Common\File\CompiledJsonFile;
 use RocketTheme\Toolbox\File\MarkdownFile;
 
@@ -27,7 +28,7 @@ class Utils {
         'iconAnchor' => [12, 41],
         'iconRetinaUrl' => 'user/plugins/leaflet-tour/images/marker-icon-2x.png',
         'iconSize' => [25, 41],
-        'iconUrl' => 'user/plugins/leaflet-tour/images/marker-shadow.png',
+        'iconUrl' => 'user/plugins/leaflet-tour/images/marker.png',
         'shadowSize' => [41, 41],
         'shadowUrl' => 'user/plugins/leaflet-tour/images/marker-shadow.png',
         'className' => 'leaflet-marker',
@@ -159,6 +160,22 @@ class Utils {
         return [];
     }
 
+    public static function addToLat($lat, $amount) {
+        $amount = fmod($amount, 180);
+        $result = $lat + $amount;
+        if ($result < 90 && $result > -90) return $result;
+        else if ($result > 90) return $result - 180;
+        else return $result + 180;
+    }
+
+    public static function addToLong($long, $amount) {
+        $amount = fmod($amount, 360);
+        $result = $long + $amount;
+        if ($result < 180 && $result > -180) return $result;
+        else if ($result > 180) return $result - 360;
+        else return $result + 360;
+    }
+
     // Route Utils
     
     // takes an array of folder/page names and returns a route
@@ -221,12 +238,13 @@ class Utils {
 
     // Dataset Upload Utils
 
-    public static function parseDatasetUpload($fileData) {
+    public static function parseDatasetUpload($fileData): array {
         // fix php's bad json handling
         if (version_compare(phpversion(), '7.1', '>=')) {
             ini_set( 'serialize_precision', -1 );
         }
         $jsonFilename = preg_replace('/.js$/', '.json', $fileData['name']);
+        $jsonFilename = str_replace(' ', '-', $jsonFilename);
         $jsonArray = [];
         try {
             switch ($fileData['type']) {
@@ -244,6 +262,28 @@ class Utils {
             return [$jsonArray, $jsonFilename];
         } catch (\Throwable $t) {
             return [];
+        }
+    }
+
+    public static function deleteDatasets() {
+        $datasetFiles = [];
+        // get list of jsonFilenames
+        foreach ((Grav::instance()['config']->get('plugins.leaflet-tour.data_files') ?? []) as $key=>$fileData) {
+            $datasetFiles[] = str_replace(' ', '-', preg_replace('/.js$/', '.json', $fileData['name']));
+        }
+        // loop through datasets and look for ones that don't belong
+        foreach (Dataset::getDatasets() as $key=>$dataset) {
+            if (!in_array($key, $datasetFiles)) {
+                // move dataset page to deleted_datasets
+                $dataset = Dataset::getDatasets()[$key];
+                $mdFile = MarkdownFile::instance($dataset->getDatasetRoute());
+                $mdFile->filename(Grav::instance()['locator']->findResource('page://').'/deleted_datasets/'.$dataset->getName().'/default.md');
+                $mdFile->save();
+                // delete the json file
+                Dataset::getJsonFile($key)->delete();
+                // delete the old dataset page
+                Folder::delete(str_replace('/dataset.md','', $dataset->getDatasetRoute()));
+            }
         }
     }
     
@@ -294,7 +334,7 @@ class Utils {
         return implode("\r\n", $shortcodes);
     }
 
-    public static function createPopupsPage(string $tourTitle) {
+    public static function createPopupsPage(string $tourTitle): void {
         $uri = Grav::instance()['uri'];
         $mdFile = MarkdownFile::instance(Grav::instance()['locator']->findResource('page://').'/popups/'.$uri->basename().'/default.md');
         if (!$mdFile->exists() || empty($mdFile->markdown())) {

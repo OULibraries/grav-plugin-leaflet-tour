@@ -72,6 +72,21 @@ form:
                       type: display
                       markdown: true
                       content: 'This page was automatically created. Use the Features, Icon, and SVG tabs to customize your dataset. Please do not enter expert mode to change options that are read only, as changing these may break aspects of this plugin.'
+
+            legend_section:
+              type: display
+              content: "## Legend"
+              markdown: true
+              style: vertical
+            
+            header.legend_text:
+              type: text
+              label: Description for Legend
+            
+            header.legend_alt:
+              type: text
+              label: Legend Alt text
+              description: Optional shorter version of the legend description that will be included as alt text for icons on the map. If empty, the legend description will be used.
         
         features:
           type: tab
@@ -127,21 +142,6 @@ form:
           type: tab
           title: Icon
           fields:
-
-            legend_section:
-              type: display
-              content: "## Legend"
-              markdown: true
-              style: vertical
-            
-            header.legend_text:
-              type: text
-              label: Description for Legend
-            
-            header.legend_alt:
-              type: text
-              label: Legend Alt text
-              description: Optional shorter version of the legend description that will be included as alt text for icons on the map. If empty, the legend description will be used.
             
             header.icon_alt:
               type: text
@@ -198,7 +198,7 @@ form:
               type: display
               content: "#### Icon Anchor
 
-              The coordinates of the 'tip' of the icon (relative to its top left corner). The icon will be aligned so that this point is at the marker's geographical location. Centered by default."
+              The coordinates of the 'tip' of the icon (relative to its top left corner). The icon will be aligned so that this point is at the marker's geographical location. Centered by default. If you are using a custom icon, both the x and y values must be provided or the custom icon anchor settings will be ignored."
               markdown: true
               style: vertical
             iconanchcols:
@@ -285,7 +285,7 @@ form:
               type: display
               content: "#### Shadow Anchor
               
-              The coordinates of the 'tip' of the shadow (relative to its top left corner). If not set, uses the same values as icon anchor."
+              The coordinates of the 'tip' of the shadow (relative to its top left corner). If not set, uses the same values as icon anchor. Both the x and y values must be provided or the custom shadow anchor settings will be ignored."
               markdown: true
               style: vertical
             iconshadowanchcols:
@@ -403,6 +403,7 @@ form:
             
             header.svg.fillOpacity:
               type: number
+              label: Fill Opacity
               description: "A number from 0 (completely transparent) to 1 (completely opaque)."
               default: 0.2
               validate:
@@ -492,6 +493,7 @@ form:
             header.svg_active.fillOpacity:
               type: number
               toggleable: true
+              label: Fill Opacity
               description: "A number from 0 (completely transparent) to 1 (completely opaque)."
               default: 0.2
               validate:

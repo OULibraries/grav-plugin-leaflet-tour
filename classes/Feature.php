@@ -13,17 +13,15 @@ class Feature {
     /* Coordinates:
      * Point coords: [x, y]
      * Polyline coords: [[x,y], [x,y], [x,y]]
-     * Polygon coords: [[x,y], [x,y], [x,y]]
+     * Polygon coords: [[[x,y], [x,y], [x,y]]]
      * Polygon coords with holes: [
      *      [[x,y], [x,y], [x,y]], (polygon)
      *      [[x,y], [x,y], [x,y]], (first hole)
      *      [[x,y], [x,y], [x,y]], (second hole, etc.)
      * ]
      * MultiPolygon coords: [
-     *      [[x,y], [x,y], [x,y]] (first polygon)
-     * ],
-     * [
-     *      [[x,y], [x,y], [x,y]] (second polygon)
+     *      [[[x,y], [x,y], [x,y]]], (first polygon)
+     *      [[[x,y], [x,y], [x,y]]] (second polygon)
      * ]
      */
     protected $id;
@@ -59,7 +57,7 @@ class Feature {
      * Sets additional info from dataset config that is not found in json
      * @param array $featureData - yaml data from dataset config file
      */
-    public function setDatasetFields($featureData) {
+    public function setDatasetFields($featureData): void {
         $this->popupContent = $featureData['popup_content'];
         $id = $featureData['custom_id'];
         if ($id) $this->customId = $id;
@@ -69,7 +67,7 @@ class Feature {
      * Updates information based on changes made in the dataset config file
      * @param array $featureData - yaml data from dataset config file
      */
-    public function update($featureData) {
+    public function update($featureData): void {
         // everything also stored in json file
         $this->customName = $featureData['custom_name'];
         if ($this->customName) $this->name = $this->customName;
@@ -142,7 +140,7 @@ class Feature {
             $yaml['coordinates'] = ['long'=>$this->coordinates[0], 'lat'=>$this->coordinates[1]];
         } else if ($this->type === 'MultiPoint' || $this->type === 'LineString') {
             $coords = [];
-            foreach ($this->coords as $point) {
+            foreach ($this->coordinates as $point) {
                 $coords[] = ['long'=>$point[0], 'lat'=>$point[1]];
             }
             $yaml['coordinates'] = $coords;
