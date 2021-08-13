@@ -37,7 +37,7 @@ Do this once:
     - points2.js
     - points3.json
     - Polygons.json
-    - Multi Points.json
+    - Multi Points.json (removed)
     - LineStrings.json
     - MultiLineStrings.json
     - MultiPolygons.json
@@ -257,14 +257,16 @@ Number of valid features and the feature type are included in parantheses.
     - feature settings:
         - no features have popups
     - path settings: default only
-- Multi Points.json (4, MultiPoint)
+- Multi Points.json (4, MultiPoint) (removed)
     - name prop: Name
         - featureName ahead of Name
         - nameoffeature after Name
     - invalid features: 1
         - just a string
 - LineStrings.json (4, LineString)
-    - name prop: Name
+    - name prop: name
+        - featureName ahead of name
+        - nameoffeature after name
     - invalid features: 1
         - empty feature
     - feature notes:

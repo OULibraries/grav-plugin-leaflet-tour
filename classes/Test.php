@@ -942,13 +942,13 @@ class Test {
                     'anchor_y'=>2,
                 ]
             ],
-            'Multi-Points'=>[
+            /*'Multi-Points'=>[
                 'features'=>[
                     ['id'=>'Multi-Points_0','coordinates'=>[[-81.6427,29.4933],[-81.456,29.49],[-81.558,29.31]], 'custom_name'=>'MultiPoint with 3 Points'],
                     ['id'=>'Multi-Points_1','coordinates'=>[[-81.85,29.372],[-81.865,29.203],[-81.544,29.13],[-81.47,29.39]], 'custom_name'=>'MultiPoint with 4 Points'],
                     ['id'=>'Multi-Points_2','coordinates'=>[[-81.578,29.32]], 'custom_name'=>'MultiPoint with 1 Point'],
                 ],
-            ],
+            ],*/
             'LineStrings'=>[
                 'features'=>[
                     ['id'=>'LineStrings_0','coordinates'=>[[-81.366,29.058],[-81.328,29.089],[-81.312,29.085],[-81.274,29.104],[-81.291,29.08]], 'custom_name'=>'LineString with 5 Points'],
@@ -1041,7 +1041,7 @@ class Test {
         $this->points2 = $datasets['points2.json'];
         $this->points3 = $datasets['points3.json'];
         $this->polygons = $datasets['Polygons.json'];
-        $this->multiPoints = $datasets['Multi-Points.json'];
+        //$this->multiPoints = $datasets['Multi-Points.json'];
         $this->lineStrings = $datasets['LineStrings.json'];
         $this->multiLineStrings = $datasets['MultiLineStrings.json'];
         $this->multiPolygons = $datasets['MultiPolygons.json'];
@@ -1348,7 +1348,7 @@ class Test {
         $datasets = LeafletTourPlugin::getDatasetFiles();
         $this->assertSize($datasets, 13);
         // dataset Multi-Points exists
-        $this->assertNotEmpty($datasets['Multi-Points.json']);
+        //$this->assertNotEmpty($datasets['Multi-Points.json']);
         // dataset test1 does not exist
         $this->assertEmpty($datasets['test1.json']);
         // get basemaps - array of 5
@@ -1394,8 +1394,8 @@ class Test {
         $this->startHeader('Name Property');
         // property with spaces (points3) - "N A M E"
         $this->assertEquals($this->points3->getNameProperty(), 'N A M E');
-        // property "name" where "x_name" or "name_x" comes before and the other after (MultiPoints) - "Name"
-        $this->assertEquals($this->multiPoints->getNameProperty(), 'Name');
+        // property "name" where "x_name" or "name_x" comes before and the other after (LineStrings) - "name"
+        $this->assertEquals($this->lineStrings->getNameProperty(), 'name');
         // property "x_name" or "name_x" where "x_name" or "name_x" comes after (points1) - "FeatureName"
         $this->assertEquals($this->points1->getNameProperty(), 'FeatureName');
         // property with no "name" in list (points2)
@@ -1528,7 +1528,7 @@ class Test {
         // svg opacity (null, 1)
         $this->assertEquals($pathOptions['opacity'], 1);
         // svg fill (false, true)
-        $this->assertFalse($pathOptions['fill']);
+        $this->assertEmpty($pathOptions['fill']);
         // svg fillColor (null, null)
         $this->assertEmpty($pathOptions['fillColor']);
         // svg fillOpacity (null, 0.2)
@@ -1603,7 +1603,7 @@ class Test {
         // points1 - 7
         $this->assertSize($this->points1->getFeatures(), 7);
         // Multi Points - 4
-        $this->assertSize($this->multiPoints->getFeatures(), 4);
+        //$this->assertSize($this->multiPoints->getFeatures(), 4);
         // count of features for dataset that includes feature without a valid name (MultiLineStrings) (only 2 with valid names)
         $this->assertSize($this->multiLineStrings->getFeatures(), 2);
         // TODO: Allow non-existing names on upload
@@ -1687,15 +1687,15 @@ class Test {
         $this->assertTrue(Utils::isValidPoint([95.32952385683943, 10.328943899523]));
         $this->endHeader();
 
-        $this->startHeader('MultiPoint');
-        // valid MultiPoint with two points
-        $this->assertTrue(Utils::isValidMultiPoint([[-96.2, 45.3],[-180, 90]]));
+        $this->startHeader('LineString');
+        // valid LineString with two points
+        $this->assertTrue(Utils::isValidLineString([[-96.2, 45.3],[-180, 90]]));
         // empty array
-        $this->assertFalse(Utils::isValidMultiPoint([]));
-        // array of arrays (array of MultiPoints)
-        $this->assertFalse(Utils::isValidMultiPoint([[[-96.2, 45.3],[-180, 90]],[[-96.2, 45.3],[-180, 90]]]));
-        // Point (would be valid if it were encased in an array)
-        $this->assertFalse(Utils::isValidMultiPoint([-96.2, 45.3]));
+        $this->assertFalse(Utils::isValidLineString([]));
+        // array of arrays (array of LineStrings)
+        $this->assertFalse(Utils::isValidLineString([[[-96.2, 45.3],[-180, 90]],[[-96.2, 45.3],[-180, 90]]]));
+        // array with single point
+        $this->assertFalse(Utils::isValidLineString([[-96.2, 45.3]]));
         $this->endHeader();
 
         $this->startHeader('Polygon'); // todo
@@ -1737,7 +1737,7 @@ class Test {
         $this->assertTrue(Utils::isValidMultiPolygon($hugeMultiPolygon));
         $this->endHeader();
 
-        // Note: isValidLineString is covered by isValidMultiPoint, and isValidMultiLineString should also be covered by these tests already.
+        // Note: isValidMultiLineString should be covered by these tests already.
 
         $this->startHeader('Coordinates');
         // valid point
@@ -1749,7 +1749,7 @@ class Test {
         // valid point but with type MultiPoint (or in other words, invalid MultiPoint)
         $this->assertFalse(Utils::areValidCoordinates([-96.2, 45.3], 'MultiPoint'));
         // valid MultiPoint
-        $this->assertTrue(Utils::areValidCoordinates([[-96.2, 45.3],[-180, 90]], 'MultiPoint'));
+        //$this->assertTrue(Utils::areValidCoordinates([[-96.2, 45.3],[-180, 90]], 'MultiPoint'));
         // valid polygon
         $this->assertTrue(Utils::areValidCoordinates($polygon, 'Polygon'));
         // invalid MultiPolygon

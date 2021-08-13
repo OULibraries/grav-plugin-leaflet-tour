@@ -34,6 +34,8 @@
         var tourFeaturesJson = {{ tourData.getFeatures()|json_encode|raw }};
         var tourOptions = {{ tourData.getOptions()|json_encode|raw }};
         var tourDatasets = new Map(Object.entries({{ tourData.getDatasets()|json_encode|raw }}));
+        // load before theme.js - make nav menu collapsed by default
+        if (sessionStorage.getItem("nav-expanded") === null) sessionStorage.setItem("nav-expanded", "false");
     </script>
     
 {% endblock javascripts %}

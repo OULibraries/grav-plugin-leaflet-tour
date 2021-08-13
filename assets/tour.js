@@ -45,7 +45,7 @@ let tileLayerOptions = {
     maxZoom: tourOptions.maxZoom,
 }
 if (tourOptions.stamenTileServer) {
-    tileLayerOptions.maxNativeZoom = 14;
+    tileLayerOptions.maxNativeZoom = 13;
     var tileLayer = new L.StamenTileLayer(tourOptions.stamenTileServer, tileLayerOptions);
 }
 else var tileLayer = L.tileLayer(tourOptions.tileServer, tileLayerOptions);

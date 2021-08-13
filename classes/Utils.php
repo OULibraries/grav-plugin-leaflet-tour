@@ -92,16 +92,23 @@ class Utils {
     /**
      * Checks that coordinates are an array with one or more points
      */
-    public static function isValidMultiPoint($coords): bool {
+    /*public static function isValidMultiPoint($coords): bool {
         if (!is_array($coords) || empty($coords)) return false;
         foreach ($coords as $point) {
             if (!self::isValidPoint($point)) return false;
         }
         return true;
-    }
+    }*/
 
+    /**
+     * Check that coordinates are any array with two or more points
+     */
     public static function isValidLineString($coords): bool {
-        return self::isValidMultiPoint($coords);
+        if (!is_array($coords) || count($coords) < 2) return false;
+        foreach ($coords as $point) {
+            if (!self::isValidPoint($point)) return false;
+        }
+        return true;
     }
     public static function isValidMultiLineString($coords): bool {
         if (!is_array($coords)) return false;
@@ -117,7 +124,7 @@ class Utils {
     public static function isValidPolygon($coords): bool {
         if (!is_array($coords)) return false;
         foreach ($coords as $polygon) {
-            if (!self::isValidMultiPoint($polygon) || count($polygon) < 4 || ($polygon[0] !== $polygon[count($polygon)-1])) return false;
+            if (!self::isValidLineString($polygon) || count($polygon) < 4 || ($polygon[0] !== $polygon[count($polygon)-1])) return false;
         }
         return true;
     }
@@ -137,7 +144,7 @@ class Utils {
         $type = self::setValidType($type); // just in case
         switch ($type) {
             case 'Point': return self::isValidPoint($coords);
-            case 'MultiPoint': return self::isValidMultiPoint($coords);
+            //case 'MultiPoint': return self::isValidMultiPoint($coords);
             case 'Polygon': return self::isValidPolygon($coords);
             case 'MultiPolygon': return self::isValidMultiPolygon($coords);
             case 'LineString': return self::isValidLineString($coords);
