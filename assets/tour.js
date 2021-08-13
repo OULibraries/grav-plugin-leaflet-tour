@@ -61,7 +61,6 @@ for (let [key, basemap] of tourBasemaps) {
     });
     tourBasemaps.set(key, layer);
 }
-setBasemaps();
 
 // set up datasets (without features, to start with - just creating the list and defining the options)
 for (let [key, dataset] of tourDatasets) {
@@ -267,6 +266,8 @@ for (let [viewId, view] of tourViews) {
 
 // set map bounds
 if (tourOptions.bounds) map.fitBounds(tourOptions.bounds, { padding: [10, 10] });
+
+setBasemaps();
 
 resetAllLabels();
 

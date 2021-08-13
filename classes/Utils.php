@@ -28,7 +28,7 @@ class Utils {
         'iconAnchor' => [12, 41],
         'iconRetinaUrl' => 'user/plugins/leaflet-tour/images/marker-icon-2x.png',
         'iconSize' => [25, 41],
-        'iconUrl' => 'user/plugins/leaflet-tour/images/marker.png',
+        'iconUrl' => 'user/plugins/leaflet-tour/images/marker-icon.png',
         'shadowSize' => [41, 41],
         'shadowUrl' => 'user/plugins/leaflet-tour/images/marker-shadow.png',
         'className' => 'leaflet-marker',

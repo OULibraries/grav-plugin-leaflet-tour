@@ -98,9 +98,9 @@ class Dataset {
         $this->legendText = $header->get('legend_text');
         $this->legendAltText = $header->get('legend_alt');
         $this->iconAltText = $header->get('icon_alt');
-        $this->iconOptions = $header->get('icon') ?? [];
-        $this->pathOptions = $header->get('svg') ?? [];
-        $this->pathActiveOptions = $header->get('svg_active') ?? [];
+        $this->iconOptions = $header->get('icon') ?? $this->iconOptions ?? [];
+        $this->pathOptions = $header->get('svg') ?? $this->pathOptions ?? [];
+        $this->pathActiveOptions = $header->get('svg_active') ?? $this->pathActiveOptions ?? [];
     }
 
     /**
@@ -255,12 +255,14 @@ class Dataset {
         $pathKeys = ['stroke', 'weight', 'color', 'opacity', 'fill', 'fillColor', 'fillOpacity'];
         $pathOptions = [];
         foreach ($pathKeys as $key) {
-            $pathOptions[$key] = ($dataset->get('svg') ?? [])[$key] ?? ($this->pathOptions ?? [])[$key];
+            $option = ($dataset->get('svg') ?? [])[$key] ?? ($this->pathOptions ?? [])[$key];
+            if ($option) $pathOptions[$key] = $option;
         }
         $data['pathOptions'] = $pathOptions;
         $pathActiveOptions = [];
         foreach ($pathKeys as $key) {
-            $pathActiveOptions[$key] = ($dataset->get('svg_active') ?? [])[$key] ?? ($this->pathActiveOptions ?? [])[$key];
+            $option = ($dataset->get('svg_active') ?? [])[$key] ?? ($this->pathActiveOptions ?? [])[$key];
+            if ($option) $pathActiveOptions[$key] = $option;
         }
         $data['pathActiveOptions'] = $pathActiveOptions;
         // legend

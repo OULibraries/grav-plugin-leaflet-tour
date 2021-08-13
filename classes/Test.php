@@ -260,6 +260,7 @@ class Test {
         // add/modify tour pages
         $tour0 = [
             'title'=>'Tour 0',
+            'visible'=>false,
             'content'=>['items'=>'@self.modular'],
             'datasets'=>[
                 [
@@ -370,6 +371,7 @@ class Test {
         ];
         $tour2 = [
             'title'=>'Tour 2',
+            'visible'=>false,
             'content'=>['items'=>'@self.modular'],
             'datasets'=>[
                 [
@@ -875,7 +877,6 @@ class Test {
         ];
         $configFile = CompiledYamlFile::instance(Grav::instance()['locator']->findResource('user://').'/config/plugins/leaflet-tour.yaml');
         $pluginData = array_merge($configFile->content(), $plugin);
-        // TODO: See if I need to do something more specific than array_merge
         $configFile->content($pluginData);
         $configFile->save();
     }
@@ -941,19 +942,65 @@ class Test {
                     'anchor_y'=>2,
                 ]
             ],
+            'Multi-Points'=>[
+                'features'=>[
+                    ['id'=>'Multi-Points_0','coordinates'=>[[-81.6427,29.4933],[-81.456,29.49],[-81.558,29.31]], 'custom_name'=>'MultiPoint with 3 Points'],
+                    ['id'=>'Multi-Points_1','coordinates'=>[[-81.85,29.372],[-81.865,29.203],[-81.544,29.13],[-81.47,29.39]], 'custom_name'=>'MultiPoint with 4 Points'],
+                    ['id'=>'Multi-Points_2','coordinates'=>[[-81.578,29.32]], 'custom_name'=>'MultiPoint with 1 Point'],
+                ],
+            ],
             'LineStrings'=>[
+                'features'=>[
+                    ['id'=>'LineStrings_0','coordinates'=>[[-81.366,29.058],[-81.328,29.089],[-81.312,29.085],[-81.274,29.104],[-81.291,29.08]], 'custom_name'=>'LineString with 5 Points'],
+                    ['id'=>'LineStrings_1','coordinates'=>[[-81.369,29.029],[-81.188,29.017]], 'custom_name'=>'LineString with 2 Points'],
+                ],
                 'legend_text'=>'Line Strings Legend',
                 'svg_active'=>[
                     'weight'=>3,
                 ]
             ],
             'MultiLineStrings'=>[
+                'features'=>[
+                    ['id'=>'MultiLineStrings_0','coordinates'=>[
+                        [[-81.221,28.738],[-81.214,28.74],[-81.217,28.735]],
+                        [[-81.207,28.726],[-81.208,28.724],[-81.212,28.72],[-81.21,28.716]]
+                    ], 'custom_name'=>'MultiLineString with 2 Lines (3, 4)'],
+                    ['id'=>'MultiLineStrings_3','coordinates'=>[
+                        [[-81.192,28.732],[-81.188,28.741]],
+                        [[-81.178,28.744],[-81.186,28.748]],
+                        [[-81.189,28.756],[-81.184,28.759],[-81.182,28.757],[-81.189,28.756]]
+                    ], 'custom_name'=>'MultiLineString with 3 Lines (2, 2, 4)'],
+                    ['id'=>'MultiLineStrings_1','coordinates'=>[[[-81.195,28.742],[-81.183,28.737],[-81.185,28.733]]]],
+                ],
                 'svg'=>[
                     'stroke'=>false,
                     'fillColor'=>'#ffffff'
                 ]
             ],
+            'Polygons'=>[
+                'features'=>[
+                    ['id'=>'Polygons_0','coordinates'=>[
+                        [[-81.063,28.888],[-81.047,28.896],[-81.042,28.935],[-81.032,28.997],[-80.985,28.974],[-80.953,28.933],[-80.935,28.896],[-80.929,28.821],[-81.042,28.846],[-81.063,28.888]],
+                        [[-81.085,28.891],[-81.076,28.891],[-81.06,28.882],[-81.085,28.891]],
+                        [[-81.04,28.947],[-81.05,28.963],[-81.04,28.986],[-81.002,28.988],[-81.004,28.979],[-81.001,28.968],[-81.04,28.947]]
+                    ], 'custom_name'=>'Polygon with 2 Bites'],
+                    ['id'=>'Polygons_1','coordinates'=>[
+                        [[-81.057,28.78],[-81.042,28.786],[-81.036,28.779],[-81.037,28.765],[-81.049,28.749],[-81.039,28.748],[-81.019,28.762],[-81.011,28.772],[-81.004,28.762],[-81.014,28.741],[-81.04,28.726],[-81.057,28.78]]
+                    ]],
+                ],
+            ],
             'MultiPolygons'=>[
+                'features'=>[
+                    ['id'=>'MultiPolygons_1','coordinates'=>[
+                        [[[-81.426,28.927],[-81.378,28.926],[-81.391,28.897],[-81.426,28.927]]],
+                        [[[-81.369,28.917],[-81.353,28.914],[-81.345,28.919],[-81.352,28.93],[-81.369,28.917]]]
+                    ], 'custom_name'=>'MultiPoly with 2 Polygons'],
+                    ['id'=>'MultiPolygons_2','coordinates'=>[
+                        [[[-81.332,29.011],[-81.332,29.018],[-81.325,29.018],[-81.325,29.011],[-81.332,29.011]]],
+                        [[[-81.306,29.025],[-81.305,29.033],[-81.293,29.031],[-81.306,29.025]]],
+                        [[[-81.31,29.049],[-81.301,29.068],[-81.275,29.059],[-81.31,29.049]]]
+                    ], 'custom_name'=>'MultiPoly with 3 Polygons'],
+                ],
                 'svg'=>[
                     'stroke'=>true,
                     'color'=>'#445566',
@@ -1417,7 +1464,7 @@ class Test {
 
         $this->startHeader('Icon - General');
         // use defaults, icon file not set (tour 0, points1)
-        $this->assertEquals($t0_points1['iconOptions']['iconUrl'], 'user/plugins/leaflet-tour/images/marker.png');
+        $this->assertEquals($t0_points1['iconOptions']['iconUrl'], 'user/plugins/leaflet-tour/images/marker-icon.png');
         // use defaults, icon file set, icon size not set (tour 3, points1) - width
         $this->assertEquals($t3_points1['iconOptions']['iconSize'][0], 14);
         // icon width (tour - tour 4, points1)
