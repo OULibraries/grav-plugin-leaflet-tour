@@ -1344,9 +1344,9 @@ class Test {
     protected function testLeafletTourPlugin() {
         $this->name = "Results for Leaflet Tour Plugin";
 
-        // get dataset files - array of 13 datasets
+        // get dataset files - array of 13 datasets (12 with multi points removed)
         $datasets = LeafletTourPlugin::getDatasetFiles();
-        $this->assertSize($datasets, 13);
+        $this->assertSize($datasets, 12);
         // dataset Multi-Points exists
         //$this->assertNotEmpty($datasets['Multi-Points.json']);
         // dataset test1 does not exist
@@ -1375,10 +1375,10 @@ class Test {
     protected function testDataset() {
         $this->name = "Results for Datasets";
 
-        // get dataset list - 13
-        $this->assertSize(Dataset::getDatasetList(), 13);
-        // get datasets - 13
-        $this->assertSize(Dataset::getDatasets(), 13);
+        // get dataset list - 13 (12 with multi points removed)
+        $this->assertSize(Dataset::getDatasetList(), 12);
+        // get datasets - 13 (12 with multi points removed)
+        $this->assertSize(Dataset::getDatasets(), 12);
 
         $this->startHeader('Dataset Name');
         // original name (points3) - Points Dataset Three
