@@ -237,7 +237,7 @@ main {
         label {
             @include flex();
             cursor: pointer;
-            img {
+            img, svg {
                 margin: 10px;
             }
         }
@@ -334,7 +334,7 @@ main {
                 box-shadow: inset 0 0 0 1px black, inset 0 0 0 2px white, inset 0 0 0 10px black;
                 outline: revert !important;
             }
-            &.no-popup {
+            &.no-popup, &.path-no-popup {
                 cursor: default;
                 cursor: not-allowed;
             }
@@ -500,6 +500,14 @@ footer {
             display: block;
         }
     }
+    #scrolly {
+        .scroll-top {
+            min-height: calc(33vh + 40px); // scrollamaOptions.offset - 33%
+        }
+    }
+    footer {
+        min-height: calc(67vh - 160px) // (1 - scrollamaOptions.offset) - 67%
+    }
 }
 @media (min-width: $tablet) {
     .wide-column {
@@ -518,5 +526,13 @@ footer {
                 width: 60%;
             }
         }
+    }
+    #scrolly {
+        .scroll-top {
+            min-height: calc(33vh - 60px); // scrollamaOptions.offset - 33%
+        }
+    }
+    footer {
+        min-height: calc(67vh - 360px); // (1 - scrollamaOptions.offset) - 67%
     }
 }

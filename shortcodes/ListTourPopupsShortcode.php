@@ -3,13 +3,13 @@ namespace Grav\Plugin\Shortcodes;
 
 //use Grav\Common\Grav;
 use Grav\Plugin\LeafletTour\Utils;
-use Thunder\Shortcode\Shortcode\ShortcodeInterface;
+use Thunder\Shortcode\Shortcode\ProcessedShortcode;
 
 class ListTourPopupsShortcode extends Shortcode
 {
     public function init()
     {
-        $this->shortcode->getHandlers()->add('list-tour-popups', function(ShortcodeInterface $sc) {
+        $this->shortcode->getRawHandlers()->add('list-tour-popups', function(ProcessedShortcode $sc) {
             $tourRoute = $sc->getParameter('route');
             $content = "";
             if (!empty($tourRoute)) {
@@ -21,8 +21,8 @@ class ListTourPopupsShortcode extends Shortcode
                         // popup content
                         $content.="\n\n".$popup['popup'];
                     }
-                } else return "empty popups";
-            } else return "empty route";
+                }
+            }
             return $content;
         });
     }

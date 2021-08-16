@@ -205,7 +205,7 @@ main {
   flex-wrap: wrap;
   cursor: pointer;
 }
-#map-wrapper .legend label img {
+#map-wrapper .legend label img, #map-wrapper .legend label svg {
   margin: 10px;
 }
 #map-wrapper .legend.minimized {
@@ -298,7 +298,7 @@ main {
   box-shadow: inset 0 0 0 1px black, inset 0 0 0 2px white, inset 0 0 0 10px black;
   outline: revert !important;
 }
-#map-wrapper #map .leaflet-interactive.no-popup {
+#map-wrapper #map .leaflet-interactive.no-popup, #map-wrapper #map .leaflet-interactive.path-no-popup {
   cursor: default;
   cursor: not-allowed;
 }
@@ -437,6 +437,14 @@ footer > div {
   .map-active #map-wrapper {
     display: block;
   }
+
+  #scrolly .scroll-top {
+    min-height: calc(33vh + 40px);
+  }
+
+  footer {
+    min-height: calc(67vh - 160px);
+  }
 }
 @media (min-width: 600px) {
   .wide-column header, .wide-column main, .wide-column footer {
@@ -451,6 +459,14 @@ footer > div {
   .wide-column #map-wrapper #map {
     left: 40%;
     width: 60%;
+  }
+
+  #scrolly .scroll-top {
+    min-height: calc(33vh - 60px);
+  }
+
+  footer {
+    min-height: calc(67vh - 360px);
   }
 }
 

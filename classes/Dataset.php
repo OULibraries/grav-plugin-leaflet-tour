@@ -210,6 +210,7 @@ class Dataset {
     }
 
     public function setDefaults(): void {
+        $this->pathOptions ??= ['stroke'=>true, 'color'=>'#3388ff', 'weight'=>3, 'opacity'=>1, 'fill'=>true, 'fillOpacity'=>0.2];
         $this->pathActiveOptions ??= ['weight'=>5, 'fillOpacity' => 0.4];
     }
 
@@ -272,12 +273,37 @@ class Dataset {
             $legend = [
                 'dataSource' => $this->jsonFilename,
                 'legendText' => $legendText,
-                'iconFile' => $iconOptions['iconUrl'],
-                'iconWidth' => $iconOptions['iconSize'][0],
-                'iconHeight' => $iconOptions['iconSize'][1],
+                //'iconFile' => $iconOptions['iconUrl'],
+                //'iconWidth' => $iconOptions['iconSize'][0],
+                //'iconHeight' => $iconOptions['iconSize'][1],
             ];
-            $iconAltText = $dataset->get('icon_alt') ?? $this->iconAltText;
-            if (!empty($iconAltText)) $legend['iconAltText'] = $iconAltText;
+            // Points
+            if ($this->featureType === 'Point') {
+                // icon file, width, height, and alt text
+                $legend['iconFile'] = $iconOptions['iconUrl'];
+                $legend['iconWidth'] = $iconOptions['iconSize'][0];
+                $legend['iconHeight'] = $iconOptions['iconSize'][1];
+                $iconAltText = $dataset->get('icon_alt') ?? $this->iconAltText;
+                if (!empty($iconAltText)) $legend['iconAltText'] = $iconAltText;
+            } else if ($this->featureType === 'LineString' || $this->featureType === 'MultiLineString') {
+                // line, color, weight, opacity, shape?
+                $legend['featureType'] = 'line';
+                $legend['color'] = $pathOptions['color'] ?? '#3388ff';
+            } else {
+                // polygon; stroke - color, weight, opacity; fill - color, opacity; shape?
+                $legend['featureType'] = 'polygon';
+                if ($pathOptions['stroke'] ?? true) {
+                    $legend['color'] = $pathOptions['color'] ?? '#3388ff';
+                    $legend['weight'] = $pathOptions['weight'] ?? 3;
+                    $legend['opacity'] = $pathOptions['opacity'] ?? 1;
+                }
+                if ($pathOptions['fill'] ?? true) {
+                    $legend['fillColor'] = $pathOptions['fillColor'] ?? $pathOptions['color'] ?? '#3388ff';
+                    $legend['fillOpacity'] = $pathOptions['fillOpacity'] ?? 0.2;
+                }
+            }
+            //$iconAltText = $dataset->get('icon_alt') ?? $this->iconAltText;
+            //if (!empty($iconAltText)) $legend['iconAltText'] = $iconAltText;
             $data['legend'] = $legend;
         }
         // from tour features - id, remove popup, popup content

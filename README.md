@@ -182,6 +182,8 @@ attribution_toggle: true        # Toggle, include list of resources used (leafle
 attribution_list:               # List of additional attributions to add (starts with QGIS, Leaflet, and qgis2web by default)
     # text - Identifies the resource in the attribution
     # url - If provided, the above text will link to this URL
+attribution_long:               # List of additional attributions to add - HTML code
+    # text - the HTML code
 tileserver:
     select:                     # Dropdown menu for default available tile servers
     url:                        # If nothing is selected, manually provide a link to the desired tile server
@@ -234,6 +236,8 @@ Include Attribution in Footer (attribution_toggle): Toggles the list of resource
 Additional Resources (attribution_list): This is a list of resources to add to the attribution list included in the footer. If attribution_toggle is disabled, this list will be ignored. Resources added here will be added to attributions for every tour. You can also add resources specific to an individual tour using the tour configuration.
 - Attribution Text (.text): Required, identifies the resource used.
 - Attribution URL (.url): If provided, the attribution text will become a link to this URL. The URL will be ignored if no attribution text is provided.
+
+Extra Attribution (attribution_long): This list functions similarly to the Additional Resources list, but allows you to add the full HTML code for an attribution. This is useful for any resources that provide a ready-made attribution, as all you have to do is copy and paste it.
 
 #### Basemaps Tab
 

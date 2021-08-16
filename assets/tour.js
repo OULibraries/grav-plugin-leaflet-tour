@@ -140,40 +140,81 @@ function setPathInteraction() {
     // make sure all paths have id and class
     // also make sure they have an additional element added to the end of the pane that is screen reader only
     for (let [id, feature] of tourFeatures) {
-        if (!feature.point) {
+        if (feature.type !== "Point") {
             let props = feature.layer.feature.properties;
-            let altText = props.name;
             let dataset = tourDatasets.get(props.dataSource).options.dataset;
+            // set alt text
+            let altText = props.name;
             if (dataset.legendAltText) altText += ", " + dataset.legendAltText;
-            feature.layer._path.id = id;
+            // create image element - receives focus
             let element = document.createElement("img");
             element.classList.add("sr-only");
             element.id = id + "-element";
             element.setAttribute("data-feature", id);
             element.setAttribute("tabindex", "0");
+            // if feature has popup, img element becomes button to open popup
             if (props.hasPopup) {
-                feature.layer._path.classList.add("path-has-popup");
                 element.classList.add("element-has-popup");
                 element.setAttribute("role", "button");
                 altText += ", open popup";
             } else {
-                feature.layer._path.classList.add("path-no-popup");
                 element.classList.add("element-no-popup");
             }
             element.setAttribute("alt", altText);
+            // treat lines and polygons different so that lines can have extra buffer for hover
+            if (feature.type === "LineString" || feature.type === "MultiLineString") {
+                // create extra feature
+                let extraProps = { lineBuffer: true, featureId: props.id };
+                let extra = { type: "Feature", properties: extraProps, geometry: feature.layer.feature.geometry };
+                // add extra feature to dataset
+                tourDatasets.get(props.dataSource).addData(extra);
+                let lineBuffer = tourFeatures.get(id).lineBuffer;
+                // set extra feature style
+                lineBuffer.setStyle({ stroke: true, weight: 21, opacity: 0});
+                // add id to path
+                feature.layer._path.id = id;
+                // add id to extra path
+                lineBuffer._path.id = id+'extra';
+                lineBuffer._path.setAttribute('data-featureId', id);
+                // add class to extra path based on whether or not feature has popup
+                if (props.hasPopup) lineBuffer._path.classList.add("path-has-popup");
+                else lineBuffer._path.classList.add("path-no-popup");
+                lineBuffer._path.classList.add("line");
+            } else {
+                // add id to path element
+                feature.layer._path.id = id;
+                // add class to path based on whether or not feature has popup
+                if (props.hasPopup) feature.layer._path.classList.add("path-has-popup");
+                else feature.layer._path.classList.add("path-no-popup");
+                feature.layer._path.classList.add("polygon");
+            }
             $(".leaflet-marker-pane").append(element);
         }
     }
     // path functions
-    // let clicking on path open popup
-    $(".path-has-popup").on("click", function(e) {
+    // clicking on path opens popup - polygon
+    $(".polygon.path-has-popup").on("click", function(e) {
+        let id = this.id;
         e.stopPropagation();
-        openDialog(this.id+"-popup", document.getElementById(this.id+"-element"));
+        openDialog(id+"-popup", document.getElementById(id+"-element"));
     });
-    // let clicking on path without popup move focus to special element
-    $(".path-no-popup").on("click", function(e) {
-        setActivePath(this.id);
-        document.getElementById(this.id+"-element").focus();
+    // clicking on path opens popup - line
+    $(".line.path-has-popup").on("click", function(e) {
+        let id = this.getAttribute("data-featureId");
+        e.stopPropagation();
+        openDialog(id+"-popup", document.getElementById(id+"-element"));
+    });
+    // clicking on path without popup moves focus to special element - polygon
+    $(".polygon.path-no-popup").on("click", function(e) {
+        let id = this.id;
+        setActivePath(id);
+        document.getElementById(id+"-element").focus();
+    });
+    // clicking on path without popup moves focus to special element - line
+    $(".line.path-no-popup").on("click", function(e) {
+        let id = this.getAttribute("data-featureId");
+        setActivePath(id);
+        document.getElementById(id+"-element").focus();
     });
     // let keypress on special element open popup
     $(".element-has-popup").on("keypress", function(e) {
@@ -182,12 +223,20 @@ function setPathInteraction() {
             openDialog(this.getAttribute("data-feature")+"-popup", this);
         }
     });
-    // make tooltip active and change style when hovering over path
-    $(".path-has-popup, .path-no-popup").on("mouseover", function(e) {
+    // make tooltip active and change style when hovering over path - polygon
+    $(".polygon.path-has-popup, .polygon.path-no-popup").on("mouseover", function(e) {
         setActivePath(this.id);
     }).on("mouseout", function(e) {
         // make tooltip inactive and revert style when ending hover over path
         if (!(document.getElementById(this.id+"-element") === document.activeElement)) endActivePath(this.id);
+    });
+    // make tooltip active and change style when hovering over path - line
+    $(".line.path-has-popup, .line.path-no-popup").on("mouseover", function(e) {
+        setActivePath(this.getAttribute("data-featureId"));
+    }).on("mouseout", function(e) {
+        // make tooltip inactive and revert style when ending hover over path
+        let id = this.getAttribute("data-featureId");
+        if (!(document.getElementById(id) === document.activeElement)) endActivePath(id);
     });
     // make tooltip active and change path style when focusing on special element
     $(".element-has-popup, .element-no-popup").on("focus", function(e) {
@@ -209,23 +258,26 @@ function endActivePath(id) {
 }
 function setupFeature(geoJsonFeature, layer) {
     let props = geoJsonFeature.properties;
+    if (props.lineBuffer) {
+        let featureId = props.featureId;
+        tourFeatures.get(featureId).lineBuffer = layer;
+        return;
+    }
     let featureId = props.id;
     let feature = tourFeatures.get(featureId);
     feature.layer = layer;
-    createTooltip(props.name, props.dataSource, layer);
+    if (props.name !== null) createTooltip(props.name, props.dataSource, layer);
 }
 function createTooltip(name, datasetId, layer) {
-    if (name !== null) { // just in case
-        layer.bindTooltip(String('<div aria-hidden="true">' + name) + '</div>', {
-            permanent: true,
-            className: datasetId,
-            // Option: interactive true
-        });
-        labels.push(layer);
-        addLabel(layer, totalMarkers);
-        layer.added = true;
-        totalMarkers++;
-    }
+    layer.bindTooltip(String('<div aria-hidden="true">' + name) + '</div>', {
+        permanent: true,
+        className: datasetId,
+        // Option: interactive true
+    });
+    labels.push(layer);
+    addLabel(layer, totalMarkers);
+    layer.added = true;
+    totalMarkers++;
 }
 
 var tourFeatures = new Map();
@@ -235,14 +287,14 @@ for (let [featureId, feature] of Object.entries(tourFeaturesJson)) {
     tourFeatures.set(featureId, {
         name: feature.properties.name,
         dataset: feature.properties.dataSource,
-        point: (feature.geometry.type === "Point"),
+        type: feature.geometry.type,
     });
     tourDatasets.get(feature.properties.dataSource).addData(feature);
 }
 
 // deal with non-point tooltips - without this, tooltips associated with polygons that are much smaller than the starting view may be bound way too far off
 for (let feature of tourFeatures.values()) {
-    if (!feature.point) {
+    if (feature.type !== "Point") {
         map.fitBounds(feature.layer.getBounds());
         feature.layer.closeTooltip();
         feature.layer.openTooltip();
@@ -492,9 +544,21 @@ function switchToContent(focusElement) {
 function toggleHideFeature(feature) {
     let hide = (feature.hideDataSource || feature.hideNonView);
     let tooltip = feature.layer.getTooltip().getElement();
-    let icon = feature.layer._icon;
-    let shadow = feature.layer._shadow;
-    $(tooltip).add(icon).add(shadow).attr("aria-hidden", hide).css("display", (hide ? 'none' : 'block'));
+    if (feature.type === "Point") {
+        // hide tooltip, icon, and possibly shadow
+        let icon = feature.layer._icon;
+        let shadow = feature.layer._shadow;
+        $(tooltip).add(icon).add(shadow).attr("aria-hidden", hide).css("display", (hide ? 'none' : 'block'));
+    }
+    else {
+        let img = document.getElementById(feature.layer.feature.properties.id+"-element");
+        let path = feature.layer._path;
+        if (feature.type === "LineString" || feature.type === "MultiLineString") {
+            let buffer = feature.lineBuffer._path;
+            $(tooltip).add(img).add(path).add(buffer).attr("aria-hidden", hide).css("display", (hide ? 'none' : 'block'));
+        }
+        else $(tooltip).add(img).add(path).attr("aria-hidden", hide).css("display", (hide ? 'none' : 'block'));
+    }
 }
 
 function toggleHideNonViewFeatures(viewId, hide) {
@@ -526,7 +590,7 @@ function enterView(id) {
         if (tourState.mapNeedsAdjusting) adjustMap();
     } else {
         // exit view
-        if (!tourState.view) return; // already no view
+        //if (!tourState.view) return; // already no view
         tourState.view = null;
         if (tourOptions.bounds) map.flyToBounds(tourOptions.bounds, { padding: [10, 10] });
     }

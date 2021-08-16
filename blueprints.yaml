@@ -180,6 +180,20 @@ form:
                     .url:
                       type: text
                       label: Attribution URL
+                
+                attribution_long:
+                  type: list
+                  label: Extra Attribution
+                  description: Provide resource attributions here instead if you have HTML code for the attribution.
+                  btnLabel: Add Resource
+                  collapsed: true
+                  style: vertical
+                  fields:
+                    .text:
+                      type: text
+                      label: HTML Code
+                      validate:
+                        required: true
         
         basemaps:
           type: tab
@@ -346,3 +360,19 @@ form:
                   type: text
                   label: Attribution URL
                   description: If provided, the attribution will become a link to this URL.
+        
+        images:
+          type: tab
+          title: Popup Images
+          fields:
+
+            popup_images:
+              type: file
+              label: Image Upload
+              limit: 500
+              description: "These files will be added to the user/images folder. Reference them using Markdown by typing 'image://' in front of the image name. e.g. ![Image alt text](image://image_name.jpg)"
+              style: vertical
+              destination: 'image://'
+              multiple: true
+              accept:
+                - image/*

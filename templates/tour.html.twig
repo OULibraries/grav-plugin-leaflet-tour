@@ -130,7 +130,22 @@
                 {% else %}
                 <div>
                 {% endif %}
+                    {% if item.iconFile is defined %}
                     <img class="legend-icon" src="{{ item.iconFile }}" alt="{{ item.iconAltText }}" style="height: {{ item.iconHeight }}px; width: {{ item.iconWidth }}px;">
+                    {% elseif item.featureType is same as 'line' %}
+                        <svg width="14px" height="14px">
+                            <rect x="0" y="0" width="14" height="14" fill="{{ item.color }}" />
+                        </svg>
+                    {% else %}
+                        {% set weight = (item.weight|default(1)) - 1 %}
+                        {% set size = 14 + (2 * weight) %}
+                        <svg width="{{ size }}px" height="{{ size }}px">
+                            <rect x="{{ weight }}" y="{{ weight }}" width="14" height="14"
+                                {% if item.color is defined %} stroke="{{ item.color }}" stroke-width="{{ item.weight }}" stroke-opacity="{{ item.opacity }}" {% endif %}
+                                {% if item.fillColor is defined %} fill="{{ item.fillColor }}" fill-opacity="{{ item.fillOpacity }}" {% endif %}
+                            />
+                        </svg>
+                    {% endif %}
                     <span>{{ item.legendText }}</span>
                 {% if header.legend_toggles %}</label>
                 {% else %}</div>
@@ -186,7 +201,7 @@
     {% if attribution|length > 0 %}
     <div class="footer-section">
         {% for item in attribution %}
-            {{ item }}
+            {{ item|raw }}
         {% endfor %}
     </div>
     {% endif %}

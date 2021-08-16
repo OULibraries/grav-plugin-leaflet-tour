@@ -344,7 +344,7 @@ class Utils {
     public static function createPopupsPage(string $tourTitle): void {
         $uri = Grav::instance()['uri'];
         $mdFile = MarkdownFile::instance(Grav::instance()['locator']->findResource('page://').'/popups/'.$uri->basename().'/default.md');
-        if (!$mdFile->exists() || empty($mdFile->markdown())) {
+        //if (!$mdFile->exists() || empty($mdFile->markdown())) {
             $content = "";
             // add link
             $content .="<a href='".str_replace("/admin/pages", "", $uri->route(true, true))."' class='btn'>Return to Tour</a>";
@@ -354,7 +354,7 @@ class Utils {
             // set title
             $mdFile->header(['title'=>"Popup Content for $tourTitle", 'visible'=>0]);
             $mdFile->save();
-        }
+        //}
     }
 
     public static function getAllPopups(string $tourRoute): array {

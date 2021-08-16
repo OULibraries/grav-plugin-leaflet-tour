@@ -180,15 +180,27 @@ class LeafletTourPlugin extends Plugin
         else $file = MarkdownFile::instance(Utils::getTourRouteFromTourConfig());
         if ($file->exists()) {
             $data = new Data((array)$file->header());
-            foreach ($data->get('datasets') ?? [] as $dataset) {
-                $dataset = Dataset::getDatasets()[$dataset['file']];
-                if (!$onlyPoints || $dataset->getFeatureType()==='Point') {
+            $extraFeatures = [];
+            foreach ($data->get('datasets') ?? [] as $tour_dataset) {
+                $dataset = Dataset::getDatasets()[$tour_dataset['file']];
+                if ($fromView && !$onlyPoints) {
+                    // only add all features if show all
+                    if ($tour_dataset['show_all']) $featureList = array_merge($featureList, Feature::buildConfigList($dataset->getFeatures(), $dataset->getNameProperty()));
+                    else $extraFeatures = array_merge($extraFeatures, $dataset->getFeatures());
+                }
+                else if (!$onlyPoints || $dataset->getFeatureType()==='Point') {
                     $featureList = array_merge($featureList, Feature::buildConfigList($dataset->getFeatures(), $dataset->getNameProperty()));
                 }
             }
             if ($onlyPoints) {
                 // list of point locations are for start location - should have a default null value
                 $featureList = array('default' => 'None') + $featureList;
+            }
+            if ($fromView && !$onlyPoints) {
+                // add any features from datasets without show all
+                foreach ($data->get('features') ?? [] as $feature) {
+                    if (empty($featureList[$feature['id']])) $featureList[$feature['id']] = $extraFeatures[$feature['id']]->getName();
+                }
             }
         }
         return $featureList;

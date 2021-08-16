@@ -25,7 +25,7 @@ form:
                   type: list
                   size: long
                   style: vertical
-                  collapsed: false
+                  collapsed: true
                   btnLabel: Add Dataset
                   fields:
                     .file:
@@ -96,6 +96,60 @@ form:
                             0: PLUGIN_ADMIN.DISABLED
                           validate:
                             type: bool
+                        .icon.anchor_x:
+                          type: hidden
+                        .icon.anchor_y:
+                          type: hidden
+                        .icon.tooltip_anchor_x:
+                          type: hidden
+                        .icon.tooltip_anchor_y:
+                          type: hidden
+                        .icon.shadow:
+                          type: hidden
+                        .icon.shadow_width:
+                          type: hidden
+                        .icon.shadow_height:
+                          type: hidden
+                        .icon.shadow_anchor_x:
+                          type: hidden
+                        .icon.shadow_anchor_y:
+                          type: hidden
+                        .icon.class:
+                          type: hidden
+                        .icon.retina:
+                          type: hidden
+                    .svg:
+                      type: hidden
+                    .svg.stroke:
+                      type: hidden
+                    .svg.color:
+                      type: hidden
+                    .svg.weight:
+                      type: hidden
+                    .svg.opacity:
+                      type: hidden
+                    .svg.fill:
+                      type: hidden
+                    .svg.fillColor:
+                      type: hidden
+                    .svg.fillOpacity:
+                      type: hidden
+                    .svg_active:
+                      type: hidden
+                    .svg_active.stroke:
+                      type: hidden
+                    .svg_active.color:
+                      type: hidden
+                    .svg_active.weight:
+                      type: hidden
+                    .svg_active.opacity:
+                      type: hidden
+                    .svg_active.fill:
+                      type: hidden
+                    .svg_active.fillColor:
+                      type: hidden
+                    .svg_active.fillOpacity:
+                      type: hidden
             
             header.start_section:
               type: section
