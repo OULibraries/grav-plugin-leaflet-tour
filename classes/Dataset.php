@@ -98,9 +98,9 @@ class Dataset {
         $this->legendText = $header->get('legend_text');
         $this->legendAltText = $header->get('legend_alt');
         $this->iconAltText = $header->get('icon_alt');
-        $this->iconOptions = $header->get('icon') ?? $this->iconOptions ?? [];
-        $this->pathOptions = $header->get('svg') ?? $this->pathOptions ?? [];
-        $this->pathActiveOptions = $header->get('svg_active') ?? $this->pathActiveOptions ?? [];
+        $this->iconOptions = array_filter($header->get('icon') ?? $this->iconOptions ?? []);
+        $this->pathOptions = array_filter($header->get('svg') ?? $this->pathOptions ?? []);
+        $this->pathActiveOptions = array_filter($header->get('svg_active') ?? $this->pathActiveOptions ?? []);
     }
 
     /**
@@ -117,7 +117,12 @@ class Dataset {
         else if ($name !== $this->name) $this->name = $name;
         $nameProperty = $header->get('name_prop');
         // Option: Make sure property list is updated first if allowing users to add/remove properties
-        if ($nameProperty !== $this->nameProperty && in_array($nameProperty, $this->properties)) $this->nameProperty = $nameProperty;
+        if ($nameProperty !== $this->nameProperty && in_array($nameProperty, $this->properties)) {
+            $this->nameProperty = $nameProperty;
+            foreach ($this->features as $feature) {
+                $feature->updateName($nameProperty);
+            }
+        }
         else $header->set('name_prop', $this->nameProperty);
         if ($datasetFileRoute !== $this->datasetFileRoute) $this->datasetFileRoute = $datasetFileRoute;
         // reconcile feature list
@@ -190,9 +195,9 @@ class Dataset {
             'legend_text'=>$this->legendText,
             'legend_alt'=>$this->legendAltText,
             'icon_alt'=>$this->iconAltText,
-            'icon'=>$this->iconOptions,
-            'svg'=>$this->pathOptions,
-            'svg_active'=>$this->pathActiveOptions,
+            'icon'=>$this->iconOptions ?? [],
+            'svg'=>$this->pathOptions ?? [],
+            'svg_active'=>$this->pathActiveOptions ?? [],
         ];
     }
 

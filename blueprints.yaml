@@ -209,7 +209,7 @@ form:
             tileserver.select:
               type: select
               label: Select a Tile Server
-              default: 'stamenWatercolor'
+              default: 'none'
               data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServers'
 
             tileserver.url:
@@ -366,7 +366,7 @@ form:
           title: Popup Images
           fields:
 
-            popup_images:
+            popup_image_files:
               type: file
               label: Image Upload
               limit: 500

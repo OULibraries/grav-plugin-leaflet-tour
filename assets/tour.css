@@ -205,7 +205,12 @@ main {
   flex-wrap: wrap;
   cursor: pointer;
 }
-#map-wrapper .legend label img, #map-wrapper .legend label svg {
+#map-wrapper .legend li > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#map-wrapper .legend img, #map-wrapper .legend svg {
   margin: 10px;
 }
 #map-wrapper .legend.minimized {

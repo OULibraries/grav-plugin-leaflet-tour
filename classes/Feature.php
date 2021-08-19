@@ -80,6 +80,10 @@ class Feature {
         $this->setDatasetFields($featureData);
     }
 
+    public function updateName($nameProperty): void {
+        $this->name = $this->customName ?? $this->properties[$nameProperty] ?? '';
+    }
+
     // getters
 
     public function getName() {

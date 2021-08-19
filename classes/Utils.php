@@ -21,7 +21,7 @@ class Utils {
         'polygon'=>'Polygon',
         'multipolygon'=>'MultiPolygon'
     ];
-    const JSON_VAR_REGEX = '/^(.)*var(\s)+json_(\w)*(\s)+=(\s)+/';
+    const JSON_VAR_REGEX = '/^.*var(\s)+json_(\w)*(\s)+=(\s)+/';
 
     // default values if the default marker icon is used
     const DEFAULT_MARKER_OPTIONS = [
@@ -383,6 +383,17 @@ class Utils {
             }
         }
         return $popups;
+    }
+
+    public static function nestedArrayFilter($array): array {
+        $newArray = [];
+        foreach($array ?? [] as $key=>$item) {
+            if (is_array($item)) $item = self::nestedArrayFilter($item);
+            else if ($item === null) continue;
+            if (is_array($item) && empty($item)) continue;
+            $newArray[$key] = $item;
+        }
+        return $newArray;
     }
 }
 

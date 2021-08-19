@@ -35,7 +35,7 @@ var map = L.map('map', {
 });
 
 if (tourOptions.showMapLocationInUrl) var hash = new L.Hash(map);
-if (tourOptions['bounds']) map.setMaxBounds(tourOptions['bounds']);
+if (tourOptions['maxBounds']) map.setMaxBounds(tourOptions['maxBounds']);
 
 // Basemaps - Tile Server
 //map.createPane('tileserverPane');
@@ -584,8 +584,6 @@ function enterView(id) {
             // Option: Any instance where I would want to add { animate: boolean } to flyTo args? (if so, add to else flyTo statement, too)
             map.flyToBounds(view.bounds, { padding: [10, 10] });
         }
-        // adjust basemaps - call here because we need setBasemaps(), not just checkBasemaps()
-        setBasemaps();
         // just in case
         if (tourState.mapNeedsAdjusting) adjustMap();
     } else {
@@ -594,6 +592,8 @@ function enterView(id) {
         tourState.view = null;
         if (tourOptions.bounds) map.flyToBounds(tourOptions.bounds, { padding: [10, 10] });
     }
+    // adjust basemaps - call here because we need setBasemaps(), not just checkBasemaps()
+    setBasemaps();
 }
 
 function exitView() {

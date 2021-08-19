@@ -237,9 +237,12 @@ main {
         label {
             @include flex();
             cursor: pointer;
-            img, svg {
-                margin: 10px;
-            }
+        }
+        li>div {
+            @include flex();
+        }
+        img, svg {
+            margin: 10px;
         }
         &.minimized {
             padding: 5px 0;
