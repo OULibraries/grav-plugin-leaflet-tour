@@ -8,6 +8,7 @@ use Composer\Autoload\ClassLoader;
 use Grav\Common\Grav;
 use Grav\Common\Plugin;
 use Grav\Common\Data\Data;
+use Grav\Common\Page\Header;
 use RocketTheme\Toolbox\Event\Event;
 use RocketTheme\Toolbox\File\MarkdownFile;
 use Grav\Plugin\LeafletTour\Dataset;
@@ -146,17 +147,21 @@ class LeafletTourPlugin extends Plugin
             }
             // handle popups page
             Utils::createPopupsPage($header->get('title'));
+            $header = Utils::filter_header($header);
         }
         // handle view config data
         else if (method_exists($obj, 'template') && $obj->template() === 'modular/view') {
             // update shortcodes_list as needed
-            if ($obj->header()->get('features') != $obj->getOriginal()->header()->get('features')) {
-                $obj->header()->set('shortcodes_list', Utils::generateShortcodeList($obj->header()->get('features'), Dataset::getDatasets()));
+            $header = $obj->header();
+            if ($header->get('features') != $obj->getOriginal()->header()->get('features')) {
+                $header->set('shortcodes_list', Utils::generateShortcodeList($header->get('features'), Dataset::getDatasets()));
             }
+            $header = Utils::filter_header($header);
         }
         // handle dataset config data
         else if (method_exists($obj, 'template') && $obj->template() === 'dataset') {
             $header = Dataset::getDatasets()[$obj->header()->get('dataset_file')]->updateDataset($obj->header());
+            $header = Utils::filter_header($header);
             $obj->header($header);
         }
     }

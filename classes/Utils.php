@@ -405,7 +405,7 @@ class Utils {
     public static function array_filter($array): array {
         $newArray = [];
         foreach($array ?? [] as $key=>$item) {
-            if (is_array($item)) $item = self::nestedArrayFilter($item);
+            if (is_array($item)) $item = self::array_filter($item);
             else if ($item === null) continue;
             if (is_array($item) && empty($item)) continue;
             $newArray[$key] = $item;
@@ -413,8 +413,13 @@ class Utils {
         return $newArray;
     }
 
-    // temp
-    public static function nestedArrayFilter($array):array { return self::array_filter($array); }
+    public static function filter_header($header) {
+        foreach ($header->toArray() as $key=>$item) {
+            if (is_array($item)) $item = Utils::array_filter($item);
+            $header->set($key, $item);
+        }
+        return $header;
+    }
 }
 
 ?>
