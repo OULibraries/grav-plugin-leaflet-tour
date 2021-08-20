@@ -1405,9 +1405,8 @@ class Test {
         $this->endHeader();
 
         $this->startHeader('Properties');
-        // mis-matched properties (polygons)
-        // TODO: Ideally recognize all properties and return 6 instead of 4
-        $this->assertSize($this->polygons->getProperties(), 4);
+        // mis-matched properties (polygons) - recognizes all 6
+        $this->assertSize($this->polygons->getProperties(), 6);
         // standard (points1)
         $this->assertSize($this->points1->getProperties(), 4);
         // properties where one includes spaces (points3) N A M E
@@ -1697,7 +1696,7 @@ class Test {
         $this->assertFalse(Utils::isValidLineString([[-96.2, 45.3]]));
         $this->endHeader();
 
-        $this->startHeader('Polygon'); // todo
+        $this->startHeader('Polygon');
         // linear ring - an array of valid points where the first and last points match
         $linearRing = [[180, 80], [120, -80], [-89, 0], [0, 22.3453], [180, 80]];
         // pass linear ring as polygon

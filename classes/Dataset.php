@@ -60,7 +60,7 @@ class Dataset {
             $this->datasetFileRoute = $jsonData->get('datasetFileRoute');
             $this->crs = $jsonData->get('crs');
             $this->nameProperty = $jsonData->get('nameProperty');
-            $this->properties = array_keys((array)($jsonData->get('features.0.properties')));
+            $this->properties = $jsonData->get('propertyList') ?? [];
             $this->featureType = $jsonData->get('featureType');
             $this->features = Feature::buildFeatureList((array)$jsonData->get('features'), $this->nameProperty, $this->featureType);
     
@@ -209,6 +209,7 @@ class Dataset {
             'datasetFileRoute'=>$this->datasetFileRoute,
             'featureType'=>$this->featureType,
             'nameProperty'=>$this->nameProperty,
+            'propertyList'=>$this->properties,
             'features'=>Feature::buildJsonList($this->features),
         ];
     }
@@ -353,12 +354,31 @@ class Dataset {
         $jsonData = new Data($jsonArray);
         $id = str_replace('.json', '', $jsonFilename);
         // some basic json validation
-        if (empty($jsonData) || empty($jsonData->get('features.0.properties')) || empty($jsonData->get('features.0.geometry'))) return;
+        if (empty($jsonData) || empty($jsonData->get('features.0.geometry'))) return;
         // set dataset name
         if (empty($jsonData->get('name'))) $jsonArray['name'] = $id;
+        // set feature type
+        $featureType = Utils::setValidType($jsonData->get('features.0.geometry.type'));
+        $jsonArray['featureType'] = $featureType;
+        // set feature ids and get properties list
+        $count = 0;
+        $features = [];
+        $propList = [];
+        foreach ($jsonData->get('features') as $feature) {
+            if (Utils::isValidFeature($feature, $featureType)) {
+                $feature['id'] = $id.'_'.$count;
+                $features[] = $feature;
+                $count++;
+                if (is_array($feature['properties'])) {
+                    $propList = array_merge($propList, $feature['properties']);
+                }
+            }
+        }
+        $jsonArray['features'] = $features;
         // set default name property
         $nameProperty = '';
-        $propList = array_keys($jsonData->get('features.0.properties'));
+        $propList = array_keys($propList);
+        $jsonArray['propertyList'] = $propList;
         foreach ($propList as $prop) {
             if (strcasecmp($prop, 'name') == 0) $nameProperty = $prop;
             else if (empty($nameProperty) && preg_match('/^(.*name|name.*)$/i', $prop)) $nameProperty = $prop;
@@ -368,20 +388,6 @@ class Dataset {
         // set dataset file route
         $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $jsonArray['name']), '-'));
         $jsonArray['datasetFileRoute'] = Grav::instance()['locator']->findResource('page://').'/datasets/'.$slug.'/dataset.md';
-        // set feature type
-        $featureType = Utils::setValidType($jsonData->get('features.0.geometry.type'));
-        $jsonArray['featureType'] = $featureType;
-        // set feature ids
-        $count = 0;
-        $features = [];
-        foreach ($jsonData->get('features') as $feature) {
-            if (Utils::isValidFeature($feature, $featureType)) {
-                $feature['id'] = $id.'_'.$count;
-                $features[] = $feature;
-                $count++;
-            }
-        }
-        $jsonArray['features'] = $features;
         // save the file
         $jsonFile = self::getJsonFile($jsonFilename);
         $jsonFile->content($jsonArray);
