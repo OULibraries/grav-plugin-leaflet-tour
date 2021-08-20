@@ -257,7 +257,8 @@ class Dataset {
         }
         $data['iconOptions'] = $iconOptions;
         // path options
-        $pathKeys = ['stroke', 'weight', 'color', 'opacity', 'fill', 'fillColor', 'fillOpacity'];
+        $pathKeys = ['stroke', 'weight', 'color', 'opacity', 'fill', 'fillColor', 'fillOpacity']; // all - polygon
+        if ($this->featureType === 'LineString' || $this->featureType === 'MultiLineString') $pathKeys = ['stroke', 'weight', 'color', 'opacity']; // remove fill options for lines
         $pathOptions = [];
         foreach ($pathKeys as $key) {
             $option = ($dataset->get('svg') ?? [])[$key] ?? ($this->pathOptions ?? [])[$key];
