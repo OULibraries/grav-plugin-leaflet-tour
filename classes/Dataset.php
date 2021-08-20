@@ -366,7 +366,8 @@ class Dataset {
         if (empty($nameProperty)) $nameProperty = $propList[0];
         $jsonArray['nameProperty'] = $nameProperty;
         // set dataset file route
-        $jsonArray['datasetFileRoute'] = Grav::instance()['locator']->findResource('page://').'/datasets/'.$jsonArray['name'].'/dataset.md';
+        $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $jsonArray['name']), '-'));
+        $jsonArray['datasetFileRoute'] = Grav::instance()['locator']->findResource('page://').'/datasets/'.$slug.'/dataset.md';
         // set feature type
         $featureType = Utils::setValidType($jsonData->get('features.0.geometry.type'));
         $jsonArray['featureType'] = $featureType;
