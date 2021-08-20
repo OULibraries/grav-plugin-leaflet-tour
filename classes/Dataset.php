@@ -98,9 +98,9 @@ class Dataset {
         $this->legendText = $header->get('legend_text');
         $this->legendAltText = $header->get('legend_alt');
         $this->iconAltText = $header->get('icon_alt');
-        $this->iconOptions = array_filter($header->get('icon') ?? $this->iconOptions ?? []);
-        $this->pathOptions = array_filter($header->get('svg') ?? $this->pathOptions ?? []);
-        $this->pathActiveOptions = array_filter($header->get('svg_active') ?? $this->pathActiveOptions ?? []);
+        $this->iconOptions = Utils::array_filter($header->get('icon') ?? $this->iconOptions ?? []);
+        $this->pathOptions = Utils::array_filter($header->get('svg') ?? $this->pathOptions ?? []);
+        $this->pathActiveOptions = Utils::array_filter($header->get('svg_active') ?? $this->pathActiveOptions ?? []);
     }
 
     /**

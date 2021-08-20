@@ -385,7 +385,11 @@ class Utils {
         return $popups;
     }
 
-    public static function nestedArrayFilter($array): array {
+    /**
+     * Because PHP's array_filter function is really stupid, and it won't even accept isset as a callback!
+     * Figured I might as well just put the nested functionality in here, too.
+     */
+    public static function array_filter($array): array {
         $newArray = [];
         foreach($array ?? [] as $key=>$item) {
             if (is_array($item)) $item = self::nestedArrayFilter($item);
@@ -395,6 +399,9 @@ class Utils {
         }
         return $newArray;
     }
+
+    // temp
+    public static function nestedArrayFilter($array):array { return self::array_filter($array); }
 }
 
 ?>
