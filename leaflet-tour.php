@@ -154,7 +154,7 @@ class LeafletTourPlugin extends Plugin
             // update shortcodes_list as needed
             $header = $obj->header();
             if ($header->get('features') != $obj->getOriginal()->header()->get('features')) {
-                $header->set('shortcodes_list', Utils::generateShortcodeList($header->get('features'), Dataset::getDatasets()));
+                $header->set('shortcodes_list', Utils::generateShortcodeList($header->get('features') ?? [], Dataset::getDatasets() ?? []));
             }
             $header = Utils::filter_header($header);
         }
@@ -186,8 +186,17 @@ class LeafletTourPlugin extends Plugin
         if ($file->exists()) {
             $data = new Data((array)$file->header());
             $extraFeatures = [];
-            foreach ($data->get('datasets') ?? [] as $tour_dataset) {
+            foreach ($data->get('datasets') ?? [] as $index=>$tour_dataset) {
                 $dataset = Dataset::getDatasets()[$tour_dataset['file']];
+                // handle deleted dataset
+                if ($dataset === null) {
+                    $datasets = $data->get('datasets');
+                    unset($datasets[$index]);
+                    $data->set('datasets', $datasets);
+                    $file->header($data->toArray());
+                    $file->save();
+                    continue;
+                }
                 if ($fromView && !$onlyPoints) {
                     // only add all features if show all
                     if ($tour_dataset['show_all']) $featureList = array_merge($featureList, Feature::buildConfigList($dataset->getFeatures(), $dataset->getNameProperty()));
