@@ -156,7 +156,7 @@ class LeafletTourPlugin extends Plugin
         }
         // handle dataset config data
         else if (method_exists($obj, 'template') && $obj->template() === 'dataset') {
-            $header = Dataset::getDatasets()[$obj->header()->get('dataset_file')]->updateDataset($obj->header(), Utils::getDatasetRoute());
+            $header = Dataset::getDatasets()[$obj->header()->get('dataset_file')]->updateDataset($obj->header());
             $obj->header($header);
         }
     }

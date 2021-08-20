@@ -53,11 +53,11 @@ form:
 
                     # Option: readonly feature type
 
-                    folder:
-                      type: folder-slug
-                      label: PLUGIN_ADMIN.FOLDER_NAME
-                      validate:
-                        rule: slug
+                    # folder:
+                    #   type: folder-slug
+                    #   label: PLUGIN_ADMIN.FOLDER_NAME
+                    #   validate:
+                    #     rule: slug
                 
                 col2:
                   type: column

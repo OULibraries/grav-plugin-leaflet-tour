@@ -110,7 +110,7 @@ class Dataset {
      * @param array $originalFeatures - list of previous features - used to check if changes need to be made and to deal with any potential issues, like deleted features
      * @return array - list of features from header with any needed changes
      */
-    public function updateDataset($header, $datasetFileRoute) {
+    public function updateDataset($header) {
         // update basic properties
         $name = $header->get('title');
         if (empty($name)) $header->set('title', $this->name);
@@ -124,7 +124,6 @@ class Dataset {
             }
         }
         else $header->set('name_prop', $this->nameProperty);
-        if ($datasetFileRoute !== $this->datasetFileRoute) $this->datasetFileRoute = $datasetFileRoute;
         // reconcile feature list
         $headerFeatures = $header->get('features');
         if (!empty($headerFeatures)) {
