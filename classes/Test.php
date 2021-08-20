@@ -1149,10 +1149,10 @@ class Test {
         $this->assertEmpty($this->tour1->getFeatures());
         // tour with datasets but no features (tour 2)
         $this->assertEmpty($this->tour2->getFeatures());
-        // tour with one dataset show all and one dataset with three features (tour 0)
-        $this->assertSize($this->tour0->getFeatures(), 6);
+        // tour with one dataset show all (4 features) and one dataset with three features (tour 0)
+        $this->assertSize($this->tour0->getFeatures(), 7);
         // tour with feature that does not have a value for the name property (tour 0)
-        $this->assertEmpty($this->tour0->getFeatures()['MultiPolygons_0']);
+        $this->assertNotEmpty($this->tour0->getFeatures()['MultiPolygons_0']);
         // check name
         $point = $this->tour0->getFeatures()['points1_3'];
         $this->assertEquals($point['properties']['name'], 'Point 4');
@@ -1596,17 +1596,16 @@ class Test {
 
         $this->startHeader('Dataset Features');
         // count of features for several different datasets
-        // Wymansites - 23 (-1, name of null)
-        $this->assertSize($this->wymansites->getFeatures(), 22);
+        // Wymansites - 23
+        $this->assertSize($this->wymansites->getFeatures(), 23);
         // Loci - 7
         $this->assertSize($this->loci->getFeatures(), 7);
         // points1 - 7
         $this->assertSize($this->points1->getFeatures(), 7);
         // Multi Points - 4
         //$this->assertSize($this->multiPoints->getFeatures(), 4);
-        // count of features for dataset that includes feature without a valid name (MultiLineStrings) (only 2 with valid names)
-        $this->assertSize($this->multiLineStrings->getFeatures(), 2);
-        // TODO: Allow non-existing names on upload
+        // count of features for dataset that includes feature without a valid name (MultiLineStrings) - 4
+        $this->assertSize($this->multiLineStrings->getFeatures(), 4);
         // update custom name for feature without a valid name MultiLineStrings_2 - 'MultiLineString 39 - new name'
         //$yaml = $this->multiLineStrings->asYaml();
         //$yaml['features'][] = ['id'=>'MultiLineStrings_2', 'custom_name'=>'MultiLineString 39 - new name'];
@@ -1616,7 +1615,7 @@ class Test {
         // check count (3)
         //$this->assertSize($this->multiLineStrings->getFeatures(), 3);
         // update custom name again to be null
-        $features = [];
+        /*$features = [];
         foreach ($this->multiLineStrings->getFeatures() as $id=>$feature) {
             if ($id !== 'MultiLineStrings_2') $features[] = $feature->asYaml();
         }
@@ -1626,18 +1625,18 @@ class Test {
         // check name
         $this->assertEmpty($this->multiLineStrings->getFeatures()['MultiLineStrings_2']);
         // check count (2)
-        $this->assertSize($this->multiLineStrings->getFeatures(), 2);
+        $this->assertSize($this->multiLineStrings->getFeatures(), 2);*/
         $this->endHeader();
 
         $this->startHeader('Name');
         // standard string (points1)
         $this->assertEquals($this->points1->getFeatures()['points1_0']->getName(), 'Point 1');
         // prop is bool false (MultiPolygons)
-        $this->assertEmpty($this->multiPolygons->getFeatures()['MultiPolygons_0']);
+        $this->assertNotEmpty($this->multiPolygons->getFeatures()['MultiPolygons_0']);
         // prop is bool true (LineStrings)
         $this->assertTrue($this->lineStrings->getFeatures()['LineStrings_2']->getName());
         // prop is null/doesn't exist (MultiLineStrings)
-        $this->assertEmpty($this->multiLineStrings->getFeatures()['MultiLineStrings_1']);
+        $this->assertNotEmpty($this->multiLineStrings->getFeatures()['MultiLineStrings_1']);
         // custom name
         $this->endHeader();
 

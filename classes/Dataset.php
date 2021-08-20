@@ -374,7 +374,7 @@ class Dataset {
         $count = 0;
         $features = [];
         foreach ($jsonData->get('features') as $feature) {
-            if (is_array($feature) && $feature['geometry'] && Utils::areValidCoordinates($feature['geometry']['coordinates'], $featureType)) {
+            if (Utils::isValidFeature($feature, $featureType)) {
                 $feature['id'] = $id.'_'.$count;
                 $features[] = $feature;
                 $count++;

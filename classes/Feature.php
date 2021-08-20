@@ -43,9 +43,8 @@ class Feature {
         if ($this->type !== $type) return;
         $this->coordinates = $jsonData['geometry']['coordinates'];
         $this->customName = $jsonData['customName'];
-        $this->name = $this->customName ?? $this->properties[$nameProperty];
-        if (empty($this->name)) return;
         $this->id = $jsonData['id'];
+        $this->name = $this->customName ?? $this->properties[$nameProperty] ?? $this->id;
     }
 
     public function isValid(): bool {
@@ -81,7 +80,7 @@ class Feature {
     }
 
     public function updateName($nameProperty): void {
-        $this->name = $this->customName ?? $this->properties[$nameProperty] ?? '';
+        $this->name = $this->customName ?? $this->properties[$nameProperty] ?? $this->id;
     }
 
     // getters

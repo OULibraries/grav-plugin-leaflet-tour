@@ -159,6 +159,19 @@ class Utils {
         return $validType;
     }
 
+    // feature must be array with type Feature, geometry type of featureType, geometry coordinates valid for featureType
+    public static function isValidFeature($feature, $featureType) {
+        try {
+            if ($feature['type'] !== "Feature") return false;
+            $featureType = self::setValidType($featureType);
+            if ($feature['geometry']['type'] !== $featureType) return false;
+            if (!self::areValidCoordinates($feature['geometry']['coordinates'], $featureType)) return false;
+        } catch (\Throwable $t) {
+            return false;
+        }
+        return true;
+    }
+
     public static function setBounds($bounds): array {
         if (is_array($bounds) && count($bounds) === 4) {
             $bounds = [[$bounds['south'], $bounds['west']], [$bounds['north'], $bounds['east']]];
