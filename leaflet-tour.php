@@ -1,6 +1,9 @@
 <?php
 namespace Grav\Plugin;
 
+// TODO: better commenting
+// TODO: comment shortcode files
+
 // TODO: Is this necessary?
 require_once __DIR__ . '/classes/LeafletTour.php';
 
@@ -18,6 +21,7 @@ use Grav\Plugin\LeafletTour\Feature;
 
 /**
  * Class LeafletTourPlugin
+ * This is the main plugin class. It handles events and functions called by admin panel config pages.
  * @package Grav\Plugin
  */
 class LeafletTourPlugin extends Plugin
@@ -154,7 +158,7 @@ class LeafletTourPlugin extends Plugin
             // update shortcodes_list as needed
             $header = $obj->header();
             if ($header->get('features') != $obj->getOriginal()->header()->get('features')) {
-                $header->set('shortcodes_list', Utils::generateShortcodeList($header->get('features') ?? [], Dataset::getDatasets() ?? []));
+                $header->set('shortcodes_list', Utils::generateShortcodeList($header->get('features') ?? []));
             }
             $header = Utils::filter_header($header);
         }
@@ -256,12 +260,12 @@ class LeafletTourPlugin extends Plugin
     public static function getTileServers($key = null) {
         if (empty($key)) {
             $servers = ['none'=>'None'];
-            foreach (Utils::TILESERVERS as $key=>$tileserver) {
+            foreach (Utils::TILE_SERVERS as $key=>$tileserver) {
                 $servers[$key] = $tileserver['select'];
             }
             return $servers;
         } else {
-            return Utils::TILESERVERS[$key];
+            return Utils::TILE_SERVERS[$key];
         }
     }
 }
