@@ -163,10 +163,10 @@ class Tour {
         $attribution = [];
         if ($this->tileserver['name']) $attribution[] = $this->tileserver['attribution'];
         foreach ($this->config->get('attribution_long') ?? [] as $attr) {
-            $attribution[] = $attr;
+            $attribution[] = $attr['text'];
         }
         foreach ($this->header->get('attribution_long') ?? [] as $attr) {
-            $attribution[] = $attr;
+            $attribution[] = $attr['text'];
         }
         return $attribution;
     }

@@ -115,24 +115,23 @@ class LeafletTourPlugin extends Plugin
         // handle plugin config data
         if (method_exists($obj, 'get') && $obj->get('leaflet_tour')) {
             // check for new data files
-            $update = $this->config->get('plugins.leaflet-tour.data_update');
             $originalFiles = $this->config->get('plugins.leaflet-tour.data_files') ?? [];
             $newFiles = 0;
             foreach ($obj->get('data_files') ?? [] as $key=>$fileData) {
-                if ($update || !($originalFiles)[$key]) {
-                if (!($originalFiles)[$key]) $newFiles++;
+                if (!($originalFiles)[$key]) {
+                    $newFiles++;
                     // new upload - save as json (if possible)
                     $jsonData = Utils::parseDatasetUpload($fileData);
                     if (!empty($jsonData)) Dataset::createNewDataset($jsonData[0], $jsonData[1]);
                 }
-                // make sure update never stays checked
-                $obj->set('update', false);
             }
             // check for deleted data files
             $obj->set('filecount', count($obj->get('data_files') ?? []));
             if ($obj->get('filecount') < (($this->config->get('plugins.leaflet-tour.filecount') ?? 0)+$newFiles)) {
                 Utils::deleteDatasets();
             }
+            // check for updates
+            if (!empty($obj->get('update.file'))) $obj->merge(['update'=>Utils::handleDatasetUpdate($obj->get('update'), $this->config->get('plugins.leaflet-tour.update') ?? [])]);
         }
         // handle tour config data
         else if (method_exists($obj, 'template') && $obj->template() === 'tour') {
@@ -180,6 +179,11 @@ class LeafletTourPlugin extends Plugin
     
     public static function getDatasetFiles(): array {
         return Dataset::getDatasetList();
+    }
+
+    // TODO: Make this a parameter for the above function, instead
+    public static function getDatasetFilesNone(): array {
+        return array_merge(['none'=>'None'], Dataset::getDatasetList());
     }
     
     // only call directly from tour.yaml
@@ -255,6 +259,15 @@ class LeafletTourPlugin extends Plugin
             return $dataset->getProperties();
         }
         return [];
+    }
+    
+    // list of properties from all datasets for convenience when updating a dataset
+    public static function getAllPropertiesList(): array {
+        $props = ['tour_none'=>'None', 'tour_coords'=>'Coordinates (not a property)'];
+        foreach (Dataset::getDatasets() as $dataset) {
+            $props = array_merge($props, $dataset->getProperties());
+        }
+        return $props;
     }
 
     public static function getTileServers($key = null) {

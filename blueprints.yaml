@@ -43,6 +43,8 @@ form:
             leaflet_tour:
               type: hidden
               default: true
+              validate:
+                type: bool
 
             data:
               type: section
@@ -61,17 +63,17 @@ form:
                 - '.js'
                 - '.json'
             
-            data_update:
-              type: toggle
-              label: Update Datasets
-              description: "TODO: Explain exactly what this does. I don't think it will overwrite any of the changes that are currently possible to make. It does recreate the json and the dataset page. At some point there may be more configurable update options."
-              highlight: 1
-              default: 0
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
+            # data_update:
+            #   type: toggle
+            #   label: Update Datasets
+            #   description: "TODO: Explain exactly what this does. I don't think it will overwrite any of the changes that are currently possible to make. It does recreate the json and the dataset page. At some point there may be more configurable update options."
+            #   highlight: 1
+            #   default: 0
+            #   options:
+            #     1: PLUGIN_ADMIN.ENABLED
+            #     0: PLUGIN_ADMIN.DISABLED
+            #   validate:
+            #     type: bool
             
             # datasets:
             #   type: list
@@ -376,3 +378,156 @@ form:
               multiple: true
               accept:
                 - image/*
+
+        update:
+          type: tab
+          title: Dataset Update
+          fields:
+
+            update.msg:
+              type: textarea
+              readonly: true
+              label: Update Status
+              default: Upload a file, select options, and save to begin.
+              style: vertical
+              rows: 7
+
+            update.status:
+              type: hidden
+              default: none
+            
+            update_cols:
+              type: columns
+              fields:
+                col1:
+                  type: column
+                  fields:
+            
+                    update.confirm:
+                      type: toggle
+                      label: Confirm Update
+                      highlight: 1
+                      default: 0
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
+                    
+                col2:
+                  type: column
+                  fields:
+            
+                    update.cancel:
+                      type: toggle
+                      label: Cancel Update
+                      highlight: 1
+                      default: 0
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
+            
+            update.file:
+              type: file
+              label: Upload File with Update Information
+              style: vertical
+              multiple: false
+              destination: 'user://data/leaflet-tour/datasets/update'
+              accept:
+                - '.js'
+                - '.json'
+            
+            update.dataset:
+              type: select
+              label: Select the Dataset to Update
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetFilesNone'
+            
+            update.dataset_prop:
+              type: select
+              label: Select a Property from the Dataset
+              # TODO: Why? Will connect to property chosen from the update file. Note that all properties are listed, not just the ones from the dataset?
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getAllPropertiesList'
+            
+            update_cols2:
+              type: columns
+              fields:
+                col1:
+                  type: column
+                  fields:
+
+                    update.same_prop:
+                      type: toggle
+                      label: Use the same property in the update file?
+                      highlight: 1
+                      default: 1
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
+                    
+                col2:
+                  type: column
+                  fields:
+
+                    update.file_prop:
+                      type: text
+                      label: Property from Update File
+                    
+            update.type:
+              type: select
+              label: Update Type
+              options:
+                standard: Standard
+                remove: Remove Specified Features
+                replace: Total Replacement
+            
+            standard_update:
+              type: section
+              title: Standard Update Options
+
+            update.modify_existing:
+              type: toggle
+              label: Update Existing Features
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            update.add_new:
+              type: toggle
+              label: Add New Features
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+
+            update.remove_empty:
+              type: toggle
+              label: Remove Missing Features
+              highlight: 1
+              default: 0
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+              
+            update.overwrite_blank:
+              type: toggle
+              label: Overwrite existing content with blank fields
+              highlight: 1
+              default: 0
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool

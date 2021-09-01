@@ -188,6 +188,9 @@ class Dataset {
         return $this->datasetFileRoute;
     }
 
+    public function getFeatureCounter(): int { return $this->featureCounter; }
+    public function getJsonFilename(): string { return $this->jsonFilename; }
+
     // for config
     public function getProperties(): array {
         return array_combine($this->properties, $this->properties);
@@ -217,6 +220,7 @@ class Dataset {
             'type'=>'FeatureCollection',
             'name'=>$this->name,
             'crs'=>$this->crs,
+            'featureCounter'=>$this->featureCounter,
             'datasetFileRoute'=>$this->datasetFileRoute,
             'featureType'=>$this->featureType,
             'nameProperty'=>$this->nameProperty,
@@ -390,6 +394,7 @@ class Dataset {
 
     // utilities
 
+// TODO: Use utils function for most of this
     /**
      * Used to build a new dataset from a json file, including validating the json and setting sensible defaults
      */
@@ -408,7 +413,7 @@ class Dataset {
         $propList = [];
         foreach ($jsonData->get('features') as $feature) {
             if (!$featureType && $feature['geometry'] && $feature['geometry']['type']) $featureType = Utils::setValidType($feature['geometry']['type']); // just in case
-            if (isset($featureType) && Feature::isValidFeature($feature, $featureType)) {
+            if (isset($featureType) && $feature=Feature::setValidFeature($feature, $featureType)) {
                 $feature['id'] = $id.'_'.$count;
                 $features[] = $feature;
                 $count++;
@@ -439,7 +444,7 @@ class Dataset {
         $jsonFile->content($jsonArray);
         $jsonFile->save();
         // create the dataset (needs to happen after the json file is saved, since the constructor requires the file)
-        $dataset = new Dataset($jsonFilename, Grav::instance()['config']->get('plugins.leaflet-tour'));
+        $dataset = new Dataset($jsonFilename, new Data(Grav::instance()['config']->get('plugins.leaflet-tour')));
         $dataset->setDefaults(); // only ever called during dataset creation (useful because the page is created on the backend, rather by saving a new page from the admin panel where the defaults in the blueprints would be used)
         $dataset->saveDatasetPage();
         self::$datasets[$jsonFilename] = $dataset;

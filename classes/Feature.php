@@ -220,9 +220,9 @@ class Feature {
     public static function setValidFeature($feature, string $featureType): ?array {
         try {
             // if ($feature['type'] !== "Feature") return null;
-            $featureType = self::setValidType($featureType);
+            $featureType = Utils::setValidType($featureType);
             if ($feature['geometry']['type'] !== $featureType) return null;
-            $coords = self::setValidCoordinates($feature['geometry']['coordinates'], $featureType);
+            $coords = Utils::setValidCoordinates($feature['geometry']['coordinates'], $featureType);
             if ($coords) $feature['geometry']['coordinates'] = $coords;
             else return null;
         } catch (\Throwable $t) {

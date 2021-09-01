@@ -8,6 +8,8 @@ use Grav\Common\Filesystem\Folder;
 use Grav\Common\File\CompiledJsonFile;
 use RocketTheme\Toolbox\File\MarkdownFile;
 
+// TODO: Note that for update properties - coordinates and other properties kind of assume that these are being used as unique identifiers. Currently, you can't use this to remove all features that have a value of x for property y, just as you cannot set multiple properties as the identifier or anything else so complicated.
+
 /**
  * The Utils class is never instantiated as an object. Instead, it contains various functions that are generally useful for a leaflet tour that should not belong to one particular class.
  */
@@ -100,6 +102,43 @@ class Utils {
             'name' => 'terrain',
             'attribution' => 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
         ],
+    ];
+
+    const MSGS = [
+        'no_dataset_selected'=>'Select an existing dataset to update.',
+        'no_dataset_prop'=>'Select a property from the existing dataset to identify features to update.',
+        'invalid_dataset_prop'=>'The property selected is not a valid property for the dataset. Select a property from this dataset to identify features to update.',
+        'no_update_prop'=>'Indicate that the same property selected for the dataset will be used to identify features in the update file, or provide a different property for this pupose.',
+        'invalid_json'=>'The uploaded file is invalid. Provide an update file with valid json, as described in the readme.', // Note: doesn't necessarily have to provide valid geojson data.
+
+        'issue_list'=>"The following issues have been identified. Correct them and try saving again, or cancel the update:\r\n",
+        
+        'update_warning'=>'Warning! Once confirmed, the update cannot be undone. Please read the information below carefully before making changes.',
+        'update_confirm_instructions'=>'To complete the update, toggle the Confirm option below. To cancel the update, toggle the Cancel option instead.',
+
+        'update_replace'=>"You have chosen a total dataset replacement. All content from the original file upload will be removed and replaced with the new file content.\r\n",
+        'no_dataset_name'=>'Because no dataset name has been specified, the old name will be preserved',
+        'dataset_name_prop'=>'If valid, the old name property setting will be preserved',
+        'prop_coords'=>'Custom names and popup content for features with matching coordinates will be preserved.',
+        'prop_props'=>'Custom names and popup content for features with matching properties for the chosen properties in the original upload in the update file will be preserved.',
+        'replace_no_prop'=>'Warning! No valid properties have been selected for preserving features. All custom names and popup content will be removed. Features selected from the old dataset in tours or views will no longer be valid.',
+        'replace_no_matches'=>'No feature matches were found between the original dataset and the update file. All custom names and popup content will be removed. Features selected from the old dataset in tours or views will no longer be valid.',
+        'replace_matches'=>'Matches were found for the following features. Custom names and popup content for only these features will be preserved. Only these features will remain as valid selections in tours or views:',
+
+        'update_remove'=>'You have chosen to remove all features that match the features provided in the update file.',
+        'remove_no_matches'=>'No feature matches were found between the original dataset and the update file. No features will be removed.',
+        'remove_matches'=>'The following features will be removed:',
+
+        'update_standard'=>'You have chosen a standard update with the following options:',
+        'modify_existing'=>'Existing features will be modified based on matching features in the update file.',
+        'overwrite_blank'=>' Any values/properties that are blank in the update file will replace existing content in the dataset.',
+        'not_overwrite_blank'=>' Any values/properties that are blank in the update file will be ignored.',
+        'add_new'=>'Features from the update file that do not have a match in the existing dataset will be added as new features.',
+        'remove_empty'=>'Features from the existing dataset that do not have a match in the update file will be removed from the existing dataset.',
+        'modify_existing_no_matches'=>'No feature matches were found between the original dataset and the update file. No features will be updated.',
+        'modify_existing_matches'=>'The following features will be updated:',
+        'add_new_none'=>'No new features were found in the update file.',
+        'add_new_some'=>'The following new features will be added:',
     ];
 
     // GeoJson Utils - Utility functions for dealing with coordinates and GeoJSON feature types
@@ -405,7 +444,7 @@ class Utils {
         try {
             switch ($fileData['type']) {
                 case 'text/javascript':
-                    $jsonArray = self::parsJsFile($fileData['path']);
+                    $jsonArray = self::parseJsFile($fileData['path']);
                     break;
                 case 'application/json':
                     $jsonArray = self::parseJsonFile($fileData['path']);
@@ -480,6 +519,402 @@ class Utils {
         $file = CompiledJsonFile::instance(Grav::instance()['locator']->getBase().'/'.$filePath);
         if (!$file->exists()) return [];
         return $file->content() ?? [];
+    }
+
+    /**
+     * Called when a file has been detected to be updated, this function ensures that all the necessary settings have been checked, that the user is given a confirmation message before continuing, and that the update occurs.
+     * @param array $update - the update settings from the plugin config page
+     * @param array $prevUpdate - the saved update settings from the plugin config (not yet replaced)
+     * @return array - modified update settings to be merged with the plugin config object before saving
+     */
+    public static function handleDatasetUpdate(array $update, array $prevUpdate): array {
+        $updateFile = $update['file'][array_keys($update['file'])[0]] ?? []; // have to make sure we grab the first one, even though there can only be one
+        $issues = []; // for storing any issues found to easily return them to the user
+        if ($update['cancel']) return self::clearUpdate($updateFile['path'] ?? '');
+        // if update status is confirm, confirm and complete the update
+        if ($update['status'] === 'confirm') {
+            $changed = false; // make sure no settings have changed
+            $keys = ['file', 'dataset', 'type', 'dataset_prop']; // always check these settings
+            if ($update['dataset_prop'] !== 'tour_none' && $update['dataset_prop'] !== 'tour_coords') {
+                $keys = array_merge($keys, ['same_prop']); // same_prop only matters if dataset_prop is set to a property
+                if (!$update['same_prop']) $keys = array_merge($keys, ['file_prop']); // file_prop only matters if same_prop matters and same_prop is false
+            }
+            if ($update['type'] === 'standard') $keys = array_merge($keys, ['modify_existing', 'add_new', 'remove_empty', 'overwrite_blank']); // these settings only apply for standard updates
+            foreach ($keys as $key) {
+                if ($update[$key] !== $prevUpdate[$key]) { // an important setting has changed
+                    $changed = true;
+                    break;
+                }
+            }
+            if (!$changed && $update['confirm']) {
+                // no important settings have changed and the user has confirmed the update - complete the update
+                try {
+                    $jsonFile = Dataset::getJsonFile($update['dataset']);
+                    $tmpFile = CompiledJsonFile::instance(Grav::instance()['locator']->findResource('user-data://').'/leaflet-tour/datasets/update/tmp.json');
+                    $jsonFile->content($tmpFile->content());
+                    $jsonFile->save();
+                    Dataset::resetDatasets();
+                    Dataset::getDatasets()[$update['dataset']]->saveDatasetPage();
+                    // TODO: ensure that props list will be regenerated
+                    return self::clearUpdate($updateFile['path'] ?? '');
+                } catch (\Throwable $t) {
+                    $issues[] = 'Issue Updating: '.$t->getMessage();
+                }
+            }
+            else if (!$changed) return $update; // nothing has changed, but the update has been neither confirmed nor canceled - all settings should remain the same until the user changes them
+        }
+        // set some variables
+        $issues = []; // for storing any issues found to easily return them to the user
+        $dataset = Dataset::getDatasets()[$update['dataset']];
+        $propertySettings = [];
+        $datasetProp = $update['dataset_prop'];
+        if ($datasetProp === 'tour_coords') $propertySettings = ['tour_coords'];
+        else if (!empty($dataset) && !empty($dataset->getProperties()[$datasetProp])) {
+            $updateProp = $update['same_prop'] ? $datasetProp : $update['file_prop'];
+            if (!empty($updateProp)) $propertySettings = [$datasetProp, $updateProp];
+        }
+        $parsedJsonData = self::parseDatasetUpload($updateFile); // have  to make sure we grab the first one, even though there can only be one
+        // checks
+        if (empty($dataset)) $issues[] = self::MSGS['no_dataset_selected'];
+        if (empty($propertySettings) && $update['type'] !== 'replace') {
+            if ($datasetProp === 'tour_none') $issues[] = self::MSGS['no_dataset_prop'];
+            else if (!empty($dataset) && empty($dataset->getProperties()[$datasetProp])) $issues[] = self::MSGS['invalid_dataset_prop'];
+            if (!$update['same_prop'] && empty($update['file_prop'])) $issues[] = self::MSGS['no_update_prop'];
+        }
+        if (empty($parsedJsonData)) $issues[] = self::MSGS['invalid_json'];
+
+        if (empty($issues)) {
+            $datasetFeatures = $dataset->getFeatures() ?? [];
+            try {
+                // create detailed message noting the chosen options and what will be changed, as well as a temporary json file so that the work of checking and modifying various features does not have to be redone when actually updating
+                [$jsonArray, $jsonFilename] = $parsedJsonData;
+                //$jsonFeatures = (new Data($jsonArray))->get('features') ?? []; // TODO: JsonData neded?
+                $jsonFeatures = $jsonArray['features'] ?? [];
+                switch ($update['type']) {
+                    case 'replace':
+                        [$msg, $tmpJson] = self::updateReplace($dataset, $jsonArray, $propertySettings);
+                        break;
+                    case 'remove':
+                        [$msg, $tmpJson] = self::updateRemove($dataset, $jsonArray['features'], $propertySettings);
+                        break;
+                    default:
+                        [$msg, $tmpJson] = self::updateStandard($update, $dataset, $jsonArray['features'] ?? [], $propertySettings);
+                }
+                // save the tmp json file
+                $tmpJsonFile = CompiledJsonFile::instance(Grav::instance()['locator']->findResource('user-data://').'/leaflet-tour/datasets/update/tmp.json');
+                $tmpJsonFile->content($tmpJson);
+                $tmpJsonFile->save();
+                // prep message, settings
+                $msg = self::MSGS['update_warning']."\r\n\r\n".$msg."\r\n".self::MSGS['update_confirm_instructions'];
+                return ['msg'=>$msg, 'confirm'=>false, 'status'=>'confirm'];
+            } catch (\Throwable $t) {
+                $issues[] = $t->getMessage();
+            }
+        }
+        // issues exist
+        $msg = self::MSGS['issue_list'];
+        foreach ($issues as $issue) {
+            $msg .= "\t- $issue\r\n";
+        }
+        return ['msg'=>$msg, 'confirm'=>false, 'status'=>'corrections'];
+    }
+
+    /**
+     * Removes uploaded and temporary files, as applicable. Also returns an array that will reset update settings to their defaults.
+     * @param string $filepath - the path to the uploaded update file
+     * @return array - empty update settings
+     */
+    protected static function clearUpdate(string $filepath): array {
+        // remove update file
+        $file = File::instance(Grav::instance()['locator']->getBase().'/'.$filepath);
+        if ($file->exists()) $file->delete();
+        // remove temporary file
+        $file = File::instance(Grav::instance()['locator']->findResource('user-data://').'/leaflet-tour/datasets/update/tmp.json');
+        if ($file->exists()) $file->delete();
+        // return empty/default update settings array
+        return [
+            'msg'=>'Upload a file, select options, and save to begin.',
+            'status'=>'none',
+            'confirm'=>false,
+            'cancel'=>false,
+            'dataset'=>null,
+            'file'=>null,
+            'dataset_prop'=>'none',
+            'same_prop'=>true,
+            'file_prop'=>null,
+            'type'=>'standard',
+            'file'=>[]
+        ];
+    }
+
+    /**
+     * Handles replace update type, which replaces all features from the old dataset with features features from the update file.
+     * @param Dataset $dataset - the Dataset object associated with the chosen dataset
+     * @param array $jsonArray - json content from the update file
+     * @param array $propertySettings - settings for identifying matches between original dataset and update file
+     * @return array - [$msg, $datasestJson] - the msg to present to the user informing them of what changes will occur, and the json data to save in the tmp file for easier updating once the update is confirmed
+     */
+    protected static function updateReplace(Dataset $dataset, array $jsonArray, array $propertySettings) {
+        $msg = self::MSGS['update_replace'];
+        // check for name and name property
+        if (empty($jsonArray['name'])) {
+            $jsonArray['name'] = $dataset->getName();
+            $msg .= "\t- ".self::MSGS['no_dataset_name'].' ('.$dataset->getName().").\r\n";
+        }
+        $jsonArray['nameProperty'] = $dataset->getNameProperty();
+        $msg .= "\t- ".self::MSGS['dataset_name_prop'].' ('.$dataset->getNameProperty().").\r\n";
+        $jsonArray['featureCounter'] = $dataset->getFeatureCounter(); // prevents different features with same ids as deleted features
+        // check for property settings - not required, but can be useful for preserving some content
+        switch (count($propertySettings)) {
+            case 1:
+                $msg .= self::MSGS['prop_coords']."\r\n";
+                break;
+            case 2:
+                $msg .= self::MSGS['prop_props']."\r\n";
+                break;
+            default:
+                $msg .= self::MSGS['replace_no_prop'];
+        }
+        if (!empty($propertySettings)) {
+            // possibility that some features will be preserved
+            $datasetFeatures = $dataset->getFeatures();
+            [$featureMatches, $jsonFeatures] = self::matchFeatures($datasetFeatures, $jsonArray['features'], $propertySettings);
+            if (empty($featureMatches)) $msg .= "\r\n".self::MSGS['replace_no_matches'];
+            else {
+                $msg .= "\r\n".self::MSGS['replace_matches']."\r\n".self::listFeatures($featureMatches, $datasetFeatures);
+                $jsonArray['features'] = $jsonFeatures;
+            }
+        }
+        $datasetJson = self::buildNewDataset($jsonArray, $dataset->getJsonFilename());
+        return [$msg, $datasetJson];
+    }
+
+    /**
+     * Handles remove update type, which will remove all feature matches in the update file from the dataset.
+     * @param Dataset $dataset - the Dataset object associated with the chosen dataset
+     * @param array $jsonFeatures - list of features from the update file
+     * @param array $propertySettings - settings for identifying matches between original dataset and update file
+     * @return array - [$msg, $datasestJson] - the msg to present to the user informing them of what changes will occur, and the json data to save in the tmp file for easier updating once the update is confirmed
+     */
+    protected static function updateRemove(Dataset $dataset, array $jsonFeatures, array $propertySettings) {
+        $datasetFeatures = $dataset->getFeatures();
+        $featureMatches = self::matchFeatures($datasetFeatures, $jsonFeatures, $propertySettings)[0];
+        $msg = self::MSGS['update_remove']."\r\n";
+        if (empty($featureMatches)) $msg .= "\r\n".self::MSGS['remove_no_matches']."\r\n";
+        else $msg .= "\r\n".self::MSGS['remove_matches']."\r\n".self::listFeatures($featureMatches, $datasetFeatures);
+        // make a list of json features for only those features that would remain
+        $datasetJson = $dataset->asJson();
+        $features = [];
+        foreach ($datasetFeatures as $id=>$feature) {
+            if (!in_array($id, $featureMatches)) $features[] = $feature->asJson();
+        }
+        $datasetJson['features'] = $features;
+        return [$msg, $datasetJson];
+    }
+
+    /**
+     * Handles standard update type, which may include a combination of modify_existing, overwrite_blank, add_new, and remove_empty.
+     * @param array $update - the update settings from the plugin config page
+     * @param Dataset $dataset - the Dataset object associated with the chosen dataset
+     * @param array $jsonFeatures - list of features from the update file
+     * @param array $propertySettings - settings for identifying matches between original dataset and update file
+     * @return array - [$msg, $datasestJson] - the msg to present to the user informing them of what changes will occur, and the json data to save in the tmp file for easier updating once the update is confirmed
+     */
+    protected static function updateStandard(array $update, Dataset $dataset, array $jsonFeatures, array $propertySettings): array {
+        $datasetFeatures = $dataset->getFeatures();
+        // set initial message
+        $msg = self::MSGS['update_standard']."\r\n";
+        if ($update['modify_existing']) {
+            $msg .= "\t- ".self::MSGS['modify_existing'];
+            if ($update['overwrite_blank']) $msg .= self::MSGS['overwrite_blank']."\r\n";
+            else $msg .= self::MSGS['not_overwrite_blank']."\r\n";
+        }
+        if ($update['add_new']) $msg .= "\t- ".self::MSGS['add_new']."\r\n";
+        if ($update['remove_empty']) $msg .= "\t- ".self::MSGS['remove_empty']."\r\n";
+        // get list of features to be modified
+        [$featureMatches, $jsonFeatures] = self::matchFeatures($datasetFeatures, $jsonFeatures, $propertySettings);
+        $features = []; // the features that will actually be saved
+        // the three major options: standard update can include any combination of these
+        if ($update['modify_existing']) {
+            if (empty($featureMatches)) $msg .="\r\n".self::MSGS['modify_existing_no_matches']."\r\n";
+            else $msg .= "\r\n".self::MSGS['modify_existing_matches']."\r\n".self::listFeatures($featureMatches, $datasetFeatures);
+            foreach ($jsonFeatures as $jsonFeature) {
+                if (empty($jsonFeature['id'])) continue; // not a match, no modification
+                $newFeature = $datasetFeatures[$jsonFeature['id']]->asJson();
+                // only update properties and coordinates
+                $props = [];
+                foreach ($newFeature['properties'] ?? [] as $prop=>$val) {
+                    $newVal = ($jsonFeature['properties'] ?? [])[$prop];
+                    if ($newVal !== null && ($update['overwrite_blank'] || !empty($newVal))) $props[$prop] = $newVal;
+                    else $props[$prop] = $val;
+                }
+                $newFeature['properties'] = $props;
+                // coords
+                $coords = ($jsonFeature['geometry'] ?? [])['coordinates'];
+                $coords = Utils::setValidCoordinates($coords, $dataset->getFeatureType());
+                if (!empty($coords)) $newFeature['geometry']['coordinates'] = $coords; // coords will still be valid otherwise, because the old (valid) coords will be kept
+                $features[] = $newFeature;
+            }
+        } else {
+            // make sure that existing features are kept
+            // make sure existing features are kept
+            foreach ($datasetFeatures as $id=>$feature) {
+                if (in_array($id, $featureMatches)) $features[] = $feature->asJson();
+            }
+        }
+        if ($update['add_new']) {
+            // everything in jsonFeatures that didn't get an id will be added
+            $addedFeatures = [];
+            $unnamedCount = 0; // in case some don't have a name for their name property
+            $count = $dataset->asJson()['featureCounter'];
+            $dataId = str_replace('.json', '', $dataset->asYaml()['dataset_file']);
+            foreach ($jsonFeatures as $feature) {
+                if (!empty($feature['id'])) continue;
+                if ($feature=Feature::setValidFeature($feature, $dataset->getFeatureType())) {
+                    $feature['id'] = $dataId.'_'.$count;
+                    $count++;
+                    $name = ($feature['properties'] ?? [])[$dataset->getNameProperty()];
+                    $features[] = $feature; // add to the features json list
+                    if (!empty($name)) $addedFeatures[] = $name;
+                    else $unnamedCount++;
+                }
+            }
+            if (empty($addedFeatures) && $unnamedCount < 0) $msg .="\r\n".self::MSGS['add_new_none']."\r\n";
+            else {
+                $msg .="\r\n".self::MSGS['add_new_some']."\r\n";
+                foreach ($addedFeatures as $feat) {
+                    $msg .= "\t- $feat\r\n";
+                }
+                if ($unnamedCount > 0) $msg .= "\t- $unnamedCount unnamed features\r\n";
+            }
+        }
+        if ($update['remove_empty']) {
+            // everything in dataset features not in the foundFeatures list will be removed
+            $removedFeatures = [];
+            $jsonFeaturesIds = array_column($jsonFeatures, 'id');
+            foreach (array_keys($datasetFeatures) as $id) {
+                if (!in_array($id, $jsonFeaturesIds)) $removedFeatures[] = $id;
+            }
+            if (empty($removedFeatures)) $msg .= "\r\nAll existing features had matches in the update file. No features will be removed.\r\n";
+            else $msg .= "\r\nThe following ".count($removedFeatures)." will be removed:\r\n".self::listFeatures($removedFeatures, $datasetFeatures);
+        } else {
+            // make sure existing features are kept
+            foreach ($datasetFeatures as $id=>$feature) {
+                if (!in_array($id, $featureMatches)) $features[] = $feature->asJson();
+            }
+        }
+        // update features, featureCounter
+        $datasetJson = $dataset->asJson();
+        $datasetJson['features'] = $features;
+        if (!empty($count)) $datasetJson['featureCounter'] = $count;
+        return [$msg, $datasetJson];
+    }
+
+    /**
+     * Returns all features from the first dataset that match features in the second dataset based on parameters provided. Also modifies features in the second dataset slightly.
+     * @param array $datasetFeatures - list of Feature objects from the dataset
+     * @param array $jsonFeatures - list of features from the newly uploaded json content
+     * @param array $propertySettings - an array with one item ['tour_coords'] or an array with two items [$datasetProp, $fileProp]
+     * @return array - array with list of feature matches (just ids) and list of new features with added ids [$matches, $jsonFeatures]
+     */
+    protected static function matchFeatures(array $datasetFeatures, array $jsonFeatures, array $propertySettings): array {
+        if (empty($propertySettings)) return [[], $jsonFeatures];
+        $coords = $propertySettings[0] === 'tour_coords' ? true : false;
+        if (!$coords && count($propertySettings) !=2) return [[], $jsonFeatures]; // may change in the future if allowing additional params
+        $matches = [];
+        $newJson = [];
+        if ($coords) {
+            $coordsList = []; // make list using coordinates from the dataset features as index i.e. [coords=>id]
+            foreach ($datasetFeatures as $id=>$feature) {
+                $x = ($feature->asJson())['geometry']['coordinates'];
+                $coordsList[(new Data($x))->toYaml()] = $id;
+            }
+            foreach ($jsonFeatures as $feature) { // look for matches
+                $x = ($feature['geometry'] ?? [])['coordinates'];
+                $id = $coordsList[(new Data($x))->toYaml()];
+                if (!empty($id)) $matches[] = $feature['id'] = $id;
+                $newJson[] = $feature;
+            }
+        } else {
+            $propsList = []; // make list using property from the dataset features as index i.e. [propValue=>id] (slightly more complicated because the feature may not have that property (or even any properties))
+            foreach ($datasetFeatures as $id=>$feature) {
+                $prop = ($feature->asJson()['properties'] ?? [])[$propertySettings[0]];
+                if ($prop) $propsList[$prop] = $id;
+            }
+            foreach ($jsonFeatures as $feature) {
+                $id = $propsList[($feature['properties'] ?? [])[$propertySettings[1]]];
+                if (!empty($id)) $matches[] = $feature['id'] = $id;
+                $newJson[] = $feature;
+            }
+        }
+        return [$matches, $newJson];
+    }
+    /**
+     * List names of a subset of features from the dataset
+     * @param array $featureIds - list of ids for the features to display
+     * @param array $features - full list of features from the dataset
+     * @return string - list of feature names as a string (for easy output)
+     */
+    protected static function listFeatures(array $featureIds, array $features): string {
+        $list = '';
+        foreach ($featureIds as $id) {
+            $feature = $features[$id];
+            if (empty($feature)) $name = $id;
+            else $name = $feature->getName();
+            $list .= "\t- ".$name." ($id)\r\n";
+        }
+        return $list;
+    }
+
+    /**
+     * Used to build a new dataset from a json file, including validating the json/features and setting sensible defaults. Can be used when a new dataset file has been uploaded, or when a total replacement update is initiated.
+     * @param array $jsonArray - json content from the new file
+     * @param string $jsonFilename - the name of the new file
+     */
+    protected static function buildNewDataset(array $jsonArray, string $jsonFilename): array {
+        $jsonData = new Data($jsonArray); // $jsonData is used to get values, because the 'get' function is useful and there may have been some problems using $jsonArray. $jsonArray is necessary for setting values, because setting values for a Data object is extremely annoying (have to use merge, not set)
+        $id = str_replace('.json', '', $jsonFilename); // json filename is primarily used as the id, but this is used to generate default dataset name and feature ids
+        if (empty($jsonData)) return []; // just in case
+        if (empty($jsonData->get('name'))) $jsonArray['name'] = $id; // set dataset name, if not already set
+        if ($jsonData->get('features.0.geometry.type')) $featureType = Utils::setValidType($jsonData->get('features.0.geometry.type')); // first feature might be invalid, hence the if statement
+        // set feature ids and get properties list
+        $count = $jsonData->get('featureCounter') ?? 0; // will already be set if this is an update
+        $features = [];
+        $propList = [];
+        foreach ($jsonData->get('features') as $feature) {
+            if (!$featureType && $feature['geometry'] && $feature['geometry']['type']) $featureType = Utils::setValidType($feature['geometry']['type']); // in case first feature(s) was/were invalid
+            if (isset($featureType) && $feature=Feature::setValidFeature($feature, $featureType)) {
+                if (empty($feature['id'])) { // allows for setting ids ahead of time, if necessary (updates)
+                    $feature['id'] = $id.'_'.$count;
+                    $count++;
+                }
+                $features[] = $feature;
+                if (is_array($feature['properties'])) {
+                    $propList = array_merge($propList, $feature['properties']); // make sure to add any properties that previous features didn't have - ensures that all properties are listed, not just the properties of the first feature
+                }
+            }
+        }
+        $propList = array_keys($propList); // only need the keys, which are the property names - values are set per feature
+        $jsonArray['propertyList'] = $propList;
+        $jsonArray['featureType'] = $featureType ?? '';
+        $jsonArray['featureCounter'] = $count; // if features are added in future updates, will be used to generate ids for them
+        $jsonArray['features'] = $features;
+        // set default name property - first priority is already set name prop, next is property called name, next is property beginning or ending with name, and last resort is first property
+        $nameProperty = $jsonData->get('nameProperty') ?? '';
+        if (empty($nameProperty) || !in_array($nameProperty, $propList)) {
+            foreach ($propList as $prop) {
+                if (strcasecmp($prop, 'name') == 0) $nameProperty = $prop;
+                else if (empty($nameProperty) && preg_match('/^(.*name|name.*)$/i', $prop)) $nameProperty = $prop;
+            }
+            if (empty($nameProperty) && !empty($propList)) $nameProperty = $propList[0];
+            $jsonArray['nameProperty'] = $nameProperty;
+        }
+        // set dataset file route, if necessary
+        if (empty($jsonData->get('datasetFileRoute'))) {
+            $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $jsonArray['name']), '-')); // trying to save folders with capital letters or special symbols may cause issues
+            $jsonArray['datasetFileRoute'] = Grav::instance()['locator']->findResource('page://').'/datasets/'.$slug.'/dataset.md';
+        }
+        return $jsonArray;
     }
 
     // Other Utils
