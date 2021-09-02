@@ -399,46 +399,7 @@ class Dataset {
      * Used to build a new dataset from a json file, including validating the json and setting sensible defaults
      */
     public static function createNewDataset(array $jsonArray, string $jsonFilename): void {
-        $jsonData = new Data($jsonArray); // $jsonData is used to get values, because the 'get' function is useful and there may have been some problems using $jsonArray. $jsonArray is necessary for setting values, because for some reason $jsonData was giving problems and $jsonArray was fine.
-        $id = str_replace('.json', '', $jsonFilename); // json filename is primarily used as the id, but this is used to generate default dataset name and feature ids
-        // some basic json validation
-        if (empty($jsonData) || empty($jsonData->get('features.0.geometry'))) return;
-        // set dataset name
-        if (empty($jsonData->get('name'))) $jsonArray['name'] = $id;
-        // set feature type
-        if ($jsonData->get('features.0.geometry.type')) $featureType = Utils::setValidType($jsonData->get('features.0.geometry.type')); // first feature might be invalid
-        // set feature ids and get properties list
-        $count = 0;
-        $features = [];
-        $propList = [];
-        foreach ($jsonData->get('features') as $feature) {
-            if (!$featureType && $feature['geometry'] && $feature['geometry']['type']) $featureType = Utils::setValidType($feature['geometry']['type']); // just in case
-            if (isset($featureType) && $feature=Feature::setValidFeature($feature, $featureType)) {
-                $feature['id'] = $id.'_'.$count;
-                $features[] = $feature;
-                $count++;
-                if (is_array($feature['properties'])) {
-                    $propList = array_merge($propList, $feature['properties']); // make sure to add any properties that previous features didn't have - ensures that all properties are listed, not just the properties of the first feature
-                }
-            }
-        }
-        $jsonArray['featureType'] = $featureType ?? '';
-        $jsonArray['featureCounter'] = $count; // if features are added in future updates, will be used to generate ids for them
-        $jsonArray['features'] = $features;
-        // set default name property
-        $nameProperty = '';
-        $propList = array_keys($propList); // only need the keys, which are the property names - values are set per feature
-        $jsonArray['propertyList'] = $propList;
-        // search for sensible default for name property - first priority is property name, second is property beginning or ending with name, last resort is first property
-        foreach ($propList as $prop) {
-            if (strcasecmp($prop, 'name') == 0) $nameProperty = $prop;
-            else if (empty($nameProperty) && preg_match('/^(.*name|name.*)$/i', $prop)) $nameProperty = $prop;
-        }
-        if (empty($nameProperty) && !empty($propList)) $nameProperty = $propList[0]; // possible that nameProperty will still be blank if no features have properties
-        $jsonArray['nameProperty'] = $nameProperty;
-        // set dataset file route
-        $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $jsonArray['name']), '-')); // trying to save folders with capital letters or special symbols may cause issues
-        $jsonArray['datasetFileRoute'] = Grav::instance()['locator']->findResource('page://').'/datasets/'.$slug.'/dataset.md';
+        $jsonArray = Utils::buildNewDataset($jsonArray, $jsonFilename);
         // save the file
         $jsonFile = self::getJsonFile($jsonFilename);
         $jsonFile->content($jsonArray);

@@ -871,11 +871,10 @@ class Utils {
      * @param array $jsonArray - json content from the new file
      * @param string $jsonFilename - the name of the new file
      */
-    protected static function buildNewDataset(array $jsonArray, string $jsonFilename): array {
+    public static function buildNewDataset(array $jsonArray, string $jsonFilename): array {
         $jsonData = new Data($jsonArray); // $jsonData is used to get values, because the 'get' function is useful and there may have been some problems using $jsonArray. $jsonArray is necessary for setting values, because setting values for a Data object is extremely annoying (have to use merge, not set)
         $id = str_replace('.json', '', $jsonFilename); // json filename is primarily used as the id, but this is used to generate default dataset name and feature ids
         if (empty($jsonData)) return []; // just in case
-        if (empty($jsonData->get('name'))) $jsonArray['name'] = $id; // set dataset name, if not already set
         if ($jsonData->get('features.0.geometry.type')) $featureType = Utils::setValidType($jsonData->get('features.0.geometry.type')); // first feature might be invalid, hence the if statement
         // set feature ids and get properties list
         $count = $jsonData->get('featureCounter') ?? 0; // will already be set if this is an update
@@ -911,8 +910,18 @@ class Utils {
         }
         // set dataset file route, if necessary
         if (empty($jsonData->get('datasetFileRoute'))) {
-            $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $jsonArray['name']), '-')); // trying to save folders with capital letters or special symbols may cause issues
-            $jsonArray['datasetFileRoute'] = Grav::instance()['locator']->findResource('page://').'/datasets/'.$slug.'/dataset.md';
+            // also handle potential for multiple datasets with the same name
+            $name = $baseName = $jsonData->get('name') ?? $id;
+            $slug = $baseSlug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $baseName), '-')); // trying to save folders with capital letters or special symbols may cause issues
+            $route = Grav::instance()['locator']->findResource('page://').'/datasets/'.$slug.'/dataset.md';
+            while (File::instance($route)->exists()) { // need to change name and slug/route
+                $nameCount = ($nameCount ?? 0) + 1;
+                $name = $baseName.'_'.$nameCount;
+                $slug = $baseSlug.'_'.$nameCount;
+                $route = Grav::instance()['locator']->findResource('page://').'/datasets/'.$slug.'/dataset.md';
+            }
+            $jsonArray['name'] = $name;
+            $jsonArray['datasetFileRoute'] = $route;
         }
         return $jsonArray;
     }
