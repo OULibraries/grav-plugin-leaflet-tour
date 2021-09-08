@@ -205,32 +205,6 @@ class Utils {
 
     /**
      * Checks that coordinates are an array of linear rings (line strings with four or more points where the first and last points are the same).
-     */
-    /*public static function isValidPolygon($coords): bool {
-        if (!is_array($coords) || count($coords) < 1) return false; // must be an array with at least one item
-        foreach ($coords as $polygon) {
-            if (!self::isValidLineString($polygon) || count($polygon) < 4 || ($polygon[0] !== $polygon[count($polygon)-1])) return false; // every item must be a valid linear ring
-        }
-        return true; // all checks passed
-    }*/
-
-    /**
-     * Checks that coordinates are an array with one or more polygons.
-     * @param $coords - The variable to test. The function will accept any type, but will return false for anything but an array. Longitude and latitude values must be in degrees.
-     * @return bool - true if $coords is a valid MultiPolygon, false otherwise
-     */
-    /*public static function isValidMultiPolygon($coords): bool {
-        if (!is_array($coords) || count($coords) < 1) return false;
-        foreach ($coords as $polygon) {
-            if (!self::isValidPolygon($polygon)) return false;
-        }
-        return true;
-    }*/
-
-    // TODO: Replace isValidPolygon and isValidMultiPolygon with the new "set" functions
-
-    /**
-     * Checks that coordinates are an array of linear rings (line strings with four or more points where the first and last points are the same).
      * If the first and last points are not the same, the first point will be added to the end.
      * @param $coords - The variable to test. The function will accept any type, but will return false for anything but an array. Longitude and latitude values must be in degrees.
      * @return array|null - The valid coordinates if possible, otherwise null
@@ -273,19 +247,6 @@ class Utils {
         }
         return $newCoords;
     }
-
-    /*public static function areValidCoordinates($coords, $type): bool {
-        $type = self::setValidType($type); // just in case
-        switch ($type) {
-            case 'Point': return self::isValidPoint($coords);
-            //case 'MultiPoint': return self::isValidMultiPoint($coords);
-            case 'Polygon': return self::isValidPolygon($coords);
-            case 'MultiPolygon': return self::isValidMultiPolygon($coords);
-            case 'LineString': return self::isValidLineString($coords);
-            case 'MultiLineString': return self::isValidMultiLineString($coords);
-            default: return false;
-        }
-    }*/
     
     /**
      * Checks that the coordinates provided are valid for the GeoJSON type provided. (If the type is invalid, will default to Point). Corrects any linear rings that do not have matching first and last points.
@@ -340,7 +301,6 @@ class Utils {
      * @param float $amount - The amount by which to increase/decrease the latitude
      * @return float - The modified latitude
      */
-    // TODO: test
     public static function addToLat(float $lat, float $amount): float {
         $amount = fmod($amount, 180); // Don't add or subtract by more than 180. Then the range of possible values is -270 to 270 after initial addition.
         $result = $lat + $amount;
@@ -355,7 +315,6 @@ class Utils {
      * @param float $amount - The amount by which to increase/decrease the longitude
      * @return float - The modified longitude
      */
-    // TODO: test
     public static function addToLong($long, $amount) {
         $amount = fmod($amount, 360); // Don't add or subtract by more than 360. Then the range of possible values is -540 to 540 after initial addition.
         $result = $long + $amount;

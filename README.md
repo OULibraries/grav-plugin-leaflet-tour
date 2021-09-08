@@ -198,20 +198,28 @@ You may want to turn on folder numeric prefix if you are having trouble ordering
 
 ## Updating and Deleting Content
 
-The current process for updating and deleting various types of content is not very good. This section will detail the process and specifications for future develoopment.
-
 ### Update Datasets
 
-1. Upload the new file to dataset update field (not the data files field).
-2. Save.
-    1. The new file will be parsed and compared to existing data.
-    2. Features and various properties will be updated based on the new file.
-    3. The JSON file wil be updated to match the updated dataset.
-    4. The original upload file will be replaced by the update file.
+1. Go to the plugin configuration _"Dataset Update"_ tab.
+2. Upload the new file.
+3. Select the dataset the file will be used to update.
+4. Select a property to match features from the new file with the existing dataset. You can use coordinates or any property in the datasest. The dropdown will show all properties from all datasets, so make sure the one you pick is valid. Note that you can currently only pick one property (or coordinates), and that the expectation is that this property will be used as a unique identifier. That is, you cannot use this to remove all features where property "State" equals "Texas". The property field is not required if you are doing a total replacement, but if you are keeping some of the same features, it is recommended.
+5. If you set a property (not coordinates), either indicate that the property in the update file has the same name, or provide the name of the property from the update file.
+6. Choose the type of update you want to perform.
+  1. A standard update allows you to update existing features, add new features, remove any features not in the update file, or some combination thereof.
+  2. A removal update will remove all matching features from the dataset.
+  3. A replacement update will remove all existing features and replace them with the new ones. If a property is provided to match features, custom names, ids, and popup content for any matching features will still be saved.
+7. If you are doing a standard update, set the options for the update. (More description can be found in the Plugin Configuration section).
+8. After saving, reload the page. Using refresh will probably not work - you will either want to click into the browser's url field and press enter or click the button to go back to plugins and then click on the Leaflet Tour plugin again.
+9. If any issues were found, a message will be displayed noting the issues and what to do to correct them. If not, the message will indicate what changes will be made.
+  1. If all is well, toggle the Confirm Update option and save again.
+  2. If settings need to be changed, change the settings and return to step 8.
+  3. Or if you decided against the update entirely, toggle the Cancel Update option and save again.
+10. After confirming or canceling, reloading the page (as described in step 8) should show all options have been cleared.
 
 ### Delete Datasets
 
-1. Delete the file from the data files fields.
+1. Delete the file from the data files field.
 2. Save.
     1. The original upload file will be gone.
     2. The JSON file created from the original upload will be removed.
@@ -306,6 +314,19 @@ If editing this manually, make sure to copy the `user/plugins/leaflet-tour/leafl
 |     Custom Basemap Images   (basemap_files) |     None |     File upload (multiple) |     File upload for image   files to the "user/data/leaflet-tour/basemaps" folder. Images added   here (and provided with additional data as described below) can be included   in tours and views as additional basemaps. You will have to save the plugin   configuration before you can add the additional required information for any   new uploads.    |
 |     Basemap Information   (basemaps) |     None |     List | A list of necessary information   about each basemap. Only images that have this information will be valid   choices to add to tours and views. A description of each of the fields is   provided below. |
 | Popup   Images (popup_image_files) | None | File upload (multiple) | File upload for image files to   the "user/images" folder. Images added here can be referenced in   the popup content markdown in dataset and tour configuration pages by adding   `image://` in front of the filename. For example: `![Image alt text](image://image_name.jpg)` |
+| Update   Status (update.msg) | Upload a file, select options,   and save to begin. | Read Only | Provides informative message   regarding the current update status: Will list any issues preventing an   update from occurring, or will list what features will be   updated/added/removed. |
+| Confirm   Update (update.confirm) | Disabled (false) | Enabled (true) or Disabled   (false) | When enabled and the update is   ready (as indicated by the update status), the update will occur and settings   will return to their defaults. |
+| Cancel   Update (update.cancel) | Disabled (false) | Enabled (true) or Disabled   (false) | Settings return to their   defaults. |
+| Upload   File with Update Information (update.file) | None | File Upload (single) | The file used to update the   dataset. Required for the update process to start at all. |
+| Select   the Dataset to Update (update.dataset) | None | Dropdown featuring all datasets   available | The dataset that the file will   update. |
+| Select a   Property from the Dataset (update.dataset_prop) | None | Dropdown featuring options for   coordinates and list of all properties from all datasets | Used to find matches between   the update file features and the dataset features. Assumes that the   coordinates or property will be used as unique identifiers - that is, that   there will not be multiple features with the same value for the property   chosen. |
+| Use the   same property in the update file? (update.same_prop) | Enabled (true) | Enabled (true) or Disabled   (false) | Determines if a new property   name needs to be provided. |
+| Property   from Update File (update.file_prop) | None | Text | If the property names are   different between the update file and the existing dataset, the property name   from the update file can be provided here. |
+| Update   Type (update.type) | Standard | Dropdown with three options   (standard, remove, replace) | Determines the behavior of the   update. Standard updates perform some combination of updating, adding, and   removing features, based on the settings below. Removal updates remove all   features from the dataset that. Match features in the update file. Replacement   updates replace all features in the dataset with features from the update   file. |
+| Update   Existing Features (update.modify_existing) | Enabled (true) | Enabled (true) or Disabled   (false) | Determines if existing features   in the dataset should be updated based on values provided from the update   file. Coordinates and properties can be updated. |
+| Add New   Features (update.add_new) | Enabled (true) | Enabled (true) or Disabled   (false) | Determines if any features in   the update file that do not match features in the dataset should be added as   new features to the dataset. |
+| Remove   Missing Features (update.remove_empty) | Disabled (false) | Enabled (true) or Disabled   (false) | Determines if any features in   the dataset that do not match features in the update file should be removed. |
+| Overwrite   existing content with blank fields (update.overwrite_blank) | Disabled (false) | Enabled (true) or Disabled   (false) | If existing features are being   updated, determines if properties where the value is blank should replace   existing content. That is, if a feature with property "x" and value   "value of x" is being updated, and the value of property "x"   for the matching feature in the update file is blank ("x":   ""), determines if "x" will keep "value of x"   or become blank. This does not apply if the property is not provided in the   update file at all. That is, if property "x" does not exist for the   update feature, "value of x" will remain. |
 
 Notes on a few fields:
 - Detailed instructions about datasets for Data Files can be found in the section on preparing datasets.
@@ -337,7 +358,6 @@ The following fields are required for items in the Basemap Information list: Ima
 ```yaml
 enabled: true
 leaflet_tour: true    # Hidden field, do not modify or remove!
-update_data: false
 wide_column: false
 show_map_location_in_url: true
 attribution_toggle: true
@@ -356,6 +376,16 @@ tile_server:
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
     attribution_text: 'ArcGIS World'
     attribution_url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer'
+update:
+    msg: 'Upload a file, select options, and save to begin.'
+    status: 'none'    # Hidden field, do not modify or remove!
+    confirm: false
+    cancel: false
+    same_prop: true
+    modify_existing: true
+    add_new: true
+    remove_empty: false
+    overwrite_blank: false
 ```
 
 #### Editing YAML
@@ -370,7 +400,6 @@ tile_server:
 |---|---|---|---|---|
 | Dataset   File (dataset_file) | JSON filename of the   dataset the page was created for |  | Read Only | Defines which dataset all of   the settings will be applied to. |
 | Dataset   Name (title) | The "name"   included in the dataset file if it exists. Otherwise the filename. |  | Text | The name of the dataset and the   title of the page. |
-| Folder   Name (folder) | Same as page title |  | Text | The name of the folder holding   this page (not stored in the header config). |
 | Description   for Legend (legend_text) | None |  | Text | A short description of the   dataset that will be included in the legend. |
 | Legend   Alt Text (legend_alt) | None |  | Text | Ideally the legend description   will be quite short, but if it is not, a shorter description can be provided   here to be included in the alt text for each feature on the map. If this is   empty, will default to the legend description. |
 | Name   Property (name_prop) | Feature property   "name" if it exists. Otherwise first feature property starting or   ending with "name" if one exists. Otherwise the first feature   property. |  | Dropdown featuring list of   properties provided for dataset features | The property that provides the   default name/identifier for each feature. |

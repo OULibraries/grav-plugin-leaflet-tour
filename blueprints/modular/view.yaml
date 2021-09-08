@@ -42,21 +42,21 @@ form:
               label: Central Location
               data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourLocationsForView'
             
-            header.start.lat:
-              type: number
-              label: Center Latitude
-              validate:
-                min: -90
-                max: 90
-                step: .00000000001
-            
             header.start.long:
               type: number
               label: Center Longitude
               validate:
                 min: -180
                 max: 180
-                step: .00000000001
+                step: .0000001
+            
+            header.start.lat:
+              type: number
+              label: Center Latitude
+              validate:
+                min: -90
+                max: 90
+                step: .0000001
             
             header.start.distance:
               type: number
@@ -64,7 +64,7 @@ form:
               size: long
               validate:
                 min: 0
-                step: .00000000001
+                step: .0000001
             
             header.features_set:
               type: fieldset
@@ -110,7 +110,7 @@ form:
                   validate:
                     type: bool
                 
-                header.remove_tileserver:
+                header.remove_tile_server:
                   type: toggle
                   toggleable: true
                   label: Remove Tile Server
