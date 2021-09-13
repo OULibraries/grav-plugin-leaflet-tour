@@ -124,21 +124,14 @@ class Dataset {
         if ($nameProperty !== $this->nameProperty && in_array($nameProperty, $this->properties)) {
             // update nameProperty for the dataset and for each of the features (only matters for features without custom names)
             $this->nameProperty = $nameProperty;
-            foreach ($this->features as $feature) {
-                $feature->updateName($nameProperty);
-            }
+            $newName = true;
         }
         else $header->set('name_prop', $this->nameProperty); // just in case
         // reconcile feature list
-        $headerFeatures = $header->get('features');
-        if (!empty($headerFeatures)) { // loop through features from the header to find any features in the Dataset that need to be updated
-            foreach($headerFeatures as $feature) {
-                if ($this->features[$feature['id']]) {
-                    // update the feature
-                    $this->features[$feature['id']]->update($feature);
-                }
-                // Option: potentially allow adding/removing features
-            }
+        $headerFeatures = array_column($header->get('features') ?? [], null, 'id');
+        foreach ($this->features as $id=>$feature) {
+            if ($headerFeatures[$id]) $feature->update($headerFeatures[$id], $this->nameProperty);
+            else if ($newName) $feature->updateNameProperty($this->nameProperty);
         }
         $header->set('features', Feature::buildYamlList($this->features)); // build feature list from dataset - that way any removals/additions to the feature list will be reverted
         // Option: allow add/remove features properties
@@ -216,6 +209,10 @@ class Dataset {
 
     // get json - for saving to json file
     public function asJson(): array {
+        // fix php's bad json handling
+        if (version_compare(phpversion(), '7.1', '>=')) {
+            ini_set( 'serialize_precision', -1 );
+        }
         return [
             'type'=>'FeatureCollection',
             'name'=>$this->name,
@@ -250,7 +247,9 @@ class Dataset {
         ];
         if ($this->featureType === 'Point') {
             // use icon options for Point datasets
-            $data['iconOptions'] = $this->mergeIconOptions($tour->get('icon') ?? []);
+            $iconAlt = [];
+            if ($tour->get('icon_alt')) $iconAlt['icon_alt'] = $tour->get('icon_alt');
+            [$data['iconOptions'], $iconAltText] = $this->mergeIconOptions(array_merge($tour->get('icon') ?? [], $iconAlt));
         } else {
             // use path options for LineString/Polygon datasets
             $data = array_merge($data, $this->mergePathOptions($tour->get('svg') ?? [], $tour->get('svg_active') ?? []));
@@ -258,9 +257,9 @@ class Dataset {
         $data = array_merge($data, $this->mergeFeatures($tour->get('show_all') ?? true, $tourFeatures ?? []));
         // keeping legend merge here since it would be a bit complicated to outsource
         // only add legend if there is legend text for the dataset and the dataset actually has features
-        $legendText = $tour->get('legend_text') ?? $this->legendText;
+        $legendText = $tour->get('legend_text') ?: $this->legendText;
         if (!empty($legendText) && !empty($data['features'])) {
-            $data['legendAltText'] = $tour->get('legend_alt') ?? $tour->get('legend_text') ?? $this->legendAltText ?? $this->legendText;
+            $data['legendAltText'] = $tour->get('legend_alt') ?: $tour->get('legend_text') ?: $this->legendAltText ?: $this->legendText;
             $legend = [
                 'dataSource' => $this->jsonFilename,
                 'legendText' => $legendText,
@@ -271,24 +270,23 @@ class Dataset {
                 $legend['iconFile'] = $iconOptions['iconUrl'];
                 $legend['iconWidth'] = $iconOptions['iconSize'][0];
                 $legend['iconHeight'] = $iconOptions['iconSize'][1];
-                $iconAltText = $tour->get('icon_alt') ?? $this->iconAltText;
                 if (!empty($iconAltText)) $legend['iconAltText'] = $iconAltText;
             } else if ($this->featureType === 'LineString' || $this->featureType === 'MultiLineString') {
                 // lines - all we really need is the color to display a square of that color in the legend
                 $legend['featureType'] = 'line';
-                $legend['color'] = $data['pathOptions']['color'] ?? '#3388ff';
+                $legend['color'] = $data['pathOptions']['color'] ?: '#3388ff';
             } else {
                 // polygons - only include stroke options and fill options if they are applicable - existence of the options will be used to determine if they should be used when drawing svg in legend
                 $pathOptions = $data['pathOptions'];
                 $legend['featureType'] = 'polygon';
                 if ($pathOptions['stroke'] ?? true) {
-                    $legend['color'] = $pathOptions['color'] ?? '#3388ff';
-                    $legend['weight'] = $pathOptions['weight'] ?? 3;
-                    $legend['opacity'] = $pathOptions['opacity'] ?? 1;
+                    $legend['color'] = $pathOptions['color'] ?: '#3388ff';
+                    $legend['weight'] = $pathOptions['weight'] ?: 3;
+                    $legend['opacity'] = $pathOptions['opacity'] ?: 1;
                 }
                 if ($pathOptions['fill'] ?? true) {
-                    $legend['fillColor'] = $pathOptions['fillColor'] ?? $pathOptions['color'] ?? '#3388ff';
-                    $legend['fillOpacity'] = $pathOptions['fillOpacity'] ?? 0.2;
+                    $legend['fillColor'] = $pathOptions['fillColor'] ?: $pathOptions['color'] ?: '#3388ff';
+                    $legend['fillOpacity'] = $pathOptions['fillOpacity'] ?: 0.2;
                 }
             }
             $data['legend'] = $legend;
@@ -305,7 +303,11 @@ class Dataset {
         // if (empty($tourIcon) && empty($this->iconOptions)) $iconOptions = Utils::DEFAULT_MARKER_OPTIONS; // shouldn't happen - tour icon options should always at least have true/false for use_defaults
         // Set basic options: If use_defaults is enabled, ignore the icon options from this dataset; otherwise merge the options from the dataset and the tour header
         if ($tourIcon['use_defaults']) $options = $tourIcon;
-        else $options = array_merge($this->iconOptions ?? [], $tourIcon);
+        else {
+            $iconAlt = [];
+            if (empty($tourIcon['file'])) $iconAlt['icon_alt'] = $this->iconAltText;
+            $options = array_merge($this->iconOptions ?? [], $iconAlt, $tourIcon);
+        }
         // Set appropriate defaults to reference
         if (!empty($options['file'])) $defaults = Utils::MARKER_FALLBACKS;
         else $defaults = Utils::DEFAULT_MARKER_OPTIONS;
@@ -319,7 +321,7 @@ class Dataset {
         // Add anchor options if either x and y are both set or the default marker icon is being used (as those defaults set both x and y)
         $anchorX = $options['anchor_x'];
         $anchorY = $options['anchor_y'];
-        if (is_numeric($anchorX) && is_numeric($anchorY) || empty($options['file'])) $iconOptions['iconAnchor'] = [$anchorX ?? $defaults['iconAnchor'][0], $options['anchor_y'] ?? $defaults['iconAnchor'][1]];
+        if (is_numeric($anchorX) && is_numeric($anchorY) || empty($options['file'])) $iconOptions['iconAnchor'] = [$anchorX ?? $defaults['iconAnchor'][0], $anchorY ?? $defaults['iconAnchor'][1]];
         // Add url for retina file if applicable
         $retinaUrl = $options['retina'] ? Utils::IMAGE_ROUTE.'markers/'.$options['retina'] : $defaults['iconRetinaUrl'];
         if (!empty($retinaUrl)) $iconOptions['iconRetinaUrl'] = $retinaUrl;
@@ -329,7 +331,7 @@ class Dataset {
             $iconOptions['shadowSize'] = [$options['shadow_width'] ?? $defaults['shadowSize'][0] ?? $iconOptions['iconSize'][0], $options['shadow_height'] ?? $defaults['shadowSize'][1]] ?? $iconOptions['iconSize'][1]; // use icon size as fallback if shadow size is not provided in either the options or the defaults
             if (is_numeric($options['shadow_anchor_x']) && is_numeric($options['shadow_anchor_y'])) $iconOptions['shadowAnchor'] = [$options['shadow_anchor_x'], $options['shadow_anchor_y']];
         }
-        return $iconOptions;
+        return [$iconOptions, $options['icon_alt']];
     }
 
     /**
@@ -345,12 +347,12 @@ class Dataset {
         $pathOptions = [];
         foreach ($pathKeys as $key) {
             $option = ($tourPath)[$key] ?? ($this->pathOptions ?? [])[$key];
-            if ($option) $pathOptions[$key] = $option;
+            if ($option !== null) $pathOptions[$key] = $option;
         }
         $pathActiveOptions = [];
         foreach ($pathKeys as $key) {
             $option = ($tourActivePath)[$key] ?? ($this->pathActiveOptions ?? [])[$key];
-            if ($option) $pathActiveOptions[$key] = $option;
+            if ($option !== null) $pathActiveOptions[$key] = $option;
         }
         return ['pathOptions'=>$pathOptions, 'pathActiveOptions'=>$pathActiveOptions];
     }

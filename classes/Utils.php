@@ -123,7 +123,7 @@ class Utils {
         'prop_props'=>'Custom names and popup content for features with matching properties for the chosen properties in the original upload in the update file will be preserved.',
         'replace_no_prop'=>'Warning! No valid properties have been selected for preserving features. All custom names and popup content will be removed. Features selected from the old dataset in tours or views will no longer be valid.',
         'replace_no_matches'=>'No feature matches were found between the original dataset and the update file. All custom names and popup content will be removed. Features selected from the old dataset in tours or views will no longer be valid.',
-        'replace_matches'=>'Matches were found for the following features. Custom names and popup content for only these features will be preserved. Only these features will remain as valid selections in tours or views:',
+        'replace_matches'=>' matches found. Custom names and popup content for only these features will be preserved. Only these features will remain as valid selections in tours or views:',
 
         'update_remove'=>'You have chosen to remove all features that match the features provided in the update file.',
         'remove_no_matches'=>'No feature matches were found between the original dataset and the update file. No features will be removed.',
@@ -238,7 +238,7 @@ class Utils {
      * @return array|null - The valid coordinates if possible, otherwise null
      */
     protected static function setValidMultiPolygon($coords): ?array {
-        if (!is_array($coords) || count($coords) < 1) return false; // must be an array with at least one item
+        if (!is_array($coords) || count($coords) < 1) return null; // must be an array with at least one item
         $newCoords = []; // new variable to store coordinates in, just in case
         foreach ($coords as $polygon) {
             $poly = self::setValidPolygon($polygon);
@@ -304,7 +304,7 @@ class Utils {
     public static function addToLat(float $lat, float $amount): float {
         $amount = fmod($amount, 180); // Don't add or subtract by more than 180. Then the range of possible values is -270 to 270 after initial addition.
         $result = $lat + $amount;
-        if ($result < 90 && $result > -90) return $result; // The amount added did not move the latitude outside of valid range, so no additional work is needed.
+        if ($result <= 90 && $result >= -90) return $result; // The amount added did not move the latitude outside of valid range, so no additional work is needed.
         else if ($result > 90) return $result - 180; // Value could be anywhere from 90+ to 270. Subtracting 180 ensures that this range becomes -90 to 90. It also ensures that the value wraps the way it should (e.g. 120 becomes -60, as would be expected).
         else return $result + 180; // Same general idea as before, but the value is negative, so 180 needs to be added, not subtracted.
     }
@@ -318,7 +318,7 @@ class Utils {
     public static function addToLong($long, $amount) {
         $amount = fmod($amount, 360); // Don't add or subtract by more than 360. Then the range of possible values is -540 to 540 after initial addition.
         $result = $long + $amount;
-        if ($result < 180 && $result > -180) return $result; // The amount added did not move the longitude outside of valid range, so no additional work is needed.
+        if ($result <= 180 && $result >= -180) return $result; // The amount added did not move the longitude outside of valid range, so no additional work is needed.
         else if ($result > 180) return $result - 360; // Value could be anywhere from 180+ to 540. Subtracting 360 ensures that this range becomes -180 to 180. It also ensures that the value wraps the way it should (e.g. 210 becomes -150, as would be expected).
         else return $result + 360; // Same general idea as before, but the value is negative, so 360 needs to be added, not subtracted.
     }
@@ -487,7 +487,11 @@ class Utils {
      * @return array - modified update settings to be merged with the plugin config object before saving
      */
     public static function handleDatasetUpdate(array $update, array $prevUpdate): array {
-        $updateFile = $update['file'][array_keys($update['file'])[0]] ?? []; // have to make sure we grab the first one, even though there can only be one
+        try {
+            $updateFile = $update['file'][array_keys($update['file'])[0]] ?? []; // have to make sure we grab the first one, even though there can only be one
+        } catch (\Throwable $t) {
+            return ['msg'=>'Issue updating: '.$t->getMessage(), 'confirm'=>false, 'status'=>'corrections'];
+        }
         $issues = []; // for storing any issues found to easily return them to the user
         if ($update['cancel']) return self::clearUpdate($updateFile['path'] ?? '');
         // if update status is confirm, confirm and complete the update
@@ -532,7 +536,7 @@ class Utils {
             $updateProp = $update['same_prop'] ? $datasetProp : $update['file_prop'];
             if (!empty($updateProp)) $propertySettings = [$datasetProp, $updateProp];
         }
-        $parsedJsonData = self::parseDatasetUpload($updateFile); // have  to make sure we grab the first one, even though there can only be one
+        $parsedJsonData = self::parseDatasetUpload($updateFile); // have to make sure we grab the first one, even though there can only be one
         // checks
         if (empty($dataset)) $issues[] = self::MSGS['no_dataset_selected'];
         if (empty($propertySettings) && $update['type'] !== 'replace') {
@@ -543,12 +547,12 @@ class Utils {
         if (empty($parsedJsonData)) $issues[] = self::MSGS['invalid_json'];
 
         if (empty($issues)) {
-            $datasetFeatures = $dataset->getFeatures() ?? [];
+            //$datasetFeatures = $dataset->getFeatures() ?? [];
             try {
                 // create detailed message noting the chosen options and what will be changed, as well as a temporary json file so that the work of checking and modifying various features does not have to be redone when actually updating
-                [$jsonArray, $jsonFilename] = $parsedJsonData;
+                $jsonArray = ($parsedJsonData ?? [[]])[0];
                 //$jsonFeatures = (new Data($jsonArray))->get('features') ?? []; // TODO: JsonData neded?
-                $jsonFeatures = $jsonArray['features'] ?? [];
+                //$jsonFeatures = $jsonArray['features'] ?? [];
                 switch ($update['type']) {
                     case 'replace':
                         [$msg, $tmpJson] = self::updateReplace($dataset, $jsonArray, $propertySettings);
@@ -640,7 +644,7 @@ class Utils {
             [$featureMatches, $jsonFeatures] = self::matchFeatures($datasetFeatures, $jsonArray['features'], $propertySettings);
             if (empty($featureMatches)) $msg .= "\r\n".self::MSGS['replace_no_matches'];
             else {
-                $msg .= "\r\n".self::MSGS['replace_matches']."\r\n".self::listFeatures($featureMatches, $datasetFeatures);
+                $msg .= "\r\n".count($featureMatches).self::MSGS['replace_matches']."\r\n".self::listFeatures($featureMatches, $datasetFeatures);
                 $jsonArray['features'] = $jsonFeatures;
             }
         }
@@ -701,11 +705,10 @@ class Utils {
                 if (empty($jsonFeature['id'])) continue; // not a match, no modification
                 $newFeature = $datasetFeatures[$jsonFeature['id']]->asJson();
                 // only update properties and coordinates
-                $props = [];
-                foreach ($newFeature['properties'] ?? [] as $prop=>$val) {
-                    $newVal = ($jsonFeature['properties'] ?? [])[$prop];
-                    if ($newVal !== null && ($update['overwrite_blank'] || !empty($newVal))) $props[$prop] = $newVal;
-                    else $props[$prop] = $val;
+                $props = $newFeature['properties'] ?? [];
+                // loop through properties from the update feature, not the original
+                foreach ($jsonFeature['properties'] ?? [] as $prop=>$val) {
+                    if ($val !== null && ($update['overwrite_blank'] || !empty($val))) $props[$prop] = $val;
                 }
                 $newFeature['properties'] = $props;
                 // coords
@@ -790,6 +793,7 @@ class Utils {
             }
             foreach ($jsonFeatures as $feature) { // look for matches
                 $x = ($feature['geometry'] ?? [])['coordinates'];
+                if (empty($x)) continue;
                 $id = $coordsList[(new Data($x))->toYaml()];
                 if (!empty($id)) $matches[] = $feature['id'] = $id;
                 $newJson[] = $feature;
@@ -829,6 +833,7 @@ class Utils {
      * Used to build a new dataset from a json file, including validating the json/features and setting sensible defaults. Can be used when a new dataset file has been uploaded, or when a total replacement update is initiated.
      * @param array $jsonArray - json content from the new file
      * @param string $jsonFilename - the name of the new file
+     * @return array - modified json content
      */
     public static function buildNewDataset(array $jsonArray, string $jsonFilename): array {
         $jsonData = new Data($jsonArray); // $jsonData is used to get values, because the 'get' function is useful and there may have been some problems using $jsonArray. $jsonArray is necessary for setting values, because setting values for a Data object is extremely annoying (have to use merge, not set)
@@ -984,6 +989,16 @@ class Utils {
             $header->set($key, $item);
         }
         return $header;
+    }
+
+    public static function testUpdateReplace(Dataset $dataset, array $jsonArray, array $propertySettings) {
+        return self::updateReplace($dataset, $jsonArray, $propertySettings);
+    }
+    public static function testUpdateRemove(Dataset $dataset, array $jsonFeatures, array $propertySettings) {
+        return self::updateRemove($dataset, $jsonFeatures, $propertySettings);
+    }
+    public static function testUpdateStandard(array $update, Dataset $dataset, array $jsonFeatures, array $propertySettings) {
+        return self::updateStandard($update, $dataset, $jsonFeatures, $propertySettings);
     }
 }
 
