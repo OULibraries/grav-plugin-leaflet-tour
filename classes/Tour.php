@@ -302,8 +302,8 @@ class Tour {
             'showMapLocationInUrl' => $this->header->get('show_map_location_in_url') ?? $this->config->get('show_map_location_in_url') ?? true,
         ];
         // tile server
-        if ($this->tileserver['url']) $options['tileServer'] = $this->tileserver['url'];
-        else if ($this->tileserver['type'] === 'stamen') $options['stamenTileServer'] = $this->tileserver['name'];
+        if ($this->tileServer['url']) $options['tileServer'] = $this->tileServer['url'];
+        else if ($this->tileServer['type'] === 'stamen') $options['stamenTileServer'] = $this->tileServer['name'];
         // starting bounds for tour
         $bounds = $this->setStartingBounds($this->header->get('start'));
         if (!empty($bounds)) $options['bounds'] = $bounds;
