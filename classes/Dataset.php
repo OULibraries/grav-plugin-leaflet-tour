@@ -133,6 +133,17 @@ class Dataset {
             if ($headerFeatures[$id]) $feature->update($headerFeatures[$id], $this->nameProperty);
             else if ($newName) $feature->updateNameProperty($this->nameProperty);
         }
+        // reorder features
+        $featuresOrdered = [];
+        // first: Match order from header
+        foreach ($headerFeatures as $id=>$feature) {
+            if ($this->features[$id]) $featuresOrdered[$id] = $this->features[$id];
+        }
+        // next: Add any features that were removed
+        foreach ($this->features as $id=>$feature) {
+            if (empty($headerFeatures[$id])) $featuresOrdered[$id] = $feature;
+        }
+        $this->features = $featuresOrdered;
         $header->set('features', Feature::buildYamlList($this->features)); // build feature list from dataset - that way any removals/additions to the feature list will be reverted
         // Option: allow add/remove features properties
         // update legend, icon properties

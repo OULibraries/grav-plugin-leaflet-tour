@@ -52,6 +52,25 @@ class DatasetTest extends Test {
         $lineStrings->updateDataset(new Header($lineStringsYaml));
     }
 
+    protected function testUpdateDataset_order() {
+        // rearranging the order
+        $points = Dataset::getDatasets()['points1.json'];
+        $pointsYaml = $points->asYaml();
+        $update = [
+            'features'=>[
+                ['id'=>'points1_4'], ['id'=>'points1_0'], ['id'=>'points1_11'],
+                ['id'=>'points1_9'], ['id'=>'points1_5'], ['id'=>'points1_2'],
+                ['id'=>'points1_1'], ['id'=>'points1_6'], ['id'=>'points1_10'],
+                // 3, 7, 8
+            ]
+        ];
+        $points->updateDataset(new Header($update));
+        $features = array_keys($points->getFeatures());
+        $this->assertEquals($features, ['points1_4', 'points1_0', 'points1_11', 'points1_9', 'points1_5', 'points1_2', 'points1_1', 'points1_6', 'points1_10', 'points1_3', 'points1_7', 'points1_8']);
+        // $this->print(implode(', ', $features));
+        $points->updateDataset(new Header($pointsYaml));
+    }
+
     protected function testSetDefaults() {
         $multiLineStrings = Dataset::getDatasets()['multiLineStrings.json']->asYaml();
         $this->assertEquals($multiLineStrings['svg']['color'], '#3388ff');

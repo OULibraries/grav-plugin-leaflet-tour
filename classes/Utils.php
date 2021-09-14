@@ -767,7 +767,20 @@ class Utils {
         }
         // update features, featureCounter
         $datasetJson = $dataset->asJson();
-        $datasetJson['features'] = $features;
+        // reorder features
+        $featuresOrdered = [];
+        // first: All features that previously existed should remain in the same order
+        $features = array_column($features, null, 'id');
+        foreach (array_keys($dataset->getFeatures()) as $id) {
+            if ($features[$id]) $featuresOrdered[] = $features[$id];
+        }
+        // next: Any new features should be added at the end
+        if ($update['add_new']) {
+            foreach ($features as $id=>$feature) {
+                if (empty($dataset->getFeatures()[$id])) $featuresOrdered[] = $feature;
+            }
+        }
+        $datasetJson['features'] = $featuresOrdered;
         if (!empty($count)) $datasetJson['featureCounter'] = $count;
         return [$msg, $datasetJson];
     }

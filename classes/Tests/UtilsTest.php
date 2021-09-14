@@ -397,11 +397,18 @@ class UtilsTest extends Test {
         $this->assertEquals($features['points1_5']['properties']['fruit'], 'banana');
         $this->assertNotEmpty($features['points1_7']);
         $this->assertEquals($features['points1_11']['properties']['fruit'], 'pear');
+        // ensure the order has stayed the same
+        $this->assertEquals($result['features'][0]['id'], 'points1_0');
+        $this->assertEquals($result['features'][2]['id'], 'points1_2');
         // add new - coords match - 4 new features, feature 7 fruit unchanged (pineapple)
         $result = Utils::testUpdateStandard(['add_new'=>true, 'modify_existing'=>false], $this->pointSet, $this->updateArray['features'], ['tour_coords'])[1];
         $features = array_column($result['features'], null, 'id');
         $this->assertSize($features, 16);
         $this->assertEquals($features['points1_7']['properties']['fruit'], 'pineapple');
+        // ensure correct order - add new features at the end
+        $this->assertEquals($result['features'][0]['id'], 'points1_0');
+        $this->assertEquals($result['features'][2]['id'], 'points1_2');
+        $this->assertEquals($result['features'][12]['id'], 'points1_12');
         // remove empty - name match - only 3 features left, point 2 fruit and coords unchanged
         $result = Utils::testUpdateStandard(['remove_empty'=>true], $this->pointSet, $this->updateArray['features'], ['name', 'name'])[1];
         $features = array_column($result['features'], null, 'id');
