@@ -144,6 +144,9 @@ class PluginTest extends Test {
                 'fill'=>false,
                 'fillOpacity'=>null,
             ],
+            'features'=>[
+                ['id'=>'polygons_3', 'popup_content'=>'exists'],
+            ],
         ]));
         // multiLineStrings.json - no setup needed, all default
     }
@@ -163,9 +166,9 @@ class PluginTest extends Test {
             'title'=>'Tour 0',
             'datasets'=>[
                 ['file'=>'polygons.json', 'show_all'=>false],
-                ['file'=>'points1.json', 'show_all'=>true],
+                ['file'=>'points1.json', 'show_all'=>true], // 12 features
                 ['file'=>'points3.json', 'show_all'=>false],
-                ['file'=>'multiPolygons.json', 'show_all'=>true],
+                ['file'=>'multiPolygons.json', 'show_all'=>true], // 4 features
                 // no others, especially not points2.json
             ],
             'basemaps'=>[
@@ -178,7 +181,7 @@ class PluginTest extends Test {
                 'lat'=>25, 'long'=>35,
                 'distance'=>10,
             ],
-            'maxBounds'=>['north'=>80, 'east'=>170, 'south'=>0, 'west'=>-170], // valid
+            'max_bounds'=>['north'=>80, 'east'=>170, 'south'=>0, 'west'=>-170], // valid
             'remove_tile_server'=>true, // default
             'wide_column'=>true,
             'show_map_location_in_url'=>false,
@@ -201,7 +204,7 @@ class PluginTest extends Test {
         $tour = array_merge($defaults, $file->header() ?? [], [
             'title'=>'Tour 1',
             'datasets'=>[],
-            'maxBounds'=>['north'=>85, 'south'=>-60, 'east'=>65, 'west'=>null], // invalid (only three values provided)
+            'max_bounds'=>['north'=>85, 'south'=>-60, 'east'=>65, 'west'=>null], // invalid (only three values provided)
             'start'=>['lat'=>10, 'long'=>10, 'distance'=>null], // valid coords, but no distance
             'tile_server_select'=>'stamenWatercolor',
             'attribution_list'=>[
@@ -209,7 +212,7 @@ class PluginTest extends Test {
                 ['text'=>null, 'url'=>'myfakeurl.com'], // no text
                 ['text'=>'item 1', 'url'=>'libraries.ou.edu'], // url and text
                 ['text'=>'qgis2web', 'url'=>null], // overwrite config
-                ['text'=>'QGIS', 'url'=>'fakeurl.com'], // overwrite config
+                ['text'=>'QGIS', 'url'=>'new-qgis-url.com'], // overwrite config
             ],
         ]);
         $file->header($tour);
@@ -226,9 +229,9 @@ class PluginTest extends Test {
             ],
             'start'=>[
                 'bounds'=>['north'=>80, 'south'=>-92, 'east'=>60, 'west'=>40], // invalid
-                'location'=>'points3_1', // hidden feature
+                'location'=>'points3_3', // hidden feature
                 'lat'=>65, 'long'=>130.4,
-                'distance'=>-5
+                'distance'=>5
             ],
             'only_show_view_features'=>true,
             'remove_tile_server'=>false,
@@ -246,7 +249,16 @@ class PluginTest extends Test {
             ],
             'only_show_view_features'=>true,
             'remove_tile_server'=>null,
-            'features'=>[], // todo
+            'features'=>[ // 5 valid, 3 with popups
+                ['id'=>'points3_0'], // valid - not show all, but in features list, has popup
+                ['id'=>'points1_2'], // valid - show all, not in features list, has popup
+                ['id'=>'multiPolygons_3'], // valid - show all, not in features list, no popup
+                ['id'=>'points1_0'], // valid - in features list, popup removed
+                ['id'=>'points1_3'], // valid - show all, has popup
+                ['id'=>'polygons_3'], // invalid - not show all, not in features list, has popup
+                ['id'=>'points2_0'], // invalid - not in dataset, but in features list, has popup
+                ['id'=>'Wymancamps_0'], // invalid - not in tour dataset
+            ],
         ]);
         $file->save();
         $file = MarkdownFile::instance($pages.'/tour-0/_view-2/view.md');

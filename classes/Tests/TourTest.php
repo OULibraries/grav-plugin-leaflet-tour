@@ -1,9 +1,10 @@
 <?php
 namespace Grav\Plugin\LeafletTour;
 
+use Grav\Common\Grav;
 use Grav\Common\Data\Data;
 
-class DatasetTest extends Test {
+class TourTest extends Test {
 
     protected function setup() {
         $config = new Data(Grav::instance()['config']->get('plugins.leaflet-tour'));
@@ -27,14 +28,14 @@ class DatasetTest extends Test {
 
     protected function testGetAttribution() {
         // defaults: 3 from plugin config, 1 from plugin tile server
-        // defaults + x from basemaps (with one overwriting basemap attribution)
+        // defaults + 2 from basemaps (with one overwriting basemap attribution)
         $attr = array_column($this->tour0->getAttribution(), null, 'name');
-        $this->assertSize($attr, 6); // TODO: check
-        $this->assertEquals($attr['todo']['url'], 'overwritten-by-tour.doesntexist');
+        $this->assertSize($attr, 6);
+        $this->assertEquals($attr['Map 1873']['url'], 'google.com');
         // defaults - 1 because of custom tile server and + 2 (one no url, one no text, one url and text, two overwriting config)
         $attr = array_column($this->tour1->getAttribution(), null, 'name');
         $this->assertSize($attr, 5);
-        $this->assertNotEmpty($attr['Text Only']);
+        $this->assertNotEmpty($attr['Attribution Item']);
         $this->assertEmpty(array_column($this->tour1->getAttribution(), null, 'url')['no-text-url.com']);
         $this->assertEmpty($attr['qgis2web']['url']); // overwritten with no url
         $this->assertEquals($attr['QGIS']['url'], 'new-qgis-url.com');
@@ -48,7 +49,7 @@ class DatasetTest extends Test {
     }
 
     protected function testGetViews() {
-        $views = array_column($this->tour0->getViews(), null);
+        $views = array_values($this->tour0->getViews());
         $view0 = $views[0];
         $view1 = $views[1];
         // view basemaps
@@ -58,11 +59,11 @@ class DatasetTest extends Test {
         $this->assertEmpty($view0['features']);
         $this->assertSize($view1['features'], 5); // 5 valid out of 7
         // onlyShowViewFeatures
-        $this->assertFalse($this->view0['onlyShowViewFeatures']); // true, but no features, so false
-        $this->assertTrue($this->view1['onlyShowViewFeatures']);
+        $this->assertFalse($view0['onlyShowViewFeatures']); // true, but no features, so false
+        $this->assertTrue($view1['onlyShowViewFeatures']);
         // removeTileServer
-        $this->assertTrue($this->view1['removeTileServer']); // default from tour
-        $this->assertFalse($this->view0['removeTileServer']);
+        $this->assertTrue($view1['removeTileServer']); // default from tour
+        $this->assertFalse($view0['removeTileServer']);
     }
 
     protected function testGetDatasets() {
@@ -77,16 +78,16 @@ class DatasetTest extends Test {
 
     protected function testGetFeatures() {
         $features = $this->tour0->getFeatures();
-        // correct number of features (TODO)
-        $this->assertSize($features, 0);
+        // correct number of features
+        $this->assertSize($features, 17);
         // name
-        $this->assertEquals($features['points1_0']['name'], 'Point 0');
+        $this->assertEquals($features['points1_0']['properties']['name'], 'Point 0');
         // dataSource
-        $this->assertEquals($features['points3_0']['dataSource'], 'points3.json');
+        $this->assertEquals($features['points3_0']['properties']['dataSource'], 'points3.json');
         // hasPopup
-        $this->assertTrue($features['points1_3']['hasPopup']);
+        $this->assertTrue($features['points1_3']['properties']['hasPopup']);
         // geometry type
-        $this->assertEquals($features['multiPolygons_1'], 'MultiPolygon');
+        $this->assertEquals($features['multiPolygons_1']['geometry']['type'], 'MultiPolygon');
         // coordinates
         $this->assertEquals($features['points1_1']['geometry']['coordinates'][1], 90);
     }
@@ -102,7 +103,7 @@ class DatasetTest extends Test {
         $this->assertEmpty($this->tour1->getPopups());
         // features, some with popups
         $popups = $this->tour0->getPopups();
-        $this->assertSize($popups, 0); // todo
+        $this->assertSize($popups, 3);
         // check removed popup
         $this->assertEmpty($popups['points1_0']);
         // check popup from tour
@@ -116,7 +117,7 @@ class DatasetTest extends Test {
         // view with no features
         $this->assertEmpty($this->tour0->getViewPopups($keys[0]));
         // view with features, some of which are valid, some of which have popups
-        $this->assertSize($this->tour0->getViewPopups($keys[1]), 2); // todo
+        $this->assertSize($this->tour0->getViewPopups($keys[1]), 3);
     }
 
     protected function testGetOptions() {
@@ -140,18 +141,20 @@ class DatasetTest extends Test {
         $this->assertNotEmpty($this->tour0->getOptions()['maxBounds']); // valid max bounds
         $this->assertEmpty($this->tour1->getOptions()['maxBounds']); // invalid max bounds (only three values provided)
         // valid bounds (feature and coordinates also valid)
-        $this->assertEquals($this->tour0->getOptions()['bounds'][1][1], -171.89); // east TODO (3)
+        $this->assertEquals($this->tour0->getOptions()['bounds'][0][1], 78.43); // west
         // feature/coords set, but no distance
         $this->assertEmpty($this->tour1->getOptions()['bounds']);
 
         // from view
-        $views = array_column($this->tour0->getViews(), null);
+        $views = array_values($this->tour0->getViews());
         // feature as center (hidden feature) (invalid bounds also set, and valid coordinates)
-        $this->assertEquals($views[0]['bounds'], 0); // todo 5-3
+        $bounds = Utils::setBounds(['north'=>27, 'south'=>17, 'east'=>16, 'west'=>6]);
+        $this->assertNotEmpty($bounds);
+        $this->assertEquals($views[0]['bounds'], $bounds); // points3_3 [11, 22], distance 5
         // invalid feature (not included in any tour dataset)
-        $this->assertEmpty($views[1]['bounds']); // todo tour 1?
+        $this->assertEmpty($views[1]['bounds']); //
         // coordinates set as center, distance causing wraparound
-        $this->assertEquals($views[2]['bounds'], 0); // todo
+        $this->assertEquals($views[2]['bounds'][1][1], -171.89); // east
     }
 
     protected function testHasPopup() {

@@ -5,6 +5,7 @@ require_once(__DIR__ . '/Tests/PluginTest.php');
 require_once(__DIR__ . '/Tests/UtilsTest.php');
 require_once(__DIR__ . '/Tests/FeatureTest.php');
 require_once(__DIR__ . '/Tests/DatasetTest.php');
+require_once(__DIR__ . '/Tests/TourTest.php');
 
 /**
  * This class is for testing the site and should probably not be included in the production site. I know it's possible to set up unit testing in Grav, but it ended up being easier to throw this together than continue trying to figure it out.
@@ -40,6 +41,7 @@ class Test {
             new UtilsTest('Utils Test', $showSuccess, $showPrint),
             new FeatureTest('Feature Test', $showSuccess, $showPrint),
             new DatasetTest('Dataset Test', $showSuccess, $showPrint),
+            new TourTest('Tour Test', $showSuccess, $showPrint),
         ];
         $resultText = '';
         $errCount = 0;
