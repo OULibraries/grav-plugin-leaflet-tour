@@ -110,6 +110,7 @@ class Utils {
         'invalid_dataset_prop'=>'The property selected is not a valid property for the dataset. Select a property from this dataset to identify features to update.',
         'no_update_prop'=>'Indicate that the same property selected for the dataset will be used to identify features in the update file, or provide a different property for this pupose.',
         'invalid_json'=>'The uploaded file is invalid. Provide an update file with valid json, as described in the readme.', // Note: doesn't necessarily have to provide valid geojson data.
+        'no_standard_settings'=>'At least one of the following must be selected to perform a standard update: Update Existing Features, Add New Features, Remove Missing Features.',
 
         'issue_list'=>"The following issues have been identified. Correct them and try saving again, or cancel the update:\r\n",
         
@@ -422,10 +423,10 @@ class Utils {
     /**
      * Called after a dataset upload has been removed. Searches the current Dataset list for one created using that upload. If found, makes a copy of the dataset.md page as a default page in the deleted_datasets folder, removes the associated json file, and removes the dataset.md page and the folder that contains it.
      */
-    public static function deleteDatasets() {
+    public static function deleteDatasets(array $dataFiles) {
         $datasetFiles = [];
         // get list of jsonFilenames
-        foreach ((Grav::instance()['config']->get('plugins.leaflet-tour.data_files') ?? []) as $key=>$fileData) {
+        foreach ($dataFiles as $key=>$fileData) {
             $datasetFiles[] = str_replace(' ', '-', preg_replace('/.js$/', '.json', $fileData['name']));
         }
         // loop through datasets and look for ones that don't belong
@@ -488,7 +489,9 @@ class Utils {
      */
     public static function handleDatasetUpdate(array $update, array $prevUpdate): array {
         try {
-            $updateFile = $update['file'][array_keys($update['file'])[0]] ?? []; // have to make sure we grab the first one, even though there can only be one
+            $fileKeys = array_keys($update['file'] ?? []);
+            if (empty($fileKeys)) throw new \Exception('No file uploaded');
+            $updateFile = $update['file'][$fileKeys[0]] ?? []; // have to make sure we grab the first one, even though there can only be one
         } catch (\Throwable $t) {
             return ['msg'=>'Issue updating: '.$t->getMessage(), 'confirm'=>false, 'status'=>'corrections'];
         }
@@ -545,6 +548,7 @@ class Utils {
             if (!$update['same_prop'] && empty($update['file_prop'])) $issues[] = self::MSGS['no_update_prop'];
         }
         if (empty($parsedJsonData)) $issues[] = self::MSGS['invalid_json'];
+        if ($update['type']==='standard' && !$update['modify_existing'] && !$update['add_new'] && !$update['remove_empty']) $issues[] = self::MSGS['no_standard_settings'];
 
         if (empty($issues)) {
             //$datasetFeatures = $dataset->getFeatures() ?? [];
@@ -563,6 +567,7 @@ class Utils {
                     default:
                         [$msg, $tmpJson] = self::updateStandard($update, $dataset, $jsonArray['features'] ?? [], $propertySettings);
                 }
+                $tmpJson['propertyList'] = self::generatePropertiesList($tmpJson['features'] ?? []);
                 // save the tmp json file
                 $tmpJsonFile = CompiledJsonFile::instance(Grav::instance()['locator']->findResource('user-data://').'/leaflet-tour/datasets/update/tmp.json');
                 $tmpJsonFile->content($tmpJson);
@@ -627,6 +632,7 @@ class Utils {
         $jsonArray['nameProperty'] = $dataset->getNameProperty();
         $msg .= "\t- ".self::MSGS['dataset_name_prop'].' ('.$dataset->getNameProperty().").\r\n";
         $jsonArray['featureCounter'] = $dataset->getFeatureCounter(); // prevents different features with same ids as deleted features
+        $jsonArray['datasetFileRoute'] = $dataset->getDatasetRoute();
         // check for property settings - not required, but can be useful for preserving some content
         switch (count($propertySettings)) {
             case 1:
@@ -645,7 +651,13 @@ class Utils {
             if (empty($featureMatches)) $msg .= "\r\n".self::MSGS['replace_no_matches'];
             else {
                 $msg .= "\r\n".count($featureMatches).self::MSGS['replace_matches']."\r\n".self::listFeatures($featureMatches, $datasetFeatures);
-                $jsonArray['features'] = $jsonFeatures;
+                $jsonArray['features'] = [];
+                // preserve custom name
+                foreach ($jsonFeatures as $feature) {
+                    $originalFeature = $datasetFeatures[$feature['id']];
+                    if ($originalFeature) $feature['customName'] = $originalFeature->asYaml()['custom_name'];
+                    $jsonArray['features'][] = $feature;
+                }
             }
         }
         $datasetJson = self::buildNewDataset($jsonArray, $dataset->getJsonFilename());
@@ -684,7 +696,7 @@ class Utils {
      * @return array - [$msg, $datasestJson] - the msg to present to the user informing them of what changes will occur, and the json data to save in the tmp file for easier updating once the update is confirmed
      */
     protected static function updateStandard(array $update, Dataset $dataset, array $jsonFeatures, array $propertySettings): array {
-        $datasetFeatures = $dataset->getFeatures();
+        $datasetFeatures = $dataset->getFeatures() ?? [];
         // set initial message
         $msg = self::MSGS['update_standard']."\r\n";
         if ($update['modify_existing']) {
@@ -771,13 +783,13 @@ class Utils {
         $featuresOrdered = [];
         // first: All features that previously existed should remain in the same order
         $features = array_column($features, null, 'id');
-        foreach (array_keys($dataset->getFeatures()) as $id) {
+        foreach (array_keys($datasetFeatures) as $id) {
             if ($features[$id]) $featuresOrdered[] = $features[$id];
         }
         // next: Any new features should be added at the end
         if ($update['add_new']) {
             foreach ($features as $id=>$feature) {
-                if (empty($dataset->getFeatures()[$id])) $featuresOrdered[] = $feature;
+                if (empty($datasetFeatures[$id])) $featuresOrdered[] = $feature;
             }
         }
         $datasetJson['features'] = $featuresOrdered;
@@ -857,7 +869,7 @@ class Utils {
         $count = $jsonData->get('featureCounter') ?? 0; // will already be set if this is an update
         $features = [];
         $propList = [];
-        foreach ($jsonData->get('features') as $feature) {
+        foreach ($jsonData->get('features') ?? [] as $feature) {
             if (!$featureType && $feature['geometry'] && $feature['geometry']['type']) $featureType = Utils::setValidType($feature['geometry']['type']); // in case first feature(s) was/were invalid
             if (isset($featureType) && $feature=Feature::setValidFeature($feature, $featureType)) {
                 if (empty($feature['id'])) { // allows for setting ids ahead of time, if necessary (updates)
@@ -865,12 +877,9 @@ class Utils {
                     $count++;
                 }
                 $features[] = $feature;
-                if (is_array($feature['properties'])) {
-                    $propList = array_merge($propList, $feature['properties']); // make sure to add any properties that previous features didn't have - ensures that all properties are listed, not just the properties of the first feature
-                }
             }
         }
-        $propList = array_keys($propList); // only need the keys, which are the property names - values are set per feature
+        $propList = self::generatePropertiesList($features);
         $jsonArray['propertyList'] = $propList;
         $jsonArray['featureType'] = $featureType ?? '';
         $jsonArray['featureCounter'] = $count; // if features are added in future updates, will be used to generate ids for them
@@ -901,6 +910,15 @@ class Utils {
             $jsonArray['datasetFileRoute'] = $route;
         }
         return $jsonArray;
+    }
+
+    public static function generatePropertiesList(array $featureArray): array {
+        $propList = [];
+        foreach ($featureArray as $feature) {
+            if (is_array($feature['properties'])) $propList = array_merge($propList, $feature['properties']); // make sure to add any properties that previous features didn't have - ensures that all properties are listed, not just the properties of the first feature
+        }
+        $propList = array_keys($propList); // only need the keys, which are the property names - values are set per feature
+        return $propList;
     }
 
     // Other Utils

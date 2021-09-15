@@ -128,7 +128,7 @@ class LeafletTourPlugin extends Plugin
             // check for deleted data files
             $obj->set('filecount', count($obj->get('data_files') ?? []));
             if ($obj->get('filecount') < (($this->config->get('plugins.leaflet-tour.filecount') ?? 0)+$newFiles)) {
-                Utils::deleteDatasets();
+                Utils::deleteDatasets($obj->get('data_files') ?? []);
             }
             // check for updates
             if (!empty($obj->get('update.file'))) $obj->merge(['update'=>Utils::handleDatasetUpdate($obj->get('update'), $this->config->get('plugins.leaflet-tour.update') ?? [])]);

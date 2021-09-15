@@ -2,7 +2,8 @@
 namespace Grav\Plugin\LeafletTour;
 
 use Grav\Common\Grav;
-use RocketTheme\Toolbox\File\File;
+use Grav\Common\File\CompiledJsonFile;
+use RocketTheme\Toolbox\File\MarkdownFile;
 
 class UtilsTest extends Test {
 
@@ -146,38 +147,6 @@ class UtilsTest extends Test {
                 ],
             ]
         ];
-
-        $this->updateArray = [
-            'type'=>'FeatureCollection',
-            'name'=>'Points Replacement',
-            'features'=>[
-                [
-                    'type'=>'Feature',
-                    'properties'=>['name'=>'Point 2'],
-                    'geometry'=>['type'=>'Point', 'coordinates'=>[5, 6.007]],
-                ],[
-                    'type'=>'Feature',
-                    'properties'=>['name'=>'Point 12'],
-                    'geometry'=>['type'=>'Point', 'coordinates'=>[-8.009, 10]],
-                ],[
-                    'type'=>'Feature',
-                    'properties'=>['name'=>'Point 13', 'fruit'=>'orange'],
-                    'geometry'=>['type'=>'Point', 'coordinates'=>[-11, -12.013]],
-                ],[
-                    'type'=>'Feature',
-                    'properties'=>['name'=>'Point 5', 'fruit'=>'banana'],
-                    'geometry'=>['type'=>'Point', 'coordinates'=>[14.015, -16]],
-                ],[
-                    'type'=>'Feature',
-                    'properties'=>['name'=>'Point 11', 'fruit'=>''],
-                    'geometry'=>['type'=>'Point', 'coordinates'=>[17, -18.019]],
-                ],[
-                    'type'=>'Feature',
-                    'properties'=>['name'=>'Point 14'],
-                    'geometry'=>['type'=>'Point', 'coordinates'=>[-20, 21.022]],
-                ],
-            ],
-        ];
     }
     
     protected function testIsValidPoint() {
@@ -320,15 +289,15 @@ class UtilsTest extends Test {
         $includesFileName2 = Utils::getPageRoute(['home', '01.subpage-1', 'default.md']);
         $incorrectPrefix = Utils::getPageRoute(['home', '02.subpage-1']).'default.md';
         $prefixForReg = Utils::getPageRoute(['02.test-folder', 'test-subpage-1']).'default.md';
-        $this->assertTrue(File::instance($topLevelPrefix)->exists());
-        $this->assertTrue(File::instance($prefixPrefix)->exists());
-        $this->assertTrue(File::instance($regPrefix)->exists());
-        $this->assertTrue(File::instance($regRegReg)->exists());
-        $this->assertTrue(File::instance($prefixRegPrefix)->exists());
-        $this->assertFalse(File::instance($includesFileName1)->exists());
-        $this->assertFalse(File::instance($includesFileName2)->exists());
-        $this->assertFalse(File::instance($incorrectPrefix)->exists());
-        $this->assertFalse(File::instance($prefixForReg)->exists());
+        $this->assertTrue(MarkdownFile::instance($topLevelPrefix)->exists());
+        $this->assertTrue(MarkdownFile::instance($prefixPrefix)->exists());
+        $this->assertTrue(MarkdownFile::instance($regPrefix)->exists());
+        $this->assertTrue(MarkdownFile::instance($regRegReg)->exists());
+        $this->assertTrue(MarkdownFile::instance($prefixRegPrefix)->exists());
+        $this->assertFalse(MarkdownFile::instance($includesFileName1)->exists());
+        $this->assertFalse(MarkdownFile::instance($includesFileName2)->exists());
+        $this->assertFalse(MarkdownFile::instance($incorrectPrefix)->exists());
+        $this->assertFalse(MarkdownFile::instance($prefixForReg)->exists());
     }
 
     // also serves as setup for update functions
@@ -361,111 +330,316 @@ class UtilsTest extends Test {
 
     // matchFeatures - tested within the various testUpdate methods
 
-    protected function testUpdateReplace() {
-        [$msg1, $result1] = Utils::testUpdateReplace($this->pointSet, $this->updateArray, ['name', 'name']);
-        // test: 6 features total, msg indicates 3 matches, feature 0 has id of point 2 but new coords, feature 1 has id of point 12, feature 3 has fruit of banana, feature 4 has id of point 11
-        $this->assertSize($result1['features'], 6);
-        $this->assertTrue(str_contains($msg1, '3 matches found'));
-        $this->assertEquals($result1['features'][0]['id'], 'points1_2');
-        $this->assertEquals($result1['features'][0]['geometry']['coordinates'][0], 5);
-        $this->assertEquals($result1['features'][1]['id'], 'points1_12');
-        $this->assertEquals($result1['features'][3]['properties']['fruit'], 'banana');
-        $this->assertEquals($result1['features'][4]['id'], 'points1_11');
-        [$msg2, $result2] = Utils::testUpdateReplace($this->pointSet, $this->updateArray, ['tour_coords']);
-        // test: msg indicates 2 matches, feature 0 has id of point 12, feature 1 has id of point 0, feature 4 has id of point 7
-        $this->assertTrue(str_contains($msg2, '2 matches found'));
-        $this->assertEquals($result2['features'][0]['id'], 'points1_12');
-        $this->assertEquals($result2['features'][1]['id'], 'points1_0');
-        $this->assertEquals($result2['features'][3]['id'], 'points1_7');
-    }
-
-    protected function testUpdateRemove() {
-        $result = Utils::testUpdateRemove($this->pointSet, $this->updateArray['features'], ['name', 'name'])[1];
-        // 3 matches, 12-3 = 9, points1_7 exists, points1_2 does not
-        $this->assertSize($result['features'], 9);
-        $features = array_column($result['features'], null, 'id');
-        $this->assertNotEmpty($features['points1_7']);
-        $this->assertEmpty($features['points1_2']);
-    }
-
-    protected function testUpdateStandard() {
-        // modify existing - name match - point 5 fruit changed, point 2 coords changed, point 11 fruit unchanged, number of features stayed the same, point 7 exists
-        $result = Utils::testUpdateStandard(['modify_existing'=>true], $this->pointSet, $this->updateArray['features'], ['name', 'name'])[1];
-        $features = array_column($result['features'], null, 'id');
-        $this->assertSize($features, 12);
-        $this->assertEquals($features['points1_2']['geometry']['coordinates'][0], 5);
-        $this->assertEquals($features['points1_5']['properties']['fruit'], 'banana');
-        $this->assertNotEmpty($features['points1_7']);
-        $this->assertEquals($features['points1_11']['properties']['fruit'], 'pear');
-        // ensure the order has stayed the same
-        $this->assertEquals($result['features'][0]['id'], 'points1_0');
-        $this->assertEquals($result['features'][2]['id'], 'points1_2');
-        // add new - coords match - 4 new features, feature 7 fruit unchanged (pineapple)
-        $result = Utils::testUpdateStandard(['add_new'=>true, 'modify_existing'=>false], $this->pointSet, $this->updateArray['features'], ['tour_coords'])[1];
-        $features = array_column($result['features'], null, 'id');
-        $this->assertSize($features, 16);
-        $this->assertEquals($features['points1_7']['properties']['fruit'], 'pineapple');
-        // ensure correct order - add new features at the end
-        $this->assertEquals($result['features'][0]['id'], 'points1_0');
-        $this->assertEquals($result['features'][2]['id'], 'points1_2');
-        $this->assertEquals($result['features'][12]['id'], 'points1_12');
-        // remove empty - name match - only 3 features left, point 2 fruit and coords unchanged
-        $result = Utils::testUpdateStandard(['remove_empty'=>true], $this->pointSet, $this->updateArray['features'], ['name', 'name'])[1];
-        $features = array_column($result['features'], null, 'id');
-        $this->assertSize($features, 3);
-        $this->assertEquals($features['points1_2']['properties']['fruit'], 'kiwi');
-        $this->assertEquals($features['points1_2']['geometry']['coordinates'][0], -20);
-        // modify existing, overwrite blank - name match - point 11 fruit empty, number of features stayed the same, point 2 fruit unchanged
-        $result = Utils::testUpdateStandard(['modify_existing'=>true, 'overwrite_blank'=>true], $this->pointSet, $this->updateArray['features'], ['name', 'name'])[1];
-        $features = array_column($result['features'], null, 'id');
-        $this->assertSize($features, 12);
-        $this->assertEquals($features['points1_2']['properties']['fruit'], 'kiwi');
-        $this->assertEmpty($features['points1_11']['properties']['fruit']);
-    }
-
     protected function testHandleDatasetUpdate() {
-        // cancel resets all settings
-        $update1 = [
-            'msg'=>'blah blah blah',
-            'status'=>'none',
-            'confirm'=>false, 'cancel'=>true,
-            'dataset'=>'points1.json',
-            'dataset_prop'=>'name',
-            'same_prop'=>false, 'file_prop'=>'featureName',
-            'type'=>'standard',
-            'modify_existing'=>true,
-            'file'=>[['name'=>'points1.json']]
-        ];
-        $result = Utils::handleDatasetUpdate($update1, []);
-        $this->assertFalse($result['cancel']);
-        $this->assertEmpty($result['dataset']);
-        $this->assertEquals($result['dataset_prop'], 'none');
-        $this->assertEmpty($result['file_prop']);
+        // set up update
+        $this->prepareUpdate([]);
+        $update = array_merge($this->updateData['settings'], ['status'=>'corrections', 'confirm'=>false, 'dataset_prop'=>'name', 'same_prop'=>false, 'file_prop'=>'featureName']);
         // confirm (when not ready) does nothing and is unset
-        $update2 = array_merge($update1, [
-            'status'=>'corrections', 
-            'confirm'=>true, 'cancel'=>false, 
-            'file'=>[[
-                'name'=>'points1.json', 
-                'type'=>'application/json', 
-                'path'=>'user/data/leaflet-tour/datasets/points1.json']]
-        ]);
-        $result = array_merge($update2, Utils::handleDatasetUpdate($update2, []));
+        $settings = array_merge($update, ['confirm'=>true]);
+        $result = array_merge($settings, Utils::handleDatasetUpdate($settings, []));
         $this->assertFalse($result['confirm']);
         $this->assertEquals($result['dataset'], 'points1.json');
         $this->assertNotEmpty($result['file_prop']);
         $this->assertEquals($result['status'], 'confirm');
-        // issues: no dataset selected, no property selected, invalid property selected, matching property not selected
-        $update = array_merge($update2, ['status'=>'none', 'confirm'=>false, 'dataset'=>'']);
-        $this->assertEquals(Utils::handleDatasetUpdate($update, [])['status'], 'corrections');
-        $update = array_merge($update2, ['dataset_prop'=>'none']);
-        $this->assertEquals(Utils::handleDatasetUpdate($update, [])['status'], 'corrections');
-        $update = array_merge($update2, ['file_prop'=>'']);
-        $this->assertEquals(Utils::handleDatasetUpdate($update, [])['status'], 'corrections');
-        $update = array_merge($update2, ['dataset_prop'=>'fu']);
-        $this->assertEquals(Utils::handleDatasetUpdate($update, [])['status'], 'corrections');
-        // cancel
-        Utils::handleDatasetUpdate($update1, []);
+        // confirm (when things have changed) does nothing and is unset
+        $settings = array_merge($update, ['confirm'=>true, 'status'=>'confirm']);
+        $result = array_merge($settings, Utils::handleDatasetUpdate($settings, array_merge($settings, ['dataset_prop'=>'tour_coords'])));
+        $this->assertFalse($result['confirm']);
+        $this->assertEquals($result['status'], 'confirm');
+        // the following issues require correction: no dataset selected, no property selected, invalid property selected, matching property not selected
+        $settings = array_merge($update, ['dataset'=>'']);
+        $this->assertEquals(Utils::handleDatasetUpdate($settings, [])['status'], 'corrections');
+        $settings = array_merge($update, ['dataset_prop'=>'none']);
+        $this->assertEquals(Utils::handleDatasetUpdate($settings, [])['status'], 'corrections');
+        $settings = array_merge($update, ['file_prop'=>'']);
+        $this->assertEquals(Utils::handleDatasetUpdate($settings, [])['status'], 'corrections');
+        $settings = array_merge($update, ['dataset_prop'=>'fu']);
+        $this->assertEquals(Utils::handleDatasetUpdate($settings, [])['status'], 'corrections');
+        // standard update requires at least one option selected
+        $settings = array_merge($update, ['modify_existing'=>false]); // add and remove options are already not set
+        $this->assertEquals(Utils::handleDatasetUpdate($settings, [])['status'], 'corrections');
+        // the following issues do not require correction when the update is replacement: no property selected, matching property not selected
+        $settings = array_merge($update, ['type'=>'replace', 'dataset_prop'=>'none']);
+        $this->assertEquals(Utils::handleDatasetUpdate($settings, [])['status'], 'confirm');
+        $settings = array_merge($update, ['type'=>'replace', 'file_prop'=>'']);
+        $this->assertEquals(Utils::handleDatasetUpdate($settings, [])['status'], 'confirm');
+        // cancel resets all settings
+        $settings = array_merge($update, ['cancel'=>true]);
+        $result = array_merge($settings, Utils::handleDatasetUpdate($settings, []));
+        $this->assertFalse($result['cancel']);
+        $this->assertEmpty($result['dataset']);
+        $this->assertEquals($result['dataset_prop'], 'none');
+        $this->assertEmpty($result['file_prop']);
+    }
+    protected function testUpdateReplace() {
+        $updateContent = [
+            'type'=>'FeatureCollection',
+            'name'=>'Points Replacement Update',
+            'features'=>[
+                [
+                    'type'=>'Feature',
+                    'properties'=>['name'=>'Point 2'],
+                    'geometry'=>['type'=>'Point', 'coordinates'=>[5, 6.007]],
+                ],[
+                    'type'=>'Feature',
+                    'properties'=>['name'=>'Point 12'],
+                    'geometry'=>['type'=>'Point', 'coordinates'=>[-8.009, 10]],
+                ],[
+                    'type'=>'Feature',
+                    'properties'=>['name'=>'Point 13', 'fruit'=>'orange'],
+                    'geometry'=>['type'=>'Point', 'coordinates'=>[-11, -12.013]],
+                ],[
+                    'type'=>'Feature',
+                    'properties'=>['name'=>'Point 5', 'fruit'=>'banana'],
+                    'geometry'=>['type'=>'Point', 'coordinates'=>[14.015, -16]],
+                ],[
+                    'type'=>'Feature',
+                    'properties'=>['name'=>'Point 11', 'fruit'=>''],
+                    'geometry'=>['type'=>'Point', 'coordinates'=>[17, -18.019]],
+                ],[
+                    'type'=>'Feature',
+                    'properties'=>['name'=>'Point 14'],
+                    'geometry'=>['type'=>'Point', 'coordinates'=>[-20, 21.022]],
+                ],
+            ],
+        ];
+        // set up some custom names
+        $features = Dataset::getDatasets()['points1.json']->getFeatures();
+        $features['points1_0']->update(['custom_name'=>'Point 0 Custom Name']);
+        $features['points1_5']->update(['custom_name'=>'Point 5 Custom Name']);
+        // set up update (name)
+        $this->prepareUpdate($updateContent);
+        $update = array_merge($this->updateData['settings'], ['type'=>'replace', 'dataset_prop'=>'name', 'add_new'=>false]);
+        // check: msg indicates 3 matches
+        $settings = array_merge($update, Utils::handleDatasetUpdate($update, []));
+        $this->assertTrue(str_contains($settings['msg'], '3 matches found'));
+        $this->assertEquals($settings['status'], 'confirm');
+        // change standard update options - shouldn't affect confirmation
+        $result = Utils::handleDatasetUpdate(array_merge($settings, ['confirm'=>true, 'modify_existing'=>false, 'remove_empty'=>true]), $settings);
+        $this->assertEquals($result['status'], 'none');
+        // update: 6 features total, feat0 has id 2 but new coords, feat1 has id 12, feat3 has fruit banana, feat4 has id 11
+        $features = Dataset::getDatasets()['points1.json']->getFeatures();
+        $this->assertSize($features, 6);
+        $this->assertEquals(array_keys($features)[0], 'points1_2');
+        $this->assertEquals($features['points1_2']->asJson()['geometry']['coordinates'][0], 5);
+        $this->assertEquals(array_keys($features)[1], 'points1_12');
+        $this->assertEquals($features['points1_5']->getProperties()['fruit'], 'banana');
+        $this->assertEquals(array_keys($features)[4], 'points1_11');
+        // check custom names
+        $this->assertEquals($features['points1_2']->getName(), 'Point 2');
+        $this->assertEquals($features['points1_5']->getName(), 'Point 5 Custom Name');
+        // revert changes
+        $this->undoUpdate();
+        // set up update (coordinates)
+        $this->prepareUpdate($updateContent);
+        $update = array_merge($update, ['status'=>'confirm', 'dataset_prop'=>'tour_coords', 'confirm'=>true]);
+        // check: msg indicates 2 matches
+        $this->assertTrue(str_contains(Utils::handleDatasetUpdate($update, [])['msg'], '2 matches found'));
+        // update: feat0 has id 12, feat1 has id 0, feat3 has id 7
+        Utils::handleDatasetUpdate($update, $update);
+        $features = array_keys(Dataset::getDatasets()['points1.json']->getFeatures());
+        $this->assertEquals($features[0], 'points1_12');
+        $this->assertEquals($features[1], 'points1_0');
+        $this->assertEquals($features[3], 'points1_7');
+        // revert changes
+        $this->undoUpdate();
+    }
+    protected function testUpdateRemove() {
+        // set up update
+        $updateContent = ['features'=>[
+            ['properties'=>['id'=>2]],
+            ['properties'=>['id'=>12]],
+            ['properties'=>['id'=>13]],
+            ['properties'=>['id'=>5]],
+            ['properties'=>['id'=>11]],
+            ['properties'=>['id'=>14]],
+        ]];
+        $this->prepareUpdate($updateContent);
+        $update = array_merge($this->updateData['settings'], ['type'=>'remove']);
+        // update: 3 features removed, point 7 exists, point 2 does not
+        Utils::handleDatasetUpdate($update, []);
+        Utils::handleDatasetUpdate($update, $update);
+        $features = Dataset::getDatasets()['points1.json']->getFeatures();
+        $this->assertSize($features, 9);
+        $this->assertNotEmpty($features['points1_7']);
+        $this->assertEmpty($features['points1_2']);
+        // revert changes
+        $this->undoUpdate();
+    }
+    protected function testUpdateStandard_modify_existing() {
+        $this->prepareUpdate($this->updateContent);
+        $update = array_merge($this->updateData['settings'], ['overwrite_blank'=>true]);
+        Utils::handleDatasetUpdate($update, []);
+        Utils::handleDatasetUpdate($update, $update);
+        $features = Dataset::getDatasets()['points1.json']->getFeatures();
+        // property added to feature (point 1, veggie)
+        $this->assertEquals($features['points1_1']->getProperties()['veggie'], 'carrot');
+        // coordinates changed (point 9)
+        $this->assertEquals($features['points1_9']->asJson()['geometry']['coordinates'][0], 17);
+        // coordinates changed despite invalid geometry type (point 11)
+        $this->assertEquals($features['points1_11']->asJson()['geometry']['coordinates'][1], -8);
+        // invalid coordinates not changed (point 1)
+        $this->assertEquals($features['points1_1']->asJson()['geometry']['coordinates'][0], 180);
+        // invalid geometry type not changed (point 11)
+        $this->assertEquals($features['points1_11']->asJson()['geometry']['type'], 'Point');
+        // property overwritten by blank (point 11, fruit)
+        $this->assertEmpty($features['points1_11']->getProperties()['fruit']);
+        // property not included in property list
+        $this->assertEquals($features['points1_9']->getProperties()['name'], 'Point 9');
+        // no property list
+        $this->assertEquals($features['points1_2']->getProperties()['fruit'], 'kiwi');
+        // no features added or removed
+        $this->assertSize($features, 12);
+        // check existence of feature that would be removed (point 8)
+        $this->assertNotEmpty($features['points1_8']);
+        $this->undoUpdate();
+    }
+    protected function testUpdateStandard_add_new() {
+        $this->prepareUpdate($this->updateContent);
+        $update = array_merge($this->updateData['settings'], ['modify_existing'=>false, 'add_new'=>true]);
+        Utils::handleDatasetUpdate($update, []);
+        Utils::handleDatasetUpdate($update, $update);
+        $features = Dataset::getDatasets()['points1.json']->getFeatures();
+        // 3 new features added
+        $this->assertSize($features, 15);
+        // point 7 fruit unchanged
+        $this->assertEquals($features['points1_7']->getProperties()['fruit'], 'pineapple');
+        // check new feature added with name property
+        $this->assertEquals($features['points1_13']->getName(), 'Point 13');
+        // check new feature added without name property
+        $this->assertEquals($features['points1_14']->getName(), 'points1_14');
+        // check correct order - features added at the end
+        $features = array_keys($features);
+        $this->assertEquals($features[0], 'points1_0');
+        $this->assertEquals($features[2], 'points1_2');
+        $this->assertEquals($features[12], 'points1_12');
+        $this->undoUpdate();
+    }
+    protected function testUpdateStandard_remove_empty() {
+        $this->prepareUpdate($this->updateContent);
+        $update = array_merge($this->updateData['settings'], ['modify_existing'=>false, 'remove_empty'=>true]);
+        Utils::handleDatasetUpdate($update, []);
+        Utils::handleDatasetUpdate($update, $update);
+        $features = Dataset::getDatasets()['points1.json']->getFeatures();
+        // 4 features removed
+        $this->assertSize($features, 8);
+        // point 7 exists with fruit unchanged
+        $this->assertEquals($features['points1_7']->getProperties()['fruit'], 'pineapple');
+        // point 8 does not exist
+        $this->assertEmpty($features['points1_8']);
+        // features are in the correct order
+        $features = array_keys($features);
+        $this->assertEquals($features[0], 'points1_1');
+        $this->assertEquals($features[4], 'points1_6');
+        $this->assertEquals($features[7], 'points1_11');
+        $this->undoUpdate();
+    }
+    protected function testUpdateStandard_all() {
+
+        // test all (without overwrite blank)
+        $this->prepareUpdate($this->updateContent);
+        $update = array_merge($this->updateData['settings'], ['add_new'=>true, 'remove_empty'=>true]);
+        // save with correct settings, then confirm
+        Utils::handleDatasetUpdate($update, []);
+        $result = Utils::handleDatasetUpdate($update, $update);
+        $result = array_merge($update, $result);
+        // options are cleared
+        $this->assertEmpty($result['dataset']);
+        $this->assertEmpty($result['file']);
+        // check features
+        $features = Dataset::getDatasets()['points1.json']->getFeatures();
+        $this->assertSize($features, 11);
+        $this->assertEquals($features['points1_7']->getProperties()['veggie'], 'broccoli'); // updated feature
+        $this->assertEquals($features['points1_11']->getProperties()['fruit'], 'pear'); // not overwrite blank
+
+        // check property list update
+        $this->assertNotEmpty(Dataset::getDatasets()['points1.json']->getProperties()['veggie']);
+
+        // check yaml to ensure features have been updated
+        $features = array_column(MarkdownFile::instance(Dataset::getDatasets()['points1.json']->getDatasetRoute())->header()['features'], null, 'id');
+        $this->assertSize($features, 11);
+        $this->assertNotEmpty($features['points1_12']); // added feature
+        $this->assertEmpty($features['points1_0']); // removed feature
+        $this->assertEquals($features['points1_11']['name'], 'Point 11 Name Update'); // changed name
+        // correct feature order
+        $features = array_keys($features);
+        $this->assertEquals($features[0], 'points1_1');
+        $this->assertEquals($features[4], 'points1_6');
+        $this->assertEquals($features[7], 'points1_11');
+        $this->assertEquals($features[9], 'points1_13');
+
+        $this->undoUpdate();
+    }
+
+    protected function prepareUpdate(array $updateContent) {
+        // set some needed variables
+        if (empty($this->updateData)) {
+            $fileData = ['path'=>'user/data/leaflet-tour/datasets/update/pointsUpdate.json', 'name'=>'pointsUpdate.json', 'type'=>'application/json'];
+            $updateFile = CompiledJsonFile::instance(Grav::instance()['locator']->getBase().'/'.$fileData['path']);
+            $jsonFile = CompiledJsonFile::instance(Grav::instance()['locator']->getBase().'/user/data/leaflet-tour/datasets/points1.json');
+            $savedJson = CompiledJsonFile::instance(Grav::instance()['locator']->getBase().'/user/data/leaflet-tour/datasets/points1.json')->content();
+            $savedDataset = MarkdownFile::instance(Dataset::getDatasets()['points1.json']->getDatasetRoute())->header();
+            $settings = ['status'=>'confirm', 'confirm'=>true, 'dataset'=>'points1.json', 'dataset_prop'=>'id', 'same_prop'=>true, 'file'=>[$fileData], 'type'=>'standard', 'modify_existing'=>true];
+            $this->updateData = ['updateFile'=>$updateFile, 'jsonFile'=>$jsonFile, 'savedJson'=>$savedJson, 'savedDataset'=>$savedDataset, 'settings'=>$settings];
+            $this->updateContent = [
+                'type'=>'FeatureCollection',
+                'features'=>[ // some features that are the same (2, 3, 5, 6), some features modified (1, 7, 9, 11), some removed (0, 4, 8, 10), some added (12, 13, 14), some invalid (new or modified) (2 new, 7, 9)
+                    // these four features should remain the same - all that should be necessary is that the appropriate propertry match - they shouldn't have to be valid features as long as they already exist as valid features
+                    ['properties'=>['id'=>2]],
+                    ['properties'=>['id'=>5]],
+                    ['properties'=>['id'=>6]],
+                    ['properties'=>['id'=>3]],
+                    // these five features are new - only three should be added, as the other two are invalid
+                    [
+                        'type'=>'Feature',
+                        'properties'=>['type'=>'valid', 'id'=>12, 'name'=>'Point 12'],
+                        'geometry'=>['type'=>'Point', 'coordinates'=>[5, 60]],
+                    ],[
+                        'type'=>'Feature',
+                        'properties'=>['type'=>'invalid', 'id'=>0.6, 'name'=>'Invalid point'],
+                        'geometry'=>['type'=>'Point', 'coordinates'=>[92, 92]],
+                    ],[
+                        'type'=>'Feature',
+                        'properties'=>['type'=>'valid', 'id'=>13, 'name'=>'Point 13'],
+                        'geometry'=>['type'=>'Point', 'coordinates'=>[-5, 10.5]],
+                    ],[
+                        'properties'=>['type'=>'valid', 'id'=>14],
+                        'geometry'=>['type'=>'Point', 'coordinates'=>[7, -14]],
+                    ],[
+                        'type'=>'Feature',
+                        'properties'=>['type'=>'invalid', 'id'=>0.7, 'name'=>'No geometry'],
+                    ],
+                    // these four features are modified, two have some invalid modifications that should be ignored, but valid modifications that should not be
+                    [ // invalid geometry modification
+                        'properties'=>['id'=>1, 'fruit'=>'watermelon', 'veggie'=>'carrot'],
+                        'geometry'=>['coordinates'=>[7, 92.5]],
+                    ],[ // invalid geometry type modification
+                        'properties'=>['id'=>11, 'fruit'=>'', 'name'=>'Point 11 Name Update'],
+                        'geometry'=>['type'=>'Polygon', 'coordinates'=>[8, -8]],
+                    ],[
+                        'properties'=>['id'=>9],
+                        'geometry'=>['type'=>'Point', 'coordinates'=>[17, 10.7]],
+                    ],[
+                        'properties'=>['id'=>7, 'veggie'=>'broccoli', 'fruit'=>'orange'],
+                    ],
+                ],
+            ];
+        }
+        // "upload" the update file
+        if (empty($updateContent)) $updateContent = $this->updateData['savedJson'];
+        $this->updateData['updateFile']->content($updateContent);
+        $this->updateData['updateFile']->save();
+    }
+    protected function undoUpdate() {
+        // reset json and dataset content
+        $points = Dataset::getDatasets()['points1.json'];
+        $jsonFile = $points->getJsonFile('points1.json');
+        $jsonFile->content($this->updateData['savedJson']);
+        $jsonFile->save();
+        $datasetFile = MarkdownFile::instance($points->getDatasetRoute());
+        $datasetFile->header($this->updateData['savedDataset']);
+        $datasetFile->save();
+        Dataset::resetDatasets();
     }
 
     /**
@@ -520,6 +694,8 @@ class UtilsTest extends Test {
         $this->assertNull($result['emptyArray']);
         $this->assertEquals($result['emptyString'], '');
         $this->assertFalse($result['bool']);
+
+        $this->undoUpdate();
     }
 }
 ?>
