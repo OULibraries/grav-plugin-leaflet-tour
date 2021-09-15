@@ -34,7 +34,7 @@ form:
             header.start_section:
               type: section
               title: Starting Position
-              text: "Choose a location/feature to center the view on, or set the latitude and longitude manually. Leave all fields blank or set the zoom to -1 if you don't want the map to zoom."
+              text: By default, the starting bounds will be determined by all included features. You can override this by providing bounds manually in the page header (expert mode) or by choosing a center and a distance (in degrees) from it. You can choose a location for the center or set the latitude and longitude manually.
               underline: true
             
             header.start.location:
@@ -58,16 +58,13 @@ form:
                 max: 180
                 step: .00000000001
             
-            header.start.zoom:
+            header.start.distance:
               type: number
-              label: Starting Zoom Level
-              description: Choose an integer between 0 and 28 inclusive. Defaults to 12.
+              label: Distance from Starting Center
               size: long
-              default: 10
               validate:
-                min: -1
-                max: 28
-                step: 1
+                min: 0
+                step: .00000000001
             
             header.features_set:
               type: fieldset
@@ -113,11 +110,11 @@ form:
                   validate:
                     type: bool
                 
-                header.remove_default_basemap:
+                header.remove_tileserver:
                   type: toggle
                   toggleable: true
-                  label: Remove Default Basemap
-                  description: If toggled, will remove the default basemap when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. Overrides the tour setting.
+                  label: Remove Tile Server
+                  description: If toggled, will remove the tile server when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. Overrides the tour setting.
                   highlight: 1
                   default: 1
                   options:

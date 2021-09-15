@@ -1,7 +1,7 @@
 {% extends 'partials/base.html.twig' %}
 
 {% set pluginConfig = config.plugins['leaflet-tour'] %}
-{% set tourData = leafletTour.getTourData(page) %}
+{% set tourData = leafletTour.getTour(page) %}
 
 {# Add CSS #}
 {% block stylesheets %}
@@ -14,41 +14,28 @@
 {% block javascripts %}
     {{ parent() }}
     {# JS to add after page HTML #}
-    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/js_expressions.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.rotatedMarker.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.pattern.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet-hash.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/Autolinker.min.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/rbush.min.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/labelgun.min.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/labels.js', {group:'bottom'}) %}
     {# Question: Download these? #}
     {% do assets.addJs('https://unpkg.com/intersection-observer', {group:'bottom'}) %}
     {% do assets.addJs('https://unpkg.com/scrollama', {group:'bottom'}) %}
+    {% do assets.addJs('https://stamen-maps.a.ssl.fastly.net/js/tile.stamen.js?v1.3.0', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/tour.js', {group:'bottom'}) %}
 
     <script>
         // set important map data
-        var tourOptions = {
-            center: [{{ header.start.lat ?? 0 }}, {{ header.start.long ?? 0 }}],
-            zoom: {{ header.start.zoom ?? 10 }},
-            maxZoom: {{ header.zoom_max ?? 16 }},
-            minZoom: {{ header.zoom_min ?? 8 }},
-            // todo: move default tileserver into leaflet-tour.yaml
-            tileServer: "{{ header.tileserver.url ?? pluginConfig.tileserver.url  ?? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' }}",
-            basemaps: {{ tourData['basemaps']|json_encode|raw }}, // all basemap info
-            removeDefaultBasemap: {{ header.remove_default_basemap ? 'true' : 'false' }},
-            tourMaps: [ {% for item in header.basemaps %} "{{ item.file }}", {% endfor %}], // list of all tour basemaps
-            datasets: {{ tourData['datasets']|json_encode|raw }},
-            wideCol: {{ header.wide_column is defined ? (header.wide_column ? 'true' : 'false') : pluginConfig.wide_column is defined ? (pluginConfig.wide_column ? 'true' : 'false') : 'false' }},
-            showMapLocationInUrl: {{ header.show_map_location_in_url is defined ? (header.show_map_location_in_url ? 'true' : 'false') : pluginConfig.show_map_location_in_url is defined ? (pluginConfig.show_map_location_in_url ? 'true' : 'false') : 'true' }},
-        };
-        {% if header.bounds|length == 4 %}
-        tourOptions['bounds'] = [[{{ header.bounds.south }}, {{ header.bounds.west }}], [{{ header.bounds.north }}, {{ header.bounds.east}}]];
-        {% endif %}
-        var tourViews = {{ tourData['views']|json_encode|raw }};
-        var geoJson = {{ tourData['features']|json_encode|raw }};
+        var tourBasemaps = new Map(Object.entries({{ tourData.getBasemaps()|json_encode|raw }}));
+        var tourViews = new Map(Object.entries({{ tourData.getViews()|json_encode|raw }}));
+        var tourFeaturesJson = {{ tourData.getFeatures()|json_encode|raw }};
+        var tourOptions = {{ tourData.getOptions()|json_encode|raw }};
+        var tourDatasets = new Map(Object.entries({{ tourData.getDatasets()|json_encode|raw }}));
+        // load before theme.js - make nav menu collapsed by default
+        if (sessionStorage.getItem("nav-expanded") === null) sessionStorage.setItem("nav-expanded", "false");
     </script>
     
 {% endblock javascripts %}
@@ -57,30 +44,20 @@
 <div id="header-wrapper">
     <div class="mobile-row">
         {{ parent() }}
-        <button id="header-toggle" aria-expanded="true" class="mobile-only hamburger-btn expanded">
+        <button id="header-toggle-btn" aria-expanded="true" class="mobile-only hamburger-btn expanded">
             <i class="fas fa-minus" aria-hidden="true"></i>
             <i class="fas fa-bars" aria-hidden="true"></i>
             <span class="sr-only">Toggle Menu</span>
         </button>
     </div>
     <div id="header-options-wrapper" class="mobile-row">
-        <div role="region" aria-label="Map and Content Toggle" id="toggle-list" class="mobile-only">
-            <ul class="list-unstyled" role="list">
-                <li>
-                    {# TODO: aria-current?? #}
-                    {# TODO: Make this just one button, since it only switches between map and content #}
-                    <button id="scrolly-toggle" class="btn btn-disabled" aria-current="true" aria-disabled="true" data-toggle="scrolly">Content</button>
-                </li>
-                <li>
-                    <button id="map-toggle" class="btn" data-toggle="map">Map</button>
-                </li>
-            </ul>
-        </div>
-        <!--button id="open-settings-btn" class="icon-btn">
+        <nav aria-label="Map and Content">
+            <button id="content-toggle-btn" class="btn" data-current="scrolly">View Map</button>
+        </nav>
+        <button id="open-settings-btn" class="icon-btn" onClick="openDialog('settings-dialog', this)">
             <i class="fa fas fa-cog" aria-hidden="true"></i>
             <span class="sr-only">Open settings</span>
-        </button-->
-        {% include 'partials/settings.html.twig' %}
+        </button>
     </div>
 </div>
 <nav id="main-nav" aria-label="Primary" class="main-nav">
@@ -101,27 +78,27 @@
 {% block navigation %}{% endblock navigation %} {# clear navigation block - already included in header #}
 
 {% block main %}
+{% include 'partials/settings.html.twig' %}
 <div id="scrolly">
     <div class="scroll-top">
         <h1>{{ page.title }}</h1>
-        <!-- TODO: This might still be useful for linking to another page -->
-        <!--button id="all-popups-btn" class="btn mobile-only">See All Popup Content</button-->
         <div id="scrolly-content">
             {{ content|raw }}
         </div>
+        <a class="btn" href="{{ pages.url }}popups/{{ page.slug }}">View all popup content</a>
     </div>
     <div id="scroll-text">
     {% for view in page.collection() if view.template == 'modular/view' %}
-        {% set viewId = leafletTour.getViewId(view) %}
+        {% set viewId = tourData.getViewId(view) %}
         <div class="step" id="{{ viewId }}">
             <h2>{{ view.header.title }}</h2>
-            <button data-view="{{ viewId }}" class="btn show-view-btn">Show View</button>
+            <button data-view="{{ viewId }}" id="show-view-{{ viewId }}" class="btn show-view-btn">Show View</button>
             {{ view.content|raw }}
-            {% set viewPopups = leafletTour.getViewPopups(tourData['views'][viewId]['features'], tourData['popups']) %}
+            {% set viewPopups = tourData.getViewPopups(viewId) %}
             {% if viewPopups|length > 0 %}
             <ul class="list-unstyled">
                 {% for feature in viewPopups %}
-                <li><button id="{{ viewId }}_{{ feature.id }}_btn" data-feature="{{ feature.id }}" class="btn view-popup-btn">View {{ feature.name }} popup</button></li>
+                <li><button id="{{ viewId }}_{{ feature.id }}_btn" class="btn view-popup-btn" onClick="openDialog('{{ feature.id }}-popup', this)">View {{ feature.name }} popup</button></li>
                 {% endfor %}
             </ul>
             {% endif %}
@@ -133,8 +110,8 @@
 <div id="map-wrapper" role="region" aria-label="Map">
     <a href="#footer" id="skip-map-link" class="skip-link">Skip to Footer</a>
     {# Legend #}
-    {% if (header.legend ?? true) %}{% set legendList = tourData['legend'] %}{% endif %}
-    {% if legendList %}
+    {% set legendList = tourData.getLegend() %}
+    {% if legendList|length > 0 %}
     <div class="legend">
         <div class="legend-top">
             <h2>Legend</h2>
@@ -153,7 +130,22 @@
                 {% else %}
                 <div>
                 {% endif %}
+                    {% if item.iconFile is defined %}
                     <img class="legend-icon" src="{{ item.iconFile }}" alt="{{ item.iconAltText }}" style="height: {{ item.iconHeight }}px; width: {{ item.iconWidth }}px;">
+                    {% elseif item.featureType is same as 'line' %}
+                        <svg width="14px" height="14px">
+                            <rect x="0" y="0" width="14" height="14" fill="{{ item.color }}" />
+                        </svg>
+                    {% else %}
+                        {% set weight = (item.weight|default(1)) - 1 %}
+                        {% set size = 14 + (2 * weight) %}
+                        <svg width="{{ size }}px" height="{{ size }}px">
+                            <rect x="{{ weight }}" y="{{ weight }}" width="14" height="14"
+                                {% if item.color is defined %} stroke="{{ item.color }}" stroke-width="{{ item.weight }}" stroke-opacity="{{ item.opacity }}" {% endif %}
+                                {% if item.fillColor is defined %} fill="{{ item.fillColor }}" fill-opacity="{{ item.fillOpacity }}" {% endif %}
+                            />
+                        </svg>
+                    {% endif %}
                     <span>{{ item.legendText }}</span>
                 {% if header.legend_toggles %}</label>
                 {% else %}</div>
@@ -166,36 +158,34 @@
     <div id="map">
     </div>
 </div>
-<div id="popup-list-wrapper">
-{% for feature in tourData['popups'] %}
-    <div class="popup" id="{{ feature.id }}-popup">
-        <div class="popup-top">
-            <h2 class="popup-header" tabindex="-1">{{ feature.name }}</h2>
-            <!-- TODO: Turn this button into a back button for mobile (still closes popup, though) -->
-            <button id="{{ feature.id }}-popup-close-btn" class="popup-btn popup-close-btn icon-btn">
+{% for feature in tourData.getPopups() %}
+<div class="dialog-backdrop">
+    <div role="dialog" id="{{ feature.id }}-popup" aria-labelledby="{{ feature.id }}-popup-label" aria-modal="true" class="hidden">
+        <div class="dialog-top">
+            <h2 id="{{ feature.id }}-popup-label" class="dialog-label">{{ feature.name }}</h2>
+            <button id="{{ feature.id }}-close-btn" class="icon-btn" onClick="closeDialog(this)">
                 <i class="fas fa-times" aria-hidden="true"></i>
-                <span class="sr-only">Close popup</span>
+                <span class="sr-only">Close</span>
             </button>
         </div>
         <div class="popup-content">
             {{ feature.popup|markdown }}
+            {#% include 'partials/bits/back_to_top.html.twig' %#}
         </div>
-        <button id="{{ feature.id }}-popup-back-btn" class="btn popup-btn popup-back-btn desktop-only">Back</button>
-        <!-- TODO: Add back to top button -->
-        <!-- Question: Should this button be mobile only, or also included on desktop? -->
     </div>
-{% endfor %}
 </div>
+{% endfor %}
 {% endblock main %}
 
 {% block backtotop %}{% endblock backtotop %} {# clear block - already included in main content #}
 
 {% block footer %}
-    {% if tourData['attribution'] %}
+    {% set attribution = tourData.getAttribution() %}
+    {% if attribution|length > 0 %}
     <div id="attribution-section" class="footer-section">
         Resources used:
         <ul class="attribution-list list-unstyled" role="list">
-            {% for item in tourData['attribution'] %}
+            {% for item in attribution %}
                 <li>
                 {% if item.url %}
                     <a href="{{ item.url }}" target="_blank" class="attribution">{{ item.name }}<span class="sr-only"> Opens in new tab</span></a>
@@ -205,6 +195,14 @@
                 {% if not item.isLast %} <i aria-hidden="true" class="fas fa-circle"></i>{% endif %}</li>
             {% endfor %}
         </ul>
+    </div>
+    {% endif %}
+    {% set attribution = tourData.getExtraAttribution() %}
+    {% if attribution|length > 0 %}
+    <div class="footer-section">
+        {% for item in attribution %}
+            {{ item|raw }}
+        {% endfor %}
     </div>
     {% endif %}
     {{ parent() }}

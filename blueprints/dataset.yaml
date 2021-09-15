@@ -49,28 +49,15 @@ form:
                       type: text
                       label: Dataset Name
                   
-                    # TODO: customize dataset id?
+                    # Option: customize dataset id
 
-                    # TODO: select or readonly feature type?
+                    # Option: readonly feature type
 
                     folder:
                       type: folder-slug
                       label: PLUGIN_ADMIN.FOLDER_NAME
                       validate:
                         rule: slug
-
-                    route:
-                      type: parents
-                      label: PLUGIN_ADMIN.PARENT
-                      classes: fancy
-
-                    name:
-                      type: select
-                      classes: fancy
-                      label: PLUGIN_ADMIN.PAGE_FILE
-                      help: PLUGIN_ADMIN.PAGE_FILE_HELP
-                      default: default
-                      data-options@: '\Grav\Common\Page\Pages::pageTypes'
                 
                 col2:
                   type: column
@@ -84,62 +71,7 @@ form:
                     info:
                       type: display
                       markdown: true
-                      content: 'TODO: Information should go here.'
-        
-        features:
-          type: tab
-          title: Features
-          fields:
-
-            header.name_prop:
-              type: select
-              label: Name Property
-              description: "The property in the data file that contains features' names."
-              data-options@: 'Grav\Plugin\LeafletTourPlugin::getPropertyList'
-
-            # TODO: auto add properties?
-
-            header.features:
-              type: list
-              collapsed: true
-              style: vertical
-              label: Features
-              btnLabel: 'Ignore: Do not click'
-              # TODO: ability to add a feature
-              fields:
-                .id:
-                  type: hidden
-                  validate:
-                    required: true
-                .name:
-                  type: text
-                  label: Name
-                  readonly: true
-                .custom_name:
-                  type: text
-                  label: Custom Name
-                  
-                # TODO: custom id?
-
-                # TODO: feature type?
-
-                # TODO: coordinates?
-
-                # TODO: property list?
-
-                # TODO: hide feature option?
-
-                .popup_content:
-                  type: editor
-                  label: Popup Content
-                  description: Leave blank for no popup window. Current content may not show up until you click inside the text area.
-                  validate:
-                    type: textarea
-        
-        icon:
-          type: tab
-          title: Icon
-          fields:
+                      content: 'This page was automatically created. Use the Features, Icon, and SVG tabs to customize your dataset. Please do not enter expert mode to change options that are read only, as changing these may break aspects of this plugin.'
 
             legend_section:
               type: display
@@ -153,8 +85,63 @@ form:
             
             header.legend_alt:
               type: text
-              label: Legend Alt text
+              label: Legend Alt Text
               description: Optional shorter version of the legend description that will be included as alt text for icons on the map. If empty, the legend description will be used.
+        
+        features:
+          type: tab
+          title: Features
+          fields:
+
+            header.name_prop:
+              type: select
+              label: Name Property
+              description: "The property in the data file that contains features' names."
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getPropertyList'
+
+            # Option: auto add properties
+
+            header.features:
+              type: list
+              collapsed: true
+              style: vertical
+              label: Features
+              description: Customize feature name and popup content. While you are currently able to add and delete features, these changes will not be saved.
+              btnLabel: 'Ignore: Do not click'
+              fields:
+                .id:
+                  type: hidden
+                  validate:
+                    required: true
+                .name:
+                  type: text
+                  label: Name
+                  readonly: true
+                .custom_name:
+                  type: text
+                  label: Custom Name
+                  
+                # Option: custom id?
+
+                # Option: read only feature type
+
+                # Option: coordinates
+
+                # Option: property list
+
+                # Option: hide feature option
+
+                .popup_content:
+                  type: editor
+                  label: Popup Content
+                  description: Leave blank for no popup window. Current content may not show up until you click inside the text area.
+                  validate:
+                    type: textarea
+        
+        icon:
+          type: tab
+          title: Icon
+          fields:
             
             header.icon_alt:
               type: text
@@ -211,7 +198,7 @@ form:
               type: display
               content: "#### Icon Anchor
 
-              The coordinates of the 'tip' of the icon (relative to its top left corner). The icon will be aligned so that this point is at the marker's geographical location. Centered by default."
+              The coordinates of the 'tip' of the icon (relative to its top left corner). The icon will be aligned so that this point is at the marker's geographical location. Centered by default. If you are using a custom icon, both the x and y values must be provided or the custom icon anchor settings will be ignored."
               markdown: true
               style: vertical
             iconanchcols:
@@ -223,15 +210,14 @@ form:
                     header.icon.anchor_x:
                       type: number
                       label: Icon Anchor X
-                      # TODO: doublecheck accuracy of descriptions
-                      #description: Moves icon up
+                      description: Moves icon left
                 iconanchcol2:
                   type: column
                   fields:
                     header.icon.anchor_y:
                       type: number
                       label: Icon Anchor Y
-                      #description: Moves icon right
+                      description: Moves icon up
 
             icon_tooltip_section:
               type: display
@@ -249,15 +235,14 @@ form:
                     header.icon.tooltip_anchor_x:
                       type: number
                       label: Tooltip Anchor X
-                      # TODO: doublecheck accuracy of descriptions
-                      #description: Moves icon up
+                      description: Moves tooltip right
                 icontooltipcol2:
                   type: column
                   fields:
                     header.icon.tooltip_anchor_y:
                       type: number
                       label: Tooltip Anchor Y
-                      #description: Moves icon right
+                      description: Moves tooltip down
                 
             icon_shadow_section:
               type: display
@@ -300,7 +285,7 @@ form:
               type: display
               content: "#### Shadow Anchor
               
-              The coordinates of the 'tip' of the shadow (relative to its top left corner). If not set, uses the same values as icon anchor."
+              The coordinates of the 'tip' of the shadow (relative to its top left corner). If not set, uses the same values as icon anchor. Both the x and y values must be provided or the custom shadow anchor settings will be ignored."
               markdown: true
               style: vertical
             iconshadowanchcols:
@@ -338,3 +323,198 @@ form:
               description: Optional. Used for Retina screen devices
               preview_images: true
               folder: 'user://data/leaflet-tour/images/markers'
+        
+        svg:
+          type: tab
+          title: SVG
+          fields:
+
+            svg_path:
+              type: display
+              content: "## SVG Style"
+              style: vertical
+              markdown: true
+            
+            svg_path_stroke:
+              type: display
+              content: "### Stroke Options"
+              style: vertical
+              markdown: true
+            
+            # additional options: lineCap, lineJoin, dashArray, dashOffset
+
+            header.svg.stroke:
+              type: toggle
+              label: Draw Stroke
+              description: "Whether to draw stroke along the path. Set it to false to disable borders on polygons or circles."
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.svg.color:
+              type: colorpicker
+              label: Stroke Color
+              default: "#3388ff"
+            
+            header.svg.weight:
+              type: number
+              label: Stroke Width (pixels)
+              default: 3
+              validate:
+                min: 1
+            
+            header.svg.opacity:
+              type: number
+              label: Stroke Opacity
+              description: "A number from 0 (completely transparent) to 1 (completely opaque)."
+              default: 1.0
+              validate:
+                min: 0
+                max: 1
+                step: 0.01
+
+            svg_path_fill:
+              type: display
+              content: "### Fill Options"
+              style: vertical
+              markdown: true
+            
+            header.svg.fill:
+              type: toggle
+              label: Use Fill
+              description: "Whether to fill the path with color. Set it to false to disable filling on polygons or circles."
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.svg.fillColor:
+              type: colorpicker
+              label: Fill Color
+              description: Defaults to the stroke color.
+              toggleable: true
+            
+            header.svg.fillOpacity:
+              type: number
+              label: Fill Opacity
+              description: "A number from 0 (completely transparent) to 1 (completely opaque)."
+              default: 0.2
+              validate:
+                min: 0
+                max: 1
+                step: 0.01
+            
+            header.svg.lineCap:
+              type: hidden
+            header.svg.lineJoin:
+              type: hidden
+            header.svg.dashArray:
+              type: hidden
+            header.svg.dashOffset:
+              type: hidden
+            
+            svg_active:
+              type: display
+              content: "## SVG Active Style
+              
+              Applied when the feature is hovered over or receives focus."
+              style: vertical
+              markdown: true
+            
+            svg_active_stroke:
+              type: display
+              content: "### Stroke Options"
+              style: vertical
+              markdown: true
+            
+            # additional options: lineCap, lineJoin, dashArray, dashOffset
+
+            header.svg_active.stroke:
+              type: toggle
+              toggleable: true
+              label: Draw Stroke
+              description: "Whether to draw stroke along the path. Set it to false to disable borders on polygons or circles."
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.svg_active.color:
+              type: colorpicker
+              toggleable: true
+              label: Stroke Color
+              default: "#3388ff"
+            
+            header.svg_active.weight:
+              type: number
+              toggleable: true
+              label: Stroke Width (pixels)
+              default: 3
+              validate:
+                min: 1
+            
+            header.svg_active.opacity:
+              type: number
+              toggleable: true
+              label: Stroke Opacity
+              description: "A number from 0 (completely transparent) to 1 (completely opaque)."
+              default: 1.0
+              validate:
+                min: 0
+                max: 1
+                step: 0.01
+
+            svg_active_fill:
+              type: display
+              content: "### Fill Options"
+              style: vertical
+              markdown: true
+            
+            header.svg_active.fill:
+              type: toggle
+              toggleable: true
+              label: Use Fill
+              description: "Whether to fill the path with color. Set it to false to disable filling on polygons or circles."
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            header.svg_activev.fillColor:
+              type: colorpicker
+              label: Fill Color
+              description: Defaults to the stroke color.
+              toggleable: true
+            
+            header.svg_active.fillOpacity:
+              type: number
+              toggleable: true
+              label: Fill Opacity
+              description: "A number from 0 (completely transparent) to 1 (completely opaque)."
+              default: 0.2
+              validate:
+                min: 0
+                max: 1
+                step: 0.01
+            
+            header.svg_active.lineCap:
+              type: hidden
+            header.svg_active.lineJoin:
+              type: hidden
+            header.svg_active.dashArray:
+              type: hidden
+            header.svg_active.dashOffset:
+              type: hidden

@@ -1,55 +1,17 @@
-/* Notes from tmp.css
-
-A couple of header logo styles - probably mostly a note that I need to work on the header:
-header .logo {
-    max-width: 100%;
-}
-header .logo a {
-    padding: 0;
-}
-*/
-/* Temporary: Move these to theme.css */
-.skip-link:visited {
-  color: #004fa3;
+::-webkit-scrollbar {
+  display: none;
 }
 
-.btn-disabled:hover {
-  box-shadow: none;
-  pointer-events: none;
-  cursor: default;
+body {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  overflow-wrap: break-word;
 }
 
-.main-nav .nav-item {
-  border: none;
-  margin: 5px 0;
-}
-.main-nav li {
-  border-bottom: 1px solid;
-  border-color: darkgray;
-}
-.main-nav li:last-child {
-  border-bottom-style: none;
-}
-.main-nav li:last-child.expanded > .nav-item {
-  border: none;
+.dialog-backdrop.active {
+  z-index: 900;
 }
 
-#back-to-top {
-  display: flex;
-  opacity: 0;
-  transition: opacity linear 0.5s;
-  pointer-events: none;
-}
-#back-to-top.active, #back-to-top:focus {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-header a:hover:not(:focus) {
-  outline: 1px solid;
-}
-
-/* end temporary */
 /* Header */
 header {
   position: sticky;
@@ -102,6 +64,9 @@ header .main-nav ul ul .nav-item {
     display: block;
     height: inherit;
   }
+  header #header-toggle-btn {
+    margin: 10px;
+  }
   header .mobile-row {
     display: flex;
     width: 100%;
@@ -109,37 +74,28 @@ header .main-nav ul ul .nav-item {
     justify-content: space-between;
     align-items: center;
   }
-  header #header-toggle {
-    margin: 10px 5px;
-  }
-  header #toggle-list {
+  header .mobile-row nav {
     flex-grow: 1;
-  }
-  header #toggle-list ul {
     display: flex;
-    justify-content: space-evenly;
+    justify-content: center;
   }
-  header #toggle-list ul li {
-    margin-bottom: 0;
-    width: 30%;
-  }
-  header #toggle-list ul li button {
+  header .mobile-row nav button {
     margin: 5px 0;
-    width: 100%;
+    min-width: 30%;
     padding: 10px;
     border-color: #070f4e;
     background-color: #fff;
     color: #070f4e;
   }
-  header #toggle-list ul li button:hover, header #toggle-list ul li button:focus {
+  header .mobile-row nav button:hover, header .mobile-row nav button:focus {
     background-color: #070f4e;
     color: #fff;
   }
-  header #toggle-list ul li button.btn-disabled {
+  header .mobile-row nav button.btn-disabled {
     background-color: #e2e2e2 !important;
     color: #333 !important;
   }
-  header #toggle-list ul li button.btn-disabled:focus {
+  header .mobile-row nav button.btn-disabled:focus {
     box-shadow: none;
   }
 }
@@ -179,13 +135,15 @@ header .main-nav ul ul .nav-item {
     top: 0;
     right: 0;
   }
+  header #header-options-wrapper nav {
+    display: none;
+  }
 }
 
 /* Content */
 main {
   padding: 0;
   margin: 0 !important;
-  z-index: 0;
 }
 @media (min-width: 600px) {
   main {
@@ -201,11 +159,6 @@ main {
 }
 #scrolly .step {
   padding: 1rem 0;
-}
-@media (max-width: 599px) {
-  #scrolly {
-    display: none;
-  }
 }
 @media (min-width: 600px) {
   #scrolly #back-to-top {
@@ -252,7 +205,12 @@ main {
   flex-wrap: wrap;
   cursor: pointer;
 }
-#map-wrapper .legend label img {
+#map-wrapper .legend li > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#map-wrapper .legend img, #map-wrapper .legend svg {
   margin: 10px;
 }
 #map-wrapper .legend.minimized {
@@ -314,19 +272,25 @@ main {
 #map-wrapper #map .leaflet-control-zoom a.leaflet-control-zoom-in:hover {
   border-bottom: none;
 }
+#map-wrapper #map .leaflet-control-zoom a.leaflet-control-zoom-in:hover.leaflet-disabled:hover {
+  border-bottom: 1px solid #ccc;
+  border-top: none;
+}
 #map-wrapper #map .leaflet-control-zoom a.leaflet-control-zoom-out {
   border-top: 1px solid #ccc;
 }
 #map-wrapper #map .leaflet-control-zoom a.leaflet-control-zoom-out:hover {
   border-top: none;
 }
-#map-wrapper #map .leaflet-control-zoom .leaflet-disabled {
+#map-wrapper #map .leaflet-control-zoom a.leaflet-control-zoom-out.leaflet-disabled:hover {
+  border-top: 1px solid #ccc;
+}
+#map-wrapper #map .leaflet-control-zoom a.leaflet-disabled {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 10 10'> <path d='M10 0 L0 10' fill='none' stroke='%23444444' stroke-width='.5' /></svg>");
   color: #444;
 }
-#map-wrapper #map .leaflet-control-zoom .leaflet-disabled:hover {
+#map-wrapper #map .leaflet-control-zoom a.leaflet-disabled:hover {
   outline: none;
-  border-top: 1px solid #ccc;
   background-color: #f4f4f4;
 }
 #map-wrapper #map .leaflet-interactive {
@@ -339,7 +303,7 @@ main {
   box-shadow: inset 0 0 0 1px black, inset 0 0 0 2px white, inset 0 0 0 10px black;
   outline: revert !important;
 }
-#map-wrapper #map .leaflet-interactive.no-popup {
+#map-wrapper #map .leaflet-interactive.no-popup, #map-wrapper #map .leaflet-interactive.path-no-popup {
   cursor: default;
   cursor: not-allowed;
 }
@@ -408,67 +372,6 @@ main {
   }
 }
 
-/* Popups */
-#popup-list-wrapper .popup {
-  display: none;
-}
-#popup-list-wrapper .popup.active {
-  display: block;
-}
-@media (max-width: 599px) {
-  #popup-list-wrapper {
-    display: none;
-    padding: 1px 1rem;
-  }
-}
-@media (min-width: 600px) {
-  #popup-list-wrapper .popup {
-    width: 30%;
-    max-height: 30%;
-    background: white;
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-    padding: 5px;
-    padding-bottom: 10px;
-    min-height: 200px;
-    border-radius: 5px;
-    border: 2px solid black;
-    overflow-x: scroll;
-    top: 65%;
-  }
-  #popup-list-wrapper .popup .popup-top {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-  #popup-list-wrapper .popup h3 {
-    margin: 1.5rem 0;
-    flex-grow: 1;
-  }
-  #popup-list-wrapper .popup .popup-close-btn {
-    margin: 1rem;
-    height: 3rem;
-    width: 3rem;
-    font-size: 18px;
-    font-size: 1.8rem;
-  }
-  #popup-list-wrapper .popup .popup-content {
-    margin: 1rem;
-  }
-  #popup-list-wrapper .popup-back-btn {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.5s linear;
-  }
-  #popup-list-wrapper .popup-back-btn:focus {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
-
 /* Footer */
 footer {
   padding: 1rem 0 3rem 0;
@@ -533,25 +436,19 @@ footer > div {
     height: 100%;
   }
 
-  .scrolly-active #scrolly {
-    display: block;
-  }
-
-  .map-active nav, .map-active footer {
+  .map-active #main-nav, .map-active footer, .map-active #scrolly {
     display: none;
   }
   .map-active #map-wrapper {
     display: block;
   }
 
-  .popups-active #header-wrapper {
-    height: 50px;
+  #scrolly .scroll-top {
+    min-height: calc(33vh + 40px);
   }
-  .popups-active #header-toggle, .popups-active #header-options-wrapper, .popups-active #main-nav, .popups-active footer {
-    display: none;
-  }
-  .popups-active #popup-list-wrapper {
-    display: block;
+
+  footer {
+    min-height: calc(67vh - 160px);
   }
 }
 @media (min-width: 600px) {
@@ -567,6 +464,14 @@ footer > div {
   .wide-column #map-wrapper #map {
     left: 40%;
     width: 60%;
+  }
+
+  #scrolly .scroll-top {
+    min-height: calc(33vh - 60px);
+  }
+
+  footer {
+    min-height: calc(67vh - 360px);
   }
 }
 

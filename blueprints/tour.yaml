@@ -25,7 +25,7 @@ form:
                   type: list
                   size: long
                   style: vertical
-                  collapsed: false
+                  collapsed: true
                   btnLabel: Add Dataset
                   fields:
                     .file:
@@ -96,25 +96,71 @@ form:
                             0: PLUGIN_ADMIN.DISABLED
                           validate:
                             type: bool
+                        .icon.anchor_x:
+                          type: hidden
+                        .icon.anchor_y:
+                          type: hidden
+                        .icon.tooltip_anchor_x:
+                          type: hidden
+                        .icon.tooltip_anchor_y:
+                          type: hidden
+                        .icon.shadow:
+                          type: hidden
+                        .icon.shadow_width:
+                          type: hidden
+                        .icon.shadow_height:
+                          type: hidden
+                        .icon.shadow_anchor_x:
+                          type: hidden
+                        .icon.shadow_anchor_y:
+                          type: hidden
+                        .icon.class:
+                          type: hidden
+                        .icon.retina:
+                          type: hidden
+                    .svg:
+                      type: hidden
+                    .svg.stroke:
+                      type: hidden
+                    .svg.color:
+                      type: hidden
+                    .svg.weight:
+                      type: hidden
+                    .svg.opacity:
+                      type: hidden
+                    .svg.fill:
+                      type: hidden
+                    .svg.fillColor:
+                      type: hidden
+                    .svg.fillOpacity:
+                      type: hidden
+                    .svg_active:
+                      type: hidden
+                    .svg_active.stroke:
+                      type: hidden
+                    .svg_active.color:
+                      type: hidden
+                    .svg_active.weight:
+                      type: hidden
+                    .svg_active.opacity:
+                      type: hidden
+                    .svg_active.fill:
+                      type: hidden
+                    .svg_active.fillColor:
+                      type: hidden
+                    .svg_active.fillOpacity:
+                      type: hidden
             
             header.start_section:
               type: section
               title: Starting Position
               underline: true
-              text: This will be the default center of the map when not in a specific view. You can choose a location or set the latitude and longitude manually.
+              text: By default, the starting bounds will be determined by all included features. You can override this by providing bounds manually in the page header (expert mode) or by choosing a center and a distance (in degrees) from it. You can choose a location for the center or set the latitude and longitude manually.
             
             header.start.location:
               type: select
               label: Central Location
               data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourLocations'
-            
-            header.start.lat:
-              type: number
-              label: Center Latitude
-              validate:
-                min: -90
-                max: 90
-                step: .00000000001
             
             header.start.long:
               type: number
@@ -124,16 +170,21 @@ form:
                 max: 180
                 step: .00000000001
             
-            header.start.zoom:
+            header.start.lat:
               type: number
-              label: Starting Zoom Level
-              description: Choose an integer between 0 and 28 inclusive. Defaults to 10.
+              label: Center Latitude
+              validate:
+                min: -90
+                max: 90
+                step: .00000000001
+            
+            header.start.distance:
+              type: number
+              label: Distance from Starting Center
               size: long
-              default: 10
               validate:
                 min: 0
-                max: 28
-                step: 1
+                step: .00000000001
 
             header.options_section:
               type: section
@@ -188,10 +239,10 @@ form:
               validate:
                 type: bool
             
-            header.remove_default_basemap:
+            header.remove_tileserver:
               type: toggle
-              label: Remove Default Basemap
-              description: If toggled, will remove the default basemap when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area.
+              label: Remove Tile Server
+              description: If toggled, will remove the tile server when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. Can be overriden by individual view settings.
               highlight: 1
               default: 1
               options:
@@ -215,13 +266,13 @@ form:
                     
             header.features_set:
               type: fieldset
-              title: Feature Info/Overrides
+              title: Feature Overrides
               icon: map-marker
               collapsed: true
               collapsible: true
               fields:
 
-                # TODO: Select properties to automatically add to popups (dataset override)?
+                # Option: Select properties to automatically add to popups (dataset override)?
 
                 header.features:
                   type: list
@@ -238,15 +289,11 @@ form:
                       data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourFeatures'
                       validate:
                         required: true
-                    .custom_name:
-                      type: text
-                      label: Custom Name
-                      description: Optional. This name will be displayed instead of the default feature name above.
                     .remove_popup:
                       type: toggle
                       label: Remove Default Popup
                       description: Will prevent default popup (as set in dataset configuration) from being displayed, even if no popup content is provided to override it. It is not necessary if popup content is provided below, as this will automatically override the default popup.
-                      # TODO: Still needs better wording, especially if automatically adding properties to a popup becomes a thing
+                      # Note: Still needs better wording, especially if automatically adding properties to a popup becomes a thing
                       highlight: 1
                       default: 0
                       options:
@@ -269,19 +316,19 @@ form:
               collapsible: true
               fields:
 
-                header.bounds_section:
+                header.maxbounds_section:
                   type: section
                   title: Maximum Map Bounds
                   text: These will define how far the map can be panned. All four values must be provided or map bounds will be ignored.
                 
-                header.bounds_cols:
+                header.maxbounds_cols:
                   type: columns
                   fields:
-                    header.bounds_col_1:
+                    header.maxbounds_col_1:
                       type: column
                       fields:
                         
-                        header.bounds.north:
+                        header.max_bounds.north:
                           type: number
                           label: North
                           description: Latitude for the Northern (top) boundary of the map.
@@ -290,7 +337,7 @@ form:
                             max: 90
                             step: .00000000001
                         
-                        header.bounds.south:
+                        header.max_bounds.south:
                           type: number
                           label: South
                           description: Latitude for the Southern (bottom) boundary of the map.
@@ -299,11 +346,11 @@ form:
                             max: 90
                             step: .00000000001
                     
-                    header.bounds_col_2:
+                    header.maxbounds_col_2:
                       type: column
                       fields:
                         
-                        header.bounds.east:
+                        header.max_bounds.east:
                           type: number
                           label: East
                           description: Longitude for the Eastern (right) boundary of the map.
@@ -312,7 +359,7 @@ form:
                             max: 180
                             step: .00000000001
                         
-                        header.bounds.west:
+                        header.max_bounds.west:
                           type: number
                           label: West
                           description: Longitude for the Western (left) boundary of the map.
@@ -361,7 +408,6 @@ form:
               type: fieldset
               title: Overrides
               icon: flag
-              # TODO: Text: overriding stuff?
               collapsed: true
               collapsible: true
               fields:
@@ -394,19 +440,25 @@ form:
                 
                 header.tileserver_section:
                   type: section
-                  title: Default Basemap Tile Server
+                  title: Tile Server
+                  text: Choose one of the tile servers from the dropdown, or input the URL and attribution info for a tile server.
                   underline: true
+            
+                header.tileserver.select:
+                  type: select
+                  label: Select a Tile Server
+                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServers'
                 
                 header.tileserver.url:
                   type: text
-                  label: Default Basemap URL
+                  label: Tile Server URL
                 
                 header.tileserver.attribution_text:
                   type: text
-                  label: Default Basemap Attribution
+                  label: Tile Server Attribution
                   description: This text will be displayed in the footer.
                 
                 header.tileserver.attribution_url:
                   type: text
-                  label: Default Basemap Attribution Link
+                  label: Tile Server Attribution URL
                   description: If provided, the attribution will become a link to this URL.

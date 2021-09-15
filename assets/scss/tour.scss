@@ -1,74 +1,25 @@
-/* Notes from tmp.css
+@use "sass:color";
 
-A couple of header logo styles - probably mostly a note that I need to work on the header:
-header .logo {
-    max-width: 100%;
+// Question: Is hiding the scrollbar bad for accessibility?
+::-webkit-scrollbar {
+    display: none;
 }
-header .logo a {
-    padding: 0;
+body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    overflow-wrap: break-word;
 }
-*/
 
-// TODO
-// - make mobile back button sticky
-// - ensure desktop back button is hidden on mobile
-// - overflow-wrap: break-word
+.dialog-backdrop.active {
+    z-index: 900;
+}
 
-$link-blue: #004fa3;
-$main-light: #fff;
-$main-dark: #333;
 $theme-color-1: #070f4e;
 $accent-color-1: #fff;
-// TODO: temp name here:
-$nav-border: darkgray;
+$theme-color-2: #505050;
+$nav-border: color.adjust($theme-color-2, $lightness: 35%);
 
 $tablet: 600px;
-
-/* Temporary: Move these to theme.css */
-.skip-link:visited {
-    color: $link-blue;
-    // TODO: check hover and focus, too
-}
-.btn-disabled:hover {
-    box-shadow: none;
-    pointer-events: none;
-    cursor: default;
-}
-// possible nav menu modification
-.main-nav {
-    .nav-item {
-        border: none; // basically remove border
-        margin: 5px 0;
-    }
-    li {
-        border-bottom: 1px solid;
-        border-color: darkgray;
-        &:last-child {
-            border-bottom-style: none;
-            &.expanded {
-                & > .nav-item {
-                    border: none; // basically remove border-bottom-style
-                }
-            }
-        }
-    }
-}
-// back to top button opacity transition
-#back-to-top {
-    display: flex; // can move from .active
-    opacity: 0;
-    transition: opacity linear .5s;
-    pointer-events: none;
-    &.active, &:focus {
-        opacity: 1;
-        pointer-events: auto;
-    }
-}
-header a:hover:not(:focus) {
-    outline: 1px solid;
-}
-// TODO: icon button on focus - not darker inside
-/* end temporary */
 
 @mixin font-size($val) {
     font-size: 1px * $val;
@@ -107,9 +58,8 @@ header {
     position: sticky;
     top: 0;
     z-index: 1;
-    // TODO: Display logo or not display logo? (and how to deal with logo replacing site title)
     #header-wrapper {
-        overflow: hidden; // TODO: Is this okay/good?
+        overflow: hidden; // Question: Is overflow hidden okay?
     }
     #open-settings-btn {
         margin: 10px;
@@ -151,49 +101,39 @@ header {
                 }
             }
         }
+        #header-toggle-btn {
+            margin: 10px;
+        }
         .mobile-row {
             display: flex;
             width: 100%;
             height: 50px;
             justify-content: space-between;
             align-items: center;
-        }
-        #header-toggle {
-            margin: 10px 5px;
-        }
-        #toggle-list {
-            // TODO: make buttons take less height?
-            // decrease margins/etc at very low screen size (<350 etc.)
-            flex-grow: 1;
-            ul {
+            nav {
+                flex-grow: 1;
                 display: flex;
-                justify-content: space-evenly;
-                li {
-                    margin-bottom: 0;
-                    width: 30%;
-                    button {
-                        margin: 5px 0;
-                        width: 100%;
-                        padding: 10px;
-                        border-color: $theme-color-1;
-                        background-color: $accent-color-1;
-                        color: $theme-color-1;
-                        &:hover, &:focus {
-                            background-color: $theme-color-1;
-                            color: $accent-color-1;
-                            //border-color: #e2e2e2;
-                        }
-                        &.btn-disabled {
-                            background-color: #e2e2e2 !important;
-                            color: #333 !important;
-                            &:focus {
-                                box-shadow: none;
-                                //outline: 2px dashed black;
-                                //outline-offset: -5px;
-                            }
-                            //&:hover {
-                                //border-color: $theme-color-1;
-                            //}
+                justify-content: center;
+                button {
+                    margin: 5px 0;
+                    //width: 100%;
+                    min-width: 30%;
+                    padding: 10px;
+                    border-color: $theme-color-1;
+                    background-color: $accent-color-1;
+                    color: $theme-color-1;
+                    &:hover, &:focus {
+                        background-color: $theme-color-1;
+                        color: $accent-color-1;
+                        //border-color: #e2e2e2;
+                    }
+                    &.btn-disabled {
+                        background-color: #e2e2e2 !important;
+                        color: #333 !important;
+                        &:focus {
+                            box-shadow: none;
+                            //outline: 2px dashed black;
+                            //outline-offset: -5px;
                         }
                     }
                 }
@@ -215,7 +155,6 @@ header {
                     &.expanded {
                         @include font-size(18);
                     }
-                    // TODO: Is it weird to have the nav font switch back and forth?
                 }
             }
         }
@@ -232,6 +171,11 @@ header {
             top: 0;
             right: 0;
         }
+        #header-options-wrapper {
+            nav {
+                display: none;
+            }
+        }
     }
 }
 
@@ -239,7 +183,7 @@ header {
 main {
     padding: 0;
     margin: 0 !important;
-    z-index: 0;
+    // z-index: 0; interfering with popups
     @media (min-width: $tablet) {
         width: 33%; // column size
     }
@@ -251,9 +195,6 @@ main {
     }
     .step {
         padding: 1rem 0;
-    }
-    @media (max-width: $tablet - 1) {
-        display: none;
     }
     @media (min-width: $tablet) {
         #back-to-top {
@@ -296,13 +237,13 @@ main {
         label {
             @include flex();
             cursor: pointer;
-            img {
-                margin: 10px;
-            }
         }
-        // TODO: some kind of transition?
-        // TODO: Which side should the plus go on?
-        // TODO: Should legend be on the same level as the show menu button (mobile, menu hidden)?
+        li>div {
+            @include flex();
+        }
+        img, svg {
+            margin: 10px;
+        }
         &.minimized {
             padding: 5px 0;
             width: 120px;
@@ -362,21 +303,27 @@ main {
                 }
                 &.leaflet-control-zoom-in:hover {
                     border-bottom: none;
+                    &.leaflet-disabled:hover {
+                        border-bottom: 1px solid #ccc;
+                        border-top: none;
+                    }
                 }
                 &.leaflet-control-zoom-out {
                     border-top: 1px solid #ccc;
                     &:hover {
                         border-top: none;
                     }
+                    &.leaflet-disabled:hover {
+                        border-top: 1px solid #ccc;
+                    }
                 }
-            }
-            .leaflet-disabled {
-                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 10 10'> <path d='M10 0 L0 10' fill='none' stroke='%23444444' stroke-width='.5' /></svg>");
-                color: #444;
-                &:hover {
-                    outline: none;
-                    border-top: 1px solid #ccc;
-                    background-color: #f4f4f4;
+                &.leaflet-disabled {
+                    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 10 10'> <path d='M10 0 L0 10' fill='none' stroke='%23444444' stroke-width='.5' /></svg>");
+                    color: #444;
+                    &:hover {
+                        outline: none;
+                        background-color: #f4f4f4;
+                    }
                 }
             }
         }
@@ -390,7 +337,7 @@ main {
                 box-shadow: inset 0 0 0 1px black, inset 0 0 0 2px white, inset 0 0 0 10px black;
                 outline: revert !important;
             }
-            &.no-popup {
+            &.no-popup, &.path-no-popup {
                 cursor: default;
                 cursor: not-allowed;
             }
@@ -455,7 +402,6 @@ main {
             height: calc(100% - 100px);
             left: 0;
             width: 100%;
-            // TODO: change height when header changes height
         }
     }
     // desktop
@@ -481,67 +427,6 @@ main {
             left: 33%; // column size
             width: 67%; // column size
             height: 100%;
-        }
-    }
-}
-
-/* Popups */
-
-#popup-list-wrapper {
-    .popup {
-        display: none;
-        &.active {
-            display: block;
-        }
-    }
-    // phone
-    @media (max-width: $tablet - 1) {
-        display: none;
-        padding: 1px 1rem;
-    }
-    // tablet/desktop
-    @media (min-width: $tablet) {
-        .popup {
-            width: 30%;
-            max-height: 30%;
-            background: white;
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            padding: 5px;
-            padding-bottom: 10px;
-            min-height: 200px;
-            border-radius: 5px;
-            border: 2px solid black;
-            overflow-x: scroll;
-            top: 65%;
-            .popup-top {
-                @include flex();
-                justify-content: space-between;
-                align-items: flex-start;
-            }
-            h3 {
-                margin: 1.5rem 0;
-                flex-grow: 1;
-            }
-            .popup-close-btn {
-                margin: 1rem;
-                height: 3rem;
-                width: 3rem;
-                @include font-size(18);
-            }
-            .popup-content {
-                margin: 1rem;
-            }
-        }
-        .popup-back-btn {
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity .5s linear;
-            &:focus {
-                opacity: 1;
-                pointer-events: auto;
-            }
         }
     }
 }
@@ -610,27 +495,21 @@ footer {
             }
         }
     }
-    .scrolly-active #scrolly {
-        display: block;
-    }
     .map-active {
-        nav, footer {
+        #main-nav, footer, #scrolly {
             display: none;
         }
         #map-wrapper {
             display: block;
         }
     }
-    .popups-active {
-        #header-wrapper {
-            height: 50px;
+    #scrolly {
+        .scroll-top {
+            min-height: calc(33vh + 40px); // scrollamaOptions.offset - 33%
         }
-        #header-toggle, #header-options-wrapper, #main-nav, footer {
-            display: none;
-        }
-        #popup-list-wrapper {
-            display: block;
-        }
+    }
+    footer {
+        min-height: calc(67vh - 160px) // (1 - scrollamaOptions.offset) - 67%
     }
 }
 @media (min-width: $tablet) {
@@ -650,5 +529,13 @@ footer {
                 width: 60%;
             }
         }
+    }
+    #scrolly {
+        .scroll-top {
+            min-height: calc(33vh - 60px); // scrollamaOptions.offset - 33%
+        }
+    }
+    footer {
+        min-height: calc(67vh - 360px); // (1 - scrollamaOptions.offset) - 67%
     }
 }

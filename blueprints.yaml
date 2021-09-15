@@ -17,7 +17,6 @@ license: MIT
 
 dependencies:
   - { name: grav, version: '>=1.7.0' }
-  # TODO: add shortcode core plugin, admin plugin, theme?
 
 form:
   validation: loose
@@ -50,8 +49,6 @@ form:
               title: Data
               underline: true
             
-            # TODO: Data instructions
-
             data_files:
               type: file
               label: Data Files
@@ -59,26 +56,40 @@ form:
               style: vertical
               destination: 'user://data/leaflet-tour/datasets/uploads'
               multiple: true
+              limit: 25
               accept:
                 - '.js'
+                - '.json'
             
-            datasets:
-              type: list
-              label: Dataset Information
-              # description: TODO
-              style: vertical
-              btnLabel: Add Dataset Info
-              fields:
-                .file:
-                  type: select
-                  label: Select the Dataset
-                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetFiles'
-                  validate:
-                    required: true
-                .name_prop:
-                  type: text
-                  label: Feature Name Property
-                  description: The property in the data file that will serve as the feature name.
+            data_update:
+              type: toggle
+              label: Update Datasets
+              description: "TODO: Explain exactly what this does. I don't think it will overwrite any of the changes that are currently possible to make. It does recreate the json and the dataset page. At some point there may be more configurable update options."
+              highlight: 1
+              default: 0
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            # datasets:
+            #   type: list
+            #   label: Dataset Information
+            #   # description: TODO
+            #   style: vertical
+            #   btnLabel: Add Dataset Info
+            #   fields:
+            #     .file:
+            #       type: select
+            #       label: Select the Dataset
+            #       data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetFiles'
+            #       validate:
+            #         required: true
+            #     .name_prop:
+            #       type: text
+            #       label: Feature Name Property
+            #       description: The property in the data file that will serve as the feature name.
             
             markers:
               type: section
@@ -168,7 +179,21 @@ form:
                         required: true
                     .url:
                       type: text
-                      label: Attribution Link
+                      label: Attribution URL
+                
+                attribution_long:
+                  type: list
+                  label: Extra Attribution
+                  description: Provide resource attributions here instead if you have HTML code for the attribution.
+                  btnLabel: Add Resource
+                  collapsed: true
+                  style: vertical
+                  fields:
+                    .text:
+                      type: text
+                      label: HTML Code
+                      validate:
+                        required: true
         
         basemaps:
           type: tab
@@ -177,25 +202,32 @@ form:
 
             tileserver_section:
               type: section
-              title: Default Basemap (Tile Server)
+              title: Tile Server
+              text: Choose one of the tile servers from the dropdown, or input the URL and attribution info for a tile server.
               underline: true
+            
+            tileserver.select:
+              type: select
+              label: Select a Tile Server
+              default: 'none'
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServers'
 
             tileserver.url:
               type: text
-              label: Default Basemap URL
+              label: Tile Server URL
               default: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
               validate:
                 required: true
             
             tileserver.attribution_text:
               type: text
-              label: Default Basemap Attribution
+              label: Tile Server Attribution
               description: This text will be displayed in the footer.
               default: "ArcGIS World"
             
             tileserver.attribution_url:
               type: text
-              label: Default Basemap Attribution URL
+              label: Tile Server Attribution URL
               description: If provided, the attribution will become a link to this URL.
               default: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer"
 
@@ -328,3 +360,19 @@ form:
                   type: text
                   label: Attribution URL
                   description: If provided, the attribution will become a link to this URL.
+        
+        images:
+          type: tab
+          title: Popup Images
+          fields:
+
+            popup_image_files:
+              type: file
+              label: Image Upload
+              limit: 500
+              description: "These files will be added to the user/images folder. Reference them using Markdown by typing 'image://' in front of the image name. e.g. ![Image alt text](image://image_name.jpg)"
+              style: vertical
+              destination: 'image://'
+              multiple: true
+              accept:
+                - image/*
