@@ -67,25 +67,25 @@ form:
                       collapsed: true
                       collapsible: true
                       fields:
-                        .icon.file:
+                        .file:
                           type: filepicker
                           label: Icon Marker
                           description: If not set, the default Leaflet marker will be used.
                           preview_images: true
                           folder: 'user://data/leaflet-tour/images/markers'
-                        .icon.width:
+                        .width:
                           type: number
                           label: Icon Width (pixels)
                           description: Defaults to 14.
                           validate:
                             min: 1
-                        .icon.height:
+                        .height:
                           type: number
                           label: Icon Height (pixels)
                           description: Defaults to 14.
                           validate:
                             min: 1
-                        .icon.use_defaults:
+                        .use_defaults:
                           type: toggle
                           label: Use Default Values
                           description: Will override any options set in the dataset configuration but not for this page with default values.
@@ -96,27 +96,27 @@ form:
                             0: PLUGIN_ADMIN.DISABLED
                           validate:
                             type: bool
-                        .icon.anchor_x:
+                        .anchor_x:
                           type: hidden
-                        .icon.anchor_y:
+                        .anchor_y:
                           type: hidden
-                        .icon.tooltip_anchor_x:
+                        .tooltip_anchor_x:
                           type: hidden
-                        .icon.tooltip_anchor_y:
+                        .tooltip_anchor_y:
                           type: hidden
-                        .icon.shadow:
+                        .shadow:
                           type: hidden
-                        .icon.shadow_width:
+                        .shadow_width:
                           type: hidden
-                        .icon.shadow_height:
+                        .shadow_height:
                           type: hidden
-                        .icon.shadow_anchor_x:
+                        .shadow_anchor_x:
                           type: hidden
-                        .icon.shadow_anchor_y:
+                        .shadow_anchor_y:
                           type: hidden
-                        .icon.class:
+                        .class:
                           type: hidden
-                        .icon.retina:
+                        .retina:
                           type: hidden
                     .svg:
                       type: hidden
