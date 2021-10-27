@@ -162,7 +162,8 @@ function setPathInteraction() {
             }
             element.setAttribute("alt", altText);
             // treat lines and polygons different so that lines can have extra buffer for hover
-            if (feature.type === "LineString" || feature.type === "MultiLineString") {
+            // include polygons with no fill as lines
+            if (feature.type === "LineString" || feature.type === "MultiLineString" || !(dataset.pathOptions.fill ?? true)) {
                 // create extra feature
                 let extraProps = { lineBuffer: true, featureId: props.id };
                 let extra = { type: "Feature", properties: extraProps, geometry: feature.layer.feature.geometry };
