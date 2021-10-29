@@ -187,10 +187,13 @@ class LeafletTourPlugin extends Plugin
     }
     
     // only call directly from tour.yaml
-    public static function getTourFeatures($onlyPoints=false, $fromView=false): array {
+    public static function getTourFeatures($onlyPoints=false, $fromView=false, $fileRoute=null): array {
         $featureList = [];
-        if ($fromView) $file = MarkdownFile::instance(Utils::getTourRouteFromViewConfig());
-        else $file = MarkdownFile::instance(Utils::getTourRouteFromTourConfig());
+        if (!$fileRoute) {
+            if ($fromView) $fileRoute = Utils::getTourRouteFromViewConfig();
+            else $fileRoute = Utils::getTourRouteFromTourConfig();
+        }
+        $file = MarkdownFile::instance($fileRoute);
         if ($file->exists()) {
             $data = new Data((array)$file->header());
             $extraFeatures = [];
