@@ -64,7 +64,7 @@ class PluginTest extends Test {
         }
         $file = MarkdownFile::instance($pages.'/test-folder/default.md');
         if (!$file->exists()) {
-            $file->header(['title'=>'Test Folder', 'routable'=>0]);
+            $file->header(['title'=>'Test Folder']);
             $file->save();
         }
         $file = MarkdownFile::instance($pages.'/test-folder/01.test-subpage-1/default.md');
