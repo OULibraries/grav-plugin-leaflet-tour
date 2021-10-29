@@ -93,8 +93,8 @@ class DatasetTest extends Test {
      * - multiLineStrings: svg.fill, svg_active.opacity, svg_active.weight
      */
     protected function testSetDefaults() {
+        $this->assertEquals(Dataset::getDatasets()['points3.json']->asYaml()['svg']['color'], '#3388ff');
         $multiLineStrings = Dataset::getDatasets()['multiLineStrings.json']->asYaml();
-        $this->assertEquals($multiLineStrings['svg']['color'], '#3388ff');
         $this->assertTrue($multiLineStrings['svg']['fill']);
         $this->assertEmpty($multiLineStrings['svg_active']['opacity']);
         $this->assertEquals($multiLineStrings['svg_active']['weight'], 5);
