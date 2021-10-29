@@ -716,7 +716,7 @@ class UtilsTest extends Test {
      *  - point 9 coords: x != 17
      *  - point 11
      *      - has fruit property
-     *      - coords: 7 != -8
+     *      - coords: y != -8
      */
     protected function testUpdateStandard_modify_existing() {
         // set up and perform the update
