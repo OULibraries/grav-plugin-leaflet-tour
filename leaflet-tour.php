@@ -224,7 +224,8 @@ class LeafletTourPlugin extends Plugin
             if ($fromView && !$onlyPoints) {
                 // add any features from datasets without show all
                 foreach ($data->get('features') ?? [] as $feature) {
-                    if (empty($featureList[$feature['id']])) $featureList[$feature['id']] = $extraFeatures[$feature['id']]->getName();
+                    // make sure handle the case when a feature in the tour features list does not exist
+                    if (empty($featureList[$feature['id']]) && $extraFeatures[$feature['id']]) $featureList[$feature['id']] = $extraFeatures[$feature['id']]->getName();
                 }
             }
         }
