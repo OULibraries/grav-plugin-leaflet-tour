@@ -188,7 +188,7 @@ class Test {
                     else $success = "Value is not empty.";
                     break;
                 case "equals":
-                    if ($result != $expected) throw new \Exception("Expected '$expected'. Received '$result'.");
+                    if ($result !== $expected) throw new \Exception("Expected '$expected'. Received '$result'.");
                     else $success = "Value equals $result.";
                     break;
                 case "size":
