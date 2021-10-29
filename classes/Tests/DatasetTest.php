@@ -82,7 +82,7 @@ class DatasetTest extends Test {
         $this->assertEquals($features, ['points1_4', 'points1_0', 'points1_11', 'points1_9', 'points1_5', 'points1_2', 'points1_1', 'points1_6', 'points1_10', 'points1_3', 'points1_7', 'points1_8']);
         // revert to previous dataset settings
         $points->updateDataset(new Header($pointsYaml));
-        $this->assertFalse($features === ['points1_4', 'points1_0', 'points1_11', 'points1_9', 'points1_5', 'points1_2', 'points1_1', 'points1_6', 'points1_10', 'points1_3', 'points1_7', 'points1_8']);
+        $this->assertFalse(array_keys($points->getFeatures()) === ['points1_4', 'points1_0', 'points1_11', 'points1_9', 'points1_5', 'points1_2', 'points1_1', 'points1_6', 'points1_10', 'points1_3', 'points1_7', 'points1_8']);
     }
 
     /**
