@@ -6,6 +6,16 @@ use Grav\Common\Page\Header;
 
 class DatasetTest extends Test {
 
+    /**
+     * Test the updateDataset method.
+     * 
+     * Requires lineStrings.json dataset with the following:
+     * - title: 'LineStrings Dataset'
+     * - name_prop: name
+     * - 6 valid features
+     *     - lineStrings_2: Does not have name or featureName properties.
+     *     - lineStrings_3: Does not have name property.
+     */
     protected function testUpdateDataset() {
         $lineStrings = Dataset::getDatasets()['lineStrings.json'];
         $lineStringsYaml = $lineStrings->asYaml();
@@ -52,10 +62,13 @@ class DatasetTest extends Test {
         $lineStrings->updateDataset(new Header($lineStringsYaml));
     }
 
+    /**
+     * Test possibility of reordering features in a dataset.
+     */
     protected function testUpdateDataset_order() {
-        // rearranging the order
         $points = Dataset::getDatasets()['points1.json'];
-        $pointsYaml = $points->asYaml();
+        $pointsYaml = $points->asYaml(); // save current dataset settings
+        // reordering features
         $update = [
             'features'=>[
                 ['id'=>'points1_4'], ['id'=>'points1_0'], ['id'=>'points1_11'],
@@ -67,10 +80,18 @@ class DatasetTest extends Test {
         $points->updateDataset(new Header($update));
         $features = array_keys($points->getFeatures());
         $this->assertEquals($features, ['points1_4', 'points1_0', 'points1_11', 'points1_9', 'points1_5', 'points1_2', 'points1_1', 'points1_6', 'points1_10', 'points1_3', 'points1_7', 'points1_8']);
-        // $this->print(implode(', ', $features));
+        // revert to previous dataset settings
         $points->updateDataset(new Header($pointsYaml));
+        $this->assertFalse($features === ['points1_4', 'points1_0', 'points1_11', 'points1_9', 'points1_5', 'points1_2', 'points1_1', 'points1_6', 'points1_10', 'points1_3', 'points1_7', 'points1_8']);
     }
 
+    /**
+     * Ensure that defaults (for svg and svg_active) are set correctly when a new dataset is created. We cannot rely on specifying defauls in the blueprints, because the dataset configuration is not initially saved from the admin panel.
+     * 
+     * Requires unmodified settings for:
+     * - points3.json: svg.color
+     * - multiLineStrings: svg.fill, svg_active.opacity, svg_active.weight
+     */
     protected function testSetDefaults() {
         $multiLineStrings = Dataset::getDatasets()['multiLineStrings.json']->asYaml();
         $this->assertEquals($multiLineStrings['svg']['color'], '#3388ff');
@@ -79,6 +100,16 @@ class DatasetTest extends Test {
         $this->assertEquals($multiLineStrings['svg_active']['weight'], 5);
     }
 
+    /**
+     * Test the mergeTourData method.
+     * 
+     * Requires:
+     *  - datasets: points1, points3, polygons
+     *  - points3:
+     *      - legend alt text set
+     *      - icon alt text: Points 3 Icon Alt Text
+     * 
+     */
     protected function testMergeTourData() {
         // point dataset gets iconOptions array, but no pathOptions
         $pointsData = Dataset::getDatasets()['points1.json']->mergeTourData(new Data(['show_all'=>true, 'legend_text'=>'', 'icon'=>['width'=>5]]), []);
@@ -111,6 +142,23 @@ class DatasetTest extends Test {
         $this->assertEmpty($polyData->get('legend.color'));
     }
 
+    /**
+     * Test the mergeIconOptions method (method is protected, but called by mergeTourData)
+     * 
+     * Requires:
+     *  - datasets: points1, points3,
+     *  - points1
+     *      - icon file: set
+     *      - anchor: not set
+     *  - points3
+     *      - icon file: not set
+     *      - anchor: [x: null/not set, y: 7]
+     *      - tooltip anchor: (x: -5, y: null/not set)
+     *      - shadow url: not set
+     *      - shadow size: (width: 10, height: anything other than 3)
+     *      - class: 'icon-test-class'
+     * 
+     */
     protected function testMergeIconOptions() {
         // use_defaults=true, icon file not set in tour, file set in dataset
         $data = Dataset::getDatasets()['points1.json']->mergeTourData(new Data(['icon'=>['use_defaults'=>true, 'anchor_x'=>25], 'shadow_anchor_y'=>-12]), []);
@@ -155,6 +203,20 @@ class DatasetTest extends Test {
         $this->assertEmpty($data->get('iconOptions.shadowSize'));
     }
 
+    /**
+     * Test the mergePathOptions method (method is protected, but called by mergeTourData)
+     * 
+     * Requires:
+     *  - dataset: polygons
+     *  - polygons
+     *      - svg.color: #445566
+     *      - svg.weight: anything but 2
+     *      - svg.fill: false
+     *      - svg.fillColor not set
+     *      - svg_active.stroke: true
+     *      - svg_active.fill: false
+     *      - svg_active.fillOpacity: null
+     */
     protected function testMergePathOptions() {
         $data = Dataset::getDatasets()['polygons.json']->mergeTourData(new Data(['svg'=>['weight'=>2], 'svg_active'=>['stroke'=>false, 'fill'=>true, 'fillOpacity'=>0.5]]), []);
         // fillColor - not set in tour or dataset
@@ -173,6 +235,17 @@ class DatasetTest extends Test {
         $this->assertEquals($data->get('pathOptions.weight'), 2);
     }
 
+    /**
+     * Test the mergeFeatures method (method is protected, but called by mergeTourData)
+     * 
+     * Requires:
+     *  - dataset: points1
+     *  - points1:
+     *      - 12 features
+     *      - points1_3 name: Point 3
+     *      - points1_0 and points1_2 with popup content
+     *      - points1_1: no popup content
+     */
     protected function testMergeFeatures() {
         // show_all = false
         $data = Dataset::getDatasets()['points1.json']->mergeTourData(new Data(['show_all'=>false]), [
@@ -205,11 +278,23 @@ class DatasetTest extends Test {
         $this->assertEquals($data->get('features.points1_3.name'), 'Point 3');
     }
 
+    /**
+     * Test the static getDatasetList function
+     * 
+     * Requires: lineStrings dataset with name "LineStrings Dataset"
+     */
     protected function testGetDatasetList() {
         // check for correct dataset name
         $this->assertEquals(Dataset::getDatasetList()['lineStrings.json'], 'LineStrings Dataset');
     }
 
+    /**
+     * Test the static getDatasets method
+     * 
+     * Requires:
+     *  - 12 datasets
+     *  - points1 dataset with 12 features
+     */
     protected function testGetDatasets() {
         // check for correct number of datasets (12)
         $this->assertSize(Dataset::getDatasets(), 12);

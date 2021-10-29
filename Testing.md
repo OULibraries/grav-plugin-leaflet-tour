@@ -15,9 +15,22 @@ Do this once:
 
 1. Theme is set to the basic theme.
 2. Plugin dependencies installed
-    1. Admin
+    1. Admin (and associated)
     2. Shortcode core
 3. Plugin installed and enabled
+4. Create 'Test Folder'
+    - Should be default page
+    - Not routable
+    - Folder numeric prefix enabled (should be second item)
+5. Create 'Test Page'
+    - Should be under 'Test Folder'
+    - Use 'test' template
+    - Folder numeric prefix enabled/otherwise visible
+    - Important: Do not go to this page until instructed!
+6. Create 'Test Tour'
+    - Use 'tour' template
+    - Folder numeric prefix enabled (should be third item)
+    - Folder named `test-tour` (`03.test-tour` in the file system, but Grav admin won't show that)
 
 Do this every time:
 
@@ -37,7 +50,6 @@ Do this once:
     - points2.js
     - points3.json
     - Polygons.json
-    - Multi Points.json (removed)
     - LineStrings.json
     - MultiLineStrings.json
     - MultiPolygons.json
@@ -59,478 +71,129 @@ Do this once:
     - LakeMonroe.jpg
     - VoCo.jpeg
     - Map1873_copy.png
-5. Save.
-6. Remove Wymansites_copy.js (make sure it is possible to remove a dataset)
-7. Save.
+5. Upload one or more images.
+6. Save.
+7. Remove Wymansites_copy.js (make sure it is possible to remove a dataset)
+    - Ensure that the created json file is also deleted.
+    - Ensure that the dataset page is moved from its previous location to the deleted_datasets folder.
+8. Save.
+9. Check an uploaded file to make sure coordinates have not become overly long.
 
 Do this every time:
 
 1. Make sure the blueprints look like they should.
 2. Save.
 
+## Dataset Config
+
+1. Make sure pages have been created for each of the datasets.
+2. Go to one of the pages:
+    1. Make sure all features are listed.
+    2. Make sure options are as they should be. (including all properties in the properties list)
+
 ## Create Tour
 
 Do this once:
 
-1. Create new tour called tour-0. (Should be able to select template from admin panel).
-2. Choose settings.
-    1. Pick a few icon settings.
-    2. Choose multiple datasets.
-        - MultiPolygons (show all)
-        - points1 (not show all)
-        - points2 (not show all)
-3. Save
+1. Go to the test page (on the public-facing site, not the admin panel). This will run setup as well as tests, which will populate needed settings.
+2. Go to test tour and add some content.
+3. Save.
+4. Go to expert mode and check the header. Make sure there aren't a bunch of null items. (Utils `filter-header` function)
 
 Do this every time:
 
 1. Make sure the tour blueprints look like they should.
-    1. Check icon and path settings (tour 3).
-        - points1 icon file set
-        - misc path options for MultiPolygons
-    2. Check start location dropdown (tour 0)
-        - everything in points1 and points 2 - 13 options
-    3. Check add feature dropdown (tour 0)
-        - everything in points1, points2, and MultiPolygons - 17 options (-1 b/c feature with name: false)
+    1. Check start location dropdown. It should have lots of points listed from Wymansites and Wymancamps. It should not have any non-point features.
+    2. Check add feature dropdown. It should have all the feature options.
 2. Save
 
-## Create View
+## Create Views
 
 Do this once:
 
-1. Create new view under tour-0 called view. (Should be able to select template from admin panel).
-2. Choose settings.
-    1. Pick a few features to add to the view (doesn't matter which).
-3. Save.
+1. Go to each of the views, add some content, and save.
+2. For view 2, make sure to use shortcodes for popup buttons for Astor Midden and Ropes Island.
 
-Do this every time:
+Do this every time (for one of the views):
 
-1. Go to the view page and make sure the blueprints look like they should (tour 0 - view).
+1. Make sure the view blueprints look like they should.
     1. Make sure the shortcodes list is correctly popuplated with all features in the features list.
-    2. Start location drodpown has 13 options (points1 and points2).
-    3. Add feature dropdown has 17 options (points1, points2, and MultiPolygons) (-1 b/c feature with name: false).
+    2. Check start location dropdown. It should have all the point options.
+    3. Check add feature dropdown. It should have only options included in the tour. For example, there should only be two options for MultiPolygons.
 2. Save.
 
-## Dataset
+## Extra
 
-Do this every time:
-
-1. Go to a dataset page (Wymancamps) and make sure the blueprints look like they should.
-    1. Check properties dropdown (NAME, TYPE, YEAR_, SOURCE, Y1867).
-    2. Check features list (19 features).
-    3. Check icon and path options.
-2. Save.
+- Could be good to upload dataset, add it to a tour, add some feature overrides, then delete the dataset and make sure the tour can handle it.
+- Also would be good to add a dataset to a tour, add features from the datset to a view, then remove the dataset from the tour and make sure the view can handle it.
+- Do the same as above, but instead of removing the dataset, just remove the feature(s) in question (i.e. `show_all: false` and given feature(s) not in features list).
 
 ## Main Tests
 
-1. Go to the testing page and confirm that all tests have passed
+1. Go to the testing page and confirm that all tests have passed.
+2. Go to the tour page for the test tour.
+    1. Make sure features are showing up properly (names, icons, svg options, popups work, etc.)
+    2. Make sure legend has what it is supposed to.
+    3. Scroll through views.
+        - All views should be reachable.
+        - Views should be able to hide non-view features.
+        - Views should show appropriate basemaps.
+        - Views should pan and zoom.
+        - Shortcodes for popup buttons should work.
+        - The first view should have popup buttons listed.
+    4. Make sure turning off scrolling animation works.
+    5. Make sure link to popups page works.
+3. Go to the popups page for the test tour. Make sure the popups all show up and that any popup images (there should be at least one) show up as well. Make sure the link back to the tour also works.
 
-## Popups
+## Testing Requirements
 
-1. Go to the popups page for (TODO: tour)
-2. TODO: List things to check
+Most of the various requirements are set up in `PluginTest.php`. See the comments for more information.
 
-## Tour
+For requirements related to the dataset files themselves, see below.
 
-1. Go to the tour page for (TODO: tour) (need to build out a nice looking tour that has all the features one could want)
-2. TODO: List things to check
-    - view popups buttons
+### Required Dataset Properties
 
-## Notes for Testing Suite
-
-- required page structure
-    - tour-1 as top level page (with folder numeric prefix enabled)
-    - _view-1 inside tour-1
-    - modules/footer included
-
-Start with setup. This will also serve as a test, but mostly will make sure settings are correct for future tests.
-- Add/modify tour pages
-- Update popups pages
-- Add/modify view pages
-- Modify plugin settings
-- Modify dataset pages
-- Do dataset update
-    - check before update that Polygons_1 fruit is apple and that Polygons_2 does not have fruit property
-    - (points3_3 - lat - 22 to 42)
-    - (MultiPolygons_3 - [[[[1,2],[2,3],[3,4],[1,2]]]] to [[[[1,5],[2,3],[3,4],[1,5]]]])
-    - title updates (and changes dataset name)
-    - name property updates (and feature names update with it)
-    - name property only works if it is a valid property
-    - datasetFileRoute updates - try relocating dataset file
-    - features update
-- at the end, undo the dataset update
-
-### LeafletTourPlugin
-
-- getDatasetFiles
-    - returns needed array
-- getBasemaps
-    - returns all basemaps whose info has been set and none that haven't
-- getTileServers
-    - returns the appropriate list
-    - returns the correct tile server on $key input
-
-### Dataset
-
-## Testing Dataset Notes
-
-Number of valid features and the feature type are included in parantheses.
-
-- Wymansites.js (23, Point)
-    - name prop: NAME
-    - feature settings
-        - 4 - has popup
-- Wymancamps.js (19, Point)
-    - name prop: NAME
-    - feature settings:
-        - 2 - has popup
-- SceneCentroids.js (9, Point)
-    - name prop: Section
-    - feature settings:
-        - 0 - hide feature
-- Loci.js (7, MultiPolygon)
-    - name prop: Locus
-- water.js (1, MultiPolygon)
-    - name prop: OBJECTID
-- points1.json (7, Point)
-    - name: Points Dataset One (modified from original)
-    - name prop: FeatureName
-        - also includes prop NameOfFeature
-    - invalid features: 2
-        - incorrect geometry type
-        - invalid coordinates (mixed up long/lat)
-    - feature notes:
-        - coordinates contain edge cases (min/max, very long, zero)
-    - feature settings:
-        - 0 - no popup
-        - 3
-            - name: Point 4
-            - has popup
-            - lat: 90
-    - icon settings:
-        - icon file: set
-        - tooltip anchor: -5, 5
-        - class: 'points1-test-class'
-        - shadow size: 10, 8
-        - icon width: 20
-        - shadow file: set
-        - icon anchor: x and y set
-        - icon alt: 'points 1 icon alt'
-    - legend: none
-- points2.js (6, Point)
-    - name: Points Dataset Two (modified in update - none to start with)
-    - name prop: Feature
-    - notes:
-        - has additional js code before variable
-    - icon settings:
-        - icon alt: 'points 2 icon alt'
-        - icon file, anchor, size, shadow: not set
-        - shadow anchor: only x set
-    - legend
-        - text: 'points 2 legend text'
-        - alt: 'points 2 legend alt - dataset'
-- points3.js (5, Point)
-    - name: Points Dataset Three
-    - name prop: N A M E
-        - not the first property
-    - invalid features: 2
-        - no geometry type
-        - no coordinates
-    - feature settings:
-        - 0 - has popup - 'points 3 0 dataset popup'
-        - 1 - has popup
-        - 2 - has popup
-        - 3 - does not have popup
-        - 4 - has popup
-    - icon settings:
-        - alt: none
-        - file: set
-        - height: 16 (width not set)
-        - anchor: only y set
-        - shadow: not set
-- Polygons.json (5, Polygon)
-    - name: Polygons
-    - name prop: NameOfFeature
-    - invalid features: 1
-        - no geometry
-    - feature notes:
-        - non-matching properties - 3 standard, 3 random
-    - feature settings:
-        - no features have popups
-    - path settings: default only
-- Multi Points.json (4, MultiPoint) (removed)
-    - name prop: Name
-        - featureName ahead of Name
-        - nameoffeature after Name
-    - invalid features: 1
-        - just a string
-- LineStrings.json (4, LineString)
-    - name prop: name
-        - featureName ahead of name
-        - nameoffeature after name
-    - invalid features: 1
-        - empty feature
-    - feature notes:
-        - includes property specialProp@&%^()!--
-        - feature with numeric name
-        - feature with bool name (true)
-        - legend settings:
-            - text: 'Line Strings Legend'
-            - alt: none
-        - active path options:
-            - weight: 3
-            - fillOpacity: null
-    - feature settings:
-        - 1 - no popup
-- MultiLineStrings.json (4, MultiLineString)
-    - name prop: Name
-    - invalid features: 1
-        - incorrect type
-    - feature notes:
-        - feature with empty name
-        - feature missing name property
-    - path settings
-        - stroke: false
-        - fillColor: #ffffff
-- MultiPolygons.json (4, MultiPolygon)
-    - name prop: Name
-    - invalid features: 1
-        - invalid coordinates
-    - feature notes:
-        - feature with bool name (false) (first feature)
-    - feature settings
-        - no popups
-    - legend: none
-    - path options:
-        - stroke: true
-        - color: #445566
-        - weight: 3
-        - opacity: 1
-        - fill: true
-        - fillColor: null
-        - fillOpacity: 0.2
-    - active path options:
-        - stroke: true
-        - weight: 4
-        - fillColor: #334455
-        - color, opacity, fill, fillOpacity: null
-- test1.js (invalid)
-- test2.json (invalid)
-- test3.json (no valid features?)
-
-## Testing Tour Notes
-
-- tour 0
-    - datasets:
-        - points1 (not show all)
-            - icon - use defaults
-                - alt: none
-                - anchor: only x set
-                - file, height: not set
-        - points2 (not show all)
-            - legend text: 'tour 0 legend for points2'
-            - legend alt: none
-        - MultiPolygons (show all)
-    - features
-        - points1_0
-        - points1_3
-        - points1_4
-        - MultiPolygons_1
-        - MultiPolygons_2
-    - start
-        - coords: none
-        - location: points1_2 (lat: 0)
-        - distance: 8
-    - remove tile server: default
-    - long attribution: +1
-    - tile server: stamen
-- tour 1
-    - datasets: none
-    - basemaps: none
-    - zoom: max 15, min default
-    - maxBounds - valid (south: 0)
-    - start:
-        - bounds: invalid (only three values)
-        - distance: 10
-        - coordinates: set (lat: 60.111)
-    - tile server: not set
-    - attribution: overwriting
-        - qgis2web - no url
-        - QGIS - fakeurl.com
-- tour 2
-    - datasets:
-        - points1 (not show all)
-            - legend text: anything
-            - legend alt: 'points 1 legend alt - tour'
-            - icon
-                - file: set
-                - anchor: only y set
-        - points2 (not show all)
-            - legend: none
-    - basemaps: 1
-        - LakeMonroe.jpg (has attribution)
-    - features: none
-    - long attribution: +1
-    - maxBounds - invalid (only 3 values)
-    - start:
-        - location: invalid
-        - bounds, coordinates: not set
-        - distance: set
-    - tile server: default url
-- tour 3
-    - datasets:
-        - points1 (show all)
-            - icon - use defaults
-                - file: set
-                - size: not set
-        - MultiPolygons (show all)
-            - path options
-                - stroke: true
-                - weight: 2
-                - fill: false
-                - color, opacity, fillColor, fillOpacity: null
-            - active path options
-                - stroke: true
-                - color: #112233
-                - fill: true
-                - fillOpacity: 0.5
-                - weight, opacity, fillColor: null
-    - basemaps: none
-    - features: some (doesn't matter which)
-    - attribution: +2
-    - wideCol: true
-    - show map in url: false
-    - start: valid coordinates, no distance
-    - notes:
-        - has 1 view (has 1 basemap with attribution)
-        - no features have popups
-- tour 4
-    - datasets
-        - points1 (show all)
-            - legend: none
-            - icon
-                - width: 18
-                - shadow height: 2
-                - tooltip anchor, shadow width, class, shadow file, icon anchor, icon file: not set
-        - points2 (show all)
-            - legend: none
-            - icon
-                - file: set
-                - anchor: only x set
-                - height: not set
-        - MultiPolygons (not show all)
-            - legend: none
-    - basemaps: 2
-        - Map1873.png
-        - Small Map.jpg
-    - features: none
-    - attribution: +2
-        - Attribution Item, no url
-        - no text, myfakeurl.com
-    - start:
-        - valid coordinates
-        - distance: 3.5
-        - location: points2_1 (lat: 11)
-        - bounds: invalid (lat too low)
-    - notes
-        - one view with two basemaps (Small Map.jpg and Glot18.jpg)
-- tour 5
-    - datasets
-        - points2 (not show all)
-            - legend: none
-            - icon size, shadow anchor, shadow: not set
-        - points3 (show all)
-            - legend text: 'points3 legend'
-            - legend alt: 'points 3 legend alt'
-            - icon
-                - anchor: only x set
-                - width, shadow: not set
-        - Polygons (show all)
-            - legend: none
-            - path options: fill color not set
-    - basemaps: none
+- points1.json:
+    - has 12 valid features
+    - name property: name
+    - properties:
+        - 6 different ones (scattered throughout)
+        - no property called "fu" or "veggie"
+        - feature names are in the form: Point feature_number (e.g. Point 0, Point 1, etc.)
+        - property id in the form: feature_number (e.g. 0, 1, etc.)
     - features:
-        - Polygons_0 - popup added
-        - points3_1 - popup removed
-        - points3_0 - in list, no popup settings checked
-        - points3_3 - popup added, also remove popup
-        - Polygons_1 - popup added
-        - points3_4 - popup overwritten ('tour 5 popup for points3_4')
-        - add a couple points2 (not points2_0) (1, 2)
-    - start:
-        - valid location, coordinates, distance
-        - valid bounds (west: 123.456)
-    - only show view features, remove tile server: default
-
-## Testing View Notes
-
-Two of the tours each have one view. The views listed below all belong to tour 5.
-
-- view 1
-    - features: none
-    - basemaps: none
-    - start: valid coords, no distance
-    - only show view features: true
-    - remove tile server: not set
-- view 2
-    - features: at least one
-    - start: valid bounds (south: 21.55)
-    - only show view features: not set
-    - no tour basemaps: true
-- view 3
-    - features: 5
-        - 3 have popups
-    - basemaps: 2
-    - start:
-        - coords: valid
-        - location: points3_0 (long: 179.11)
-        - distance: 9
-    - only show view features: true
-    - remove tile server: false
-- view 4
-    - features: at least one
-        - none have popups
-    - start:
-        - location: points2_0 (from hidden features)
-        - distance: set
-- view 5
-    - features: some
-        - 2 valid features that have popups
-        - 1 or more valid features without popups
-        - several features not in the tour, at least some of which have popups
-    - start:
-        - location: points1 (any) (not in tour features)
-        - distance: set
-- view 6
-    - start:
-        - location: Polygons (any) (not a point)
-        - distance: set
-
-## Testing Basemap Notes
-
-- basemap files (and data)
-    - Map1873.png
-        - bounds: `[[27.474,-83.47],[30.94,-80.35]]`
-        - zoom: 11, 8
-        - attribution: Map 1873, no url
-    - Glot18.jpg
-        - bounds: `[[28.873378634,-81.367955392],[28.972581275,-81.262076589]]`
-        - zoom: default
-        - no attribution
-    - Small Map.jpg
-        - bounds: `[[28.873,-81.368],[28.973,-81.262]]`
-        - zoom: 16, 13
-        - attribution: Small Map, libraries.ou.edu
-    - LakeMonroe.jpg
-        - bounds: `[[27, -83], [30, -80]]`
-        - zoom: 15, 10
-        - attribution: Lake Monroe, https://libraries.ou.edu
-    - VoCo.jpeg
-        - bounds: `[[28, -81], [28.3, -80.8]]`
-        - zoom: 8, 8
-        - no attribution
-    - Map1873_copy.png
-        - no bounds/data
-
-Tile server:
-- url: https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}
-- attribution: ArcGIS World, https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer
+        - point 0
+            - coords: [-8.009, 10]
+        - point 1
+            - coords [180, 90]
+        - point 2
+            - coords [-20, 40] (x != 5)
+            - properties.fruit: kiwi
+        - point 7
+            - coords [14.015, -16]
+            - properties.fruit: pineapple
+        - point 9
+            - coords: x != 17
+        - point 11
+            - coords: y != -8
+            - properties.fruit: pear
+    - no points with coordinates: [5, 6.007], [-11, -12.013], [17, -18.019], [-20, 21.022]
+- points3.json
+    - has 5 valid features
+- lineStrings.json
+    - has 6 valid features
+    - name: LineStrings Dataset
+    - name property: name
+    - properties
+        - includes featureName
+    - features:
+        - line 0
+            - properties.name = LineStrings 0
+        - line 2
+            - no name or featureName
+        - line 3
+            - no name
+- polygons.json
+    - has 4 valid features
+- multiPolygons.json
+    - has 4 valid features
