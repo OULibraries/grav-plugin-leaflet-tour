@@ -1021,16 +1021,6 @@ class Utils {
         }
         return $header;
     }
-
-    public static function testUpdateReplace(Dataset $dataset, array $jsonArray, array $propertySettings) {
-        return self::updateReplace($dataset, $jsonArray, $propertySettings);
-    }
-    public static function testUpdateRemove(Dataset $dataset, array $jsonFeatures, array $propertySettings) {
-        return self::updateRemove($dataset, $jsonFeatures, $propertySettings);
-    }
-    public static function testUpdateStandard(array $update, Dataset $dataset, array $jsonFeatures, array $propertySettings) {
-        return self::updateStandard($update, $dataset, $jsonFeatures, $propertySettings);
-    }
 }
 
 ?>
