@@ -290,7 +290,7 @@ class TourTest extends Test {
         // from view
         $views = array_values($this->tour0->getViews());
         // feature as center (hidden feature) (invalid bounds also set, and valid coordinates)
-        $bounds = Utils::setBounds(['north'=>27, 'south'=>17, 'east'=>16, 'west'=>6]);
+        $bounds = Utils::setBounds(['north'=>27.0, 'south'=>17.0, 'east'=>16.0, 'west'=>6.0]);
         $this->assertNotEmpty($bounds);
         $this->assertEquals($views[0]['bounds'], $bounds); // points3_3 [11, 22], distance 5
         // invalid feature (not included in any tour dataset)
