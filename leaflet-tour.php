@@ -137,7 +137,7 @@ class LeafletTourPlugin extends Plugin
         else if (method_exists($obj, 'template') && $obj->template() === 'tour') {
             // handle fieldsets inside lists
             $header = $obj->header();
-            $datasets = [];
+            /*$datasets = [];
             if (!empty($header->get('datasets'))) {
                 foreach ($header->get('datasets') as $dataset) {
                     $data = $dataset;
@@ -147,7 +147,7 @@ class LeafletTourPlugin extends Plugin
                     $datasets[] = $data;
                 }
                 $header->set('datasets', $datasets);
-            }
+            }*/
             // handle popups page
             Utils::createPopupsPage($header->get('title'));
             $header = Utils::filter_header($header);
