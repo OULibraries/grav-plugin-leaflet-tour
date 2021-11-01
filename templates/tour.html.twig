@@ -43,6 +43,7 @@
 {% block header %}
 <div id="header-wrapper">
     <div class="mobile-row">
+        {# Call the header from the basic theme - logo, site title #}
         {{ parent() }}
         <button id="header-toggle-btn" aria-expanded="true" class="mobile-only hamburger-btn expanded">
             <i class="fas fa-minus" aria-hidden="true"></i>
@@ -50,6 +51,7 @@
             <span class="sr-only">Toggle Menu</span>
         </button>
     </div>
+    {# Setting button should be available regardless of screen size, but it should be part of the row allowing switching between map and content views on mobile, instead of a standalone button #}
     <div id="header-options-wrapper" class="mobile-row">
         <nav aria-label="Map and Content">
             <button id="content-toggle-btn" class="btn" data-current="scrolly">View Map</button>
@@ -69,6 +71,7 @@
         </button>
     </div>
     <ul id="main-nav-list" class="hide" role="list">
+        {# Use the nav macro from the basic theme #}
         {% import 'partials/nav_macro.html.twig' as nav_macro %}
         {{ nav_macro.loop(pages)}}
     </ul>
@@ -78,8 +81,8 @@
 {% block navigation %}{% endblock navigation %} {# clear navigation block - already included in header #}
 
 {% block main %}
-{% include 'partials/settings.html.twig' %}
-<div id="scrolly">
+{% include 'partials/settings.html.twig' %} {# modal dialog box, requires js and css from basic theme #}
+<div id="scrolly"> {# Identifies scrollama content #}
     <div class="scroll-top">
         <h1>{{ page.title }}</h1>
         <div id="scrolly-content">
@@ -89,6 +92,7 @@
     </div>
     <div id="scroll-text">
     {% for view in page.collection() if view.template == 'modular/view' %}
+        {# Including all view logic here. It did something wonky when trying to put much of this in view.html.twig #}
         {% set viewId = tourData.getViewId(view) %}
         <div class="step" id="{{ viewId }}">
             <h2>{{ view.header.title }}</h2>
@@ -105,6 +109,7 @@
         </div>
     {% endfor %}
     </div>
+    {# Add back to top button before the map, since it only affects the narrative column #}
     {% include 'partials/bits/back_to_top.html.twig' %}
 </div>
 <div id="map-wrapper" role="region" aria-label="Map">
@@ -124,7 +129,7 @@
         <ul class="list-unstyled" role="list">
         {% for item in legendList %}
             <li>
-                {% if header.legend_toggles %}
+                {% if header.legend_toggles %} {# Each legend item should be a checkbox so it can be toggled #}
                 <label>
                     <input type="checkbox" class="legend-checkbox" value="{{ item.dataSource }}" checked>
                 {% else %}
@@ -132,11 +137,11 @@
                 {% endif %}
                     {% if item.iconFile is defined %}
                     <img class="legend-icon" src="{{ item.iconFile }}" alt="{{ item.iconAltText }}" style="height: {{ item.iconHeight }}px; width: {{ item.iconWidth }}px;">
-                    {% elseif item.featureType is same as 'line' %}
+                    {% elseif item.featureType is same as 'line' %} {# Use svg instead of icon #}
                         <svg width="14px" height="14px">
                             <rect x="0" y="0" width="14" height="14" fill="{{ item.color }}" />
                         </svg>
-                    {% else %}
+                    {% else %} {# svg is more complicated for polygons, as there is both stroke and fill to consider #}
                         {% set weight = (item.weight|default(1)) - 1 %}
                         {% set size = 14 + (2 * weight) %}
                         <svg width="{{ size }}px" height="{{ size }}px">
@@ -147,7 +152,7 @@
                         </svg>
                     {% endif %}
                     <span>{{ item.legendText }}</span>
-                {% if header.legend_toggles %}</label>
+                {% if header.legend_toggles %}</label> {# Make sure to provide the closing tag if items are toggleable #}
                 {% else %}</div>
                 {% endif %}
             </li>
@@ -155,10 +160,11 @@
         </ul>
     </div>
     {% endif %}
-    <div id="map">
+    <div id="map"> {# This is what leaflet will populate #}
     </div>
 </div>
 {% for feature in tourData.getPopups() %}
+{# Leaflet also does popups, but I found it harder to customize them for accessibility. These popups function as modal dialog windows. #}
 <div class="dialog-backdrop">
     <div role="dialog" id="{{ feature.id }}-popup" aria-labelledby="{{ feature.id }}-popup-label" aria-modal="true" class="hidden">
         <div class="dialog-top">

@@ -82,7 +82,7 @@ form:
             header.legend_text:
               type: text
               label: Description for Legend
-            
+            # TODO: Refer to accessibility info?
             header.legend_alt:
               type: text
               label: Legend Alt Text
@@ -92,7 +92,7 @@ form:
           type: tab
           title: Features
           fields:
-
+            # TODO: Do you need to refresh the page again after changing?
             header.name_prop:
               type: select
               label: Name Property
@@ -117,6 +117,7 @@ form:
                   type: text
                   label: Name
                   readonly: true
+                # TODO: Note that names should not be too long?
                 .custom_name:
                   type: text
                   label: Custom Name
@@ -131,6 +132,7 @@ form:
 
                 # Option: hide feature option
 
+                # TODO: Describe how to include images here or elsewhere? Could refer to something, since this will be repeated for each feature
                 .popup_content:
                   type: editor
                   label: Popup Content

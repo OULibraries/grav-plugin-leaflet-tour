@@ -222,8 +222,9 @@ class Feature {
      */
     public static function setValidFeature($feature, string $featureType): ?array {
         try {
-            // if ($feature['type'] !== "Feature") return null;
+            // if ($feature['type'] !== "Feature") return null; // no real point in checking this
             $featureType = Utils::setValidType($featureType);
+            // Note that feature[geometry][type] has already been run through the Utils setValidType method
             if ($feature['geometry']['type'] !== $featureType) return null;
             $coords = Utils::setValidCoordinates($feature['geometry']['coordinates'], $featureType);
             if ($coords) $feature['geometry']['coordinates'] = $coords;

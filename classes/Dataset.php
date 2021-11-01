@@ -460,8 +460,9 @@ class Dataset {
         $files = glob($route."*.json");
         $config = new Data(Grav::instance()['config']->get('plugins.leaflet-tour'));
         foreach ($files as $file) {
-            $jsonFilename = str_replace($route, '', $file);
+            $jsonFilename = str_replace($route, '', $file); // $file is route.name
             $dataset = new Dataset($jsonFilename, $config);
+            // datasets should always have a name, so this probably isn't necessary...
             if (!empty($dataset->getName())) $datasets[$jsonFilename] = $dataset;
         }
         return $datasets;
