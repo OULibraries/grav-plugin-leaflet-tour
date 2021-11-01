@@ -422,7 +422,8 @@ class PluginTest extends Test {
                 ['id'=>'Loci_5'], // EAST
                 ['id'=>'Loci_6'] // D
             ],
-            'only_show_view_featurues'=>false
+            'only_show_view_featurues'=>false,
+            'list_popup_buttons'=>true
         ];
         $file->header(array_merge($file->header ?? [], $view));
         $file->save();
