@@ -326,20 +326,22 @@ class UtilsTest extends Test {
 
     /**
      * Test the addToLat method
+     * 
+     * Note the added decimal place on the expected - necessary to make sure we are comparing a double to a double
      */
     protected function testAddToLat() {
         // positive wraparound: 120 becomes -90 + 30 = -60
-        $this->assertEquals(Utils::addToLat(60, 60), -60);
+        $this->assertEquals(Utils::addToLat(60, 60), -60.0);
         // max value: 90
-        $this->assertEquals(Utils::addToLat(80, 10), 90);
+        $this->assertEquals(Utils::addToLat(80, 10), 90.0);
         // positive wraparound, twice: 190 becomes -90 + 100 = 10
-        $this->assertEquals(Utils::addToLat(80, 110), 10);
+        $this->assertEquals(Utils::addToLat(80, 110), 10.0);
         // normal: -80 + 20 = -60
-        $this->assertEquals(Utils::addToLat(-80, 20), -60);
+        $this->assertEquals(Utils::addToLat(-80, 20), -60.0);
         // normal: 80 - 30 = 50
-        $this->assertEquals(Utils::addToLat(80, -30), 50);
+        $this->assertEquals(Utils::addToLat(80, -30), 50.0);
         // negative wraparound, twice: -190 becomes 90 - 100 = -10
-        $this->assertEquals(Utils::addToLat(-170, -20), -10);
+        $this->assertEquals(Utils::addToLat(-170, -20), -10.0);
     }
 
     /**
@@ -347,11 +349,11 @@ class UtilsTest extends Test {
      */
     protected function testAddToLong() {
         // normal: 60 + 60 = 120
-        $this->assertEquals(Utils::addToLong(60, 60), 120);
+        $this->assertEquals(Utils::addToLong(60, 60), 120.0);
         // positive wraparound: 210 becomes -180 + 30 = -150
-        $this->assertEquals(Utils::addToLong(110, 100), -150);
+        $this->assertEquals(Utils::addToLong(110, 100), -150.0);
         // negative wraparound: -220 becomes 180 - 40 = 140
-        $this->assertEquals(Utils::addToLong(-100, -120), 140);
+        $this->assertEquals(Utils::addToLong(-100, -120), 140.0);
     }
 
     /**
@@ -924,6 +926,10 @@ class UtilsTest extends Test {
         // not removed - only nulls and empty arrays are removed
         $this->assertFalse($result['bool']);
 
+        $this->undoUpdate();
+    }
+
+    protected function teardown() {
         $this->undoUpdate();
     }
 }
