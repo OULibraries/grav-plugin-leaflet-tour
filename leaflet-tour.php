@@ -69,7 +69,7 @@ class LeafletTourPlugin extends Plugin
                 'onGetPageTemplates' => ['onGetPageTemplates', 0],
                 'onGetPageBlueprints' => ['onGetPageBlueprints', 0],
                 'onAdminSave' => ['onAdminSave', 0],
-                'onShortcodeHandlers' => ['onShortcodeHandlers', 0] // TODO: which
+                //'onShortcodeHandlers' => ['onShortcodeHandlers', 0] // shouldn't be necessary
             ]);
             return;
         }
