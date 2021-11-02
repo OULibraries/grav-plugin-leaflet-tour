@@ -291,7 +291,7 @@ class PluginTest extends Test {
                 [
                     'file'=>'multiLineStrings.json',
                     'show_all'=>false,
-                    'svg'=>['color'=>'171e38']
+                    'svg'=>['color'=>'#171e38']
                 ],
                 [
                     'file'=>'polygons.json',
