@@ -4,7 +4,8 @@ var tourState = {
     basemaps: [],
     activeBasemaps: [],
     mapAnimation: true,
-    scrollyPos: 0,
+    scrolly: true, // save scroll y position
+    scrollyPos: 0, // scroll y position
     mapNeedsAdjusting: true,
 }
 
@@ -521,6 +522,7 @@ $(document).ready(function() {
 
 function switchToMap(focusElement) {
     $("body").addClass("map-active");
+    tourState.scrolly = false;
     // Question: explicitly set focus to map?
     // change button text/value and set button data-focus to focusElement
     $("#content-toggle-btn").attr("data-focus", focusElement).attr("data-current", "map").text("View Content");
