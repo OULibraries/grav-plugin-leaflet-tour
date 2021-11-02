@@ -12,8 +12,8 @@ class Feature {
     protected $coordinates; // array - may just have two coordinates, may have many
     /* Coordinates:
      * Point coords: [x, y]
-     * Polyline coords: [[x,y], [x,y], [x,y]]
-     * Polygon coords: [[[x,y], [x,y], [x,y]]]
+     * LineString coords: [[x,y], [x,y], [x,y]] (array of points)
+     * Polygon coords: [[[x,y], [x,y], [x,y]]] (array of LineStrings, identical to)
      * Polygon coords with holes: [
      *      [[x,y], [x,y], [x,y]], (polygon)
      *      [[x,y], [x,y], [x,y]], (first hole)
@@ -37,57 +37,57 @@ class Feature {
     function __construct(array $jsonData, string $nameProperty, string $type='point') {
         // type has only a few accepted values
         $type = Utils::setValidType($type);
-        if (!$jsonData['type'] || strtolower($jsonData['type']) !== 'feature' || !$jsonData['geometry']) return;
+        if (!$jsonData['geometry']) return;
         $this->properties = $jsonData['properties'];
         $this->type = $jsonData['geometry']['type'];
         if ($this->type !== $type) return;
         $this->coordinates = $jsonData['geometry']['coordinates'];
         $this->customName = $jsonData['customName'];
-        $this->name = $this->customName ?? $this->properties[$nameProperty];
-        if (empty($this->name)) return;
         $this->id = $jsonData['id'];
+        $this->nameProperty = $nameProperty;
     }
 
-    public function isValid(): bool {
-        return isset($this->id);
-    }
+    // public function isValid(): bool {
+    //     return isset($this->id);
+    // }
 
     // setters
     /**
-     * Sets additional info from dataset config that is not found in json
+     * Sets additional info from dataset config that is not found in json - popup content, other options that may be implemented in the future
      * @param array $featureData - yaml data from dataset config file
      */
-    public function setDatasetFields($featureData): void {
+    public function addDatasetInfo(array $featureData): void {
         $this->popupContent = $featureData['popup_content'];
-        $id = $featureData['custom_id'];
-        if ($id) $this->customId = $id;
-        $this->hide = $featureData['hide'];
+        // $id = $featureData['custom_id'];
+        // if ($id) $this->customId = $id;
+        $this->hide = $featureData['hide']; // not really implemented yet
     }
     /**
-     * Updates information based on changes made in the dataset config file
+     * Updates information based on changes made in the dataset config file. Will update fields that will also modify the JSON file and call addDatasetInfo to update fields only stored in the dataset YAML file.
      * @param array $featureData - yaml data from dataset config file
      */
-    public function update($featureData): void {
-        // everything also stored in json file
-        $this->customName = $featureData['custom_name'];
-        if ($this->customName) $this->name = $this->customName;
+    public function update(array $featureData, string $nameProperty = null): void {
+        // update everything also stored in the json file - everything else will be set through addDatasetInfo
+        // coordinates - some base code that can be expanded to actually implement coordinate editing in the future
         $coords = $featureData['coordinates'];
         // Option: Fix coordinates - doesn't actually work with yaml format (only matters if we're actually adding coordinates as a thing)
-        if ($coords && $coords !== $this->coordinates && Utils::areValidCoordinates($coords, $this->type)) $this->coordinates = $coords;
+        if ($coords && $coords !== $this->coordinates && $coords = Utils::setValidCoordinates($coords, $this->type)) $this->coordinates = $coords;
+        // properties are currently not editable, but may be added to dataset.yaml in the future
         $props = $featureData['properties'];
         if (!empty($props) && $props !== $this->properties) $this->properties = $props;
+        // name
+        if ($nameProperty && $this->nameProperty !== $nameProperty) $this->nameProperty = $nameProperty;
+        $this->customName = $featureData['custom_name'];
         // everything not stored in json file
-        $this->setDatasetFields($featureData);
+        $this->addDatasetInfo($featureData);
     }
 
-    public function updateName($nameProperty): void {
-        $this->name = $this->customName ?? $this->properties[$nameProperty] ?? '';
-    }
+    public function updateNameProperty(string $nameProperty) { $this->nameProperty = $nameProperty; }
 
     // getters
 
     public function getName() {
-        return $this->name;
+        return $this->customName ?: $this->properties[$this->nameProperty] ?: $this->id;
     }
     public function getPopup() {
         return $this->popupContent;
@@ -95,9 +95,10 @@ class Feature {
     public function getId() {
         return $this->id;
     }
+    public function getProperties() { return $this->properties; }
 
     /**
-     * Returns the feature in the format needed for the json file
+     * Returns the feature in the format needed for the dataset json file
      */
     public function asJson(): array {
         return [
@@ -112,12 +113,15 @@ class Feature {
         ];
     }
 
+    /**
+     * Returns the feature in the format needed for Leaflet's GeoJSON layer
+     */
     public function asGeoJson(): array {
         return [
             'type'=>'Feature',
             'properties'=>[
                 'id'=>$this->id,
-                'name'=>$this->name,
+                'name'=>$this->getName(),
             ],
             'geometry'=>[
                 'type'=>$this->type,
@@ -139,37 +143,44 @@ class Feature {
             'properties'=>$this->properties,
             'hide'=>$this->hide,
         ];
-        // coordinates
+        // coordinates - not really implemented at the moment, though
         if ($this->type === 'Point') {
             $yaml['coordinates'] = ['long'=>$this->coordinates[0], 'lat'=>$this->coordinates[1]];
-        } else if ($this->type === 'MultiPoint' || $this->type === 'LineString') {
-            $coords = [];
-            foreach ($this->coordinates as $point) {
-                $coords[] = ['long'=>$point[0], 'lat'=>$point[1]];
-            }
-            $yaml['coordinates'] = $coords;
-        }
+        } 
+        // else if ($this->type === 'MultiPoint' || $this->type === 'LineString') {
+        //     $coords = [];
+        //     foreach ($this->coordinates as $point) {
+        //         $coords[] = ['long'=>$point[0], 'lat'=>$point[1]];
+        //     }
+        //     $yaml['coordinates'] = $coords;
+        // }
         return $yaml;
     }
 
     // utilities
 
     /**
+     * Takes an array of features from the dataset JSON file and turns them into Feature objects for the Dataset.
      * @param array $features - array of features from json file
-     * @param string $nameProperty - only features with a custom name or a value under nameProperty will be included
-     * @param string $type - optional, if provided, only features with the given type will be included
+     * @param string $nameProperty - for setting the feature's name
+     * @param string $type - only features with the given type will be included
      */
-    public static function buildFeatureList(array $features, $nameProperty, string $type=null): array {
+    public static function buildFeatureList(array $features, string $nameProperty, string $type='Point'): array {
         $featureList = [];
         foreach ($features as $jsonFeature) {
-            if (!is_array($jsonFeature)) continue;
-            if ($type) $feature = new Feature($jsonFeature, $nameProperty, $type);
-            else $feature = new Feature($jsonFeature, $nameProperty);
-            if ($feature->isValid()) $featureList[$feature->id] = $feature;
+            $jsonFeature = self::setValidFeature($jsonFeature, $type);
+            if ($jsonFeature) {
+                $feature = new Feature($jsonFeature, $nameProperty, $type);
+                $featureList[$feature->id] = $feature;
+            }
         }
         return $featureList;
     }
 
+    /**
+     * Builds the list of features for saving the dataset's JSON file
+     * @param array $features - array of Feature objects
+     */
     public static function buildJsonList(array $features): array {
         $jsonList = [];
         foreach ($features as $id=>$feature) {
@@ -178,6 +189,10 @@ class Feature {
         return $jsonList;
     }
 
+    /**
+     * Builds the list of features for saving the dataset's config (YAML) file
+     * @param array $features - array of Feature objects
+     */
     public static function buildYamlList(array $features): array {
         $yamlList = [];
         foreach ($features as $id=>$feature) {
@@ -186,12 +201,38 @@ class Feature {
         return $yamlList;
     }
 
+    /**
+     * Builds an array of id=>name for use in admin panel config dropdowns.
+     * @param array $features - array of Feature objects
+     */
     public static function buildConfigList(array $features): array {
         $configList = [];
         foreach ($features as $id=>$feature) {
             $configList[$id] = $feature->getName();
         }
         return $configList;
+    }
+
+    // feature must be array with type Feature, geometry type of featureType, geometry coordinates valid for featureType
+    /**
+     * Checks that a feature provided by the JSON file is valid: It must be an array with geometry type of featureType, and geometry coordinates valid for featureType. Corrects any linear rings (for Polygon and MultiPolygon features) that do not have matching first and last points.
+     * @param $feature - Should be an array, but function will accept any type.
+     * @param string $featureType - The GeoJSON type to use. Accepts: Point, Polygon, MultiPolygon, LineString, MultiLineString. If invalid, will default to Point.
+     * @return array|null - Returns the feature (possibly with improvements) if it is valid. Otherwise returns null.
+     */
+    public static function setValidFeature($feature, string $featureType): ?array {
+        try {
+            // if ($feature['type'] !== "Feature") return null; // no real point in checking this
+            $featureType = Utils::setValidType($featureType);
+            // Note that feature[geometry][type] has already been run through the Utils setValidType method
+            if ($feature['geometry']['type'] !== $featureType) return null;
+            $coords = Utils::setValidCoordinates($feature['geometry']['coordinates'], $featureType);
+            if ($coords) $feature['geometry']['coordinates'] = $coords;
+            else return null;
+        } catch (\Throwable $t) {
+            return null;
+        }
+        return $feature;
     }
 }
 

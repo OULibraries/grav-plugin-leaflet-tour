@@ -67,25 +67,25 @@ form:
                       collapsed: true
                       collapsible: true
                       fields:
-                        .icon.file:
+                        .file:
                           type: filepicker
                           label: Icon Marker
                           description: If not set, the default Leaflet marker will be used.
                           preview_images: true
                           folder: 'user://data/leaflet-tour/images/markers'
-                        .icon.width:
+                        .width:
                           type: number
                           label: Icon Width (pixels)
                           description: Defaults to 14.
                           validate:
                             min: 1
-                        .icon.height:
+                        .height:
                           type: number
                           label: Icon Height (pixels)
                           description: Defaults to 14.
                           validate:
                             min: 1
-                        .icon.use_defaults:
+                        .use_defaults:
                           type: toggle
                           label: Use Default Values
                           description: Will override any options set in the dataset configuration but not for this page with default values.
@@ -96,27 +96,27 @@ form:
                             0: PLUGIN_ADMIN.DISABLED
                           validate:
                             type: bool
-                        .icon.anchor_x:
+                        .anchor_x:
                           type: hidden
-                        .icon.anchor_y:
+                        .anchor_y:
                           type: hidden
-                        .icon.tooltip_anchor_x:
+                        .tooltip_anchor_x:
                           type: hidden
-                        .icon.tooltip_anchor_y:
+                        .tooltip_anchor_y:
                           type: hidden
-                        .icon.shadow:
+                        .shadow:
                           type: hidden
-                        .icon.shadow_width:
+                        .shadow_width:
                           type: hidden
-                        .icon.shadow_height:
+                        .shadow_height:
                           type: hidden
-                        .icon.shadow_anchor_x:
+                        .shadow_anchor_x:
                           type: hidden
-                        .icon.shadow_anchor_y:
+                        .shadow_anchor_y:
                           type: hidden
-                        .icon.class:
+                        .class:
                           type: hidden
-                        .icon.retina:
+                        .retina:
                           type: hidden
                     .svg:
                       type: hidden
@@ -168,7 +168,7 @@ form:
               validate:
                 min: -180
                 max: 180
-                step: .00000000001
+                step: .0000001
             
             header.start.lat:
               type: number
@@ -176,7 +176,7 @@ form:
               validate:
                 min: -90
                 max: 90
-                step: .00000000001
+                step: .0000001
             
             header.start.distance:
               type: number
@@ -184,7 +184,7 @@ form:
               size: long
               validate:
                 min: 0
-                step: .00000000001
+                step: .0000001
 
             header.options_section:
               type: section
@@ -239,7 +239,7 @@ form:
               validate:
                 type: bool
             
-            header.remove_tileserver:
+            header.remove_tile_server:
               type: toggle
               label: Remove Tile Server
               description: If toggled, will remove the tile server when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. Can be overriden by individual view settings.
@@ -335,7 +335,7 @@ form:
                           validate:
                             min: -90
                             max: 90
-                            step: .00000000001
+                            step: .0000001
                         
                         header.max_bounds.south:
                           type: number
@@ -344,7 +344,7 @@ form:
                           validate:
                             min: -90
                             max: 90
-                            step: .00000000001
+                            step: .0000001
                     
                     header.maxbounds_col_2:
                       type: column
@@ -357,7 +357,7 @@ form:
                           validate:
                             min: -180
                             max: 180
-                            step: .00000000001
+                            step: .0000001
                         
                         header.max_bounds.west:
                           type: number
@@ -366,7 +366,7 @@ form:
                           validate:
                             min: -180
                             max: 180
-                            step: .00000000001
+                            step: .0000001
                 
                 header.zoom_section:
                   type: section
@@ -444,21 +444,21 @@ form:
                   text: Choose one of the tile servers from the dropdown, or input the URL and attribution info for a tile server.
                   underline: true
             
-                header.tileserver.select:
+                header.tile_server_select:
                   type: select
                   label: Select a Tile Server
                   data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServers'
                 
-                header.tileserver.url:
+                header.tile_server.url:
                   type: text
                   label: Tile Server URL
                 
-                header.tileserver.attribution_text:
+                header.tile_server.attribution_text:
                   type: text
                   label: Tile Server Attribution
                   description: This text will be displayed in the footer.
                 
-                header.tileserver.attribution_url:
+                header.tile_server.attribution_url:
                   type: text
                   label: Tile Server Attribution URL
                   description: If provided, the attribution will become a link to this URL.

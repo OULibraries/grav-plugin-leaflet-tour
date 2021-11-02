@@ -162,7 +162,8 @@ function setPathInteraction() {
             }
             element.setAttribute("alt", altText);
             // treat lines and polygons different so that lines can have extra buffer for hover
-            if (feature.type === "LineString" || feature.type === "MultiLineString") {
+            // include polygons with no fill as lines
+            if (feature.type === "LineString" || feature.type === "MultiLineString" || !(dataset.pathOptions.fill ?? true)) {
                 // create extra feature
                 let extraProps = { lineBuffer: true, featureId: props.id };
                 let extra = { type: "Feature", properties: extraProps, geometry: feature.layer.feature.geometry };
@@ -413,30 +414,32 @@ var scrollamaOptions = {
 };
 
 // scrollama setup
-scroller = scrollama();
-scroller.setup({
-    step: "#scrolly #scroll-text .step",
-    offset: scrollamaOptions.offset,
-    debug: scrollamaOptions.debug
-}).onStepEnter(function(e) {
-    // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
-    tourState.tmpView = e.element.getAttribute("id");
-    setTimeout(function() {
-        if (tourState.tmpView !== tourState.view && tourState.mapAnimation) {
-            enterView(tourState.tmpView);
-            tourState.mapNeedsAdjusting = true;
-        }
-    }, 500);
-}).onStepExit(function(e) {
-    // use timeout function to ensure that exitView is only called when a view is exited but no new view is entered
-    tourState.tmpView = null;
-    setTimeout(function() {
-        if (!tourState.tmpView && tourState.mapAnimation) {
-            exitView();
-            tourState.mapNeedsAdjusting = true;
-        }
-    }, 600);
-});
+if ($("#scrolly #scroll-text .step").length > 0) {
+    scroller = scrollama();
+    scroller.setup({
+        step: "#scrolly #scroll-text .step",
+        offset: scrollamaOptions.offset,
+        debug: scrollamaOptions.debug
+    }).onStepEnter(function(e) {
+        // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
+        tourState.tmpView = e.element.getAttribute("id");
+        setTimeout(function() {
+            if (tourState.tmpView !== tourState.view && tourState.mapAnimation) {
+                enterView(tourState.tmpView);
+                tourState.mapNeedsAdjusting = true;
+            }
+        }, 500);
+    }).onStepExit(function(e) {
+        // use timeout function to ensure that exitView is only called when a view is exited but no new view is entered
+        tourState.tmpView = null;
+        setTimeout(function() {
+            if (!tourState.tmpView && tourState.mapAnimation) {
+                exitView();
+                tourState.mapNeedsAdjusting = true;
+            }
+        }, 600);
+    });
+}
 
 $(document).ready(function() {
 

@@ -43,6 +43,8 @@ form:
             leaflet_tour:
               type: hidden
               default: true
+              validate:
+                type: bool
 
             data:
               type: section
@@ -61,17 +63,17 @@ form:
                 - '.js'
                 - '.json'
             
-            data_update:
-              type: toggle
-              label: Update Datasets
-              description: "TODO: Explain exactly what this does. I don't think it will overwrite any of the changes that are currently possible to make. It does recreate the json and the dataset page. At some point there may be more configurable update options."
-              highlight: 1
-              default: 0
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
+            # data_update:
+            #   type: toggle
+            #   label: Update Datasets
+            #   description: "TODO: Explain exactly what this does. I don't think it will overwrite any of the changes that are currently possible to make. It does recreate the json and the dataset page. At some point there may be more configurable update options."
+            #   highlight: 1
+            #   default: 0
+            #   options:
+            #     1: PLUGIN_ADMIN.ENABLED
+            #     0: PLUGIN_ADMIN.DISABLED
+            #   validate:
+            #     type: bool
             
             # datasets:
             #   type: list
@@ -95,7 +97,7 @@ form:
               type: section
               text: Upload images to use as marker icons for tours. You can also upload shadows, though you do not need shadows to use the icons.
 
-            marker_icon_files:
+            marker_files:
               type: file
               label: Markers
               style: vertical
@@ -104,7 +106,7 @@ form:
               accept:
                 - image/*
 
-            marker_shadow_files:
+            shadow_files:
               type: file
               label: Marker Shadows
               style: vertical
@@ -152,18 +154,6 @@ form:
                   markdown: true
                   style: vertical
 
-                attribution_toggle:
-                  type: toggle
-                  label: Include Attribution in Footer
-                  description: Uncheck this if you want to manually add attribution for leaflet/basemaps/etc.
-                  highlight: 1
-                  default: 1
-                  options:
-                    1: PLUGIN_ADMIN.ENABLED
-                    0: PLUGIN_ADMIN.DISABLED
-                  validate:
-                    type: bool
-
                 attribution_list:
                   type: list
                   label: Additional Resources
@@ -181,7 +171,7 @@ form:
                       type: text
                       label: Attribution URL
                 
-                attribution_long:
+                attribution_html:
                   type: list
                   label: Extra Attribution
                   description: Provide resource attributions here instead if you have HTML code for the attribution.
@@ -195,7 +185,7 @@ form:
                       validate:
                         required: true
         
-        basemaps:
+        basemaps_tab:
           type: tab
           title: Basemaps
           fields:
@@ -206,26 +196,26 @@ form:
               text: Choose one of the tile servers from the dropdown, or input the URL and attribution info for a tile server.
               underline: true
             
-            tileserver.select:
+            tile_server_select:
               type: select
               label: Select a Tile Server
               default: 'none'
               data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServers'
 
-            tileserver.url:
+            tile_server.url:
               type: text
               label: Tile Server URL
               default: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
               validate:
                 required: true
             
-            tileserver.attribution_text:
+            tile_server.attribution_text:
               type: text
               label: Tile Server Attribution
               description: This text will be displayed in the footer.
               default: "ArcGIS World"
             
-            tileserver.attribution_url:
+            tile_server.attribution_url:
               type: text
               label: Tile Server Attribution URL
               description: If provided, the attribution will become a link to this URL.
@@ -280,7 +270,7 @@ form:
                     required: true
                     min: -90
                     max: 90
-                    step: .00000000001
+                    step: .0000001
                 .bounds.south:
                   type: number
                   label: South
@@ -288,7 +278,7 @@ form:
                     required: true
                     min: -90
                     max: 90
-                    step: .00000000001
+                    step: .0000001
                     # .bounds_col2:
                     #   type: column
                     #   fields:
@@ -299,7 +289,7 @@ form:
                     required: true
                     min: -180
                     max: 180
-                    step: .00000000001
+                    step: .0000001
                 .bounds.west:
                   type: number
                   label: West
@@ -307,7 +297,7 @@ form:
                     required: true
                     min: -180
                     max: 180
-                    step: .00000000001
+                    step: .0000001
                 .zoom_section:
                   type: section
                   title: "Zoom Level"
@@ -376,3 +366,156 @@ form:
               multiple: true
               accept:
                 - image/*
+
+        update:
+          type: tab
+          title: Dataset Update
+          fields:
+
+            update.msg:
+              type: textarea
+              readonly: true
+              label: Update Status
+              default: Upload a file, select options, and save to begin.
+              style: vertical
+              rows: 7
+
+            update.status:
+              type: hidden
+              default: none
+            
+            update_cols:
+              type: columns
+              fields:
+                col1:
+                  type: column
+                  fields:
+            
+                    update.confirm:
+                      type: toggle
+                      label: Confirm Update
+                      highlight: 1
+                      default: 0
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
+                    
+                col2:
+                  type: column
+                  fields:
+            
+                    update.cancel:
+                      type: toggle
+                      label: Cancel Update
+                      highlight: 1
+                      default: 0
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
+            
+            update.file:
+              type: file
+              label: Upload File with Update Information
+              style: vertical
+              multiple: false
+              destination: 'user://data/leaflet-tour/datasets/update'
+              accept:
+                - '.js'
+                - '.json'
+            
+            update.dataset:
+              type: select
+              label: Select the Dataset to Update
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetFilesNone'
+            
+            update.dataset_prop:
+              type: select
+              label: Select a Property from the Dataset
+              # TODO: Why? Will connect to property chosen from the update file. Note that all properties are listed, not just the ones from the dataset?
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getAllPropertiesList'
+            
+            update_cols2:
+              type: columns
+              fields:
+                col1:
+                  type: column
+                  fields:
+
+                    update.same_prop:
+                      type: toggle
+                      label: Use the same property in the update file?
+                      highlight: 1
+                      default: 1
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
+                    
+                col2:
+                  type: column
+                  fields:
+
+                    update.file_prop:
+                      type: text
+                      label: Property from Update File
+                    
+            update.type:
+              type: select
+              label: Update Type
+              options:
+                standard: Standard
+                remove: Remove Specified Features
+                replace: Total Replacement
+            
+            standard_update:
+              type: section
+              title: Standard Update Options
+
+            update.modify_existing:
+              type: toggle
+              label: Update Existing Features
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+            
+            update.add_new:
+              type: toggle
+              label: Add New Features
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+
+            update.remove_empty:
+              type: toggle
+              label: Remove Missing Features
+              highlight: 1
+              default: 0
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+              
+            update.overwrite_blank:
+              type: toggle
+              label: Overwrite existing content with blank fields
+              highlight: 1
+              default: 0
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
