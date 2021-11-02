@@ -227,6 +227,13 @@ main {
   font-size: 19px;
   font-size: 1.9rem;
 }
+#map-wrapper .legend.minimized #legend-toggle-btn {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  background: transparent;
+  justify-content: flex-end;
+}
 #map-wrapper .legend.minimized #legend-toggle-btn .fa-plus {
   display: inline-block;
 }
@@ -328,13 +335,6 @@ main {
   #map-wrapper .legend.minimized h2 {
     margin-left: 7px;
   }
-  #map-wrapper .legend.minimized #legend-toggle-btn {
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    background: transparent;
-    justify-content: flex-end;
-  }
   #map-wrapper .legend.minimized #legend-toggle-btn .fa-plus {
     margin-right: 15px;
   }
@@ -362,8 +362,11 @@ main {
     width: 150px;
     left: calc(100% - 170px);
   }
-  #map-wrapper .legend.minimized #legend-toggle-btn {
-    margin-right: 10px;
+  #map-wrapper .legend.minimized h2 {
+    margin-left: 10%;
+  }
+  #map-wrapper .legend.minimized #legend-toggle-btn .fa-plus {
+    margin-right: 15%;
   }
   #map-wrapper #map {
     left: 33%;

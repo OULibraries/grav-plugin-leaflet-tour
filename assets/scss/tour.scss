@@ -256,8 +256,15 @@ main {
                 font-weight: normal;
                 @include font-size(19);
             }
-            #legend-toggle-btn .fa-plus {
-                display: inline-block;
+            #legend-toggle-btn {
+                position: absolute;
+                height: 100%;
+                width: 100%;
+                background: transparent;
+                justify-content: flex-end;
+                .fa-plus {
+                    display: inline-block;
+                }
             }
             ul, .fa-minus {
                 display: none;
@@ -384,11 +391,11 @@ main {
                     margin-left: 7px;
                 }
                 #legend-toggle-btn {
-                    position: absolute;
-                    height: 100%;
-                    width: 100%;
-                    background: transparent;
-                    justify-content: flex-end;
+                    // position: absolute;
+                    // height: 100%;
+                    // width: 100%;
+                    // background: transparent;
+                    // justify-content: flex-end;
                     .fa-plus {
                         margin-right: 15px;
                     }
@@ -418,8 +425,14 @@ main {
             &.minimized {
                 width: 150px;
                 left: calc(100% - 170px);
-                #legend-toggle-btn {
-                    margin-right: 10px;
+                // #legend-toggle-btn {
+                //     margin-right: 10px;
+                // }
+                h2 {
+                    margin-left: 10%;
+                }
+                #legend-toggle-btn .fa-plus {
+                    margin-right: 15%;
                 }
             }
         }
