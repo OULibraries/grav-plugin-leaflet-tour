@@ -388,17 +388,6 @@ function checkBasemaps() {
     }
 }
 
-// fix map issues - only call when absolutely necessary
-function adjustMap() {
-    if (window.innerWidth < mobileWidth && tourState.mapNeedsAdjusting) {
-        map.invalidateSize();
-        let zoom = map.getZoom();
-        map.zoomIn(1, { animate: false });
-        map.setZoom(zoom, { animate: false });
-        tourState.mapNeedsAdjusting = false;
-    }
-}
-
 // -------------------------------------------------
 // -------------------------------------------------
 // --------------- end of map setup ----------------
@@ -424,18 +413,16 @@ if ($("#scrolly #scroll-text .step").length > 0) {
         // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
         tourState.tmpView = e.element.getAttribute("id");
         setTimeout(function() {
-            if (tourState.tmpView !== tourState.view && tourState.mapAnimation) {
+            if (tourState.tmpView !== tourState.view && mapAnimationEnabled()) {
                 enterView(tourState.tmpView);
-                tourState.mapNeedsAdjusting = true;
             }
         }, 500);
     }).onStepExit(function(e) {
         // use timeout function to ensure that exitView is only called when a view is exited but no new view is entered
         tourState.tmpView = null;
         setTimeout(function() {
-            if (!tourState.tmpView && tourState.mapAnimation) {
+            if (!tourState.tmpView && mapAnimationEnabled()) {
                 exitView();
-                tourState.mapNeedsAdjusting = true;
             }
         }, 600);
     });
@@ -484,7 +471,12 @@ $(document).ready(function() {
         if (this.getAttribute("data-current") === "scrolly") {
             switchToMap(this.getAttribute("id"));
             // Question: explicitly set focus to map?
-            adjustMap();
+            // first time switching to map on mobile, make sure the map is appropriately adjusted (so it doesn't do something wonky)
+            if (window.innerWidth < mobileWidth && tourState.mapNeedsAdjusting) {
+                map.invalidateSize();
+                map.flyToBounds(tourOptions.bounds, { padding: [10, 10], animate: false });
+                tourState.mapNeedsAdjusting = false;
+            }
         } else {
            switchToContent(this.getAttribute("data-focus"));
         }
@@ -530,8 +522,7 @@ $(document).ready(function() {
 function switchToMap(focusElement) {
     $("body").addClass("map-active");
     // Question: explicitly set focus to map?
-    // change button text/value
-    // set button data-focus to focusElement
+    // change button text/value and set button data-focus to focusElement
     $("#content-toggle-btn").attr("data-focus", focusElement).attr("data-current", "map").text("View Content");
 }
 function switchToContent(focusElement) {
@@ -587,8 +578,6 @@ function enterView(id) {
             // Option: Any instance where I would want to add { animate: boolean } to flyTo args? (if so, add to else flyTo statement, too)
             map.flyToBounds(view.bounds, { padding: [10, 10] });
         }
-        // just in case
-        if (tourState.mapNeedsAdjusting) adjustMap();
     } else {
         // exit view
         //if (!tourState.view) return; // already no view
@@ -597,6 +586,12 @@ function enterView(id) {
     }
     // adjust basemaps - call here because we need setBasemaps(), not just checkBasemaps()
     setBasemaps();
+}
+
+// ensures that map animation is disabled while in mobile
+function mapAnimationEnabled() {
+    if (window.innerWidth < mobileWidth || !tourState.mapAnimation) return false;
+    else return true;
 }
 
 function exitView() {
