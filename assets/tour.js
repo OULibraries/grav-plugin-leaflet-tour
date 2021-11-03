@@ -136,6 +136,11 @@ function setIconInteraction() {
         // make tooltip inactive when ending focus/hover onver icon
         if (!(this === document.activeElement)) tourFeatures.get(this.id).layer.getTooltip().getElement().classList.remove("active");
     });
+    $(".has-popup, .no-popup").on("focus", function(e) {
+        // if feature is not in view, pan to center on the feature
+        let point = tourFeatures.get(this.id).layer.getTooltip().getLatLng();
+        if (!map.getBounds().contains(point)) map.panTo(point, { animate: true });
+    })
 }
 function setPathInteraction() {
     // make sure all paths have id and class
