@@ -411,21 +411,25 @@ if ($("#scrolly #scroll-text .step").length > 0) {
         offset: scrollamaOptions.offset,
         debug: scrollamaOptions.debug
     }).onStepEnter(function(e) {
-        // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
-        tourState.tmpView = e.element.getAttribute("id");
-        setTimeout(function() {
-            if (tourState.tmpView !== tourState.view && mapAnimationEnabled()) {
-                enterView(tourState.tmpView);
-            }
-        }, 500);
+        if (mapAnimationEnabled()) {
+            tourState.tmpyView = e.element.getAttribute("id");
+            // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
+            setTimeout(function() {
+                if (tourState.tmpView !== tourState.view) {
+                    enterView(tourState.tmpView);
+                }
+            }, 500);
+        }
     }).onStepExit(function(e) {
-        // use timeout function to ensure that exitView is only called when a view is exited but no new view is entered
-        tourState.tmpView = null;
-        setTimeout(function() {
-            if (!tourState.tmpView && mapAnimationEnabled()) {
-                exitView();
-            }
-        }, 600);
+        if (mapAnimationEnabled()) {
+            // use timeout function to ensure that exitView is only called when a view is exited but no new view is entered
+            tourState.tmpView = null;
+            setTimeout(function() {
+                if (!tourState.tmpView && mapAnimationEnabled()) {
+                    exitView();
+                }
+            }, 600);
+        }
     });
 }
 
@@ -572,6 +576,7 @@ function toggleHideNonViewFeatures(viewId, hide) {
 
 function enterView(id) {
     if (tourState.view && tourViews.get(tourState.view).onlyShowViewFeatures) toggleHideNonViewFeatures(tourState.view, false);
+    if (window.innerWidth < mobileWidth && (tourState.view !== id)) map.invalidateSize();
     if (id) {
         tourState.view = id;
         let view = tourViews.get(id);
