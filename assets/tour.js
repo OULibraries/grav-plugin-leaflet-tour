@@ -417,7 +417,7 @@ if ($("#scrolly #scroll-text .step").length > 0) {
         debug: scrollamaOptions.debug
     }).onStepEnter(function(e) {
         if (mapAnimationEnabled()) {
-            tourState.tmpyView = e.element.getAttribute("id");
+            tourState.tmpView = e.element.getAttribute("id");
             // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
             setTimeout(function() {
                 if (tourState.tmpView !== tourState.view) {
@@ -430,7 +430,7 @@ if ($("#scrolly #scroll-text .step").length > 0) {
             // use timeout function to ensure that exitView is only called when a view is exited but no new view is entered
             tourState.tmpView = null;
             setTimeout(function() {
-                if (!tourState.tmpView && mapAnimationEnabled()) {
+                if (!tourState.tmpView) {
                     exitView();
                 }
             }, 600);
