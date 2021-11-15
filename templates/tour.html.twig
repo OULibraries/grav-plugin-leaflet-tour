@@ -98,7 +98,7 @@
             <h2>{{ view.header.title }}</h2>
             <button data-view="{{ viewId }}" id="show-view-{{ viewId }}" class="btn show-view-btn">Show View</button>
             {{ view.content|raw }}
-            {% set viewPopups = tourData.getViewPopups(viewId) %}
+            {% set viewPopups = tourData.getViewPopups(viewId, view.content) %}
             {% if viewPopups|length > 0 %}
             <ul class="list-unstyled">
                 {% for feature in viewPopups %}

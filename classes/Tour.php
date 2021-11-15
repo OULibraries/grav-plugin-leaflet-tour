@@ -270,17 +270,30 @@ class Tour {
 
     /**
      * Gets list of feature popups for creating view popup buttons
+     * @param string $vieweId - the id of the view, provided by this object previously and generated using the getCacheKey method
+     * @param string $content - the HTML content of the view - used to check for existing popup buttons to avoid repetition
      * @return array - [[id, name]]
      */
-    public function getViewPopups(string $viewId): array {
+    public function getViewPopups(string $viewId, string $content): array {
         $view = $this->views[$viewId];
         $showList = $view->get('list_popup_buttons') ?? $this->header->get('list_popup_buttons') ?? true;
         if (!$showList) return []; // no need if shortcodes are being provided instead
         if (empty($view) || empty($view->get('features')) || empty($this->getPopups())) return [];
+        // find out if any shortcodes are being provided anyhow
+        // note: popup buttons look like <button id="sc_btn_randomChars" onClick="openDialog('feature_id-popup', this) class="..." etc.>Feature Name</button>
+        $buttons = explode('onClick="openDialog(\'', $content); // find all buttons by searching for the openDialog onclick method (up to the quotation mark beginning the first argument, which is the feature id)
+        $popupButtons = [];
+        if (count($buttons) > 1) {
+            array_shift($buttons);
+            foreach ($buttons as $button) {
+                // find the id of the element (by separating content such that the id is in the first element of the array and everything after the openDialog onClick method is in the second element)
+                $popupButtons[] = explode('-popup\', this)"', $button)[0];
+            }
+        }
         $viewPopups = [];
         foreach (array_column($view->get('features'), 'id') as $featureId) {
             $popup = $this->getPopups()[$featureId];
-            if (!empty($popup)) $viewPopups[] = [
+            if (!empty($popup) && !in_array($featureId, $popupButtons)) $viewPopups[] = [
                 'id' => $popup['id'],
                 'name' => $popup['name'],
             ];
