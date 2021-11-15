@@ -221,6 +221,7 @@ class TourTest extends Test {
      *  - tour 0 view 0: no features
      *  - tour 0 view 1: 3 valid popups
      *      - variety of valid vs. invalid features (see PluginTest.php setViews for comments with more info)
+     *  - tour 0 view 2: 3 valid popups (same from view 1, since they will have just been tested for validity), must include points3_0
      */
     protected function testGetViewPopups() {
         $keys = array_keys($this->tour0->getViews());
@@ -228,6 +229,14 @@ class TourTest extends Test {
         $this->assertEmpty($this->tour0->getViewPopups($keys[0]));
         // view with features, some of which are valid, some of which have popups
         $this->assertSize($this->tour0->getViewPopups($keys[1]), 3);
+        // view with three valid popups, one of which has a button already provided by shortcode
+        $viewPopups = $this->tour0->getViewPopups($keys[2], 'A popup button: '.Tour::getViewPopup('points3_0', 'random_button_id', 'Random Feature Name'));
+        $this->assertSize($viewPopups, 2);
+        // the view included by the popup should be the one not included in the list
+        $viewPopups = array_column($viewPopups, 'id');
+        $this->assertFalse(in_array('points3_0', $viewPopups));
+        // check that one of the correct popups is included
+        $this->assertTrue(in_array('points1_2', $viewPopups));
     }
 
     /**

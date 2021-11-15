@@ -403,6 +403,11 @@ class PluginTest extends Test {
                 'lat'=>45, 'long'=>179.11,
                 'distance'=>9,
             ],
+            'features'=>[ // 3 valid features with popups (same from view 1)
+                ['id'=>'points3_0'], // valid - not show all, but in features list, has popup
+                ['id'=>'points1_2'], // valid - show all, not in features list, has popup
+                ['id'=>'points1_3'], // valid - show all, has popup
+            ],
         ]);
         $file->save();
 

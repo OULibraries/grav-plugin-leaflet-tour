@@ -274,7 +274,7 @@ class Tour {
      * @param string $content - the HTML content of the view - used to check for existing popup buttons to avoid repetition
      * @return array - [[id, name]]
      */
-    public function getViewPopups(string $viewId, string $content): array {
+    public function getViewPopups(string $viewId, string $content=''): array {
         $view = $this->views[$viewId];
         $showList = $view->get('list_popup_buttons') ?? $this->header->get('list_popup_buttons') ?? true;
         if (!$showList) return []; // no need if shortcodes are being provided instead
