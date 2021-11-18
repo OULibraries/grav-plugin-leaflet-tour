@@ -413,7 +413,7 @@ main {
     }
     // desktop
     @media (min-width: $tablet) {
-        #skip-map-link {
+        #skip-map-link, #back-to-view-link {
             position: fixed;
             left: calc(33% + 1rem); // column size
         }
@@ -534,7 +534,7 @@ footer {
             right: calc(60% + 1rem);
         }
         #map-wrapper {
-            #skip-map-link {
+            #skip-map-link, #back-to-view-link {
                 left: calc(40% + 1rem);
             }
             #map {

@@ -517,7 +517,10 @@ $(document).ready(function() {
     });
 
     // other buttons
-    $("#reset-view-btn").on("click", exitView);
+    $("#reset-view-btn").on("click", function(e) {
+        exitView();
+        $("#back-to-view-link").css("display", "none");
+    });
 
     $(".show-view-btn").on("click", function(e) {
         if (window.innerWidth < mobileWidth) { // constant from theme
@@ -525,7 +528,16 @@ $(document).ready(function() {
             switchToMap(this.getAttribute("id"));
             $("#map").focus();
         }
+        else {
+            // enable skip link (considered using toggle instead of css, but it doesn't actually work as a toggle)
+            $("#back-to-view-link").css("display", "initial").attr("href", "#"+this.getAttribute("data-view")+"-anchor");
+        }
         enterView(this.getAttribute("data-view"));
+    });
+    
+    // not really a button, but needs this anyway
+    $("#back-to-view-link").on("click", function(e) {
+        $(this).css("display", "none");
     });
 });
 

@@ -94,6 +94,7 @@
     {% for view in page.collection() if view.template == 'modular/view' %}
         {# Including all view logic here. It did something wonky when trying to put much of this in view.html.twig #}
         {% set viewId = tourData.getViewId(view) %}
+        <a class="view-anchor" id="{{ viewId}}-anchor"></a>
         <div class="step" id="{{ viewId }}">
             <h2>{{ view.header.title }}</h2>
             <button data-view="{{ viewId }}" id="show-view-{{ viewId }}" class="btn show-view-btn">Show View</button>
@@ -162,6 +163,7 @@
     {% endif %}
     <div id="map"> {# This is what leaflet will populate #}
     </div>
+    <a href="#" id="back-to-view-link" class="skip-link" style="display: none;">Return to narrative</a>
 </div>
 {% for feature in tourData.getPopups() %}
 {# Leaflet also does popups, but I found it harder to customize them for accessibility. These popups function as modal dialog windows. #}
