@@ -85,7 +85,7 @@ header {
         }
     }
     // phone styles
-    @media (max-width: $tablet - 1) {
+    @media (max-width: ($tablet - 1)) {
         #header-wrapper {
             height: 100px;
             width: 100%;
@@ -196,9 +196,15 @@ main {
     .step {
         padding: 1rem 0;
     }
-    @media (min-width: $tablet) {
+    @media (min-width: $tablet) { // tablet/desktop styles
         #back-to-top {
             right: calc(67% + 1rem); // column size
+        }
+        .view-anchor {
+            display: block;
+            position: relative;
+            top: -25vh;
+            visibility: hidden;
         }
     }
 }
@@ -380,7 +386,7 @@ main {
         }
     }
     // phone
-    @media (max-width: $tablet - 1) {
+    @media (max-width: ($tablet - 1)) {
         display: none;
         #skip-map-link {
             display: none;
@@ -487,7 +493,7 @@ footer {
 }
 
 /* Other mobile vs. desktop */
-@media(max-width: $tablet - 1) {
+@media(max-width: ($tablet - 1)) {
     .menu-hidden-mobile {
         header {
             float: right;
