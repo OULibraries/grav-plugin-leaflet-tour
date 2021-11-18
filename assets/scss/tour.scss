@@ -241,7 +241,8 @@ main {
             }
         }
         label {
-            @include flex();
+            display: flex;
+            align-items: center;
             cursor: pointer;
         }
         li>div {
