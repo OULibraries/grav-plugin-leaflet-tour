@@ -2,7 +2,7 @@ name: Leaflet Tour
 slug: leaflet-tour
 type: plugin
 version: 0.1.0
-description: In development
+description: in development
 icon: map-signs
 author:
   name: Theo Acker/University of Oklahoma Libraries
@@ -17,6 +17,8 @@ license: MIT
 
 dependencies:
   - { name: grav, version: '>=1.7.0' }
+  - { name: admin, version: '>=1.10.24' }
+  # - { name: shortcode-core, version: '>=5.0.7' }
 
 form:
   validation: loose
@@ -39,483 +41,410 @@ form:
                 0: PLUGIN_ADMIN.DISABLED
               validate:
                 type: bool
-              
+
             leaflet_tour:
               type: hidden
               default: true
               validate:
                 type: bool
 
-            data:
-              type: section
-              title: Data
-              underline: true
-            
-            data_files:
-              type: file
-              label: Data Files
-              description: Upload Javascript (GeoJSON) files created by Qgis2Web
-              style: vertical
-              destination: 'user://data/leaflet-tour/datasets/uploads'
-              multiple: true
-              limit: 25
-              accept:
-                - '.js'
-                - '.json'
-            
-            # data_update:
+            # wide_column:
             #   type: toggle
-            #   label: Update Datasets
-            #   description: "TODO: Explain exactly what this does. I don't think it will overwrite any of the changes that are currently possible to make. It does recreate the json and the dataset page. At some point there may be more configurable update options."
+            #   label: Wide Narrative Column
+            #   description: If toggled, will change the narrative width from 33% to 40% of the page width.
             #   highlight: 1
             #   default: 0
+            #   options:
+            #     0: PLUGIN_ADMIN.DISABLED
+            #     1: PLUGIN_ADMIN.ENABLED
+            #   validate:
+            #     type: bool
+
+            # map_on_right:
+            #   type: toggle
+            #   label: Map Located on the Right
+            #   description: If toggled, map will be on the right side of the page, with narrative column on the left. Disable this setting to switch their positions.
+            #   highlight: 1
+            #   default: 1
             #   options:
             #     1: PLUGIN_ADMIN.ENABLED
             #     0: PLUGIN_ADMIN.DISABLED
             #   validate:
             #     type: bool
-            
-            # datasets:
-            #   type: list
-            #   label: Dataset Information
-            #   # description: TODO
+
+            # show_map_location_in_url:
+            #   type: toggle
+            #   label: Show Map Location in URL
+            #   description: If toggled, the current zoom level and center coordinates of the map location will be included in the page URL at the top of a given user's browser.
+            #   highlight: 1
+            #   default: 0
+            #   options:
+            #     0: PLUGIN_ADMIN.DISABLED
+            #     1: PLUGIN_ADMIN.ENABLED
+            #   validate:
+            #     type: bool
+
+            # data_files:
+            #   type: file
+            #   label: Data Files
+            #   description: Upload GeoJSON files. Read the documentation for more details on what files to upload.
             #   style: vertical
-            #   btnLabel: Add Dataset Info
-            #   fields:
-            #     .file:
-            #       type: select
-            #       label: Select the Dataset
-            #       data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetFiles'
-            #       validate:
-            #         required: true
-            #     .name_prop:
-            #       type: text
-            #       label: Feature Name Property
-            #       description: The property in the data file that will serve as the feature name.
-            
-            markers:
-              type: section
-              text: Upload images to use as marker icons for tours. You can also upload shadows, though you do not need shadows to use the icons.
+            #   destination: 'user://data/leaflet-tour/datasets/uploads'
+            #   multiple: true
+            #   limit: 40
+            #   accept:
+            #     - '.js'
+            #     - '.json'
 
-            marker_files:
-              type: file
-              label: Markers
-              style: vertical
-              destination: 'user://data/leaflet-tour/images/markers'
-              multiple: true
-              accept:
-                - image/*
+            # icon_files:
+            #   type: file
+            #   label: Image Marker Files
+            #   description: Upload images to use as marker icons for tours. You can also upload shadows to make your icons cast shadows on the map.
+            #   style: vertical
+            #   destination: 'user://data/leaflet-tour/images/icons'
+            #   multiple: true
+            #   accept:
+            #     - image/*
 
-            shadow_files:
-              type: file
-              label: Marker Shadows
-              style: vertical
-              destination: 'user://data/leaflet-tour/images/markerShadows'
-              multiple: true
-              accept:
-                - image/*
+            # popup_files:
+            #   type: file
+            #   label: Popup Content Images
+            #   description: "Upload images to use in feature popup content. Reference them in markdown by typing `image://` in front of the image name. Example: `![Image alt text](image://image_name.jpg)`"
+            #   markdown: true
+            #   style: vertical
+            #   destination: 'image://'
+            #   multiple: true
+            #   limit: 500
+            #   accept:
+            #     - image/*
 
-            advanced:
-              type: fieldset
-              title: Advanced
-              icon: cog
-              collapsed: true
-              collapsible: true
-              fields:
-                
-                wide_column:
-                  type: toggle
-                  label: Wide Narrative Column
-                  description: "If toggled, will change the narrative width from 33% to 40% of the page width."
-                  highlight: 1
-                  default: 0
-                  options:
-                    1: PLUGIN_ADMIN.ENABLED
-                    0: PLUGIN_ADMIN.DISABLED
-                  validate:
-                    type: bool
-
-                show_map_location_in_url:
-                  type: toggle
-                  label: Show Map Location in URL
-                  description: "Includes the zoom level and center coordinates of the map location in the URL, allowing users to share a link of exactly where they are looking."
-                  highlight: 1
-                  default: 1
-                  options:
-                    1: PLUGIN_ADMIN.ENABLED
-                    0: PLUGIN_ADMIN.DISABLED
-                  validate:
-                    type: bool
-
-                # TODO: mention default list items and why they are there
-                footer_attribution_section:
-                  type: display
-                  content: "### Footer Attribution"
-                  markdown: true
-                  style: vertical
-
-                attribution_list:
-                  type: list
-                  label: Additional Resources
-                  description: Provide non-basemap references here.
-                  btnLabel: Add Resource
-                  collapsed: true
-                  style: vertical
-                  fields:
-                    .text:
-                      type: text
-                      label: Attribution Text
-                      validate:
-                        required: true
-                    .url:
-                      type: text
-                      label: Attribution URL
-                
-                attribution_html:
-                  type: list
-                  label: Extra Attribution
-                  description: Provide resource attributions here instead if you have HTML code for the attribution.
-                  btnLabel: Add Resource
-                  collapsed: true
-                  style: vertical
-                  fields:
-                    .text:
-                      type: text
-                      label: HTML Code
-                      validate:
-                        required: true
+            # attribution:
+            #   type: editor
+            #   label: Default Tour Attribution
+            #   description: Provide some default text to include in the tour footer. Can be overridden by individual tours.
+            #   validate:
+            #     type: textarea
         
-        basemaps_tab:
+        basemaps:
           type: tab
           title: Basemaps
           fields:
 
-            tileserver_section:
-              type: section
-              title: Tile Server
-              text: Choose one of the tile servers from the dropdown, or input the URL and attribution info for a tile server.
-              underline: true
-            
-            tile_server_select:
-              type: select
-              label: Select a Tile Server
-              default: 'none'
-              data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServers'
+            # tile_server_section:
+            #   type: section
+            #   label: Tile Server
+            #   text: Choose one of the tile servers from the dropdown menu, or input the URL and attribution for a tile server of your choice.
+            #   underline: true
 
-            tile_server.url:
-              type: text
-              label: Tile Server URL
-              default: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-              validate:
-                required: true
-            
-            tile_server.attribution_text:
-              type: text
-              label: Tile Server Attribution
-              description: This text will be displayed in the footer.
-              default: "ArcGIS World"
-            
-            tile_server.attribution_url:
-              type: text
-              label: Tile Server Attribution URL
-              description: If provided, the attribution will become a link to this URL.
-              default: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer"
+            # tile_server_select:
+            #   type: select
+            #   label: Select a Tile Server
+            #   default: 'stamenWatercolor'
+            #   data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServerList'
 
-            # additional basemap images
-            basemap_images:
-              type: section
-              title: Additional Basemap Images
-              underline: true
-            
-            basemap_files:
-              type: file
-              label: Custom Basemap Images
-              description: Upload any custom basemap images here to use in tours/views. If you need to upload a basemap manually you can add it to the theme basemaps folder. You will need to provide additional information in the list below before you will be able to use an uploaded image.
-              style: vertical
-              destination: 'user://data/leaflet-tour/images/basemaps'
-              multiple: true
-              accept:
-                - image/*
-            
-            basemaps:
-              type: list
-              label: Basemap Information
-              style: vertical
-              collapsed: true
-              btnLabel: Add Basemap Info
-              fields:
-                .file:
-                  type: filepicker
-                  label: Select the Basemap Image
-                  preview_images: true
-                  folder: 'user://data/leaflet-tour/images/basemaps'
-                  # TODO: accept: - image/* ?
-                  validate:
-                    required: true
-                .bounds_section:
-                  type: section
-                  title: Bounds
-                  underline: false
-                # TODO: Cannot currently use columns in a list in a blueprint... weird
-                # .bounds_cols:
-                #   type: columns
-                #   fields:
-                #     .bounds_col1:
-                #       type: column
-                #       fields:
-                .bounds.north:
-                  type: number
-                  label: North
-                  validate:
-                    required: true
-                    min: -90
-                    max: 90
-                    step: .0000001
-                .bounds.south:
-                  type: number
-                  label: South
-                  validate:
-                    required: true
-                    min: -90
-                    max: 90
-                    step: .0000001
-                    # .bounds_col2:
-                    #   type: column
-                    #   fields:
-                .bounds.east:
-                  type: number
-                  label: East
-                  validate:
-                    required: true
-                    min: -180
-                    max: 180
-                    step: .0000001
-                .bounds.west:
-                  type: number
-                  label: West
-                  validate:
-                    required: true
-                    min: -180
-                    max: 180
-                    step: .0000001
-                .zoom_section:
-                  type: section
-                  title: "Zoom Level"
-                  underline: false
-                # .zoom_cols:
-                #   type: columns
-                #   fields:
-                #     .zoom_col1:
-                #       type: column
-                #       fields:
-                .zoom_max:
-                  type: number
-                  label: Max Zoom
-                  description: Higher zoom levels will go back to the default map.
-                  default: 16
-                  validate:
-                    min: 0
-                    max: 28
-                    step: 1
-                    # .zoom_col2:
-                    #   type: column
-                    #   fields:
-                .zoom_min:
-                  type: number
-                  label: Min Zoom
-                  description: Lower zoom levels will go back to the default map.
-                  default: 8
-                  validate:
-                    min: 0
-                    max: 28
-                    step: 1
-                .attribution_section:
-                  type: section
-                  title: Attribution
-                  underline: false
-                # .attribution_cols:
-                #   type: columns
-                #   fields:
-                #     .attribution_col1:
-                #       type: column
-                #       fields:
-                .attribution_text:
-                  type: text
-                  label: Attribution
-                  description: This text will be displayed in the footer.
-                    # .attribution_col2:
-                    #   type: column
-                    #   fields:
-                .attribution_url:
-                  type: text
-                  label: Attribution URL
-                  description: If provided, the attribution will become a link to this URL.
-        
-        images:
-          type: tab
-          title: Popup Images
-          fields:
-
-            popup_image_files:
-              type: file
-              label: Image Upload
-              limit: 500
-              description: "These files will be added to the user/images folder. Reference them using Markdown by typing 'image://' in front of the image name. e.g. ![Image alt text](image://image_name.jpg)"
-              style: vertical
-              destination: 'image://'
-              multiple: true
-              accept:
-                - image/*
-
-        update:
-          type: tab
-          title: Dataset Update
-          fields:
-
-            update.msg:
-              type: textarea
-              readonly: true
-              label: Update Status
-              default: Upload a file, select options, and save to begin.
-              style: vertical
-              rows: 7
-
-            update.status:
-              type: hidden
-              default: none
-            
-            update_cols:
-              type: columns
-              fields:
-                col1:
-                  type: column
-                  fields:
-            
-                    update.confirm:
-                      type: toggle
-                      label: Confirm Update
-                      highlight: 1
-                      default: 0
-                      options:
-                        1: PLUGIN_ADMIN.ENABLED
-                        0: PLUGIN_ADMIN.DISABLED
-                      validate:
-                        type: bool
-                    
-                col2:
-                  type: column
-                  fields:
-            
-                    update.cancel:
-                      type: toggle
-                      label: Cancel Update
-                      highlight: 1
-                      default: 0
-                      options:
-                        1: PLUGIN_ADMIN.ENABLED
-                        0: PLUGIN_ADMIN.DISABLED
-                      validate:
-                        type: bool
-            
-            update.file:
-              type: file
-              label: Upload File with Update Information
-              style: vertical
-              multiple: false
-              destination: 'user://data/leaflet-tour/datasets/update'
-              accept:
-                - '.js'
-                - '.json'
-            
-            update.dataset:
-              type: select
-              label: Select the Dataset to Update
-              data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetFilesNone'
-            
-            update.dataset_prop:
-              type: select
-              label: Select a Property from the Dataset
-              # TODO: Why? Will connect to property chosen from the update file. Note that all properties are listed, not just the ones from the dataset?
-              data-options@: 'Grav\Plugin\LeafletTourPlugin::getAllPropertiesList'
-            
-            update_cols2:
-              type: columns
-              fields:
-                col1:
-                  type: column
-                  fields:
-
-                    update.same_prop:
-                      type: toggle
-                      label: Use the same property in the update file?
-                      highlight: 1
-                      default: 1
-                      options:
-                        1: PLUGIN_ADMIN.ENABLED
-                        0: PLUGIN_ADMIN.DISABLED
-                      validate:
-                        type: bool
-                    
-                col2:
-                  type: column
-                  fields:
-
-                    update.file_prop:
-                      type: text
-                      label: Property from Update File
-                    
-            update.type:
-              type: select
-              label: Update Type
-              options:
-                standard: Standard
-                remove: Remove Specified Features
-                replace: Total Replacement
-            
-            standard_update:
-              type: section
-              title: Standard Update Options
-
-            update.modify_existing:
-              type: toggle
-              label: Update Existing Features
-              highlight: 1
-              default: 1
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
-            
-            update.add_new:
-              type: toggle
-              label: Add New Features
-              highlight: 1
-              default: 1
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
-
-            update.remove_empty:
-              type: toggle
-              label: Remove Missing Features
-              highlight: 1
-              default: 0
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
+            # tile_server_url:
+            #   type: text
+            #   label: Custom Tile Server URL
+            #   description: Make sure to select "custom" for the tile server to use this field.
               
-            update.overwrite_blank:
-              type: toggle
-              label: Overwrite existing content with blank fields
-              highlight: 1
-              default: 0
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
+            # tile_server_attribution:
+            #   type: text
+            #   label: Custom Tile Server Attribution
+            #   description: Add some HTML to include in the tour footer when the custom tile server provided above is used.
+
+            # basemap_section:
+            #   type: section
+            #   label: Additional Basemap Images
+            #   underline: true
+
+            # basemap_files:
+            #   type: file
+            #   label: Basemap Image Files
+            #   description: Upload any custom basemap images here for use in tours or views. After saving, you will need to reload this page and add additional information in the basemap information list below before you will be able to use the uploaded image.
+            #   style: vertical
+            #   destination: 'user://data/leaflet-tour/images/basemaps'
+            #   multiple: true
+            #   limit: 50
+            #   accept:
+            #     - image/*
+
+            # basemap_icon_files:
+            #   type: file
+            #   label: Basemap Icons
+            #   description: Upload smaller icons to associate with specific basemaps in order to customize the basemap image displayed in the map legend.
+            #   style: vertical
+            #   destination: 'user://data/leaflet-tour/images/basemaps/icons'
+            #   multiple: true
+            #   limit: 50
+            #   accept:
+            #     - image/*
+
+            # basemap_info:
+            #   type: list
+            #   label: Basemap Information
+            #   style: vertical
+            #   collapsed: true
+            #   btnLabel: Add Basemap Info
+            #   fields:
+
+            #     .file:
+            #       type: filepicker
+            #       label: Select Basemap Image (required)
+            #       preview_images: true
+            #       folder: 'user://data/leaflet-tour/images/basemaps'
+            #       # TODO: accept: - image/* ??
+            #       validate:
+            #         required: true
+
+            #     # .name:
+            #     #   type: text
+            #     #   label: Basemap Name
+            #     #   description: Provide a name to reference the basemap with instead of the image file name. If no legend description is provided, this name will also be used to describe the basemap in a map legend.
+
+            #     # .legend:
+            #     #   type: text
+            #     #   label: Legend Description
+                  
+            #     # .icon:
+            #     #   type: filepicker
+            #     #   label: Basemap Icon
+            #     #   description: Choose an icon to represent the basemap in a map legend. If no icon is provided, a small version or a portion of the original basemap will be used instead.
+            #     #   preview_images: true
+            #     #   folder: 'user://data/leaflet-tour/images/basemaps/icons'
+            #     #   # TODO: accept?
+
+            #     # .attribution:
+            #     #   type: text
+            #     #   label: Basemap Attribution
+            #     #   description: Add some HTML to include in the tour footer when the basemap is used.
+
+            #     .bounds_section:
+            #       type: section
+            #       title: Bounds (required)
+            #       text: Provide latitude and longitude values (in degrees) to position the basemap. Do not use more than seven decimal places.
+            #       underline: false
+                  
+            #     .bounds_cols:
+            #       type: columns
+            #       fields:
+            #         .col1:
+            #           type: column
+            #           fields:
+
+            #             .bounds.north:
+            #               type: number
+            #               label: North
+            #               validate:
+            #                 required: true
+            #                 min: -90
+            #                 max: 90
+            #                 step: .0000001
+
+            #             .bounds.south:
+            #               type: number
+            #               label: South
+            #               validate:
+            #                 required: true
+            #                 min: -90
+            #                 max: 90
+            #                 step: .0000001
+            #         .col2:
+            #           type: column
+            #           fields:
+
+            #             .bounds.east:
+            #               type: number
+            #               label: East
+            #               validate:
+            #                 required: true
+            #                 min: -180
+            #                 max: 180
+            #                 step: .0000001
+
+            #             .bounds.west:
+            #               type: number
+            #               label: West
+            #               validate:
+            #                 required: true
+            #                 min: -180
+            #                 max: 180
+            #                 step: .0000001
+
+            #     .zoom_section:
+            #       type: section
+            #       title: Zoom Levels
+            #       text: Define the maximum and minimum zoom levels (from 0 to 28) at which this basemap can be shown. 
+            #       underline: false
+
+            #     .zoom_cols:
+                  type: columns
+                  fields:
+                    col1:
+                      type: column
+                      fields:
+
+                        .max_zoom:
+                          type: number
+                          label: Maximum Zoom
+                          description: Zooming in closer will remove the basemap from the map.
+                          default: 16
+                          validate:
+                            min: 0
+                            max: 28
+                            step: 1
+                    
+                    col2:
+                      type: column
+                      fields:
+
+                        .min_zoom:
+                          type: number
+                          label: Minimum Zoom
+                          description: Zooming out farther will remove the basemap from the map.
+                          default: 8
+                          validate:
+                            min: 0
+                            max: 28
+                            step: 1
+
+        # update:
+        #   type: tab
+        #   title: Update Dataset
+        #   fields:
+
+        #     update.msg:
+        #       type: textarea
+        #       label: Update Status
+        #       readonly: true
+        #       default: Upload a file, select options, save, and reload the page to begin.
+        #       style: vertical
+        #       rows: 7
+
+        #     update.status:
+        #       type: hidden
+        #       default: 'none'
+
+        #     update_cols:
+        #       type: columns
+        #       fields:
+        #         col1:
+        #           type: column
+        #           fields:
+
+        #             update.confirm:
+        #               type: toggle
+        #               label: Confirm Update
+        #               highlight: 1
+        #               default: 0
+        #               options:
+        #                 0: PLUGIN_ADMIN.DISABLED
+        #                 1: PLUGIN_ADMIN.ENABLED
+        #               validate:
+        #                 type: bool
+
+        #         col2:
+        #           type: column
+        #           fields:
+
+        #             update.cancel:
+        #               type: toggle
+        #               label: Cancel Update
+        #               highlight: 1
+        #               default: 0
+        #               options:
+        #                 0: PLUGIN_ADMIN.DISABLED
+        #                 1: PLUGIN_ADMIN.ENABLED
+        #               validate:
+        #                 type: bool
+
+        #     update.file:
+        #       type: file
+        #       label: File for Update
+        #       description: Upload the file containing updates to apply to a dataset.
+        #       style: vertical
+        #       destination: 'user://data/leaflet-tour/datasets/update'
+        #       multiple: false
+        #       accept:
+        #         - '.js'
+        #         - '.json'
+
+        #     update.dataset:
+        #       type: select
+        #       label: Dataset to Update
+        #       data-options@: ['Grav\Plugin\LeafletTourPlugin::getDatasetList', true]
+
+        #     update.dataset_prop:
+        #       type: select
+        #       label: Property from Dataset
+        #       description: Select a property from the dataset that can be used to match features in the dataset to features in the dataset file. This is required for everything but a total replacement update, and is still recommended for most total replacement updates. Read the documentation for a complete description.
+        #       data-options@: 'Grav\Plugin\LeafletTourPlugin::getUpdatePropertiesList'
+
+        #     update.file_prop:
+        #       type: text
+        #       label: Property from File
+        #       description: Input the property from the uploaded file that corresponds to the dataset property. If you have selected coordinates or none, or if the property names are the same, leave this field empty.
+
+        #     update_info:
+        #     # TODO: Best info to put here...
+        #       type: display
+        #       label: Choosing an Update Type
+        #       content: "- Standard: Allows modifying, adding, and/or removing features.\r\n- Removal: Removes any features found in the upload from the dataset.\r\n- Replacement: Replaces all features in the dataset with the features in the upload.\r\n\r\nRead the documentation for a more detailed description of the update types."
+        #       style: vertical
+        #       markdown: true
+
+        #     update.type:
+        #       type: select
+        #       label: Update Type
+        #       options:
+        #         standard: Standard
+        #         removal: Removal
+        #         replacement: Replacement
+
+        #     standard_update_section:
+        #       type: section
+        #       title: Standard Update Options
+        #       underline: false
+
+        #     update.modify:
+        #       type: toggle
+        #       label: Modify Existing Features
+        #       highlight: 1
+        #       default: 1
+        #       options:
+        #         1: PLUGIN_ADMIN.ENABLED
+        #         0: PLUGIN_ADMIN.DISABLED
+        #       validate:
+        #         type: bool
+
+        #     update.add:
+        #       type: toggle
+        #       label: Add New Features
+        #       highlight: 1
+        #       default: 1
+        #       options:
+        #         1: PLUGIN_ADMIN.ENABLED
+        #         0: PLUGIN_ADMIN.DISABLED
+        #       validate:
+        #         type: bool
+
+        #     update.remove:
+        #       type: toggle
+        #       label: Remove Missing Features
+        #       highlight: 1
+        #       default: 0
+        #       options:
+        #         0: PLUGIN_ADMIN.DISABLED
+        #         1: PLUGIN_ADMIN.ENABLED
+        #       validate:
+        #         type: bool
+
+        #     update.overwrite:
+        #       type: toggle
+        #       label: Overwrite Empty Properties
+        #       highlight: 1
+        #       default: 0
+        #       options:
+        #         0: PLUGIN_ADMIN.DISABLED
+        #         1: PLUGIN_ADMIN.ENABLED
+        #       validate:
+        #         type: bool

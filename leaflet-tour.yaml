@@ -1,11 +1,6 @@
 enabled: true
-attribution_list:
-  -
-    text: Leaflet
-    url: https://leafletjs.com/
-  -
-    text: qgis2web
-    url: https://github.com/tomchadwin/qgis2web
-  -
-    text: QGIS
-    url: https://qgis.org/
+leaflet_tour: true
+# wide_column: false
+# map_on_right: true
+# show_map_location_in_url: false
+tile_server_select: 'stamenWatercolor'
