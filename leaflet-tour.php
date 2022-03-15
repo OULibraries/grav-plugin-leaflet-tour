@@ -158,7 +158,7 @@ class LeafletTourPlugin extends Plugin {
      */
     public static function getDatasetPropertyList(bool $include_none = false): array {
         if (($file = Utils::getDatasetFile()) && $file->exists()) {
-            $dataset = LeafletTour::getDatasets()[$file->header()->get('id')];
+            $dataset = LeafletTour::getDatasets()[$file->header()['id']];
             $properties = $dataset->getProperties();
             $list = array_combine($properties, $properties);
             if ($include_none) $list = array_merge(['none' => 'None'], $list);
