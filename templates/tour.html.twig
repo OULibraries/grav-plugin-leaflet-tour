@@ -6,13 +6,13 @@
 {% block starting_scripts %}
     {{ parent() }}
     {# Set some important map data #}
-    {# <script>
+    <script>
         const tour_options = {{ tour.getTourOptions()|json_encode|raw }};
         let tour_basemaps = new Map(Object.entries({{ tour.getBasemapOptions()|json_encode|raw }}));
         let tour_datasets = new Map(Object.entries({{ tour.getDatasetOptions()|json_encode|raw }}));
         const tour_features_json = {{ tour.getFeatureOptions()|json_encode|raw }};
-        let tour_views = new Map(Object.entries({{ tour.getViewOptions()|json_encode|raw }}));
-    </script> #}
+        // let tour_views = new Map(Object.entries({{ tour.getViewOptions()|json_encode|raw }}));
+    </script>
 {% endblock starting_scripts %}
 
 {# Allow theme CSS to overwrite Leaflet CSS, and allow tour-specific CSS to overwrite all other CSS. #}

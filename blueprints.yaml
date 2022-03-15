@@ -84,17 +84,17 @@ form:
             #   validate:
             #     type: bool
 
-            # data_files:
-            #   type: file
-            #   label: Data Files
-            #   description: Upload GeoJSON files. Read the documentation for more details on what files to upload.
-            #   style: vertical
-            #   destination: 'user://data/leaflet-tour/datasets/uploads'
-            #   multiple: true
-            #   limit: 40
-            #   accept:
-            #     - '.js'
-            #     - '.json'
+            data_files:
+              type: file
+              label: Data Files
+              description: Upload GeoJSON files. Read the documentation for more details on what files to upload.
+              style: vertical
+              destination: 'user://data/leaflet-tour/datasets/uploads'
+              multiple: true
+              limit: 40
+              accept:
+                - '.js'
+                - '.json'
 
             # icon_files:
             #   type: file

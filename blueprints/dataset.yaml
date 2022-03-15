@@ -1,0 +1,172 @@
+title: Dataset
+extends@: default
+
+form:
+  fields:
+    tabs:
+      type: tabs
+      active: 1
+      fields:
+        # Unset default fields - we don't need most of them because this isn't really a page
+        content:
+          unset@: true
+        advanced:
+          unset@: true
+        options:
+          unset@: true
+          type: tab
+          title: Options
+          fields:
+
+            header.routable:
+              type: hidden
+              default: 0
+
+            header.visible:
+              type: hidden
+              default: 0
+
+            cols:
+              type: columns
+              fields:
+                col1:
+                  type: column
+                  fields:
+
+                    general_section:
+                      type: section
+                      title: General
+                      underline: true
+
+                    header.id:
+                      type: hidden
+                      default: 'tmp'
+                      validate:
+                        required: true
+
+                    header.feature_type:
+                      type: text
+                      label: Dataset Feature Type
+                      readonly: true
+                      validate:
+                        required: true
+                        
+                    header.title:
+                      type: text
+                      label: Dataset Name
+
+                    # header.attribution:
+                    #   type: text
+                    #   label: Dataset Attribution
+                    #   description: Add some HTML to include in the tour footer when the dataset is used.
+
+                col2:
+                  type: column
+                  fields:
+
+                    info_section:
+                      type: section
+                      title: Info
+                      underline: true
+
+                    # TODO: Better info
+                    info:
+                      type: display
+                      content: This page was automatically created. Use the various tabs provided to customize your dataset. Please do not enter expert mode to change options that are read only, as changing these may break aspects of this plugin.
+
+            # legend_section:
+            #   type: display
+            #   content: "## Legend"
+            #   markdown: true
+            #   style: vertical
+
+            # header.legend.text:
+            #   type: text
+            #   label: Description for Legend
+
+            # header.legend.summary:
+            #   type: text
+            #   label: Legend Summary
+            #   description: Optional shorter version of the legend description. If provided, this will be used instead of the legend description as additional labelling for each feature on the map for users of assistive technology.
+
+            # # TODO: Include?
+            # header.legend.symbol_alt:
+            #   type: text
+            #   label: Legend Symbol Alt Text
+            #   description: A brief description of the icon/symbol/shape used for each feature.
+
+        features:
+          type: tab
+          title: Features
+          fields:
+
+            header.name_property:
+              type: select
+              label: Name Property
+              description: The property in the data file that contains feature names.
+              data-options@: ['Grav\Plugin\LeafletTourPlugin::getDatasetPropertyList', true]
+
+            # header.properties:
+            #   type: selectize
+            #   label: Feature Properties
+            #   description: A list of all properties available for features in the dataset. Anything added will be automatically added as an empty property to each feature when the page is saved. To remove properties that currently have data, destructive edits must be enabled.
+            #   validate:
+            #     type: commalist
+
+            # header.popup_props:
+            #   type: select
+            #   label: Add Properties to Popup Content
+            #   description: All properties selected here will automatically be added to popup content for features. If popup content is provided in the editor (either here in the dataset config or in the tour page), the properties will be listed above that content. If a feature does not have values for a given selected property, that property will not be included.
+            #   data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetPropertyList'
+            #   multiple: true
+            #   validate:
+            #     type: array
+
+            header.features:
+              type: list
+              label: Features
+              description: Customize feature name and popup content.
+              style: vertical
+              collapsed: true
+              btnLabel: Add New Feature
+              fields:
+
+                .id:
+                  type: hidden
+                  validate:
+                    required: true
+
+                .name:
+                  type: text
+                  label: Name
+                  description: The current value for the feature name. To change this, modify the custom name or the value of the feature's name property.
+                  readonly: true
+
+                # .custom_name:
+                #   type: text
+                #   label: Custom Name
+
+                # .hide:
+                #   type: toggle
+                #   label: Hide Feature
+                #   description: Enable this setting to automatically hide the feature when the dataset is added to tours. The feature can still be added to the tour feature list, but will otherwise not be included in the tour.
+                #   highlight: 1
+                #   default: 0
+                #   options:
+                #     0: PLUGIN_ADMIN.DISABLED
+                #     1: PLUGIN_ADMIN.ENABLED
+                #   validate:
+                #     type: bool
+
+                # .popup_content:
+                #   type: editor
+                #   label: Popup Content
+                #   description: If this field is blank and the feature has no properties selected to automatically add, then the feature will not have a popup window. Note that current content may not show up until you click inside the text area.
+                #   validate:
+                #     type: textarea
+                    
+                # # TODO: .properties:
+                # .properties:
+                #   type: fieldset
+                #   label: Properties
+                #   data-fields@: 'Grav\Plugin\LeafletTourPlugin::getFeaturePropertiesFields'

@@ -13,6 +13,10 @@ form:
           ordering@: content
           fields:
 
+            header.id:
+              type: hidden
+              default: 'tmp'
+
             TODO: Does fieldset really need header in front of it?
             header.datasets_fieldset:
               type: fieldset
@@ -21,21 +25,21 @@ form:
               collapsed: false
               fields:
 
-            #     header.datasets:
-            #       type: list
-            #       title: Dataset List
-            #       size: long
-            #       style: vertical
-            #       collapsed: true
-            #       btnLabel: Add Dataset
-            #       fields:
+                header.datasets:
+                  type: list
+                  title: Dataset List
+                  size: long
+                  style: vertical
+                  collapsed: true
+                  btnLabel: Add Dataset
+                  fields:
 
-            #         .id:
-            #           type: select
-            #           label: Select Dataset (required)
-            #           data-options@: ['Grav\Plugin\LeafletTourPlugin::getDatasetList', false]
-            #           validate:
-            #             required: true
+                    .id:
+                      type: select
+                      label: Select Dataset (required)
+                      data-options@: ['Grav\Plugin\LeafletTourPlugin::getDatasetList', false]
+                      validate:
+                        required: true
 
             #         .include_all:
             #           type: toggle
@@ -273,7 +277,7 @@ form:
                 #   validate:
                 #     type: textarea
 
-                # tile_server_section:
+                # tile_server_section: TODO: array
                 #   type: section
                 #   title: Tile Server and Basemaps
                 #   text: Choose one of the tile servers from the dropdown menu, or input the URL and attribution for a tile server of your choice. You can also select additional basemaps to add. The tile server options will override the defaults from the plugin configuration.

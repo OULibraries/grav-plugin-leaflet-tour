@@ -9,8 +9,8 @@ use Grav\Common\Plugin;
 use RocketTheme\Toolbox\Event\Event;
 // use RocketTheme\Toolbox\File\MarkdownFile;
 // use Grav\Plugin\LeafletTour\Dataset;
-// use Grav\Plugin\LeafletTour\LeafletTour;
-// use Grav\Plugin\LeafletTour\Utils;
+use Grav\Plugin\LeafletTour\LeafletTour;
+use Grav\Plugin\LeafletTour\Utils;
 // use Grav\Plugin\LeafletTour\Feature;
 
 /**
@@ -70,9 +70,9 @@ class LeafletTourPlugin extends Plugin {
     /**
      * Add a LeafletTour object as a variable that can be accessed via twig (necessary for calling certain functions from templates).
      */
-    // public function onTwigSiteVariables() {
-    //     $this->grav['twig']->twig_vars['leaflet_tour'] = LeafletTour::instance();
-    // }
+    public function onTwigSiteVariables() {
+        $this->grav['twig']->twig_vars['leaflet_tour'] = new LeafletTour();
+    }
     
     /**
      * Add templates to admin panel template list
@@ -101,28 +101,27 @@ class LeafletTourPlugin extends Plugin {
     /**
      * Handle page and plugin data on save. LeafletTour object will deal with this.
      */
-    // public function onAdminSave(Event $event) {
-    //     $obj = $event['object'];
-    //     $plugin = LeafletTour::instance();
-    //     // plugin config has method 'get' and should have item 'leaflet_tour'
-    //     if (method_exists($obj, 'get') && $obj->get('leaflet_tour')) $plugin->handlePluginConfigSave();
-    //     // page config has method 'template'
-    //     else if (method_exists($obj, 'template')) {
-    //         switch ($obj->template()) {
-    //             case 'shape_dataset':
-    //             case 'point_dataset':
-    //                 $plugin->handleDatasetPageSave($obj);
-    //                 break;
-    //             case 'tour':
-    //                 $plugin->handleTourPageSave($obj);
-    //                 break;
-    //             case 'modular/view':
-    //                 $plugin->handleViewPageSave($obj);
-    //                 break;
-    //         }
-    //         // TODO: filter header?
-    //     }
-    // }
+    public function onAdminSave(Event $event) {
+        $obj = $event['object'];
+        // plugin config has method 'get' and should have item 'leaflet_tour'
+        if (method_exists($obj, 'get') && $obj->get('leaflet_tour')) LeafletTour::handlePluginConfigSave($obj);
+        // page config has method 'template'
+        else if (method_exists($obj, 'template')) {
+            switch ($obj->template()) {
+                // case 'shape_dataset':
+                case 'point_dataset':
+                    LeafletTour::handleDatasetPageSave($obj);
+                    break;
+                // case 'tour':
+                //     $plugin->handleTourPageSave($obj);
+                //     break;
+                // case 'modular/view':
+                //     $plugin->handleViewPageSave($obj);
+                //     break;
+            }
+            // TODO: filter header?
+        }
+    }
 
     /**
      * Pass to LeafletTour object to handle page data on deletion.
@@ -151,4 +150,19 @@ class LeafletTourPlugin extends Plugin {
     // public static function getTileServerList(): array {
     //     return [];
     // }
+
+    /**
+     * Get all properties for a given dataset. Must be called from a dataset page blueprint!
+     * - Include option for 'none' (optional, useful for something like name_prop where this might be desirable)
+     * @return array [$prop => $prop] TODO: try simple w/strings
+     */
+    public static function getDatasetPropertyList(bool $include_none = false): array {
+        if (($file = Utils::getDatasetFile()) && $file->exists()) {
+            $dataset = LeafletTour::getDatasets()[$file->header()->get('id')];
+            $properties = $dataset->getProperties();
+            $list = array_combine($properties, $properties);
+            if ($include_none) $list = array_merge(['none' => 'None'], $list);
+        }
+        return $list ?? [];
+    }
 }

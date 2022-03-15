@@ -1,0 +1,349 @@
+<?php
+
+namespace Grav\Plugin\LeafletTour;
+
+use Grav\Common\Grav;
+use RocketTheme\Toolbox\File\MarkdownFile;
+
+class Dataset {
+
+    /**
+     * File storing the dataset, typically created on dataset initialization, never modified once set
+     */
+    private ?MarkdownFile $file = null;
+    /**
+     * Optional value to enable deleting unnecessary files if dataset is deleted, only set in fromJson
+     */
+    private ?string $upload_file_path = null;
+    /**
+     * Unique identifier, created on dataset initialization using the upload file name, never modified once set
+     */
+    private ?string $id = null;
+    /**
+     * Identifies the dataset to users
+     */
+    private ?string $title = null;
+    /**
+     * Point, LineString, MultiLineString, Polygon, or MultiPolygon, set in fromJson, never modified
+     */
+    private ?string $feature_type = null;
+    /**
+     * [$id => Feature, ...], the features contained by the dataset, must have valid coordinates for the dataset feature_type, never directly set, but can be updated
+     */
+    private array $features = [];
+    /**
+     * A running total of all dataset features, includes features that have been removed, used to create unique ids for new features, never modified directly
+     */
+    private ?int $feature_count = null;
+    /**
+     * A list of property keys that each feature should have / is allowed to have
+     */
+    private array $properties = [];
+    /**
+     * The property used to determine a feature's name when its custom_name is not set, must be in the dataset properties list
+     */
+    private ?string $name_property = null;
+
+    /**
+     * Never called directly by anything but the construction methods (and clone) - construction methods will take care of any necessary validation
+     */
+    private function __construct(array $options) {
+        foreach ($options as $key => $value) {
+            $this->$key = $value;
+        }
+    }
+    /**
+     * Builds a dataset from an existing markdown file. Validates the options set in the header.
+     * @param MarkdownFile $file The file with the dataset
+     * @return null|Dataset New Dataset if provided file exists
+     */
+    public static function fromFile(MarkdownFile $file): ?Dataset {
+        if ($file->exists()) {
+            $options = (array)($file->header());
+            $options['file'] = $file;
+            return self::fromArray($options, true);
+        }
+        else return null;
+    }
+    /**
+     * Creates a new dataset from an uploaded json file. Determines feature_type, features, and properties. May also set name, name_property, upload_file_path and feature_count if provided.
+     * @param array $json GeoJson array with features
+     * @return null|Dataset New Dataset if at least one feature is valid
+     */
+    public static function fromJson(array $json): ?Dataset {
+        // loop through json features and try creating new Feature objects
+        $type = null; // set by first valid feature
+        $features = $properties = []; // to fill
+        foreach ($json['features'] ?? [] as $feature_json) {
+            if ($feature = Feature::fromJson($feature_json, $type)) {
+                $type ??= $feature->getType();
+                $features[] = $feature;
+                $properties = array_merge($properties, $feature->getProperties());
+            }
+        }
+        if (!empty($features)) {
+            $options = ['feature_type' => $type, 'features' => $features, 'properties' => array_keys($properties)];
+            // set optional values
+            if ($name = $json['name']) $options['title'] = $name;
+            if ($count = $json['feature_count']) $options['feature_count'] = $count;
+            if ($path = $json['upload_file_path']) $options['upload_file_path'] = $path;
+            $dataset = new Dataset($options);
+            // if name_property, validate first
+            if ($property = $json['name_property']) $dataset->setNameProperty($property);
+            return $dataset;
+        }
+        else return null;
+    }
+    /**
+     * Builds a dataset from an array, but does some validation on feature_type and features. Can also be used to create a blank dataset. If no feature_type is found, no features will be considered valid.
+     * @param null|array $options Properties the newly created dataset object will have
+     * @param bool
+     * @return Dataset New Dataset with any provided options
+     */
+    public static function fromArray(?array $options, bool $yaml): Dataset {
+        // validate feature type (if provided)
+        $options['feature_type'] = Feature::validateFeatureType($options['feature_type'] ?? $options['type']);
+        // for a few values, save and clear from options (so not set when creating dataset)
+        $features = [];
+        foreach ($options['features'] ?? [] as $feature) {
+            if (!$yaml) $feature['coordinates'] = Feature::coordinatesToYaml($feature['coordinates'] ?? [], $options['feature_type']);
+            if ($feature = Feature::fromDataset($feature, null, $options['feature_type'])) {
+                if ($id = $feature->getId()) $features[$id] = $feature;
+                else $features[] = $feature;
+            }
+        }
+        $options['features'] = $features;
+        $dataset = new Dataset($options);
+        foreach ($dataset->getFeatures() as $id => $feature) {
+            $feature->setDataset($dataset);
+        }
+        return $dataset;
+    }
+
+    // static methods
+
+    /**
+     * First priority is property called name, next is property beginning or ending with name, and last resort is first property, if available
+     * @return null|string The value for the name_property
+     */
+    public static function determineNameProperty(array $properties): ?string {
+        $name_prop = '';
+        foreach ($properties as $prop) {
+            if (strcasecmp($prop, 'name') == 0) return $prop;
+            else if (empty($name_prop) && preg_match('/^(.*name|name.*)$/i', $prop)) $name_prop = $prop;
+        }
+        if (empty($name_prop)) $name_prop = $properties[0];
+        if ($name_prop) return $name_prop;
+        else return null;
+    }
+
+    // object methods
+    
+    /**
+     * Creates an identical copy of the dataset
+     */
+    public function clone(): Dataset {
+        $options = [];
+        foreach (get_object_vars($this) as $key => $value) {
+            $options[$key] = $value;
+        }
+        // make sure features is a deep copy
+        $features = [];
+        foreach ($this->features ?? [] as $id => $feature) {
+            $features[$id] = $feature->clone();
+        }
+        $options['features'] = $features;
+        return new Dataset($options);
+    }
+    /**
+     * @return array Dataset yaml array that can be saved in dataset.md. Potentially any and all values from self::YAML
+     */
+    public function asYaml(): array {
+        return [
+            'id' => $this->getId(),
+            'upload_file_path' => $this->getUploadFilePath(),
+            'feature_type' => $this->getType(),
+            'title' => $this->getTitle(),
+            'name_property' => $this->getNameProperty(),
+            'properties' => $this->getProperties(),
+            'features' => $this->getFeaturesYaml(),
+            'feature_count' => $this->getFeatureCount(),
+        ];
+    }
+    /**
+     * Takes yaml update array from dataset header and validates it.
+     * @param array $update Dataset header
+     * @return array Updated yaml to save
+     */
+    public function update(array $yaml): array {
+        // TODO: Make sure to include any extra properties from $yaml
+        foreach ($yaml as $key => $value) {
+            switch ($key) {
+                case 'title':
+                    $this->setTitle($value);
+                    break;
+                case 'name_property':
+                    $this->setNameProperty($value);
+                    break;
+            }
+        }
+        return array_merge($yaml, $this->asYaml());
+    }
+    /**
+     * Turns a temporary dataset created from a json file upload into a proper dataset page - sets id, title, route/file, name_property, etc.
+     * @param string $file_name Name of uploaded file (for creating id and possibly name)
+     * @param array $dataset_ids To ensure that created id is unique
+     */
+    public function initialize(string $file_name, array $dataset_ids): void {
+        // clean up file name and create id, make sure id is unique
+        $file_name = preg_replace('/(.js|.json)$/', '', $file_name);
+        $id = $base_id = str_replace(' ', '-', $file_name);
+        $count = 1;
+        while (in_array($id, $dataset_ids)) {
+            $id = "$base_id-$count";
+            $count++;
+        }
+        $this->id = $id;
+        // determine title and route, make sure route is unique
+        $name = $base_name = $this->getTitle() ?: $id;
+        $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
+        $pages = Grav::instance()['locator']->findResource('page://');
+        $type = 'point_dataset';
+        if ($this->getType() !== 'Point') $type = 'shape_dataset';
+        $route =  "$pages/datasets/$slug/$type.md";
+        $count = 1;
+        while (MarkdownFile::instance($route)->exists()) {
+            $name = "$base_name-$count";
+            $route = "$pages/datasets/$slug-$count/$type.md";
+            $count++;
+        }
+        $this->setTitle($name);
+        $this->file = MarkdownFile::instance($route);
+        // set ids, dataset for features
+        $features = [];
+        foreach ($this->features as $feature) {
+            $id = $this->nextFeatureId();
+            $feature->setId($id);
+            $feature->setDataset($this);
+            $features[$feature->getId()] = $feature;
+        }
+        $this->features = $features;
+        $this->name_property ??= self::determineNameProperty($this->properties);
+    }
+    /**
+     * If the dataset's file does not yet exist or has an empty header, first generates yaml content to add to header.
+     * 
+     * Only works if the dataset has a file object set.
+     * 
+     * @param bool $generate - If set to true, will generate yaml whether or not file header is empty
+     */
+    public function save(bool $generate = false): void {
+        if ($file = $this->file) {
+            if (!$file->exists() || empty($file->header() || $generate)) {
+                $file->header($this->asYaml());
+            }
+            $file->save();
+        }
+    }
+    /**
+     * The only way feature_count should be modified. Combines dataset id and feature_count, then increments the count
+     */
+    private function nextFeatureId(): ?string {
+        if ($this->id) { // just in case, should be checked before calling
+            $this->feature_count ??= 0; // just in case, may not be set when first feature is initialized
+            $id = $this->id . '--' . $this->feature_count;
+            $this->feature_count++;
+            return $id;
+        }
+        else return null;
+    }
+
+    // getters
+    
+    /**
+     * @return null|MarkdownFile $this->file
+     */
+    public function getFile(): ?MarkdownFile {
+        return $this->file;
+    }
+    /**
+     * @return null|string $this->id
+     */
+    public function getId(): ?string {
+        return $this->id;
+    }
+    /**
+     * @return null|string $this->file_upload_path
+     */
+    public function getUploadFilePath(): ?string {
+        return $this->upload_file_path;
+    }
+    /**
+     * @return null|string $this->title
+     */
+    public function getTitle(): ?string {
+        return $this->title;
+    }
+    /**
+     * @return string $this->feature_type This should never be null.
+     */
+    public function getType(): string {
+        return $this->feature_type;
+    }
+    /**
+     * @return array [$id => Feature], $this->features
+     */
+    public function getFeatures(): array {
+        return $this->features;
+    }
+    public function getFeaturesYaml(): array {
+        $yaml = [];
+        foreach ($this->getFeatures() as $id => $feature) {
+            $yaml[] = $feature->asYaml();
+        }
+        return $yaml;
+    }
+    /**
+     * @return int $feature_count, 0 if null
+     */
+    public function getFeatureCount(): int {
+        return $this->feature_count ??= 0;
+    }
+    /**
+     * @return array $this->properties
+     */
+    public function getProperties(): array {
+        return $this->properties;
+    }
+    /**
+     * @return null|string $this->name_property
+     */
+    public function getNameProperty(): ?string {
+        return $this->name_property;
+    }
+
+    // setters
+    
+    /**
+     * @param MarkdownFile $file Sets $this->file if not already set
+     */
+    public function setFile(MarkdownFile $file): void {
+        $this->file ??= $file;
+    }
+    public function setId(string $id): void {
+        $this->id ??= $id;
+    }
+    /**
+     * @param string $title Sets $this->title (empty string ignored)
+     */
+    public function setTitle(string $title): void {
+        $this->title = $title ?: $this->title;
+    }
+    /**
+     * @param null|string $property Sets name_property if valid, null, or 'none'
+     */
+    public function setNameProperty(?string $property): void {
+        if (!$property || $property === 'none' || in_array($property, $this->getProperties())) $this->name_property = $property;
+    }
+}
+?>
