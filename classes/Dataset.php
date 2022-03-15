@@ -49,7 +49,11 @@ class Dataset {
      */
     private function __construct(array $options) {
         foreach ($options as $key => $value) {
-            $this->$key = $value;
+            try {
+                $this->$key = $value;
+            } catch (\Throwable $t) {
+                // do nothing
+            }
         }
     }
     /**

@@ -49,7 +49,11 @@ class Feature {
     private function __construct(array $options) {
         // set all values
         foreach ($options as $key => $value) {
-            $this->$key = $value;
+            try {
+                $this->$key = $value;
+            } catch (\Throwable $t) {
+                // do nothing
+            }
         }
     }
     /**

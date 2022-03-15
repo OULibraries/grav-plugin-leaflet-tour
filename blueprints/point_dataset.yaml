@@ -10,37 +10,38 @@ form:
             header.features:
               fields:
 
-                .coordsCols:
-                  type: columns
-                  ordering@: .custom_name
-                  fields:
-                    .col1:
-                      type: column
-                      fields:
+                # no columns in list
+                # .coordsCols:
+                #   type: columns
+                #   ordering@: .custom_name
+                #   fields:
+                #     .col1:
+                #       type: column
+                #       fields:
 
-                        .coordinates.lng:
-                          type: number
-                          label: Longitude (required)
-                          description: Use degrees with a maximum of seven decimal places.
-                          validate:
-                            required: true
-                            min: -180
-                            max: 180
-                            step: .0000001
+                .coordinates.lng:
+                  type: number
+                  label: Longitude (required)
+                  description: Use degrees with a maximum of seven decimal places.
+                  validate:
+                    required: true
+                    min: -180
+                    max: 180
+                    step: .0000001
 
-                    .col2:
-                      type: column
-                      fields:
+                    # .col2:
+                    #   type: column
+                    #   fields:
 
-                        .coordinates.lat:
-                          type: number
-                          label: Latitude (required)
-                          description: Use degrees with a maximum of seven decimal places.
-                          validate:
-                            required: true
-                            min: -90
-                            max: 90
-                            step: .0000001
+                .coordinates.lat:
+                  type: number
+                  label: Latitude (required)
+                  description: Use degrees with a maximum of seven decimal places.
+                  validate:
+                    required: true
+                    min: -90
+                    max: 90
+                    step: .0000001
 
         # icon:
         #   type: tab

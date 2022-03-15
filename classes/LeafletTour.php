@@ -4,6 +4,7 @@ namespace Grav\Plugin\LeafletTour;
 
 use Grav\Common\Grav;
 use RocketTheme\Toolbox\File\File;
+use Grav\Common\File\CompiledJsonFile;
 use RocketTheme\Toolbox\File\MarkdownFile;
 
 class LeafletTour {
