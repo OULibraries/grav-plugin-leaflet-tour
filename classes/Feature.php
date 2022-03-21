@@ -192,6 +192,21 @@ class Feature {
             'properties' => $this->getProperties()
         ];
     }
+    public function update(array $yaml): void {
+        $yaml = array_diff_key($yaml, array_flip(['id', 'dataset', 'type']));
+        foreach ($yaml as $key => $value) {
+            switch ($key) {
+                case 'coordinates':
+                    $this->setCoordinatesYaml($value);
+                    break;
+                case 'properties':
+                    break;
+                default:
+                    $this->$key = $value;
+                    break;
+            }
+        }
+    }
 
     // getters
     
@@ -260,6 +275,18 @@ class Feature {
      */
     public function setDataset(Dataset $dataset): void {
         $this->dataset ??= $dataset;
+    }
+    /**
+     * @param mixed $coordinates Json-encoded string or array with lng and lat to determine new coordinates, only set if valid
+     */
+    public function setCoordinatesYaml($coordinates): void {
+        // must have type to set coordinates
+        if ($type = $this->getType()) {
+            // coordinates must be valid
+            if ($coordinates = self::validateYamlCoordinates($coordinates, $type)) {
+                $this->coordinates = $coordinates;
+            }
+        }
     }
 }
 ?>

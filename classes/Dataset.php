@@ -221,7 +221,8 @@ class Dataset {
      * @return array Updated yaml to save
      */
     public function update(array $yaml): array {
-        // TODO: Make sure to include any extra properties from $yaml
+        // remove anything that shouldn't be included
+        $yaml = array_diff_key($yaml, array_flip(['file', 'upload_file_path', 'id', 'feature_type', 'feature_count']));
         foreach ($yaml as $key => $value) {
             switch ($key) {
                 case 'title':
@@ -230,13 +231,29 @@ class Dataset {
                 case 'name_property':
                     $this->setNameProperty($value);
                     break;
+                case 'features':
+                    $this->updateFeaturesYaml($value);
+                    break;
                 // generic - no special set methods
-                case 'icon':
+                default:
                     $this->$key = $value;
                     break;
             }
         }
         return array_merge($yaml, $this->asYaml());
+    }
+    public function updateFeaturesYaml(array $features_yaml): void {
+        $features = [];
+        // loop through list to find existing and new features
+        foreach ($features_yaml as $feature_yaml) {
+            $id = $feature_yaml['id'];
+            // existing features - call feature's update function and add to list
+            if ($feature = $this->features[$id]) {
+                $feature->update($feature_yaml);
+                $features[$id] = $feature;
+            }
+        }
+        $this->features = $features;
     }
     /**
      * Turns a temporary dataset created from a json file upload into a proper dataset page - sets id, title, route/file, name_property, etc.
