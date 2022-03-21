@@ -11,7 +11,7 @@ use RocketTheme\Toolbox\Event\Event;
 // use Grav\Plugin\LeafletTour\Dataset;
 use Grav\Plugin\LeafletTour\LeafletTour;
 use Grav\Plugin\LeafletTour\Utils;
-// use Grav\Plugin\LeafletTour\Feature;
+use Grav\Plugin\LeafletTour\Feature;
 
 /**
  * @package Grav\Plugin
@@ -186,5 +186,14 @@ class LeafletTourPlugin extends Plugin {
             ];
         }
         return $fields;
+    }
+
+    public static function getShapeFillType(string $default): string {
+        $type = Feature::validateFeatureType(Utils::getDatasetFile()->header()['feature_type'] ?? 'Polygon');
+        if (str_contains($type, 'LineString')) {
+            // LineString or MultiLineString
+            return 'hidden';
+        }
+        else return $default;
     }
 }
