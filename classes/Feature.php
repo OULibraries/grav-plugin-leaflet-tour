@@ -34,6 +34,10 @@ class Feature {
      */
     private array $coordinates = [];
     /**
+     * overrides the value of the current name property
+     */
+    private ?string $custom_name = null;
+    /**
      * reference to the dataset that created the feature, assuming there is one
      */
     private ?Dataset $dataset = null;
@@ -188,6 +192,7 @@ class Feature {
         return [
             'id' => $this->getId(),
             'name' => $this->getName(),
+            'custom_name' => $this->custom_name,
             'coordinates' => $this->getCoordinatesYaml(),
             'properties' => $this->getProperties()
         ];
@@ -259,6 +264,7 @@ class Feature {
      * @return string Feature name. Priority goes to custom_name, then properties[name_property], then id. Returns empty string if nothing is found.
      */
     public function getName(): ?string {
+        if ($name = $this->custom_name) return $name;
         if (($dataset = $this->getDataset()) && ($prop = $dataset->getNameProperty()) && ($name = $this->getProperty($prop))) return $name;
         return $this->id;
     }

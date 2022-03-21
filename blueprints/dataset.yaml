@@ -143,9 +143,9 @@ form:
                   description: The current value for the feature name. To change this, modify the custom name or the value of the feature's name property.
                   readonly: true
 
-                # .custom_name:
-                #   type: text
-                #   label: Custom Name
+                .custom_name:
+                  type: text
+                  label: Custom Name
 
                 # .hide:
                 #   type: toggle
@@ -166,7 +166,6 @@ form:
                 #   validate:
                 #     type: textarea
                     
-                # # TODO: .properties:
                 .properties:
                   type: fieldset
                   collapsible: true
