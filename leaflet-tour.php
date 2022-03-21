@@ -174,4 +174,17 @@ class LeafletTourPlugin extends Plugin {
         if ($include_none) $list = array_merge(['none' => 'None'], $list);
         return $list;
     }
+
+    public static function getFeaturePropertiesFields(): array {
+        // get dataset and list of properties
+        $props = Utils::getDatasetFile()->header()['properties'] ?? [];
+        $fields = [];
+        foreach ($props as $prop) {
+            $fields[".$prop"] = [
+                'type' => 'text',
+                'label' => $prop,
+            ];
+        }
+        return $fields;
+    }
 }

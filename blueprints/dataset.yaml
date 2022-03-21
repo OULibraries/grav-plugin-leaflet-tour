@@ -166,7 +166,8 @@ form:
                 #     type: textarea
                     
                 # # TODO: .properties:
-                # .properties:
-                #   type: fieldset
-                #   label: Properties
-                #   data-fields@: 'Grav\Plugin\LeafletTourPlugin::getFeaturePropertiesFields'
+                .properties:
+                  type: fieldset
+                  collapsible: true
+                  title: Properties
+                  data-fields@: 'Grav\Plugin\LeafletTourPlugin::getFeaturePropertiesFields'
