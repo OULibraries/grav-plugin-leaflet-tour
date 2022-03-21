@@ -234,6 +234,9 @@ class Dataset {
                 case 'features':
                     $this->updateFeaturesYaml($value);
                     break;
+                case 'properties':
+                    $this->setProperties($value);
+                    break;
                 // generic - no special set methods
                 default:
                     $this->$key = $value;
@@ -455,6 +458,14 @@ class Dataset {
      */
     public function setNameProperty(?string $property): void {
         if (!$property || $property === 'none' || in_array($property, $this->getProperties())) $this->name_property = $property;
+    }
+    /**
+     * Sets $this->properties. Removes name_property if no longer valid.
+     * @param null|array $properties Sets $this->properties, null becomes empty array
+     */
+    public function setProperties(?array $properties): void {
+        $this->properties = $properties ?? [];
+        if (!in_array($this->name_property, $this->properties)) $this->name_property = 'none';
     }
 }
 ?>

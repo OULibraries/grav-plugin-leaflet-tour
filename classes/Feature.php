@@ -199,6 +199,9 @@ class Feature {
                 case 'coordinates':
                     $this->setCoordinatesYaml($value);
                     break;
+                case 'properties':
+                    $this->properties = array_merge($this->properties, $value);
+                    break;
                 default:
                     $this->$key = $value;
                     break;

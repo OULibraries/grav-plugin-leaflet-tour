@@ -106,12 +106,12 @@ form:
               description: The property in the data file that contains feature names.
               data-options@: ['Grav\Plugin\LeafletTourPlugin::getDatasetPropertyList', true]
 
-            # header.properties:
-            #   type: selectize
-            #   label: Feature Properties
-            #   description: A list of all properties available for features in the dataset. Anything added will be automatically added as an empty property to each feature when the page is saved. To remove properties that currently have data, destructive edits must be enabled.
-            #   validate:
-            #     type: commalist
+            header.properties:
+              type: selectize
+              label: Feature Properties
+              description: A list of all properties available for features in the dataset. Anything added will be automatically added as an empty property to each feature when the page is saved.
+              validate:
+                type: commalist
 
             # header.popup_props:
             #   type: select
