@@ -1,17 +1,17 @@
 {% extends 'partials/base.html.twig' %}
 
 {% set plugin_config = config.plugins['leaflet-tour'] %}
-{# {% set tour = leaflet_tour.getTour(page) %} #}
+{% set tour = leaflet_tour.getTour(header.id) %}
 
 {% block starting_scripts %}
     {{ parent() }}
     {# Set some important map data #}
     <script>
-        const tour_options = {{ tour.getTourOptions()|json_encode|raw }};
-        let tour_basemaps = new Map(Object.entries({{ tour.getBasemapOptions()|json_encode|raw }}));
-        let tour_datasets = new Map(Object.entries({{ tour.getDatasetOptions()|json_encode|raw }}));
-        const tour_features_json = {{ tour.getFeatureOptions()|json_encode|raw }};
-        // let tour_views = new Map(Object.entries({{ tour.getViewOptions()|json_encode|raw }}));
+        const tour_options = {{ tour.getTourData()|json_encode|raw }};
+        // let tour_basemaps = new Map(Object.entries({{ tour.getBasemapData()|json_encode|raw }}));
+        let tour_datasets = new Map(Object.entries({{ tour.getDatasetData()|json_encode|raw }}));
+        const tour_features = new Map(Object.entries({{ tour.getFeatureData()|json_encode|raw }}));
+        // let tour_views = new Map(Object.entries({{ tour.getViewData()|json_encode|raw }}));
     </script>
 {% endblock starting_scripts %}
 

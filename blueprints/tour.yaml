@@ -15,10 +15,12 @@ form:
 
             header.id:
               type: hidden
-              default: 'tmp'
+              default: 'tmp  id'
+              validate:
+                required: true
 
             TODO: Does fieldset really need header in front of it?
-            header.datasets_fieldset:
+            datasets_fieldset:
               type: fieldset
               title: Tour Data
               collapsible: true
@@ -37,7 +39,7 @@ form:
                     .id:
                       type: select
                       label: Select Dataset (required)
-                      data-options@: ['Grav\Plugin\LeafletTourPlugin::getDatasetList', false]
+                      data-options@: ['Grav\Plugin\LeafletTourPlugin::getDatasetsList', false]
                       validate:
                         required: true
 

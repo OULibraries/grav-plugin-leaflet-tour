@@ -6,6 +6,27 @@ use Grav\Common\Grav;
 use RocketTheme\Toolbox\File\MarkdownFile;
 
 class Dataset {
+    /**
+     * For creating icon options in merged (fromTour) dataset: Used if default Leaflet marker icon is used. Same as defaults from Leaflet, but modified to match icon yaml values for cleaner code when dealing with icon options
+     */
+    const DEFAULT_MARKER_FALLBACKS = [
+        'iconUrl' => 'user/plugins/leaflet-tour/images/marker-icon.png',
+        'iconSize' => [25, 41],
+        'width' => 25,
+        'height' => 41,
+        'iconAnchor' => [12, 41],
+        'anchor_x' => 12,
+        'anchor_y' => 41,
+        'tooltipAnchor' => [2, 0],
+        'tooltip_anchor_x' => 2,
+        'tooltip_anchor_y' => 0,
+        'shadowUrl' => 'user/plugins/leaflet-tour/images/marker-shadow.png',
+        'shadowSize' => [41, 41],
+        'shadow_width' => 41,
+        'shadow_height' => 41,
+        'iconRetinaUrl' => 'user/plugins/leaflet-tour/images/marker-icon-2x.png',
+        'className' => 'leaflet-marker '
+    ];
 
     /**
      * File storing the dataset, typically created on dataset initialization, never modified once set
@@ -324,6 +345,12 @@ class Dataset {
      */
     public function getNameProperty(): ?string {
         return $this->name_property;
+    }
+    /**
+     * @return null|array $this->icon
+     */
+    public function getIcon(): ?array {
+        return self::DEFAULT_MARKER_FALLBACKS;
     }
 
     // setters

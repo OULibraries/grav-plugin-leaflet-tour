@@ -15,8 +15,20 @@ class LeafletTour {
      * [$id => Dataset]
      */
     private static ?array $datasets = null;
+    /**
+     * [$id => Tour]
+     */
+    private static ?array $tours = null;
 
     public function __construct() {
+    }
+
+    public function testing() {
+        return Test::getResults();
+    }
+    
+    public function getTour($id): ?Tour {
+        return self::getTours()[$id];
     }
 
     // getters
@@ -28,6 +40,10 @@ class LeafletTour {
         if (!self::$datasets) self::setDatasets();
         return self::$datasets;
     }
+    public static function getTours(): array {
+        if (!self::$tours) self::setTours();
+        return self::$tours;
+    }
 
     // set/reset methods
 
@@ -35,10 +51,25 @@ class LeafletTour {
      * Build self::$datasets: Find all dataset pages, turn into dataset objects
      */
     public static function setDatasets(): void {
-        // find all $dataset.md files inside the pages folder (at any level)
-        $files = Utils::getTemplateFiles('dataset.md', []);
+        $files = self::getFiles('dataset');
+        // turn into Dataset objects
+        self::$datasets = [];
+        foreach ($files as $id => $file) {
+            if ($dataset = Dataset::fromFile($file)) self::$datasets[$id] = $dataset;
+        }
+    }
+    public static function setTours(): void {
+        $files = self::getFiles('tour');
+        self::$tours = [];
+        foreach ($files as $id => $file) {
+            if ($tour = Tour::fromFile($file)) self::$tours[$id] = $tour;
+        }
+    }
+    // accepts tour or dataset
+    private static function getFiles(string $type, ?string $dir = null): array {
+        // find all relevant files inside the pages folder (at any level)
+        $files = Utils::getTemplateFiles("$type.md", [], $dir);
         // deal with ids
-        // first set any with ids and gather any without
         $tmp_files = $new_files = [];
         foreach ($files as $file) {
             $file = MarkdownFile::instance($file);
@@ -46,16 +77,12 @@ class LeafletTour {
             else $new_files[] = $file;
         }
         foreach ($new_files as $file) {
-            $id = self::generateId($file->header()['title'] ?: 'dataset', array_keys($tmp_files));
+            $id = self::generateId($file->header()['title'] ?: $type, array_keys($tmp_files));
             $file->header(array_merge($file->header(), ['id' => $id]));
             $file->save();
             $tmp_files[$id] = $file;
         }
-        // turn into Dataset objects
-        self::$datasets = [];
-        foreach ($tmp_files as $id => $file) {
-            if ($dataset = Dataset::fromFile($file)) self::$datasets[$id] = $dataset;
-        }
+        return $tmp_files;
     }
 
     // update methods
@@ -88,8 +115,49 @@ class LeafletTour {
         $id = $page->header()->get('id');
         // perform validation, modify page header
         $dataset ??= self::getDatasets()[$id];
-        $update = $dataset->update((array)($page->header()));
+        $update = $dataset->update($page->header()->jsonSerialize());
         $page->header($update);
+        // update tours
+        foreach (self::getTours() as $tour_id => $tour) {
+            $tour->updateDataset($id);
+        }
+    }
+    public static function handleTourPageSave($page): void {
+        // check if new - make sure has id
+        $id = $page->header()->get('id');
+        if ($id === 'tmp  id' || !self::getTours()[$id]) {
+            // $file = $page->file();
+            $id = self::generateId($page->header()->get('title') ?: 'tour', array_keys(self::getTours()));
+            $page->header()->set('id', $id);
+            // $page->save();
+            // $tour = Tour::fromFile($file);
+            // self::$tours[$tour->getId()] = $tour;
+        }
+        else {
+            // perform validation
+            $tour = self::getTours()[$id];
+            $update = $tour->update($page->header()->jsonSerialize());
+            $page->header($update);
+        }
+    }
+
+    // removal methods
+    public function handleDatasetDeletion($page): void {
+        $dataset_id = $page->header()->get('id');
+        // remove original uploaded file
+        if ($path = $page->header()->get('upload_file_path')) {
+            File::instance(Grav::instance()['locator']->getBase() . "/$path")->delete();
+        }
+        // TODO: Need to remove file from config, or will that happen automatically when file is removed?
+        // update tours
+        foreach (self::getTours() as $id => $tour) {
+            $tour->removeDataset($dataset_id);
+        }
+        // update self
+        unset(self::$datasets[$page->header()->get('id')]);
+    }
+    public function handleTourDeletion($page): void {
+        unset(self::$tours[$page->header()->get('id')]);
     }
 
     // id generation

@@ -50,6 +50,7 @@ class LeafletTourPlugin extends Plugin {
                 'onGetPageTemplates' => ['onGetPageTemplates', 0],
                 'onGetPageBlueprints' => ['onGetPageBlueprints', 0],
                 'onAdminSave' => ['onAdminSave', 0],
+                'onAdminAfterDelete' => ['onAdminAfterDelete', 0],
             ]);
             return;
         }
@@ -112,9 +113,9 @@ class LeafletTourPlugin extends Plugin {
                 case 'point_dataset':
                     LeafletTour::handleDatasetPageSave($obj);
                     break;
-                // case 'tour':
-                //     $plugin->handleTourPageSave($obj);
-                //     break;
+                case 'tour':
+                    LeafletTour::handleTourPageSave($obj);
+                    break;
                 // case 'modular/view':
                 //     $plugin->handleViewPageSave($obj);
                 //     break;
@@ -126,24 +127,23 @@ class LeafletTourPlugin extends Plugin {
     /**
      * Pass to LeafletTour object to handle page data on deletion.
      */
-    // public function onAdminAfterDelete(Event $event) {
-    //     $obj = $event['object'];
-    //     $plugin = LeafletTour::instance();
-    //     if (method_exiss($obj, 'template')) {
-    //         switch ($obj->template()) {
-    //             case 'shape_dataset':
-    //             case 'point_dataset':
-    //                 $plugin->handleDatasetDeletion($obj);
-    //                 break;
-    //             case 'tour':
-    //                 $plugin->handleTourDeletion($obj);
-    //                 break;
-    //             case 'modular/view':
-    //                 $plugin->handleViewDeletion($obj);
-    //                 break;
-    //         }
-    //     }
-    // }
+    public function onAdminAfterDelete(Event $event) {
+        $obj = $event['object'];
+        if (method_exists($obj, 'template')) {
+            switch ($obj->template()) {
+                // case 'shape_dataset':
+                case 'point_dataset':
+                    LeafletTour::handleDatasetDeletion($obj);
+                    break;
+                case 'tour':
+                    LeafletTour::handleTourDeletion($obj);
+                    break;
+                // case 'modular/view':
+                //     $plugin->handleViewDeletion($obj);
+                //     break;
+            }
+        }
+    }
 
     // getters for blueprints
 
@@ -164,5 +164,14 @@ class LeafletTourPlugin extends Plugin {
             if ($include_none) $list = array_merge(['none' => 'None'], $list);
         }
         return $list ?? [];
+    }
+
+    public static function getDatasetsList(bool $include_none = false): array {
+        $list = [];
+        foreach (LeafletTour::getDatasets() as $dataset) {
+            $list[$dataset->getId()] = $dataset->getTitle() ?? $dataset->getId();
+        }
+        if ($include_none) $list = array_merge(['none' => 'None'], $list);
+        return $list;
     }
 }

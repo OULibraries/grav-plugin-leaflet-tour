@@ -174,6 +174,12 @@ class Feature {
         }
         return new Feature($options);
     }
+    public function __toString() {
+        $vars = get_object_vars($this);
+        // change dataset to just id
+        if ($dataset = $vars['dataset']) $vars['dataset'] = $dataset->getId();
+        return json_encode($vars);
+    }
 
     /**
      * @return array Feature yaml array that can be saved in dataset features list. [id, name, custom_name, hide, popup_content, properties, coordinates]
