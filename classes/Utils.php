@@ -15,16 +15,13 @@ class Utils {
      * @param array $results List of pages found so far. If calling this the first time, pass an empty array.
      * @param null|string $dir Optional: Specify the directory to start the search in. If not provided, the pages folder will be used.
      */
-    public static function getTemplateFiles(string $key, array $results, ?string $dir = null, bool $print = false): array {
+    public static function getTemplateFiles(string $key, array $results, ?string $dir = null): array {
         if (!$dir) $dir = Grav::instance()['locator']->findResource('page://');
         // check if directory holds one of the pages we are looking for - if found, add to results
-        // if (!empty(glob("$dir/$key"))) $results[] = "$dir/$key";
         // recursively search children for pages
         foreach (glob("$dir/*") as $item) {
-            if ($print && ($item == "$dir/*dataset.md")) $results[] = $item;
             if (str_ends_with($item, $key)) $results[] = $item;
-            //if ($item === "$dir/$key") var_dump($item);
-            $results = self::getTemplateFiles($key, $results, $item, $print);
+            $results = self::getTemplateFiles($key, $results, $item);
         }
         return $results;
     }

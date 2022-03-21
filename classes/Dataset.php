@@ -6,6 +6,25 @@ use Grav\Common\Grav;
 use RocketTheme\Toolbox\File\MarkdownFile;
 
 class Dataset {
+
+    /**
+     * Default path options to set when first creating the dataset
+     */
+    const DEFAULT_PATH = [
+        'stroke' => true,
+        'color' => '#3388ff',
+        'weight' => 3,
+        'opacity' => 1,
+        'fill' => true,
+        'fillOpacity' => 0.2
+    ];
+    /**
+     * Default active_path options to set when first creating the dataset
+     */
+    const DEFAULT_ACTIVE_PATH = [
+        'weight' => 5,
+        'fillOpacity' => 0.4
+    ];
     /**
      * For creating icon options in merged (fromTour) dataset: Used if default Leaflet marker icon is used. Same as defaults from Leaflet, but modified to match icon yaml values for cleaner code when dealing with icon options
      */
@@ -82,6 +101,11 @@ class Dataset {
      * Icon options, based on Leaflet icon options, but the yaml for storage is slightly different
      */
     private ?array $icon = null;
+    /**
+     * Path options from Leaflet path options
+     */
+    private ?array $path = null;
+    private ?array $active_path = null;
 
     /**
      * Never called directly by anything but the construction methods (and clone) - construction methods will take care of any necessary validation
@@ -212,7 +236,9 @@ class Dataset {
             'features' => $this->getFeaturesYaml(),
             'feature_count' => $this->getFeatureCount(),
         ];
-        if ($icon = $this->icon) $yaml['icon'] = $icon;
+        foreach (['icon', 'path', 'active_path'] as $key) {
+            if ($value = $this->$key) $yaml[$key] = $value;
+        }
         return $yaml;
     }
     /**
@@ -312,6 +338,11 @@ class Dataset {
             $features[$feature->getId()] = $feature;
         }
         $this->features = $features;
+        // set path defaults
+        if ($this->feature_type !== 'Point') {
+            $this->path = self::DEFAULT_PATH;
+            $this->active_path = self::DEFAULT_ACTIVE_PATH;
+        }
         $this->name_property ??= self::determineNameProperty($this->properties);
     }
     /**
@@ -434,6 +465,18 @@ class Dataset {
         if ($class = $icon['class']) $icon['className'] .= " $class";
 
         return $icon;
+    }
+    public function getPath(): array {
+        return $this->getPathByType($this->path ?? []);
+    }
+    public function getActivePath(): array {
+        return $this->getPathByType($this->active_path ?? []);
+    }
+    private function getPathByType(array $path): array {
+        if (str_contains(strtolower($this->getType()), 'linestring')) {
+            return array_intersect_key($path, array_flip(['stroke', 'weight', 'color', 'opacity']));
+        }
+        else return $path;
     }
 
     // setters

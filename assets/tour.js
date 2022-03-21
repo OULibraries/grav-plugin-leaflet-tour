@@ -92,6 +92,45 @@ class TourPoint extends TourFeature {
         super.addToLayer(layer);
     }
 }
+class TourPath extends TourFeature {
+    buffer; svg;
+    focus_element;
+    constructor(feature, datasets) {
+        super(feature, datasets);
+        // if weight is below buffer cutoff, set buffer true
+        if (this.dataset.path.weight < BUFFER_WEIGHT) {
+            // if polygon, only set buffer true if there is also no fill
+            let type = this.type.toLowerCase();
+            if (type === 'linestring' || type === 'multilinestring') this.buffer = true;
+            else if (!(this.dataset.path.fill ?? true)) this.buffer = true;
+        }
+    }
+    get elements() {
+        // if buffer, the hover_element will be the buffer, but svg will still store the original svg, so must also be returned
+        if (this.buffer) return super.elements.add(this.svg);
+        else return super.elements;
+    }
+    get hover_element() { 
+        if (this.buffer) return this.buffer._path;
+        else return this.layer._path;
+    }
+    addToBufferLayer(layer) {
+        this.buffer = layer;
+    }
+    modify() {
+        // tmp
+        this.alt_text = this.id;
+        // create the focus element
+        let focus_element = $('<img class="sr-only" id="' + this.id + '-focus" tabindex="0" alt="' + this.alt_text + '">');
+        $(".leaflet-marker-pane").append(this.focus_element);
+        this.focus_element = focus_element.get(0);
+        super.modify();
+        // deal with non-point tooltips - without this, tooltips associated with polygons that are much smaller than the starting view may be bound way too far off
+        map.flyToBounds(this.layer.getBounds(), { animate: false });
+        this.layer.closeTooltip();
+        this.layer.openTooltip();
+    }
+}
 
 // ---------- Tour and Tour Setup Functions ---------- //
 function createMap() {
@@ -116,13 +155,16 @@ function createTileLayer() {
     return layer;
 }
 function createFeatureLayer() {
-    layer = L.geoJson(null, {
+    let layer = L.geoJson(null, {
         pointToLayer: function(json, latlng) {
             let feature = tour.features.get(json.properties.id);
             return L.marker(latlng, {
                 icon: new L.Icon(feature.icon_options),
                 riseOnHover: true
             });
+        },
+        style: function(json) {
+            return tour.features.get(json.properties.id).dataset.path;
         },
         onEachFeature: function(json, layer) {
             tour.features.get(json.properties.id).addToLayer(layer);
@@ -132,18 +174,32 @@ function createFeatureLayer() {
     map.addLayer(layer);
     return layer;
 }
+function createBufferLayer() {
+    let layer = L.geoJson(null, {
+        style: function(json) {
+            return { stroke: true, weight: BUFFER_WEIGHT, opacity: 0, fill: false };
+        },
+        onEachFeature: function(json, layer) {
+            tour.features.get(json.properties.id).addToBufferLayer(layer);
+        }
+    });
+    map.addLayer(layer);
+    return layer;
+}
 function createFeature(value, key, map) {
     let feature;
-    switch (value.geometry.type) {
-        case "Point":
-            feature = new TourPoint(value, tour.datasets);
-            break;
+    if (value.geometry.type === 'Point') {
+        feature = new TourPoint(value, tour.datasets);
+    } else {
+        feature = new TourPath(value, tour.datasets);
     }
     if (feature) {
         map.set(key, feature);
         tour.feature_layer.addData(feature.geoJson);
         // also add feature ref to dataset
         feature.dataset.features.push(feature);
+        // also add buffer if applicable
+        if (feature.buffer) tour.buffer_layer.addData(feature.geoJson);
     }
 }
 function adjustMap() {
@@ -160,6 +216,7 @@ const map = createMap();
 tour.tile_layer = createTileLayer();
 tour.datasets = tour_datasets;
 tour.feature_layer = createFeatureLayer();
+tour.buffer_layer = createBufferLayer();
 tour.features = tour_features;
 tour.features.forEach(createFeature);
 
@@ -198,12 +255,15 @@ map.on("zoomend", function() {
 
 // ---------- General Setup ---------- //
 $(document).ready(function() {
-    adjustMap(); // todo: enter view here or above
+    map.invalidateSize();
+    map.flyToBounds(tour.feature_layer.getBounds(), { padding: FLY_TO_PADDING, animate: false });
     
     // features
     for (let feature of tour.features.values()) {
         feature.modify();
     }
+
+    adjustMap(); // todo: enter view here or above
 
     // move map controls for more sensible DOM order
     let controls = $(".leaflet-control-container");

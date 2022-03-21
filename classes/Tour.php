@@ -279,6 +279,9 @@ class Tour {
             ];
             if ($dataset->getType() === 'Point') {
                 $info['icon'] = $dataset->getIcon();
+            } else {
+                $info['path'] = $dataset->getPath();
+                $info['active_path'] = $dataset->getActivePath();
             }
             $datasets[$id] = $info;
         }

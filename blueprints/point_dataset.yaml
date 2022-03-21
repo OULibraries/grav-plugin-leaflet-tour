@@ -54,7 +54,6 @@ form:
               description: If not set, the default Leaflet marker will be used.
               preview_images: true
               folder: 'user://data/leaflet-tour/images/icons'
-              # TODO: accept?
 
             icon_size_section:
               type: section

@@ -140,6 +140,10 @@ class Feature {
     public static function validateJsonCoordinates(array $coordinates, string $type): ?array {
         switch (self::validateFeatureType($type)) {
             case 'Point': if (Utils::isValidPoint($coordinates)) return $coordinates;
+            case 'LineString': return self::validateLineString($coordinates);
+            case 'MultiLineString': return self::validateMultiLineString($coordinates);
+            case 'Polygon': return self::validatePolygon($coordinates);
+            case 'MultiPolygon': return self::validateMultiPolygon($coordinates);
         }
         return null;
     }
@@ -152,7 +156,14 @@ class Feature {
         // todo: fix php's bad json handling?
         // turn $coordinates into a json array to pass to validateJsonCoordinates
         if (is_array($coordinates)) $coordinates = [$coordinates['lng'], $coordinates['lat']];
-        else return null;
+        else {
+            try {
+                $coordinates = json_decode($coordinates);
+                if (!$coordinates) throw new Exception();
+            } catch (\Throwable $t) {
+                return null;
+            }
+        }
         return self::validateJsonCoordinates($coordinates, $type);
     }
     /**
@@ -166,7 +177,78 @@ class Feature {
         // Point => make array
         if ($type === 'Point') return ['lng' => $coordinates[0], 'lat' => $coordinates[1]];
         // not point
-        // else return json_encode($coordinates);
+        else return json_encode($coordinates);
+    }
+    /**
+     * @param array|mixed $coordinates Should be an array of points
+     * @return null|array $coordinates if valid
+     */
+    private static function validateLineString($coordinates): ?array {
+        if (is_array($coordinates) && count($coordinates) >= 2) {
+            foreach ($coordinates as $point) {
+                if (!Utils::isValidPoint($point)) return null;
+            }
+            return $coordinates;
+        }
+        return null;
+    }
+    /**
+     * @param mixed $coordinates Should be an array of LineStrings
+     * @return null|array $coordinates if valid
+     */
+    private static function validateMultiLineString($coordinates): ?array {
+        if (is_array($coordinates) && count($coordinates) >= 1) {
+            foreach ($coordinates as $line)  {
+                if (!self::validateLineString($line)) return null;
+            }
+            return $coordinates;
+        }
+        return null;
+    }
+    /**
+     * Linear ring requires at least four points, with the first and last matching.
+     * 
+     * @param mixed $coordinates Should be an array with at least three points
+     * @return null|array $coordinates if valid, possibly modified if first and last points did not match (to close the ring)
+     */
+    private static function validateLinearRing($coordinates): ?array {
+        if (self::validateLineString($coordinates) && count($coordinates) >= 3) {
+            // add first point to end if needed to close the ring
+            if ($coordinates[0] !== $coordinates[count($coordinates) - 1]) $coordinates[] = $coordinates[0];
+            // have to check length again, because array of three points may have been modified to be long enough
+            if (count($coordinates) >= 4) return $coordinates;
+        }
+        return null;
+    }
+    /**
+     * @param mixed $coordinates Should be an array of linear rings
+     * @return null|array $coordinates if valid, possibly modified to close a given linear ring
+     */
+    private static function validatePolygon($coordinates): ?array {
+        if (is_array($coordinates) && count($coordinates) >= 1) {
+            $polygon = [];
+            foreach ($coordinates as $ring) {
+                if ($ring = self::validateLinearRing($ring)) $polygon[] = $ring;
+                else return null;
+            }
+            return $polygon;
+        }
+        return null;
+    }
+    /**
+     * @param mixed $coordinates Should be an array of polygons
+     * @return null|array $coordinates if valid, possibly modified to close linear rings as needed
+     */
+    private static function validateMultiPolygon($coordinates): ?array {
+        if (is_array($coordinates) && count($coordinates) >= 1) {
+            $multi = [];
+            foreach ($coordinates as $polygon) {
+                if ($polygon = self::validatePolygon($polygon)) $multi[] = $polygon;
+                else return null;
+            }
+            return $multi;
+        }
+        return null;
     }
 
     // object methods
@@ -202,6 +284,10 @@ class Feature {
             'hide' => $this->isHidden(),
         ];
     }
+    /**
+     * Validates update content and updates the object
+     * @param array $yaml Update data
+     */
     public function update(array $yaml): void {
         $yaml = array_diff_key($yaml, array_flip(['id', 'dataset', 'type']));
         foreach ($yaml as $key => $value) {
