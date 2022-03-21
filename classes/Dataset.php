@@ -11,20 +11,34 @@ class Dataset {
      */
     const DEFAULT_MARKER_FALLBACKS = [
         'iconUrl' => 'user/plugins/leaflet-tour/images/marker-icon.png',
-        'iconSize' => [25, 41],
+        // 'iconSize' => [25, 41],
         'width' => 25,
         'height' => 41,
-        'iconAnchor' => [12, 41],
+        // 'iconAnchor' => [12, 41],
         'anchor_x' => 12,
         'anchor_y' => 41,
-        'tooltipAnchor' => [2, 0],
+        // 'tooltipAnchor' => [2, 0],
         'tooltip_anchor_x' => 2,
         'tooltip_anchor_y' => 0,
         'shadowUrl' => 'user/plugins/leaflet-tour/images/marker-shadow.png',
-        'shadowSize' => [41, 41],
+        // 'shadowSize' => [41, 41],
         'shadow_width' => 41,
         'shadow_height' => 41,
         'iconRetinaUrl' => 'user/plugins/leaflet-tour/images/marker-icon-2x.png',
+        'className' => 'leaflet-marker '
+    ];
+    /**
+     * For creating icon options in merged (fromTour) dataset: Used if custom marker icon is used. Does not have as many values as the default fallbacks - just enough to display an icon and tooltip reasonably without customization
+     */
+    const CUSTOM_MARKER_FALLBACKS = [
+        //'iconSize' => [14, 14],
+        'width' => 14,
+        'height' => 14,
+        //'iconAnchor' => [],
+        //'tooltipAnchor' => [7, 0],
+        'tooltip_anchor_x' => 7,
+        'tooltip_anchor_y' => 0,
+        //'shadowSize' => [],
         'className' => 'leaflet-marker '
     ];
 
@@ -64,6 +78,10 @@ class Dataset {
      * The property used to determine a feature's name when its custom_name is not set, must be in the dataset properties list
      */
     private ?string $name_property = null;
+    /**
+     * Icon options, based on Leaflet icon options, but the yaml for storage is slightly different
+     */
+    private ?array $icon = null;
 
     /**
      * Never called directly by anything but the construction methods (and clone) - construction methods will take care of any necessary validation
@@ -184,7 +202,7 @@ class Dataset {
      * @return array Dataset yaml array that can be saved in dataset.md. Potentially any and all values from self::YAML
      */
     public function asYaml(): array {
-        return [
+        $yaml = [
             'id' => $this->getId(),
             'upload_file_path' => $this->getUploadFilePath(),
             'feature_type' => $this->getType(),
@@ -194,6 +212,8 @@ class Dataset {
             'features' => $this->getFeaturesYaml(),
             'feature_count' => $this->getFeatureCount(),
         ];
+        if ($icon = $this->icon) $yaml['icon'] = $icon;
+        return $yaml;
     }
     /**
      * Takes yaml update array from dataset header and validates it.
@@ -209,6 +229,10 @@ class Dataset {
                     break;
                 case 'name_property':
                     $this->setNameProperty($value);
+                    break;
+                // generic - no special set methods
+                case 'icon':
+                    $this->$key = $value;
                     break;
             }
         }
@@ -347,10 +371,32 @@ class Dataset {
         return $this->name_property;
     }
     /**
-     * @return null|array $this->icon
+     * @return array $this->icon with defaults filled in
      */
-    public function getIcon(): ?array {
-        return self::DEFAULT_MARKER_FALLBACKS;
+    public function getIcon(): array {
+        $icon = $this->icon ?? [];
+        // set appropriate defaults to reference
+        if ($icon['file']) $icon = array_merge(self::CUSTOM_MARKER_FALLBACKS, $icon);
+        else $icon = array_merge(self::DEFAULT_MARKER_FALLBACKS, $icon);
+
+        // merging isn't enough - need to set/modify some things
+        // icon urls
+        $route = Utils::IMAGE_ROUTE . 'icons/';
+        if ($file = $icon['file']) $icon['iconUrl'] = "$route$file";
+        if ($file = $icon['retina']) $icon['iconRetinaUrl'] = "$route$file";
+        if ($file = $icon['shadow']) $icon['shadowUrl'] = "$route$file";
+        // sizes and anchors
+        $icon['iconSize'] = [$icon['width'], $icon['height']];
+        $icon['tooltipAnchor'] = [$icon['tooltip_anchor_x'], $icon['tooltip_anchor_y']];
+        if (is_numeric($x = $icon['anchor_x']) && is_numeric($y = $icon['anchor_y'])) $icon['iconAnchor'] = [$x, $y];
+        if ($icon['shadowUrl']) {
+            $icon['shadowSize'] = [$icon['shadow_width'] ?? $icon['width'], $icon['shadow_height'] ?? $icon['height']];
+            if (is_numeric($x = $icon['shadow_anchor_x']) && is_numeric($y = $icon['shadow_anchor_y'])) $icon['shadowAnchor'] = [$x, $y];
+        }
+        // other
+        if ($class = $icon['class']) $icon['className'] .= " $class";
+
+        return $icon;
     }
 
     // setters

@@ -6,6 +6,7 @@ use Grav\Common\Grav;
 use RocketTheme\Toolbox\File\MarkdownFile;
 
 class Utils {
+    const IMAGE_ROUTE = 'user/data/leaflet-tour/images/';
 
     /**
      * Search a directory recursively for any files matching the provided key.

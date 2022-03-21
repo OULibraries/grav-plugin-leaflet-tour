@@ -96,15 +96,15 @@ form:
                 - '.js'
                 - '.json'
 
-            # icon_files:
-            #   type: file
-            #   label: Image Marker Files
-            #   description: Upload images to use as marker icons for tours. You can also upload shadows to make your icons cast shadows on the map.
-            #   style: vertical
-            #   destination: 'user://data/leaflet-tour/images/icons'
-            #   multiple: true
-            #   accept:
-            #     - image/*
+            icon_files:
+              type: file
+              label: Image Marker Files
+              description: Upload images to use as marker icons for tours. You can also upload shadows to make your icons cast shadows on the map.
+              style: vertical
+              destination: 'user://data/leaflet-tour/images/icons'
+              multiple: true
+              accept:
+                - image/*
 
             # popup_files:
             #   type: file
