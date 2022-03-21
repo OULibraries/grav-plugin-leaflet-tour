@@ -147,17 +147,17 @@ form:
                   type: text
                   label: Custom Name
 
-                # .hide:
-                #   type: toggle
-                #   label: Hide Feature
-                #   description: Enable this setting to automatically hide the feature when the dataset is added to tours. The feature can still be added to the tour feature list, but will otherwise not be included in the tour.
-                #   highlight: 1
-                #   default: 0
-                #   options:
-                #     0: PLUGIN_ADMIN.DISABLED
-                #     1: PLUGIN_ADMIN.ENABLED
-                #   validate:
-                #     type: bool
+                .hide:
+                  type: toggle
+                  label: Hide Feature
+                  description: Enable this setting to automatically hide the feature when the dataset is added to tours. The feature can still be added to the tour feature list, but will otherwise not be included in the tour.
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
 
                 # .popup_content:
                 #   type: editor

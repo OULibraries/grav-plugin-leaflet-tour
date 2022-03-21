@@ -240,7 +240,10 @@ class Tour {
             foreach ($this->datasets as $dataset_id => $header_dataset) {
                 if ($dataset = LeafletTour::getDatasets()[$dataset_id]) {
                     // check for included features
-                    $features = array_keys($dataset->getFeatures());
+                    $features = [];
+                    foreach ($dataset->getFeatures() as $feature_id => $feature) {
+                        if (!$feature->isHidden()) $features[] = $feature_id;
+                    }
                     // if features, also add included dataset
                     if (!empty($features)) {
                         $this->included_features = array_merge($this->included_features, $features);

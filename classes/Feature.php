@@ -38,6 +38,10 @@ class Feature {
      */
     private ?string $custom_name = null;
     /**
+     * determines if feature is included in tours when include_all or add_all is set for a dataset
+     */
+    private ?bool $hide = null;
+    /**
      * reference to the dataset that created the feature, assuming there is one
      */
     private ?Dataset $dataset = null;
@@ -194,7 +198,8 @@ class Feature {
             'name' => $this->getName(),
             'custom_name' => $this->custom_name,
             'coordinates' => $this->getCoordinatesYaml(),
-            'properties' => $this->getProperties()
+            'properties' => $this->getProperties(),
+            'hide' => $this->isHidden(),
         ];
     }
     public function update(array $yaml): void {
@@ -246,6 +251,12 @@ class Feature {
      */
     public function getCoordinatesYaml() {
         return self::coordinatesToYaml($this->getCoordinatesJson(), $this->getType());
+    }
+    /**
+     * @return null|bool $this->hide
+     */
+    public function isHidden(): ?bool {
+        return $this->hide;
     }
     /**
      * @return null|Dataset dataset represented by $this->dataset
