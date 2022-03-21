@@ -199,8 +199,6 @@ class Feature {
                 case 'coordinates':
                     $this->setCoordinatesYaml($value);
                     break;
-                case 'properties':
-                    break;
                 default:
                     $this->$key = $value;
                     break;
