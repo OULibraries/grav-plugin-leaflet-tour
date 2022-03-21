@@ -242,6 +242,12 @@ class Dataset {
         }
         return array_merge($yaml, $this->asYaml());
     }
+    /**
+     * Updates features based on changes from dataset config. 
+     * Updates features based on changes from dataset config. Any features not in yaml list will be removed. Any existing features in yaml list will be updated (only valid changes). Any new features will be given new ids and added.
+     * 
+     * @param array $yaml Features yaml from dataset.md
+     */
     public function updateFeaturesYaml(array $features_yaml): void {
         $features = [];
         // loop through list to find existing and new features
@@ -251,6 +257,15 @@ class Dataset {
             if ($feature = $this->features[$id]) {
                 $feature->update($feature_yaml);
                 $features[$id] = $feature;
+            }
+            // new features - remove id before creating new object
+            else {
+                unset($feature_yaml['id']);
+                if ($feature = Feature::fromDataset($feature_yaml, $this)) {
+                    $id = $this->nextFeatureId();
+                    $feature->setId($id);
+                    $features[$id] = $feature;
+                }
             }
         }
         $this->features = $features;
@@ -317,8 +332,10 @@ class Dataset {
     private function nextFeatureId(): ?string {
         if ($this->id) { // just in case, should be checked before calling
             $this->feature_count ??= 0; // just in case, may not be set when first feature is initialized
-            $id = $this->id . '--' . $this->feature_count;
-            $this->feature_count++;
+            do {
+                $id = $this->id . '--' . $this->feature_count;
+                $this->feature_count++;
+            } while ($this->features[$id]);
             return $id;
         }
         else return null;

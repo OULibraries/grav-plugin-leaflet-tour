@@ -133,6 +133,7 @@ form:
 
                 .id:
                   type: hidden
+                  default: 'tmp'
                   validate:
                     required: true
 
