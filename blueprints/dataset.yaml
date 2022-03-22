@@ -113,14 +113,14 @@ form:
               validate:
                 type: commalist
 
-            # header.popup_props:
-            #   type: select
-            #   label: Add Properties to Popup Content
-            #   description: All properties selected here will automatically be added to popup content for features. If popup content is provided in the editor (either here in the dataset config or in the tour page), the properties will be listed above that content. If a feature does not have values for a given selected property, that property will not be included.
-            #   data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetPropertyList'
-            #   multiple: true
-            #   validate:
-            #     type: array
+            header.auto_popup_properties:
+              type: select
+              label: Add Properties to Popup Content
+              description: All properties selected here will automatically be added to popup content for features. If popup content is provided in the editor (either here in the dataset config or in the tour page), the properties will be listed above that content. If a feature does not have values for a given selected property, that property will not be included.
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetPropertyList'
+              multiple: true
+              validate:
+                type: array
 
             header.features:
               type: list
@@ -158,16 +158,16 @@ form:
                     1: PLUGIN_ADMIN.ENABLED
                   validate:
                     type: bool
-
-                # .popup_content:
-                #   type: editor
-                #   label: Popup Content
-                #   description: If this field is blank and the feature has no properties selected to automatically add, then the feature will not have a popup window. Note that current content may not show up until you click inside the text area.
-                #   validate:
-                #     type: textarea
                     
                 .properties:
                   type: fieldset
                   collapsible: true
                   title: Properties
                   data-fields@: 'Grav\Plugin\LeafletTourPlugin::getFeaturePropertiesFields'
+
+                .popup_content:
+                  type: editor
+                  label: Popup Content
+                  description: If this field is blank and the feature has no properties selected to automatically add, then the feature will not have a popup window. Note that current content may not show up until you click inside the text area.
+                  validate:
+                    type: textarea

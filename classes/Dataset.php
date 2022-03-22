@@ -94,6 +94,10 @@ class Dataset {
      */
     private array $properties = [];
     /**
+     * Properties used to generate auto popup content for features. Must be in the dataset properties list
+     */
+    private ?array $auto_popup_properties = null;
+    /**
      * The property used to determine a feature's name when its custom_name is not set, must be in the dataset properties list
      */
     private ?string $name_property = null;
@@ -187,23 +191,6 @@ class Dataset {
         return $dataset;
     }
 
-    // static methods
-
-    /**
-     * First priority is property called name, next is property beginning or ending with name, and last resort is first property, if available
-     * @return null|string The value for the name_property
-     */
-    public static function determineNameProperty(array $properties): ?string {
-        $name_prop = '';
-        foreach ($properties as $prop) {
-            if (strcasecmp($prop, 'name') == 0) return $prop;
-            else if (empty($name_prop) && preg_match('/^(.*name|name.*)$/i', $prop)) $name_prop = $prop;
-        }
-        if (empty($name_prop)) $name_prop = $properties[0];
-        if ($name_prop) return $name_prop;
-        else return null;
-    }
-
     // object methods
     
     /**
@@ -233,6 +220,7 @@ class Dataset {
             'title' => $this->getTitle(),
             'name_property' => $this->getNameProperty(),
             'properties' => $this->getProperties(),
+            'auto_popup_properties' => $this->auto_popup_properties,
             'features' => $this->getFeaturesYaml(),
             'feature_count' => $this->getFeatureCount(),
         ];
@@ -254,14 +242,8 @@ class Dataset {
                 case 'title':
                     $this->setTitle($value);
                     break;
-                case 'name_property':
-                    $this->setNameProperty($value);
-                    break;
                 case 'features':
                     $this->updateFeaturesYaml($value);
-                    break;
-                case 'properties':
-                    $this->setProperties($value);
                     break;
                 // generic - no special set methods
                 default:
@@ -269,6 +251,9 @@ class Dataset {
                     break;
             }
         }
+        // validate name property and auto popup properties
+        if (!in_array($this->name_property, $this->properties)) $this->name_property = 'none';
+        if ($props = $this->auto_popup_properties) $this->auto_popup_properties = array_values(array_intersect($props, $this->properties));
         return array_merge($yaml, $this->asYaml());
     }
     /**
@@ -439,6 +424,12 @@ class Dataset {
         return $this->name_property;
     }
     /**
+     * @return null|array $this->auto_popup_properties
+     */
+    public function getAutoPopupProperties(): ?array {
+        return $this->auto_popup_properties;
+    }
+    /**
      * @return array $this->icon with defaults filled in
      */
     public function getIcon(): array {
@@ -509,6 +500,23 @@ class Dataset {
     public function setProperties(?array $properties): void {
         $this->properties = $properties ?? [];
         if (!in_array($this->name_property, $this->properties)) $this->name_property = 'none';
+    }
+
+    // static methods
+
+    /**
+     * First priority is property called name, next is property beginning or ending with name, and last resort is first property, if available
+     * @return null|string The value for the name_property
+     */
+    public static function determineNameProperty(array $properties): ?string {
+        $name_prop = '';
+        foreach ($properties as $prop) {
+            if (strcasecmp($prop, 'name') == 0) return $prop;
+            else if (empty($name_prop) && preg_match('/^(.*name|name.*)$/i', $prop)) $name_prop = $prop;
+        }
+        if (empty($name_prop)) $name_prop = $properties[0];
+        if ($name_prop) return $name_prop;
+        else return null;
     }
 }
 ?>

@@ -42,6 +42,10 @@ class Feature {
      */
     private ?bool $hide = null;
     /**
+     * can be overridden by value from tour, may not be the full feature popup (if auto popup exists)
+     */
+    private ?string $popup_content = null;
+    /**
      * reference to the dataset that created the feature, assuming there is one
      */
     private ?Dataset $dataset = null;
@@ -106,6 +110,208 @@ class Feature {
             return new Feature(array_merge($options, $geometry));
         }
         else return null;
+    }
+    public static function fromTour(Feature $original, array $yaml, Dataset $dataset): Feature {
+        $feature = $original->clone();
+        if ($yaml['popup_content']) $feature->popup_content = $yaml['popup_content'];
+        else if ($yaml['remove_popup']) $feature->popup_content = null;
+        $feature->dataset = $dataset; // auto popup properties may have changed
+        return $feature;
+    }
+
+    // object methods
+
+    /**
+     * Creates an identical copy of the object
+     * @return Feature
+     */
+    public function clone(): Feature {
+        $options = [];
+        foreach (get_object_vars($this) as $key => $value) {
+            $options[$key] = $value;
+        }
+        return new Feature($options);
+    }
+    public function __toString() {
+        $vars = get_object_vars($this);
+        // change dataset to just id
+        if ($dataset = $vars['dataset']) $vars['dataset'] = $dataset->getId();
+        return json_encode($vars);
+    }
+
+    /**
+     * @return array Feature yaml array that can be saved in dataset features list. [id, name, custom_name, hide, popup_content, properties, coordinates]
+     */
+    public function asYaml(): array {
+        return [
+            'id' => $this->getId(),
+            'name' => $this->getName(),
+            'custom_name' => $this->custom_name,
+            'coordinates' => $this->getCoordinatesYaml(),
+            'properties' => $this->getProperties(),
+            'hide' => $this->isHidden(),
+            'popup_content' => $this->popup_content,
+        ];
+    }
+    /**
+     * Validates update content and updates the object
+     * @param array $yaml Update data
+     */
+    public function update(array $yaml): void {
+        $yaml = array_diff_key($yaml, array_flip(['id', 'dataset', 'type']));
+        foreach ($yaml as $key => $value) {
+            switch ($key) {
+                case 'coordinates':
+                    $this->setCoordinatesYaml($value);
+                    break;
+                case 'properties':
+                    $this->properties = array_merge($this->properties, $value);
+                    break;
+                default:
+                    $this->$key = $value;
+                    break;
+            }
+        }
+    }
+
+    // getters
+    
+    /**
+     * @return null|string $this->id
+     */
+    public function getId(): ?string {
+        return $this->id;
+    }
+    /**
+     * @return array $this->properties
+     */
+    public function getProperties(): array {
+        return $this->properties;
+    }
+    /**
+     * @param string $property Property key to look for
+     * @return mixed $this->properties[$property]
+     */
+    public function getProperty(string $property) {
+        return $this->getProperties()[$property];
+    }
+    /**
+     * @return array $this->coordinates
+     */
+    public function getCoordinatesJson(): array {
+        return $this->coordinates;
+    }
+    /**
+     * @return mixed $coordinates Point feature will return ['lng' => float, 'lat' => float], non-point will return json-encoded string
+     */
+    public function getCoordinatesYaml() {
+        return self::coordinatesToYaml($this->getCoordinatesJson(), $this->getType());
+    }
+    /**
+     * @return null|bool $this->hide
+     */
+    public function isHidden(): ?bool {
+        return $this->hide;
+    }
+    /**
+     * @return null|string $this->popup_content
+     */
+    public function getPopupContent(): ?string {
+        return $this->popup_content;
+    }
+    /**
+     * Generates and returns auto popup, using dataset
+     * @return null|string Formatted auto popup if the feature has any auto popup property values
+     */
+    public function getAutoPopup(): ?string {
+        if ($this->getDataset() && ($props = $this->getDataset()->getAutoPopupProperties())) {
+            // create list of feature properties, filtered by dataset property keys
+            $properties = array_intersect_key($this->getProperties(), array_flip($props));
+            // format with html into string
+            $content = '';
+            foreach ($properties as $name => $value) {
+                if ($value) $content .= "<li><span class='auto-popup-prop-name'>$name:</span> $value</li>";
+            }
+            if ($content) return "<ul>$content</ul>";
+        }
+        return null;
+    }
+    /**
+     * Generates and returns auto popup + popup content
+     * @param bool $remove If true, $this->popup_content will be ignored. Default false.
+     * @param null|string $replace If provided, replaces $this->popup_content, ignores $remove. Default null.
+     * @return string popup content generated from auto popup and regular popup
+     */
+    public function getFullPopup(): ?string {
+        $auto = $this->getAutoPopup();
+        $popup = $this->getPopupContent();
+        // return null if no popup
+        if (!$auto && !$popup) return null;
+        // if both, put them together, otherwise return one
+        $full = '';
+        if ($auto) $full .= $auto;
+        if ($popup) $full .= "<div>$popup</div>";
+        return $full;
+    }
+    /**
+     * @return null|Dataset dataset represented by $this->dataset
+     */
+    public function getDataset(): ?Dataset {
+        return $this->dataset;
+    }
+    /**
+     * @return null|string $this->type or $this->dataset->type
+     */
+    public function getType(): ?string {
+        if ($dataset = $this->getDataset()) return $dataset->getType();
+        else return $this->type;
+    }
+    /**
+     * @return string Feature name. Priority goes to custom_name, then properties[name_property], then id. Returns empty string if nothing is found.
+     */
+    public function getName(): ?string {
+        if ($name = $this->custom_name) return $name;
+        if (($dataset = $this->getDataset()) && ($prop = $dataset->getNameProperty()) && ($name = $this->getProperty($prop))) return $name;
+        return $this->id;
+    }
+
+    // setters
+    
+    /**
+     * @param string Sets $this->id if not already set
+     */
+    public function setId(string $id): void {
+        $this->id ??= $id;
+    }
+    /**
+     * @param string $dataset Sets $this->dataset if not already set
+     */
+    public function setDataset(Dataset $dataset): void {
+        $this->dataset ??= $dataset;
+    }
+    /**
+     * @param mixed $coordinates Json-encoded string or array with lng and lat to determine new coordinates, only set if valid
+     */
+    public function setCoordinatesYaml($coordinates): void {
+        // must have type to set coordinates
+        if ($type = $this->getType()) {
+            // coordinates must be valid
+            if ($coordinates = self::validateYamlCoordinates($coordinates, $type)) {
+                $this->coordinates = $coordinates;
+            }
+        }
+    }
+    /**
+     * @param array $coordinates GeoJson coordinates to replace $this->coordinates if valid
+     */
+    public function setCoordinatesJson(array $coordinates): void {
+        // must have type to set coordinates
+        if ($type = $this->getType()) {
+            // coordinates must be valid
+            if ($coordinates = self::validateJsonCoordinates($coordinates, $type)) {
+                $this->coordinates = $coordinates;
+            }
+        }
     }
 
     // static methods
@@ -249,148 +455,6 @@ class Feature {
             return $multi;
         }
         return null;
-    }
-
-    // object methods
-
-    /**
-     * Creates an identical copy of the object
-     * @return Feature
-     */
-    public function clone(): Feature {
-        $options = [];
-        foreach (get_object_vars($this) as $key => $value) {
-            $options[$key] = $value;
-        }
-        return new Feature($options);
-    }
-    public function __toString() {
-        $vars = get_object_vars($this);
-        // change dataset to just id
-        if ($dataset = $vars['dataset']) $vars['dataset'] = $dataset->getId();
-        return json_encode($vars);
-    }
-
-    /**
-     * @return array Feature yaml array that can be saved in dataset features list. [id, name, custom_name, hide, popup_content, properties, coordinates]
-     */
-    public function asYaml(): array {
-        return [
-            'id' => $this->getId(),
-            'name' => $this->getName(),
-            'custom_name' => $this->custom_name,
-            'coordinates' => $this->getCoordinatesYaml(),
-            'properties' => $this->getProperties(),
-            'hide' => $this->isHidden(),
-        ];
-    }
-    /**
-     * Validates update content and updates the object
-     * @param array $yaml Update data
-     */
-    public function update(array $yaml): void {
-        $yaml = array_diff_key($yaml, array_flip(['id', 'dataset', 'type']));
-        foreach ($yaml as $key => $value) {
-            switch ($key) {
-                case 'coordinates':
-                    $this->setCoordinatesYaml($value);
-                    break;
-                case 'properties':
-                    $this->properties = array_merge($this->properties, $value);
-                    break;
-                default:
-                    $this->$key = $value;
-                    break;
-            }
-        }
-    }
-
-    // getters
-    
-    /**
-     * @return null|string $this->id
-     */
-    public function getId(): ?string {
-        return $this->id;
-    }
-    /**
-     * @return array $this->properties
-     */
-    public function getProperties(): array {
-        return $this->properties;
-    }
-    /**
-     * @param string $property Property key to look for
-     * @return mixed $this->properties[$property]
-     */
-    public function getProperty(string $property) {
-        return $this->getProperties()[$property];
-    }
-    /**
-     * @return array $this->coordinates
-     */
-    public function getCoordinatesJson(): array {
-        return $this->coordinates;
-    }
-    /**
-     * @return mixed $coordinates Point feature will return ['lng' => float, 'lat' => float], non-point will return json-encoded string
-     */
-    public function getCoordinatesYaml() {
-        return self::coordinatesToYaml($this->getCoordinatesJson(), $this->getType());
-    }
-    /**
-     * @return null|bool $this->hide
-     */
-    public function isHidden(): ?bool {
-        return $this->hide;
-    }
-    /**
-     * @return null|Dataset dataset represented by $this->dataset
-     */
-    public function getDataset(): ?Dataset {
-        return $this->dataset;
-    }
-    /**
-     * @return null|string $this->type or $this->dataset->type
-     */
-    public function getType(): ?string {
-        if ($dataset = $this->getDataset()) return $dataset->getType();
-        else return $this->type;
-    }
-    /**
-     * @return string Feature name. Priority goes to custom_name, then properties[name_property], then id. Returns empty string if nothing is found.
-     */
-    public function getName(): ?string {
-        if ($name = $this->custom_name) return $name;
-        if (($dataset = $this->getDataset()) && ($prop = $dataset->getNameProperty()) && ($name = $this->getProperty($prop))) return $name;
-        return $this->id;
-    }
-
-    // setters
-    
-    /**
-     * @param string Sets $this->id if not already set
-     */
-    public function setId(string $id): void {
-        $this->id ??= $id;
-    }
-    /**
-     * @param string $dataset Sets $this->dataset if not already set
-     */
-    public function setDataset(Dataset $dataset): void {
-        $this->dataset ??= $dataset;
-    }
-    /**
-     * @param mixed $coordinates Json-encoded string or array with lng and lat to determine new coordinates, only set if valid
-     */
-    public function setCoordinatesYaml($coordinates): void {
-        // must have type to set coordinates
-        if ($type = $this->getType()) {
-            // coordinates must be valid
-            if ($coordinates = self::validateYamlCoordinates($coordinates, $type)) {
-                $this->coordinates = $coordinates;
-            }
-        }
     }
 }
 ?>
