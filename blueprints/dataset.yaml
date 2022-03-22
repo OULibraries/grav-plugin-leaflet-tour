@@ -55,10 +55,10 @@ form:
                       type: text
                       label: Dataset Name
 
-                    # header.attribution:
-                    #   type: text
-                    #   label: Dataset Attribution
-                    #   description: Add some HTML to include in the tour footer when the dataset is used.
+                    header.attribution:
+                      type: text
+                      label: Dataset Attribution
+                      description: Add some HTML to include in the tour footer when the dataset is used.
 
                 col2:
                   type: column
@@ -74,26 +74,26 @@ form:
                       type: display
                       content: This page was automatically created. Use the various tabs provided to customize your dataset. Please do not enter expert mode to change options that are read only, as changing these may break aspects of this plugin.
 
-            # legend_section:
-            #   type: display
-            #   content: "## Legend"
-            #   markdown: true
-            #   style: vertical
+            legend_section:
+              type: display
+              content: "## Legend"
+              markdown: true
+              style: vertical
 
-            # header.legend.text:
-            #   type: text
-            #   label: Description for Legend
+            header.legend.text:
+              type: text
+              label: Description for Legend
 
-            # header.legend.summary:
-            #   type: text
-            #   label: Legend Summary
-            #   description: Optional shorter version of the legend description. If provided, this will be used instead of the legend description as additional labelling for each feature on the map for users of assistive technology.
+            header.legend.summary:
+              type: text
+              label: Legend Summary
+              description: Optional shorter version of the legend description. If provided, this will be used instead of the legend description as additional labelling for each feature on the map for users of assistive technology.
 
-            # # TODO: Include?
-            # header.legend.symbol_alt:
-            #   type: text
-            #   label: Legend Symbol Alt Text
-            #   description: A brief description of the icon/symbol/shape used for each feature.
+            # TODO: Include?
+            header.legend.symbol_alt:
+              type: text
+              label: Legend Symbol Alt Text
+              description: A brief description of the icon/symbol/shape used for each feature.
 
         features:
           type: tab

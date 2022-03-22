@@ -102,6 +102,14 @@ class Dataset {
      */
     private ?string $name_property = null;
     /**
+     * Text to provide attribution for the dataset, will be added automatically to tours that use it
+     */
+    private ?string $attribution = null;
+    /**
+     * [text, summary, symbol_alt]
+     */
+    private ?array $legend = null;
+    /**
      * Icon options, based on Leaflet icon options, but the yaml for storage is slightly different
      */
     private ?array $icon = null;
@@ -223,6 +231,8 @@ class Dataset {
             'auto_popup_properties' => $this->auto_popup_properties,
             'features' => $this->getFeaturesYaml(),
             'feature_count' => $this->getFeatureCount(),
+            'attribution' => $this->attribution,
+            'legend' => $this->legend,
         ];
         foreach (['icon', 'path', 'active_path'] as $key) {
             if ($value = $this->$key) $yaml[$key] = $value;
@@ -428,6 +438,18 @@ class Dataset {
      */
     public function getAutoPopupProperties(): ?array {
         return $this->auto_popup_properties;
+    }
+    /**
+     * @return null|string $this->attribution
+     */
+    public function getAttribution(): ?string {
+        return $this->attribution;
+    }
+    /**
+     * @return null|array $this->legend
+     */
+    public function getLegend(): array {
+        return $this->legend ?? [];
     }
     /**
      * @return array $this->icon with defaults filled in
