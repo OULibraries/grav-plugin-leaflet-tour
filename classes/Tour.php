@@ -199,6 +199,12 @@ class Tour {
         }
         return $datasets;
     }
+    /**
+     * @return array [$id => array]
+     *  - 'type' => 'Feature'
+     *  - 'properties' => ['id' => string, 'name' => string, 'dataset' => string, 'has_popup' => bool]
+     *  - 'geometry' => ['type' => string, 'coordinates' => array]
+     */
     public function getFeatureData(): array {
         $features = [];
         foreach ($this->getIncludedFeatures() as $id) {
@@ -213,10 +219,29 @@ class Tour {
                     'id' => $id,
                     'name' => $feature->getName(),
                     'dataset' => $feature->getDataset()->getId(),
+                    'has_popup' => !empty($feature->getFullPopup()),
                 ],
             ];
         }
         return $features;
+    }
+    /**
+     * for each popup: id, name, content
+     * @return array
+     *  - 'id' => string
+     *  - 'name' => string
+     *  - 'popup' => string
+     */
+    public function getFeaturePopups(): array {
+        $popups = [];
+        foreach ($this->getMergedFeatures() as $id => $feature) {
+            if ($popup = $feature->getFullPopup()) $popups[] = [
+                'id' => $id,
+                'name' => $feature->getName(),
+                'popup' => $popup,
+            ];
+        }
+        return $popups;
     }
     /**
      * @return array [string $attr, ...]
@@ -268,7 +293,7 @@ class Tour {
      * clears all stored values relating to datasets and features (too interconnected to bother with separate methods)
      */
     private function clearFeatures(): void {
-        $this->included_features = $this->all_features = $this->included_datasets = $this->merged_datasets = null;
+        $this->included_features = $this->all_features = $this->included_datasets = $this->merged_datasets = $this->merged_features = null;
     }
 
     // setters
@@ -364,7 +389,7 @@ class Tour {
         }
         return $this->included_datasets;
     }
-    public function getMergedDatasets(): array {
+    private function getMergedDatasets(): array {
         if (!$this->merged_datasets) {
             $ids = $this->getIncludedDatasets();
             $this->merged_datasets = [];
@@ -372,11 +397,23 @@ class Tour {
                 if ($dataset = LeafletTour::getDatasets()[$id]) {
                     // should merge icon, path, legend, attribution, auto popup properties
                     // $this->merged_datasets[$id] = Dataset::fromTour($dataset, $this->getDatasets()[$id]);
-                    $this->merged_datasets[$id] = $dataset;
+                    $this->merged_datasets[$id] = Dataset::fromTour($dataset, []);
                 }
             }
         }
         return $this->merged_datasets;
+    }
+    private function getMergedFeatures(): array {
+        if (!$this->merged_features) {
+            $this->merged_features = [];
+            foreach ($this->getIncludedFeatures() as $feature_id) {
+                $feature = $this->getAllFeatures()[$feature_id];
+                $dataset_id = $feature->getDataset()->getId();
+                // popup content/settings, dataset reference
+                $this->merged_features[$feature_id] = Feature::fromTour($feature, [], $this->getMergedDatasets()[$dataset_id]);
+            }
+        }
+        return $this->merged_features;
     }
 }
 ?>
