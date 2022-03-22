@@ -198,6 +198,36 @@ class Dataset {
         }
         return $dataset;
     }
+    public static function fromTour(Dataset $original, array $yaml): Dataset {
+        $dataset = $original->clone();
+        $dataset->features = [];
+        // merge icon and path options
+        foreach (['icon', 'path', 'active_path'] as $key) {
+            if ($yaml[$key]) $dataset->$key = self::mergeArrays($dataset->$key, $yaml[$key]);
+        }
+        // overwrite attribution, auto_popup_properties if set
+        foreach (['attribution', 'auto_popup_properties'] as $key) {
+            if ($value = $yaml[$key]) $dataset->$key = $value;
+        }
+        // merge legend options - summary is special
+        // todo: provide summary even if not text? use symbol alt as backup?
+        $legend = $yaml['legend'] ?? [];
+        $dataset->legend = self::mergeArrays($original->getLegend(), $legend);
+        $summary = $legend['summary'] ?: $legend['text'] ?: $original->getLegend()['summary'] ?: $original->getLegend()['text'] ?: $dataset->getLegend()['symbol_alt'];
+        if ($summary) $dataset->legend['summary'] = $summary;
+        return $dataset;
+    }
+    // replace null or empty string with other value
+    private static function mergeArrays(?array $a1, ?array $a2): array {
+        $a1 ??= [];
+        $a2 ??= [];
+        $merged = [];
+        foreach (array_keys(array_merge($a1, $a2)) as $key) {
+            if ($a2[$key] === '') $a2[$key] = null;
+            $merged[$key] = $a2[$key] ?? $a1[$key];
+        }
+        return $merged;
+    }
 
     // object methods
     
@@ -369,6 +399,8 @@ class Dataset {
         }
         else return null;
     }
+
+    // TODO: functions for applying updates
 
     // getters
     
