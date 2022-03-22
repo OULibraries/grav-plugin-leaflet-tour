@@ -19,21 +19,21 @@ form:
               validate:
                 required: true
 
-            TODO: Does fieldset really need header in front of it?
+            # TODO: Does fieldset really need header in front of it?
             datasets_fieldset:
               type: fieldset
-              title: Tour Data
+              title: Tour Datasets
               collapsible: true
-              collapsed: false
+              collapsed: true
               fields:
-
+                
                 header.datasets:
                   type: list
-                  title: Dataset List
                   size: long
                   style: vertical
                   collapsed: true
                   btnLabel: Add Dataset
+                  controls: both
                   fields:
 
                     .id:
@@ -43,141 +43,36 @@ form:
                       validate:
                         required: true
 
-            #         .include_all:
-            #           type: toggle
-            #           label: Include All Features
-            #           description: If checked, all (non-hidden) features in the dataset will automatically be included in the tour. If not, only features added to the features list (further down) will be included.
-            #           highlight: 1
-            #           default: 1
-            #           options:
-            #             1: PLUGIN_ADMIN.ENABLED
-            #             0: PLUGIN_ADMIN.DISABLED
-            #           validate:
-            #             type: bool
+                    # .include_all:
+                    #   type: toggle
+                    #   label: Include All Features
+                    #   description: If checked, all (non-hidden) features in the dataset will automatically be included in the tour. If not, only features added to the features list (further down) will be included.
+                    #   highlight: 1
+                    #   default: 1
+                    #   options:
+                    #     1: PLUGIN_ADMIN.ENABLED
+                    #     0: PLUGIN_ADMIN.DISABLED
+                    #   validate:
+                    #     type: bool
 
-            #         .add_all:
-            #           type: toggle
-            #           label: Add All Features
-            #           description: On save, all (non-hidden) features from the dataset will automatically be added to the features list, if they are not already in the list.
-            #           highlight: 1
-            #           default: 0
-            #           options:
-            #             0: PLUGIN_ADMIN.DISABLED
-            #             1: PLUGIN_ADMIN.ENABLED
-            #           validate:
-            #             type: bool
+                    # .add_all:
+                    #   type: toggle
+                    #   label: Add All Features
+                    #   description: On save, all (non-hidden) features from the dataset will automatically be added to the features list, if they are not already in the list.
+                    #   highlight: 1
+                    #   default: 0
+                    #   options:
+                    #     0: PLUGIN_ADMIN.DISABLED
+                    #     1: PLUGIN_ADMIN.ENABLED
+                    #   validate:
+                    #     type: bool
 
-            #         .overrides:
-            #           type: fieldset
-            #           title: Dataset Overrides
-            #           collapsible: true
-            #           collapsed: true
-            #           fields:
-
-            #             .legend_section:
-            #               type: section
-            #               title: Legend Options
-            #               underline: false
-
-            #             .legend_text:
-            #               type: text
-            #               label: Description for Legend
-            #               description: If this field is set then any legend summary from the dataset will be ignored, whether or not the legend summary override is set.
-            #               # TODO: Does this work? If so, set for all overrides
-            #               toggleable: true
-
-            #             .legend_summary:
-            #               type: text
-            #               label: Legend Summary
-            #               description: Optional shorter version of the legend description.
-
-            #             .legend_symbol_alt:
-            #               type: text
-            #               label: Legend Symbol Alt Text
-            #               description: A brief description of the icon/symbol/shape used for each feature.
-
-            #             .icon_shape_section:
-            #               type: section
-            #               title: Icon and Shape Options
-            #               text: Icon options are only relevant for datasets with Point features. Shape options are only relevant for datasets with non-Point features. Note that only some of the icon/shape options provided in the dataset configuration pages are present. You can still override any options not shown by directly modifying the page header in expert mode.
-            #               underline: false
-
-            #             # TODO: Do I need a hidden .icon or .shape field? For some reason the original has hidden .shape and .shape_active fields.
-            #             .icon.file:
-            #               type: filepicker
-            #               label: Icon Image File
-            #               description: If not set, the default Leaflet marker will be used.
-            #               preview_images: true
-            #               folder: 'user://data/leaflet-tour/icons'
-            #               # TODO: Accept?
-
-            #             .icon.width:
-            #               type: number
-            #               label: Icon Width (pixels)
-            #               validate:
-            #                 min: 1
-
-            #             .icon.height:
-            #               type: number
-            #               label: Icon Height (pixels)
-            #               validate:
-            #                 min: 1
-
-            #             .icon.anchor_x:
-            #               type: hidden
-            #             .icon.anchor_y:
-            #               type: hidden
-            #             .icon.tooltip_anchor_x:
-            #               type: hidden
-            #             .icon.tooltip_anchor_y:
-            #               type: hidden
-            #             .icon.shadow:
-            #               type: hidden
-            #             .icon.shadow_width:
-            #               type: hidden
-            #             .icon.shadow_height:
-            #               type: hidden
-            #             .icon.shadow_anchor_x:
-            #               type: hidden
-            #             .icon.shadow_anchor_y:
-            #               type: hidden
-            #             .icon.class:
-            #               type: hidden
-            #             .icon.retina:
-            #               type: hidden
-
-            #             .shape.stroke:
-            #               type: hidden
-
-            #             .shape.color:
-            #               type: colorpicker
-            #               label: Shape Color
-            #               description: Does not override polygon fill color if a color has been set in the dataset configuration.
-
-            #             .shape.weight:
-            #               type: hidden
-            #             .shape.opacity:
-            #               type: hidden
-            #             .shape.fill:
-            #               type: hidden
-            #             .shape.fillColor:
-            #               type: hidden
-            #             .shape.fillOpacity:
-            #               type: hidden
-            #             .shape_active.stroke:
-            #               type: hidden
-            #             .shape_active.color:
-            #               type: hidden
-            #             .shape_active.weight:
-            #               type: hidden
-            #             .shape_active.opacity:
-            #               type: hidden
-            #             .shape_active.fill:
-            #               type: hidden
-            #             .shape_active.fillColor:
-            #               type: hidden
-            #             .shape_active.fillOpacity:
-            #               type: hidden
+            dataset_overrides_fieldset:
+              type: fieldset
+              title: Dataset Overrides
+              collapsible: true
+              collapsed: false
+              data-fields@: 'Grav\Plugin\LeafletTourPlugin::getTourDatasetFields'
 
             options_fieldset:
               type: fieldset

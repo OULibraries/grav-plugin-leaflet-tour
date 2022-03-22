@@ -39,7 +39,7 @@ class Utils {
         if ($file->exists()) return $file;
         else return MarkdownFile::instance($route . 'shape_dataset.md');
     }
-    private static function getPageRoute(array $keys): string {
+    public static function getPageRoute(array $keys): string {
         $route = Grav::instance()['locator']->findResource('page://').'/'; // user/pages folder route
         foreach ($keys as $key) {
             $glob = glob($route.'*'); // note: case-sensitive

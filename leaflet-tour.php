@@ -2,12 +2,12 @@
 namespace Grav\Plugin;
 
 use Composer\Autoload\ClassLoader;
-// use Grav\Common\Grav;
+use Grav\Common\Grav;
 use Grav\Common\Plugin;
 // use Grav\Common\Data\Data;
 // use Grav\Common\Page\Header;
 use RocketTheme\Toolbox\Event\Event;
-// use RocketTheme\Toolbox\File\MarkdownFile;
+use RocketTheme\Toolbox\File\MarkdownFile;
 // use Grav\Plugin\LeafletTour\Dataset;
 use Grav\Plugin\LeafletTour\LeafletTour;
 use Grav\Plugin\LeafletTour\Utils;
@@ -195,5 +195,110 @@ class LeafletTourPlugin extends Plugin {
             return 'hidden';
         }
         else return $default;
+    }
+
+    public static function getTourDatasetFields(): array {
+        $fields = [];
+        // get tour
+        $route = Utils::getPageRoute(explode('/', Grav::instance()['page']->header()->controller['key']));
+        $tour_id = MarkdownFile::instance($route . 'tour.md')->header()['id'];
+        $tour = LeafletTour::getTours()[$tour_id];
+        // get datasets
+        foreach (array_keys($tour->getDatasets()) as $id) {
+            $dataset = LeafletTour::getDatasets()[$id];
+            $name = "header.dataset_overrides.$id";
+            $options = [
+                "$name.auto_popup_properties" => [
+                    'type' => 'select',
+                    'label' => 'Add Properties to Popup Content',
+                    'description' => 'Properties selected here will be used instead of properties selected in the dataset header. If only \'None\' is selected, then no properties will be added to popup content.',
+                    'options' => array_merge(['none' => 'None'], array_combine($dataset->getProperties(), $dataset->getProperties())),
+                    'multiple' => true,
+                    'toggleable' => true,
+                    'validate' => [
+                        'type' => 'array'
+                    ],
+                ],
+                "$name.attribution" => [
+                    'type' => 'text',
+                    'label' => 'Dataset Attribution',
+                    'toggleable' => true,
+                ],
+                'legend_section' => [
+                    'type' => 'section',
+                    'title' => 'Legend Options',
+                ],
+                "$name.legend.text" => [
+                    'type' => 'text',
+                    'label' => 'Description for Legend',
+                    'description' => 'If this field is set then any legend summary from the dataset will be ignored, whether or not the legend summary override is set.',
+                    'toggleable' => true,
+                ],
+                "$name.legend.summary" => [
+                    'type' => 'text',
+                    'label' => 'Legend Summary',
+                    'description' => 'Optional shorter version of the legend description.',
+                    'toggleable' => true,
+                ],
+                "$name.legend.symbol_alt" => [
+                    'type' => 'text',
+                    'label' => 'Legend Symbol Alt Text',
+                    'description' => 'A brief description of the icon/symbol/shape used for each feature.',
+                    'toggleable' => true,
+                ],
+            ];
+            // add icon or path options
+            if ($dataset->getType() === 'Point') {
+                $options["$name.icon_section"] = [
+                    'type' => 'section',
+                    'title' => 'Icon Options',
+                    'text' => 'Only some of the icon options in the dataset configuration are shown here, but any can be customized by directly modifying the page header in expert mode.',
+                ];
+                $options["$name.icon.file"] = [
+                    'type' => 'filepicker',
+                    'label' => 'Icon Image File',
+                    'description' => 'If not set, the default Leaflet marker will be used',
+                    'preview_images' => true,
+                    // 'folder' => Grav::instance()['locator']->findResource('user://') . '/data/leaflet-tour/icons',
+                    'folder' => 'user://data/leaflet-tour/images/icons',
+                    'toggleable' => true,
+                ];
+                $options["$name.icon.width"] = [
+                    'type' => 'number',
+                    'label' => 'Icon Width (pixels)',
+                    'toggleable' => true,
+                    'validate' => [
+                        'min' => 1
+                    ],
+                ];
+                $options["$name.icon.height"] = [
+                    'type' => 'number',
+                    'label' => 'Icon Height (pixels)',
+                    'toggleable' => true,
+                    'validate' => [
+                        'min' => 1
+                    ],
+                ];
+            } else {
+                $options ['path_section'] = [
+                    'type' => 'section',
+                    'title' => 'Shape Options',
+                    'text' => 'Other shape/path options can be customized by directly modifying the page header in expert mode.'
+                ];
+                $options ['path.color'] = [
+                    'type' => 'colorpicker',
+                    'label' => 'Shape Color',
+                    'toggleable' => true,
+                ];
+            }
+            $fields[$name] = [
+                'type' => 'fieldset',
+                'title' => $dataset->getTitle(),
+                'collapsible' => true,
+                'collapsed' => true,
+                'fields' => $options,
+            ];
+        }
+        return $fields;
     }
 }

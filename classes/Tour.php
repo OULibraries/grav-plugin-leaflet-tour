@@ -43,6 +43,7 @@ class Tour {
     private ?string $id = null;
     private ?string $title = null;
     private array $datasets = [];
+    private array $dataset_overrides = [];
 
     // calculated and stored properties
     /**
@@ -123,7 +124,7 @@ class Tour {
      */
     public function asYaml(): array {
         $yaml = [];
-        foreach (['id', 'title'] as $property) {
+        foreach (['id', 'title', 'dataset_overrides'] as $property) {
             if ($value = $this->$property) $yaml[$property] = $value;
         }
         $yaml['datasets'] = array_values($this->datasets);
@@ -136,9 +137,10 @@ class Tour {
     public function removeDataset(string $id): bool {
         if ($this->getDatasets()[$id]) {
             unset($this->datasets[$id]);
-            $this->updateFeatures();
-            $this->save();
-            return true;
+            // $this->updateFeatures();
+            // $this->save();
+            // return true;
+            return $this->updateDataset($id, true);
         }
         else return false;
     }
@@ -146,10 +148,11 @@ class Tour {
      * Called after a dataset page has been updated
      * @return bool True if dataset is in tour
      */
-    public function updateDataset(string $id): bool {
-        if ($this->getDatasets()[$id]) {
+    public function updateDataset(string $id, bool $removed = false): bool {
+        if ($removed || $this->getDatasets()[$id]) {
             $this->updateFeatures();
             $this->save();
+            // TODO: validate auto popup properties
             return true;
         }
         else return false;
@@ -396,7 +399,7 @@ class Tour {
             foreach ($ids as $id) {
                 if ($dataset = LeafletTour::getDatasets()[$id]) {
                     // should merge icon, path, legend, attribution, auto popup properties
-                    // $this->merged_datasets[$id] = Dataset::fromTour($dataset, $this->getDatasets()[$id]);
+                    // $this->merged_datasets[$id] = Dataset::fromTour($dataset, $this->dataset_overrides[$id] ?? []);
                     $this->merged_datasets[$id] = Dataset::fromTour($dataset, []);
                 }
             }
