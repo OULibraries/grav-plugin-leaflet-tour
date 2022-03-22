@@ -6,6 +6,9 @@ use Grav\Common\Grav;
 use RocketTheme\Toolbox\File\MarkdownFile;
 
 class Utils {
+    
+    const BASEMAP_ROUTE = 'user/data/leaflet-tour/images/basemaps/';
+    const UPDATE_ROUTE = '/leaflet-tour/datasets/update/';
     const IMAGE_ROUTE = 'user/data/leaflet-tour/images/';
 
     /**
@@ -70,6 +73,35 @@ class Utils {
             if (is_numeric($lng) && $lng >= -180 && $lng <= 180 && is_numeric($lat) && $lat >= -90 && $lat <= 90) return true;
         }
         return false;
+    }
+    /**
+     * Checks a parameter to see if it constitutes a valid bounds array. Must be an array with four keys: north, south, east, and west. Southwest and northeast must be valid points.
+     * @param mixed $bounds The (hopefully) array to check
+     * @return null|array [[float, float], [float, float]] (southwest, northeast) if valid
+     */
+    public static function getBounds($bounds): ?array {
+        if (is_array($bounds) && count($bounds) === 4) { // must be an array with four values
+            $bounds = [[$bounds['south'], $bounds['west']], [$bounds['north'], $bounds['east']]]; // values must have keys south, west, north, and east
+            // have to reverse direction for checking for valid points
+            if (self::isValidPoint([$bounds[0][1], $bounds[0][0]]) && self::isValidPoint([$bounds[1][1], $bounds[1][0]])) return $bounds; // southwest and northeast must form valid points
+        }
+        return null;
+    }
+    /**
+     * Takes center coordinates and distance. Calculates the dimensions of a box that would hold a circle with radius = distance and center = coordinates
+     * @param array $coordinates The center of the circle, should be a valid point,
+     * @param float $distance The radius of the circle
+     * @return null|array [[float, float], [float, float]] (southwest, northeast) if valid
+     */
+    public static function calculateBounds($coords, float $dist): ?array {
+        if (!self::isValidPoint($coords)) return null;
+        $bounds = [
+            'north' => min($coords[1] + $dist, 90), // cap at 90
+            'south' => max($coords[1] - $dist, -90), // cap at -90
+            'east' => min($coords[0] + $dist, 180),
+            'west' => max($coords[0] - $dist, -180)
+        ];
+        return self::getBounds($bounds);
     }
 }
 ?>
