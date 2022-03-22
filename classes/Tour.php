@@ -57,6 +57,11 @@ class Tour {
      * list of dataset ids of all datasets with at least one feature included in tour - cleared when features are cleared, generated when included_features is generated
      */
     private ?array $included_datasets = null;
+    private ?array $merged_features = null;
+    /**
+     * [$id => Dataset] for all datasets in tour with at least one included feature] - set when needed, cleared with features when tour or datasets change
+     */
+    private ?array $merged_datasets = null;
     
     private function __construct(array $options) {
         foreach ($options as $key => $value) {
@@ -155,6 +160,104 @@ class Tour {
             $this->file->save();
         }
     }
+    
+    // "getters"
+    
+    public function getTileServer():array {
+        return array_values(self::TILE_SERVERS)[0];
+    }
+    public function getTourData(): array {
+        $data = [
+            'tile_server' => $this->getTileServer(),
+        ];
+        return $data;
+    }
+    /**
+     * @return array [$id => array]
+     *  - 'id' => string
+     *  - 'features' => empty array
+     *  - 'legend_summary' => string
+     *  - 'icon' => array (Leaflet icon options)
+     *  - 'path' => array (Leaflet path options)
+     *  - 'active_path' => array (Leaflet path options)
+     */
+    public function getDatasetData(): array {
+        $datasets = [];
+        foreach ($this->getMergedDatasets() as $id => $dataset) {
+            $info = [
+                'id' => $id,
+                'features' => [],
+                'legend_summary' => $dataset->getLegend()['summary'],
+            ];
+            if ($dataset->getType() === 'Point') {
+                $info['icon'] = $dataset->getIcon();
+            } else {
+                $info['path'] = $dataset->getPath();
+                $info['active_path'] = $dataset->getActivePath();
+            }
+            $datasets[$id] = $info;
+        }
+        return $datasets;
+    }
+    public function getFeatureData(): array {
+        $features = [];
+        foreach ($this->getIncludedFeatures() as $id) {
+            $feature = $this->getAllFeatures()[$id];
+            $features[$id] = [
+                'type' => 'Feature',
+                'geometry' => [
+                    'type' => $feature->getType(),
+                    'coordinates' => $feature->getCoordinatesJson(),
+                ],
+                'properties' => [
+                    'id' => $id,
+                    'name' => $feature->getName(),
+                    'dataset' => $feature->getDataset()->getId(),
+                ],
+            ];
+        }
+        return $features;
+    }
+    /**
+     * @return array [string $attr, ...]
+     */
+    public function getDatasetsAttribution(): array {
+        $datasets = [];
+        foreach ($this->getMergedDatasets() as $id => $dataset) {
+            if ($attr = $dataset->getAttribution()) $datasets[] = $attr;
+        }
+        return $datasets;
+    }
+    /**
+     * for each dataset with legend info and at least one included feature (assuming legend is included - should be checked by template before calling but will be checked again): id, symbol_alt, text, icon, path
+     * @return array
+     *  - 'id' => string
+     *  - 'symbol_alt' => string
+     *  - 'text' => string
+     *  - 'icon' => string
+     *  - 'path' => array (Leaflet path options)
+     */
+    public function getLegendDatasets(): array {
+        $legend = [];
+        if (true) {
+            foreach ($this->getMergedDatasets() as $id => $dataset) {
+                if ($text = $dataset->getLegend()['text']) {
+                    $info = [
+                        'id' => $id,
+                        'symbol_alt' => $dataset->getLegend()['symbol_alt'],
+                        'text' => $text,
+                    ];
+                    if ($dataset->getType() === 'Point') {
+                        $info['icon'] = $dataset->getIcon()['iconUrl'];
+                    } else {
+                        $info['path'] = $dataset->getPath();
+                    }
+                    $legend[] = $info;
+                }
+            }
+        }
+        return $legend;
+    }
 
     // private methods
 
@@ -165,7 +268,7 @@ class Tour {
      * clears all stored values relating to datasets and features (too interconnected to bother with separate methods)
      */
     private function clearFeatures(): void {
-        $this->included_features = $this->all_features = $this->included_datasets = null;
+        $this->included_features = $this->all_features = $this->included_datasets = $this->merged_datasets = null;
     }
 
     // setters
@@ -255,56 +358,25 @@ class Tour {
         return $this->included_features;
     }
     private function getIncludedDatasets(): array {
-        if (!$this->included_datasets) $this->getIncludedFeatures();
+        if (!$this->included_datasets) {
+            $this->included_features = null;
+            $this->getIncludedFeatures();
+        }
         return $this->included_datasets;
     }
-    
-    // other calculated getters
-    public function getTileServer():array {
-        return array_values(self::TILE_SERVERS)[0];
-    }
-    public function getTourData(): array {
-        $data = [
-            'tile_server' => $this->getTileServer(),
-        ];
-        return $data;
-    }
-    public function getDatasetData(): array {
-        $datasets = [];
-        foreach ($this->getIncludedDatasets() as $id) {
-            $dataset = LeafletTour::getDatasets()[$id];
-            $info = [
-                'id' => $id,
-                'features' => [],
-            ];
-            if ($dataset->getType() === 'Point') {
-                $info['icon'] = $dataset->getIcon();
-            } else {
-                $info['path'] = $dataset->getPath();
-                $info['active_path'] = $dataset->getActivePath();
+    public function getMergedDatasets(): array {
+        if (!$this->merged_datasets) {
+            $ids = $this->getIncludedDatasets();
+            $this->merged_datasets = [];
+            foreach ($ids as $id) {
+                if ($dataset = LeafletTour::getDatasets()[$id]) {
+                    // should merge icon, path, legend, attribution, auto popup properties
+                    // $this->merged_datasets[$id] = Dataset::fromTour($dataset, $this->getDatasets()[$id]);
+                    $this->merged_datasets[$id] = $dataset;
+                }
             }
-            $datasets[$id] = $info;
         }
-        return $datasets;
-    }
-    public function getFeatureData(): array {
-        $features = [];
-        foreach ($this->getIncludedFeatures() as $id) {
-            $feature = $this->getAllFeatures()[$id];
-            $features[$id] = [
-                'type' => 'Feature',
-                'geometry' => [
-                    'type' => $feature->getType(),
-                    'coordinates' => $feature->getCoordinatesJson(),
-                ],
-                'properties' => [
-                    'id' => $id,
-                    'name' => $feature->getName(),
-                    'dataset' => $feature->getDataset()->getId(),
-                ],
-            ];
-        }
-        return $features;
+        return $this->merged_datasets;
     }
 }
 ?>
