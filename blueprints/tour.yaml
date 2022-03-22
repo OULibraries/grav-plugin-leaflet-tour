@@ -67,7 +67,7 @@ form:
                     #   validate:
                     #     type: bool
 
-            dataset_overrides_fieldset:
+            header.dataset_overrides_fieldset:
               type: fieldset
               title: Dataset Overrides
               collapsible: true

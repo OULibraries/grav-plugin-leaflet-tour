@@ -249,7 +249,7 @@ class LeafletTourPlugin extends Plugin {
             ];
             // add icon or path options
             if ($dataset->getType() === 'Point') {
-                $options["$name.icon_section"] = [
+                $options["icon_section"] = [
                     'type' => 'section',
                     'title' => 'Icon Options',
                     'text' => 'Only some of the icon options in the dataset configuration are shown here, but any can be customized by directly modifying the page header in expert mode.',
@@ -280,12 +280,12 @@ class LeafletTourPlugin extends Plugin {
                     ],
                 ];
             } else {
-                $options ['path_section'] = [
+                $options['path_section'] = [
                     'type' => 'section',
                     'title' => 'Shape Options',
                     'text' => 'Other shape/path options can be customized by directly modifying the page header in expert mode.'
                 ];
-                $options ['path.color'] = [
+                $options["$name.path.color"] = [
                     'type' => 'colorpicker',
                     'label' => 'Shape Color',
                     'toggleable' => true,

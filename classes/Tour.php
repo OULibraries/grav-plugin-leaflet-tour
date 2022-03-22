@@ -399,8 +399,8 @@ class Tour {
             foreach ($ids as $id) {
                 if ($dataset = LeafletTour::getDatasets()[$id]) {
                     // should merge icon, path, legend, attribution, auto popup properties
-                    // $this->merged_datasets[$id] = Dataset::fromTour($dataset, $this->dataset_overrides[$id] ?? []);
-                    $this->merged_datasets[$id] = Dataset::fromTour($dataset, []);
+                    $this->merged_datasets[$id] = Dataset::fromTour($dataset, $this->dataset_overrides[$id] ?? []);
+                    // $this->merged_datasets[$id] = Dataset::fromTour($dataset, []);
                 }
             }
         }
