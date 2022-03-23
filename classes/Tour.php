@@ -116,6 +116,7 @@ class Tour {
                     $this->$key = $value;
             }
         }
+        $this->clearFeatures();
         return array_merge($yaml, $this->asYaml());
     }
     /**
@@ -373,7 +374,7 @@ class Tour {
                     // check for included features
                     $features = [];
                     foreach ($dataset->getFeatures() as $feature_id => $feature) {
-                        if (!$feature->isHidden()) $features[] = $feature_id;
+                        if ($header_dataset['include_all'] && !$feature->isHidden()) $features[] = $feature_id;
                     }
                     // if features, also add included dataset
                     if (!empty($features)) {
