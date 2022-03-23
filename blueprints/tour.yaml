@@ -167,13 +167,6 @@ form:
                 #   validate:
                 #     type: bool
 
-                # header.attribution:
-                #   type: editor
-                #   label: Tour Attribution
-                #   description: Provide some text to include in the tour footer.
-                #   validate:
-                #     type: textarea
-
                 tile_server_section:
                   type: section
                   title: Tile Server and Basemaps
@@ -212,6 +205,13 @@ form:
               collapsible: true
               collapsed: true
               fields:
+
+                header.attribution:
+                  type: editor
+                  label: Tour Attribution
+                  description: Provide some text to include in the tour footer.
+                  validate:
+                    type: textarea
               
                 # view_defaults_section:
                 #   type: section

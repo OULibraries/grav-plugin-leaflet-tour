@@ -31,6 +31,7 @@ class Tour {
             'attribution' => 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
         ],
     ];
+    private static array $reserved = ['file', 'datasets', 'features', 'all_features', 'included_features', 'merged_features', 'included_datasets', 'merged_datasets', 'tile_server_options'];
     /**
      * tour.md file, never modified
      */
@@ -46,6 +47,7 @@ class Tour {
     private array $dataset_overrides = [];
     private array $features = [];
     private array $tile_server = [];
+    private ?string $attribution = null;
 
     // calculated and stored properties
     /**
@@ -113,7 +115,7 @@ class Tour {
         if ($features = $yaml['features']) $this->updateFeatures($features);
         $this->handleDatasetsAddAll();
         // remove a few properties that should not be included in the yaml, just in case, as well as properties previously dealt with
-        $yaml = array_diff_key($yaml, array_flip(['file', 'datasets', 'features', 'all_features', 'included_features', 'merged_features', 'included_datasets', 'merged_datasets']));
+        $yaml = array_diff_key($yaml, array_flip(self::$reserved));
         foreach ($yaml as $key => $value) {
             switch ($key) {
                 // TODO: a few properties with specific setters
@@ -140,10 +142,8 @@ class Tour {
      * @return array yaml
      */
     public function asYaml(): array {
-        $yaml = [];
-        foreach (['id', 'title', 'dataset_overrides', 'tile_server'] as $property) {
-            if ($value = $this->$property) $yaml[$property] = $value;
-        }
+        $yaml = get_object_vars($this);
+        $yaml = array_diff_key($yaml, array_flip(self::$reserved));
         $yaml['datasets'] = array_values($this->datasets);
         $yaml['features'] = array_values($this->features);
         return $yaml;
@@ -269,6 +269,9 @@ class Tour {
             if ($attr = $dataset->getAttribution()) $datasets[] = $attr;
         }
         return $datasets;
+    }
+    public function getTourAttribution(): ?string {
+        return $this->attribution;
     }
     /**
      * for each dataset with legend info and at least one included feature (assuming legend is included - should be checked by template before calling but will be checked again): id, symbol_alt, text, icon, path
