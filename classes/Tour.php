@@ -123,6 +123,7 @@ class Tour {
                     $this->$key = $value;
             }
         }
+        $this->updateDatasetOverrides();
         $this->clearFeatures();
         return array_merge($yaml, $this->asYaml());
     }
@@ -161,7 +162,7 @@ class Tour {
         if ($removed || $this->getDatasets()[$id]) {
             $this->updateFeatures();
             $this->save();
-            // TODO: validate auto popup properties
+            $this->updateDatasetOverrides($id);
             return true;
         }
         else return false;
@@ -310,6 +311,21 @@ class Tour {
         $this->features = [];
         foreach ($features as $id => $feature) {
             if ($all_features[$id]) $this->features[$id] = $feature;
+        }
+    }
+    private function updateDatasetOverrides(?string $id = null): void {
+        if ($id) $ids = [$id];
+        else $ids = array_keys($this->dataset_overrides);
+        foreach ($ids as $id) {
+            // check if dataset exists
+            if ($dataset = LeafletTour::getDatasets()[$id]) {
+                // validate auto popup properties
+                $overrides = $this->dataset_overrides[$id];
+                if (!empty($props = $overrides['auto_popup_properties'])) {
+                    $this->dataset_overrides[$id]['auto_popup_properties'] = array_values(array_intersect($props, $dataset->getProperties()));
+                }
+            }
+            else unset($this->dataset_overrides[$id]);
         }
     }
     /**
