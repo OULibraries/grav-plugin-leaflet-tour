@@ -19,7 +19,6 @@ form:
               validate:
                 required: true
 
-            # TODO: Does fieldset really need header in front of it?
             datasets_fieldset:
               type: fieldset
               title: Tour Datasets
@@ -56,17 +55,17 @@ form:
                       validate:
                         type: bool
 
-                    # .add_all:
-                    #   type: toggle
-                    #   label: Add All Features
-                    #   description: On save, all (non-hidden) features from the dataset will automatically be added to the features list, if they are not already in the list.
-                    #   highlight: 1
-                    #   default: 0
-                    #   options:
-                    #     0: PLUGIN_ADMIN.DISABLED
-                    #     1: PLUGIN_ADMIN.ENABLED
-                    #   validate:
-                    #     type: bool
+                    .add_all:
+                      type: toggle
+                      label: Add All Features
+                      description: On save, all (non-hidden) features from the dataset will automatically be added to the features list, if they are not already in the list.
+                      highlight: 1
+                      default: 0
+                      options:
+                        0: PLUGIN_ADMIN.DISABLED
+                        1: PLUGIN_ADMIN.ENABLED
+                      validate:
+                        type: bool
 
             header.dataset_overrides_fieldset:
               type: fieldset

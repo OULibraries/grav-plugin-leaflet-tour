@@ -103,9 +103,10 @@ class Tour {
      * Takes yaml update array from tour header and validates it. Also clears some options that will need to be regenerated.
      */
     public function update(array $yaml): array {
-        // order matters for a few things
+        // order matters for a few things - update datasets before features, check for/update dataset add_all after features
         if ($datasets = $yaml['datasets']) $this->setDatasets($datasets);
         if ($features = $yaml['features']) $this->updateFeatures($features);
+        $this->handleDatasetsAddAll();
         // remove a few properties that should not be included in the yaml, just in case, as well as properties previously dealt with
         $yaml = array_diff_key($yaml, array_flip(['file', 'datasets', 'features', 'all_features', 'included_features', 'merged_features', 'included_datasets', 'merged_datasets']));
         foreach ($yaml as $key => $value) {
@@ -310,6 +311,31 @@ class Tour {
         foreach ($features as $id => $feature) {
             if ($all_features[$id]) $this->features[$id] = $feature;
         }
+    }
+    /**
+     * called after setting datasets and features - checks any datasets for "add_all" and updates features and datasets lists accordingly
+     * clears datasets and features lists
+     * does not save the file!
+     */
+    private function handleDatasetsAddAll() {
+        foreach ($this->getDatasets() as $id => $yaml) {
+            if ($yaml['add_all'] && ($dataset = LeafletTour::getDatasets()[$id])) {
+                // unset add_all
+                $this->datasets[$id]['add_all'] = false;
+                // add features
+                foreach ($dataset->getFeatures() as $id => $feature) {
+                    if (!$this->features[$id] && !$feature->isHidden()) {
+                        // add non-hidden features not yet in $this->features
+                        $this->features[$id] = [
+                            'id' => $id,
+                            'remove_popup' => false,
+                            'popup_content' => null,
+                        ];
+                    }
+                }
+            }
+        }
+        $this->clearFeatures();
     }
     /**
      * clears all stored values relating to datasets and features (too interconnected to bother with separate methods)
