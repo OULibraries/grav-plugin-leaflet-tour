@@ -12,6 +12,7 @@ use RocketTheme\Toolbox\File\MarkdownFile;
 use Grav\Plugin\LeafletTour\LeafletTour;
 use Grav\Plugin\LeafletTour\Utils;
 use Grav\Plugin\LeafletTour\Feature;
+use Grav\Plugin\LeafletTour\Tour;
 
 /**
  * @package Grav\Plugin
@@ -154,6 +155,12 @@ class LeafletTourPlugin extends Plugin {
         }
         if ($include_none) $list = array_merge(['none' => 'None'], $list);
         return $list;
+    }
+
+    public static function getTileServerList(): array {
+        $servers = Tour::TILE_SERVERS;
+        $list = array_combine(array_keys($servers), array_column($servers, 'select'));
+        return array_merge($list, ['custom' => 'Custom']);
     }
 
     // getters for dataset blueprints

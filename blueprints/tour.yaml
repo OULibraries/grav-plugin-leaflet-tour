@@ -174,28 +174,28 @@ form:
                 #   validate:
                 #     type: textarea
 
-                # tile_server_section: TODO: array
-                #   type: section
-                #   title: Tile Server and Basemaps
-                #   text: Choose one of the tile servers from the dropdown menu, or input the URL and attribution for a tile server of your choice. You can also select additional basemaps to add. The tile server options will override the defaults from the plugin configuration.
-                #   underline: true
+                tile_server_section:
+                  type: section
+                  title: Tile Server and Basemaps
+                  text: Choose one of the tile servers from the dropdown menu, or input the URL and attribution for a tile server of your choice. You can also select additional basemaps to add. The tile server options will override the defaults from the plugin configuration.
+                  underline: true
 
-                # header.tile_server_select:
-                #   type: select
-                #   label: Select a Tile Server
-                #   toggleable: true
-                #   default: 'stamenWatercolor'
-                #   data-opotions@: 'Grav\Plugin\LeafletTourPlugin:getTileServerList'
+                header.tile_server.select:
+                  type: select
+                  label: Select a Tile Server
+                  # toggleable: true
+                  default: 'stamenWatercolor'
+                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServerList'
 
-                # header.tile_server_url:
-                #   type: text
-                #   label: Custom Tile Server URL
-                #   description: Make sure to select "custom" for the tile server (here or in the plugin configuration) to use this field.
+                header.tile_server.url:
+                  type: text
+                  label: Custom Tile Server URL
+                  description: Make sure to select "custom" for the tile server (here or in the plugin configuration) to use this field.
 
-                # header.tile_server_attribution:
-                #   type: text
-                #   label: Custom Tile Server Attribution
-                #   description: Add some HTML to include in the tour footer for the custom tile server provided above.
+                header.tile_server.attribution:
+                  type: text
+                  label: Custom Tile Server Attribution
+                  description: Add some HTML to include in the tour footer for the custom tile server provided above.
 
                 # header.basemaps:
                 #   type: select

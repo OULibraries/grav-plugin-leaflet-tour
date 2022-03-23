@@ -45,6 +45,7 @@ class Tour {
     private array $datasets = [];
     private array $dataset_overrides = [];
     private array $features = [];
+    private array $tile_server = [];
 
     // calculated and stored properties
     /**
@@ -64,6 +65,10 @@ class Tour {
      * [$id => Dataset] for all datasets in tour with at least one included feature] - set when needed, cleared with features when tour or datasets change
      */
     private ?array $merged_datasets = null;
+    /**
+     * 'url' => string] or value from self::TILE_SERVERS + ['attribution' => string] - set when needed, cleared when plugin/config or tour changes
+     */
+    private ?array $tile_server_options = null;
     
     private function __construct(array $options) {
         foreach ($options as $key => $value) {
@@ -118,6 +123,9 @@ class Tour {
                 case 'dataset_overrides':
                     $this->dataset_overrides = array_merge($this->dataset_overrides, $value);
                     break;
+                case 'tile_server':
+                    $this->tile_server = $value;
+                    $this->clearTileServer();
                 // everything else
                 default:
                     $this->$key = $value;
@@ -133,7 +141,7 @@ class Tour {
      */
     public function asYaml(): array {
         $yaml = [];
-        foreach (['id', 'title', 'dataset_overrides'] as $property) {
+        foreach (['id', 'title', 'dataset_overrides', 'tile_server'] as $property) {
             if ($value = $this->$property) $yaml[$property] = $value;
         }
         $yaml['datasets'] = array_values($this->datasets);
@@ -175,10 +183,6 @@ class Tour {
     }
     
     // "getters"
-    
-    public function getTileServer():array {
-        return array_values(self::TILE_SERVERS)[0];
-    }
     public function getTourData(): array {
         $data = [
             'tile_server' => $this->getTileServer(),
@@ -359,52 +363,9 @@ class Tour {
     private function clearFeatures(): void {
         $this->included_features = $this->all_features = $this->included_datasets = $this->merged_datasets = $this->merged_features = null;
     }
-
-    // setters
-    /**
-     * @param string $id Sets $this->id if not yet set
-     */
-    public function setId(string $id): void {
-        $this->id ??= $id;
+    private function clearTileServer(): void {
+        $this->tile_server_options = null;
     }
-    public function setFile(MarkdownFile $file): void {
-        $this->file ??= $file;
-    }
-    private function setDatasets(array $yaml) {
-        $datasets = [];
-        foreach ($yaml as $dataset_yaml) {
-            $id = $dataset_yaml['id'];
-            if (LeafletTour::getDatasets()[$id]) {
-                $datasets[$id] = $dataset_yaml;
-            }
-        }
-        $this->datasets = $datasets;
-        $this->clearFeatures();
-    }
-
-    // getters
-    /**
-     * @return null|MarkdownFile $this->file
-     */
-    public function getFile(): ?MarkdownFile {
-        return $this->file;
-    }
-    /**
-     * @return null|string $this->id (should always be set)
-     */
-    public function getId(): ?string {
-        return $this->id;
-    }
-    public function getTitle(): ?string {
-        return $this->title;
-    }
-    public function getDatasets(): array {
-        return $this->datasets;
-    }
-    public function getFeatures(): array {
-        return $this->features;
-    }
-    // note: most stored file values do not require separate getters
 
     // calculated and stored getters
 
@@ -485,5 +446,67 @@ class Tour {
         }
         return $this->merged_features;
     }
+    private function getTileServer(): array {
+        if (!$this->tile_server_options) {
+            $server = $this->tileServerHelper($this->tile_server);
+            $attr = ($this->tile_server)['attribution'];
+
+            if (!$server) $server = array_values(self::TILE_SERVERS)[0]; // default
+            if ($attr) $server['attribution'] = $attr;
+            $this->tile_server_options = $server;
+        }
+        return $this->tile_server_options;
+    }
+    private function tileServerHelper(array $options): ?array {
+        if (($select = $options['select']) && ($server = self::TILE_SERVERS[$select])) return $server;
+        else if ($options['select'] === 'custom' && ($url = $options['url'])) return ['url' => $url];
+        return null;
+    }
+
+    // setters
+    /**
+     * @param string $id Sets $this->id if not yet set
+     */
+    public function setId(string $id): void {
+        $this->id ??= $id;
+    }
+    public function setFile(MarkdownFile $file): void {
+        $this->file ??= $file;
+    }
+    private function setDatasets(array $yaml) {
+        $datasets = [];
+        foreach ($yaml as $dataset_yaml) {
+            $id = $dataset_yaml['id'];
+            if (LeafletTour::getDatasets()[$id]) {
+                $datasets[$id] = $dataset_yaml;
+            }
+        }
+        $this->datasets = $datasets;
+        $this->clearFeatures();
+    }
+
+    // getters
+    /**
+     * @return null|MarkdownFile $this->file
+     */
+    public function getFile(): ?MarkdownFile {
+        return $this->file;
+    }
+    /**
+     * @return null|string $this->id (should always be set)
+     */
+    public function getId(): ?string {
+        return $this->id;
+    }
+    public function getTitle(): ?string {
+        return $this->title;
+    }
+    public function getDatasets(): array {
+        return $this->datasets;
+    }
+    public function getFeatures(): array {
+        return $this->features;
+    }
+    // note: most stored file values do not require separate getters
 }
 ?>
