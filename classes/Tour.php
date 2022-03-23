@@ -44,6 +44,7 @@ class Tour {
     private ?string $title = null;
     private array $datasets = [];
     private array $dataset_overrides = [];
+    private array $features = [];
 
     // calculated and stored properties
     /**
@@ -70,6 +71,7 @@ class Tour {
         }
         // make datasets a bit nicer
         $this->datasets = array_column($this->datasets ?? [], null, 'id');
+        $this->features = array_column($this->features ?? [], null, 'id');
     }
     public static function fromFile(MarkdownFile $file): ?Tour {
         if ($file->exists()) {
@@ -103,13 +105,17 @@ class Tour {
     public function update(array $yaml): array {
         // order matters for a few things
         if ($datasets = $yaml['datasets']) $this->setDatasets($datasets);
+        if ($features = $yaml['features']) $this->updateFeatures($features);
         // remove a few properties that should not be included in the yaml, just in case, as well as properties previously dealt with
-        $yaml = array_diff_key($yaml, array_flip(['file', 'all_features', 'included_features', 'included_datasets', 'datasets']));
+        $yaml = array_diff_key($yaml, array_flip(['file', 'datasets', 'features', 'all_features', 'included_features', 'merged_features', 'included_datasets', 'merged_datasets']));
         foreach ($yaml as $key => $value) {
             switch ($key) {
                 // TODO: a few properties with specific setters
                 case 'id':
                     $this->setId($value);
+                    break;
+                case 'dataset_overrides':
+                    $this->dataset_overrides = array_merge($this->dataset_overrides, $value);
                     break;
                 // everything else
                 default:
@@ -129,6 +135,7 @@ class Tour {
             if ($value = $this->$property) $yaml[$property] = $value;
         }
         $yaml['datasets'] = array_values($this->datasets);
+        $yaml['features'] = array_values($this->features);
         return $yaml;
     }
     /**
@@ -290,8 +297,19 @@ class Tour {
 
     // private methods
 
+    /**
+     * Possibly sets current features list. Ensures that the current features list contains only features that exist in datasets added to the tour.
+     */
     private function updateFeatures(?array $features = null): void {
         $this->clearFeatures();
+        if ($features) $features = array_column($features, null, 'id');
+        else $features = $this->features;
+        // getAllFeatures only gets features from datasets - does not pay attention to features list
+        $all_features = $this->getAllFeatures();
+        $this->features = [];
+        foreach ($features as $id => $feature) {
+            if ($all_features[$id]) $this->features[$id] = $feature;
+        }
     }
     /**
      * clears all stored values relating to datasets and features (too interconnected to bother with separate methods)
@@ -341,6 +359,9 @@ class Tour {
     public function getDatasets(): array {
         return $this->datasets;
     }
+    public function getFeatures(): array {
+        return $this->features;
+    }
     // note: most stored file values do not require separate getters
 
     // calculated and stored getters
@@ -374,7 +395,10 @@ class Tour {
                     // check for included features
                     $features = [];
                     foreach ($dataset->getFeatures() as $feature_id => $feature) {
+                        // all non-hidden features from datasets with include_all should be added
                         if ($header_dataset['include_all'] && !$feature->isHidden()) $features[] = $feature_id;
+                        // also, any features in the tour features list should be added, regardless of status
+                        else if ($this->getFeatures()[$feature_id]) $features[] = $feature_id;
                     }
                     // if features, also add included dataset
                     if (!empty($features)) {

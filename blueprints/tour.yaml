@@ -31,7 +31,8 @@ form:
                   type: list
                   size: long
                   style: vertical
-                  collapsed: true
+                  collapsed: false
+                  collapsible: true
                   btnLabel: Add Dataset
                   controls: both
                   fields:
@@ -46,7 +47,7 @@ form:
                     .include_all:
                       type: toggle
                       label: Include All Features
-                      description: If checked, all (non-hidden) features in the dataset will automatically be included in the tour. If not, only features added to the features list (further down) will be included.
+                      description: If disabled, only features added to the features list (further down) will be included.
                       highlight: 1
                       default: 1
                       options:
@@ -393,47 +394,47 @@ form:
                 #             max: 28
                 #             step: 1
 
-            # features_fieldset:
-            #   type: fieldset
-            #   title: Features
-            #   icon: map-marker
-            #   collapsible: true
-            #   collapsed: true
-            #   fields:
+            features_fieldset:
+              type: fieldset
+              title: Features
+              icon: map-marker
+              collapsible: true
+              collapsed: true
+              fields:
 
-            #     header.features:
-            #       type: list
-            #       label: Included Features
-            #       description: A list (in order) of all features included in the tour. This is not necessary for features of a given dataset if the "include all" option has been selected, but it still provides a method for determining feature order, including hidden features, and/or overriding feature popup content. When possible, it is better to edit feature popup content directly from the dataset page.
-            #       style: vertical
-            #       collapsed: true
-            #       btnLabel: Add Feature
-            #       controls: both
-            #       placement: position
-            #       fields:
+                header.features:
+                  type: list
+                  label: Included Features
+                  description: A list (in order) of all features included in the tour. This is not necessary for features of a given dataset if the "include all" option has been selected, but it still provides a method for determining feature order, including hidden features, and/or overriding feature popup content. When possible, it is better to edit feature popup content directly from the dataset page.
+                  style: vertical
+                  collapsed: true
+                  btnLabel: Add Feature
+                  controls: both
+                  placement: position
+                  fields:
 
-            #         .id:
-            #           type: text
-            #           label: Feature (required)
-            #           data-options@: ['Grav\Plugin\LeafletTourPlugin::getFeatureList', true, false]
-            #           validate:
-            #             required: true
+                    .id:
+                      type: select
+                      label: Feature (required)
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourFeatures'
+                      validate:
+                        required: true
 
-            #         .remove_popup:
-            #           type: toggle
-            #           label: Remove Popup
-            #           description: If popup content has been added for this feature from the dataset, that content will not be displayed. It will also remove any automatically created popup content from properties selected in the dataset. If you want to modify the popup content but keep the automatically created content, use the override option below.
-            #           highlight: 1
-            #           default: 0
-            #           options:
-            #             1: PLUGIN_ADMIN.ENABLED
-            #             0: PLUGIN_ADMIN.DISABLED
-            #           validate:
-            #             type: bool
+                    # .remove_popup:
+                    #   type: toggle
+                    #   label: Remove Popup
+                    #   description: If popup content has been added for this feature from the dataset, that content will not be displayed. It will also remove any automatically created popup content from properties selected in the dataset. If you want to modify the popup content but keep the automatically created content, use the override option below.
+                    #   highlight: 1
+                    #   default: 0
+                    #   options:
+                    #     1: PLUGIN_ADMIN.ENABLED
+                    #     0: PLUGIN_ADMIN.DISABLED
+                    #   validate:
+                    #     type: bool
 
-            #         .popup_content:
-            #           type: editor
-            #           label: Popup Content
-            #           description: Overrides the feature popup content from the dataset configuration. Does not affect properties that have been selected to automatically add. Note that current content may not show up until you click inside the text area.
-            #           validate:
-            #             type: textarea
+                    # .popup_content:
+                    #   type: editor
+                    #   label: Popup Content
+                    #   description: Overrides the feature popup content from the dataset configuration. Does not affect properties that have been selected to automatically add. Note that current content may not show up until you click inside the text area.
+                    #   validate:
+                    #     type: textarea

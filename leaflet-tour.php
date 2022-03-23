@@ -145,11 +145,18 @@ class LeafletTourPlugin extends Plugin {
         }
     }
 
-    // getters for blueprints
+    // getters for any blueprints
 
-    // public static function getTileServerList(): array {
-    //     return [];
-    // }
+    public static function getDatasetsList(bool $include_none = false): array {
+        $list = [];
+        foreach (LeafletTour::getDatasets() as $dataset) {
+            $list[$dataset->getId()] = $dataset->getTitle() ?? $dataset->getId();
+        }
+        if ($include_none) $list = array_merge(['none' => 'None'], $list);
+        return $list;
+    }
+
+    // getters for dataset blueprints
 
     /**
      * Get all properties for a given dataset. Must be called from a dataset page blueprint!
@@ -164,15 +171,6 @@ class LeafletTourPlugin extends Plugin {
             if ($include_none) $list = array_merge(['none' => 'None'], $list);
         }
         return $list ?? [];
-    }
-
-    public static function getDatasetsList(bool $include_none = false): array {
-        $list = [];
-        foreach (LeafletTour::getDatasets() as $dataset) {
-            $list[$dataset->getId()] = $dataset->getTitle() ?? $dataset->getId();
-        }
-        if ($include_none) $list = array_merge(['none' => 'None'], $list);
-        return $list;
     }
 
     public static function getFeaturePropertiesFields(): array {
@@ -196,6 +194,8 @@ class LeafletTourPlugin extends Plugin {
         }
         else return $default;
     }
+
+    // getters for tour blueprints
 
     public static function getTourDatasetFields(): array {
         $fields = [];
@@ -300,5 +300,29 @@ class LeafletTourPlugin extends Plugin {
             ];
         }
         return $fields;
+    }
+
+    public static function getTourFeatures(bool $only_points = false): array {
+        $list = [];
+        // get tour
+        $route = Utils::getPageRoute(explode('/', Grav::instance()['page']->header()->controller['key']));
+        $tour_id = MarkdownFile::instance($route . 'tour.md')->header()['id'];
+        $tour = LeafletTour::getTours()[$tour_id];
+        $features = $tour->getAllFeatures();
+        if ($only_points) return self::getPoints($features);
+        foreach ($features as $id => $feature) {
+            $name = $feature->getName();
+            $dataset = $feature->getDataset()->getTitle();
+            $list[$id] = "$name ... ($dataset)";
+        }
+        return $list;
+    }
+    private static function getPoints(array $features): array {
+        // TODO: When relevant
+        $list = [];
+        $features = array_filter($features, function($feature) {
+            return ($feature->getType() === 'Point');
+        });
+        return $list;
     }
 }

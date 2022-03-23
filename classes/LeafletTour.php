@@ -142,7 +142,7 @@ class LeafletTour {
     }
 
     // removal methods
-    public function handleDatasetDeletion($page): void {
+    public static function handleDatasetDeletion($page): void {
         $dataset_id = $page->header()->get('id');
         // remove original uploaded file
         if ($path = $page->header()->get('upload_file_path')) {
@@ -156,7 +156,7 @@ class LeafletTour {
         // update self
         unset(self::$datasets[$page->header()->get('id')]);
     }
-    public function handleTourDeletion($page): void {
+    public static function handleTourDeletion($page): void {
         unset(self::$tours[$page->header()->get('id')]);
     }
 
