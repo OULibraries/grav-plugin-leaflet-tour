@@ -420,21 +420,21 @@ form:
                       validate:
                         required: true
 
-                    # .remove_popup:
-                    #   type: toggle
-                    #   label: Remove Popup
-                    #   description: If popup content has been added for this feature from the dataset, that content will not be displayed. It will also remove any automatically created popup content from properties selected in the dataset. If you want to modify the popup content but keep the automatically created content, use the override option below.
-                    #   highlight: 1
-                    #   default: 0
-                    #   options:
-                    #     1: PLUGIN_ADMIN.ENABLED
-                    #     0: PLUGIN_ADMIN.DISABLED
-                    #   validate:
-                    #     type: bool
+                    .remove_popup:
+                      type: toggle
+                      label: Remove Popup
+                      description: If popup content has been added for this feature from the dataset, that content will not be displayed. It will also remove any automatically created popup content from properties selected in the dataset. If you want to modify the popup content but keep the automatically created content, use the override option below.
+                      highlight: 1
+                      default: 0
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
 
-                    # .popup_content:
-                    #   type: editor
-                    #   label: Popup Content
-                    #   description: Overrides the feature popup content from the dataset configuration. Does not affect properties that have been selected to automatically add. Note that current content may not show up until you click inside the text area.
-                    #   validate:
-                    #     type: textarea
+                    .popup_content:
+                      type: editor
+                      label: Popup Content
+                      description: Overrides the feature popup content from the dataset configuration. Does not affect properties that have been selected to automatically add. Note that current content may not show up until you click inside the text area.
+                      validate:
+                        type: textarea
