@@ -325,11 +325,14 @@ class LeafletTourPlugin extends Plugin {
         return $list;
     }
     private static function getPoints(array $features): array {
-        // TODO: When relevant
         $list = [];
-        $features = array_filter($features, function($feature) {
-            return ($feature->getType() === 'Point');
-        });
-        return $list;
+        foreach ($features as $id => $feature) {
+            if ($feature->getType() === 'Point') {
+                $name = $feature->getName();
+                $coords = implode(',', $feature->getCoordinatesJson());
+                $list[$id] = "$name ($coords)";
+            }
+        }
+        return array_merge(['none' => 'None'], $list);
     }
 }

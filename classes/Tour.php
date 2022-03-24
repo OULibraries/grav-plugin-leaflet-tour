@@ -48,6 +48,7 @@ class Tour {
     private array $features = [];
     private array $tile_server = [];
     private ?string $attribution = null;
+    private ?array $start = null;
 
     // calculated and stored properties
     /**
@@ -128,6 +129,10 @@ class Tour {
                 case 'tile_server':
                     $this->tile_server = $value;
                     $this->clearTileServer();
+                    break;
+                case 'start':
+                    $this->updateStart($value);
+                    break;
                 // everything else
                 default:
                     $this->$key = $value;
@@ -180,6 +185,26 @@ class Tour {
             $this->file->header($this->asYaml());
             $this->file->save();
         }
+    }
+    /**
+     * Determines the bounds for any 'start' options in tour or view.
+     * 
+     * @param array $start The yaml options for starting bounds [bounds, location, lat, lng, distance]
+     * 
+     * @return null|array Returns start.bounds if they are valid. Otherwise returns calculated bounds using location and distance if valid. Otherwise returns calculated bounds using lat, lng, and distance if valid. Otherwise returns null.
+     */
+    public function calculateStartingBounds(array $start): ?array {
+        // first priority: manually set bounds
+        $bounds = Utils::getBounds($start['bounds'] ?? []);
+        if (!$bounds && ($dist = $start['distance']) && $dist > 0) {
+            // next priority: point location
+            if (($id = $start['location']) && ($feature = $this->getAllFeatures()[$id]) && ($feature->getType() === 'Point')) {
+                $bounds = Utils::calculateBounds($feature->getCoordinatesJson(), $dist);
+            }
+            // otherwise try coordinates
+            if (!$bounds) $bounds = Utils::calculateBounds([$start['lng'], $start['lat']], $dist);
+        }
+        return $bounds;
     }
     
     // "getters"
@@ -260,6 +285,13 @@ class Tour {
         }
         return $popups;
     }
+    public function getTourAsView(): array {
+        $options = [
+            'features' => [],
+        ];
+        if ($bounds = $this->calculateStartingBounds($this->start ?? [])) $options['bounds'] = $bounds;
+        return $options;
+    }
     /**
      * @return array [string $attr, ...]
      */
@@ -319,6 +351,8 @@ class Tour {
         foreach ($features as $id => $feature) {
             if ($all_features[$id]) $this->features[$id] = $feature;
         }
+        // validate start location
+        $this->updateStart();
     }
     private function updateDatasetOverrides(?string $id = null): void {
         if ($id) $ids = [$id];
@@ -333,6 +367,15 @@ class Tour {
                 }
             }
             else unset($this->dataset_overrides[$id]);
+        }
+    }
+    private function updateStart(?array $start = null): void {
+        $start ??= $this->start;
+        if ($start) {
+            if ($location = $start['location']) {
+                if (!$this->getAllFeatures()[$location]) $start['location'] = 'none';
+            }
+            $this->start = $start;
         }
     }
     /**

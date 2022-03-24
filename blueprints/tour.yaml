@@ -205,13 +205,6 @@ form:
               collapsible: true
               collapsed: true
               fields:
-
-                header.attribution:
-                  type: editor
-                  label: Tour Attribution
-                  description: Provide some text to include in the tour footer.
-                  validate:
-                    type: textarea
               
                 # view_defaults_section:
                 #   type: section
@@ -255,54 +248,123 @@ form:
                 #   validate:
                 #     type: bool
 
-                # start_section:
-                #   type: section
-                #   title: Starting Tour Position
-                #   text: By default, the starting bounds for the tour will be determined by all included features. You can override this by providing bounds manually in the page header (expert mode) or by choosing a center and a distance (in degrees) from that center. You can choose a Point feature from any dataset included in the tour as the center, or you can set the latitude and longitude manually.
-                #   underline: true
+                header.start_fieldset:
+                  type: fieldset
+                  title: Starting Tour Position
+                  text: By default, the starting bounds for the tour will be determined by all included features. You can override this by providing bounds manually or by choosing a center and a distance (in degrees) from that center. You can choose a Point feature from any dataset included in the tour as the center, or you can set the latitude and longitude manually.
+                  collapsible: true
+                  collapsed: true
+                  # underline: true
+                  fields:
 
-                # header.start.location:
-                #   type: select
-                #   label: Center Location
-                #   data-options@: ['Grav\Plugin\LeafletTourPlugin::getFeatureList', true, true]
+                    header.start_location_fieldset:
+                      type: fieldset
+                      title: Choose Center and Distance
+                      collapsible: true
+                      collapsed: false
+                      fields:
 
-                # # TODO: columns?
-                # header.start.lng:
-                #   type: number
-                #   label: Center Longitude
-                #   description: Use degrees with a maximum of seven decimal places.
-                #   validate:
-                #     min: -180
-                #     max: 180
-                #     step: .0000001
+                        header.start.distance:
+                          type: number
+                          label: Distance from Center
+                          description: Use degrees with a maximum of seven decimal places.
+                          size: long
+                          validate:
+                            min: 0
+                            step: .0000001
 
-                # header.start.lat:
-                #   type: number
-                #   label: Center Latitude
-                #   description: Use degrees with a maximum of seven decimal places.
-                #   validate:
-                #     min: -90
-                #     max: 90
-                #     step: .0000001
+                        header.start.location:
+                          type: select
+                          label: Center Location
+                          data-options@: ['Grav\Plugin\LeafletTourPlugin::getTourFeatures', true]
+                        
+                        start_cols:
+                          type: columns
+                          fields:
+                            start_col1:
+                              type: column
+                              fields:
+                                header.start.lng:
+                                  type: number
+                                  label: Center Longitude
+                                  description: Use degrees with a maximum of seven decimal places.
+                                  validate:
+                                    min: -180
+                                    max: 180
+                                    step: .0000001
 
-                # header.start.distance:
-                #   type: number
-                #   label: Distance from Center
-                #   description: Use degrees with a maximum of seven decimal places.
-                #   size: long
-                #   validate:
-                #     min: 0
-                #     step: .0000001
+                            start_col2:
+                              type: column
+                              fields:
+                                header.start.lat:
+                                  type: number
+                                  label: Center Latitude
+                                  description: Use degrees with a maximum of seven decimal places.
+                                  validate:
+                                    min: -90
+                                    max: 90
+                                    step: .0000001
 
-                # header.start.bounds.north:
-                #   type: hidden
-                # header.start.bounds.south:
-                #   type: hidden
-                # header.start.bounds.east:
-                #   type: hidden
-                # header.start.bounds.west:
-                #   type: hidden
+                    header.start_bounds_fieldset:
+                      type: fieldset
+                      title: Choose Start Bounds
+                      collapsible: true
+                      collapsed: false
+                      fields:
+                  
+                        start_bounds_columns:
+                          type: columns
+                          fields:
+                            s_col1:
+                              type: column
+                              fields:
 
+                                header.start.bounds.north:
+                                  type: number
+                                  label: North
+                                  description: Latitude for the Northern (top) boundary of the map.
+                                  validate:
+                                    min: -90
+                                    max: 90
+                                    step: .0000001
+
+                                header.start.bounds.south:
+                                  type: number
+                                  label: South
+                                  description: Latitude for the Southern (bottom) boundary of the map.
+                                  validate:
+                                    min: -90
+                                    max: 90
+                                    step: .0000001
+
+                            s_col2:
+                              type: column
+                              fields:
+
+                                header.start.bounds.east:
+                                  type: number
+                                  label: East
+                                  description: Longitude for the Eastern (right) boundary of the map.
+                                  validate:
+                                    min: -180
+                                    max: 180
+                                    step: .0000001
+
+                                header.start.bounds.west:
+                                  type: number
+                                  label: West
+                                  description: Longitude for the Western (left) boundary of the map.
+                                  validate:
+                                    min: -180
+                                    max: 180
+                                    step: .0000001
+
+                header.attribution:
+                  type: editor
+                  label: Tour Attribution
+                  description: Provide some text to include in the tour footer.
+                  validate:
+                    type: textarea
                 # max_bounds_section:
                 #   type: section
                 #   title: Maximum Map Bounds
