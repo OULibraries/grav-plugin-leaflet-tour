@@ -157,16 +157,16 @@ form:
             #   label: Additional Basemap Images
             #   underline: true
 
-            # basemap_files:
-            #   type: file
-            #   label: Basemap Image Files
-            #   description: Upload any custom basemap images here for use in tours or views. After saving, you will need to reload this page and add additional information in the basemap information list below before you will be able to use the uploaded image.
-            #   style: vertical
-            #   destination: 'user://data/leaflet-tour/images/basemaps'
-            #   multiple: true
-            #   limit: 50
-            #   accept:
-            #     - image/*
+            basemap_files:
+              type: file
+              label: Basemap Image Files
+              description: Upload any custom basemap images here for use in tours or views. After saving, you will need to reload this page and add additional information in the basemap information list below before you will be able to use the uploaded image.
+              style: vertical
+              destination: 'user://data/leaflet-tour/images/basemaps'
+              multiple: true
+              limit: 50
+              accept:
+                - image/*
 
             # basemap_icon_files:
             #   type: file
@@ -179,133 +179,111 @@ form:
             #   accept:
             #     - image/*
 
-            # basemap_info:
-            #   type: list
-            #   label: Basemap Information
-            #   style: vertical
-            #   collapsed: true
-            #   btnLabel: Add Basemap Info
-            #   fields:
+            basemap_info:
+              type: list
+              label: Basemap Information
+              style: vertical
+              collapsed: true
+              btnLabel: Add Basemap Info
+              fields:
 
-            #     .file:
-            #       type: filepicker
-            #       label: Select Basemap Image (required)
-            #       preview_images: true
-            #       folder: 'user://data/leaflet-tour/images/basemaps'
-            #       # TODO: accept: - image/* ??
-            #       validate:
-            #         required: true
+                .file:
+                  type: filepicker
+                  label: Select Basemap Image (required)
+                  preview_images: true
+                  folder: 'user://data/leaflet-tour/images/basemaps'
+                  validate:
+                    required: true
 
-            #     # .name:
-            #     #   type: text
-            #     #   label: Basemap Name
-            #     #   description: Provide a name to reference the basemap with instead of the image file name. If no legend description is provided, this name will also be used to describe the basemap in a map legend.
+                .name:
+                  type: text
+                  label: Basemap Name
+                  description: Provide a name to reference the basemap with instead of the image file name. If no legend description is provided, this name will also be used to describe the basemap in a map legend.
 
-            #     # .legend:
-            #     #   type: text
-            #     #   label: Legend Description
+                # .legend:
+                #   type: text
+                #   label: Legend Description
                   
-            #     # .icon:
-            #     #   type: filepicker
-            #     #   label: Basemap Icon
-            #     #   description: Choose an icon to represent the basemap in a map legend. If no icon is provided, a small version or a portion of the original basemap will be used instead.
-            #     #   preview_images: true
-            #     #   folder: 'user://data/leaflet-tour/images/basemaps/icons'
-            #     #   # TODO: accept?
+                # .icon:
+                #   type: filepicker
+                #   label: Basemap Icon
+                #   description: Choose an icon to represent the basemap in a map legend. If no icon is provided, a small version or a portion of the original basemap will be used instead.
+                #   preview_images: true
+                #   folder: 'user://data/leaflet-tour/images/basemaps/icons'
+                #   # TODO: accept?
 
-            #     # .attribution:
-            #     #   type: text
-            #     #   label: Basemap Attribution
-            #     #   description: Add some HTML to include in the tour footer when the basemap is used.
+                # .attribution:
+                #   type: text
+                #   label: Basemap Attribution
+                #   description: Add some HTML to include in the tour footer when the basemap is used.
 
-            #     .bounds_section:
-            #       type: section
-            #       title: Bounds (required)
-            #       text: Provide latitude and longitude values (in degrees) to position the basemap. Do not use more than seven decimal places.
-            #       underline: false
-                  
-            #     .bounds_cols:
-            #       type: columns
-            #       fields:
-            #         .col1:
-            #           type: column
-            #           fields:
+                .bounds_section:
+                  type: section
+                  title: Bounds (required)
+                  text: Provide latitude and longitude values (in degrees) to position the basemap. Do not use more than seven decimal places.
+                  underline: false
 
-            #             .bounds.north:
-            #               type: number
-            #               label: North
-            #               validate:
-            #                 required: true
-            #                 min: -90
-            #                 max: 90
-            #                 step: .0000001
+                .bounds.north:
+                  type: number
+                  label: North
+                  validate:
+                    required: true
+                    min: -90
+                    max: 90
+                    step: .0000001
 
-            #             .bounds.south:
-            #               type: number
-            #               label: South
-            #               validate:
-            #                 required: true
-            #                 min: -90
-            #                 max: 90
-            #                 step: .0000001
-            #         .col2:
-            #           type: column
-            #           fields:
-
-            #             .bounds.east:
-            #               type: number
-            #               label: East
-            #               validate:
-            #                 required: true
-            #                 min: -180
-            #                 max: 180
-            #                 step: .0000001
-
-            #             .bounds.west:
-            #               type: number
-            #               label: West
-            #               validate:
-            #                 required: true
-            #                 min: -180
-            #                 max: 180
-            #                 step: .0000001
-
-            #     .zoom_section:
-            #       type: section
-            #       title: Zoom Levels
-            #       text: Define the maximum and minimum zoom levels (from 0 to 28) at which this basemap can be shown. 
-            #       underline: false
-
-            #     .zoom_cols:
-                  type: columns
-                  fields:
-                    col1:
-                      type: column
-                      fields:
-
-                        .max_zoom:
-                          type: number
-                          label: Maximum Zoom
-                          description: Zooming in closer will remove the basemap from the map.
-                          default: 16
-                          validate:
-                            min: 0
-                            max: 28
-                            step: 1
+                .bounds.south:
+                  type: number
+                  label: South
+                  validate:
+                    required: true
+                    min: -90
+                    max: 90
+                    step: .0000001
                     
-                    col2:
-                      type: column
-                      fields:
+                .bounds.east:
+                  type: number
+                  label: East
+                  validate:
+                    required: true
+                    min: -180
+                    max: 180
+                    step: .0000001
 
-                        .min_zoom:
-                          type: number
-                          label: Minimum Zoom
-                          description: Zooming out farther will remove the basemap from the map.
-                          default: 8
-                          validate:
-                            min: 0
-                            max: 28
-                            step: 1
+                .bounds.west:
+                  type: number
+                  label: West
+                  validate:
+                    required: true
+                    min: -180
+                    max: 180
+                    step: .0000001
+
+                .zoom_section:
+                  type: section
+                  title: Zoom Levels
+                  text: Define the maximum and minimum zoom levels (from 0 to 28) at which this basemap can be shown. 
+                  underline: false
+
+                .max_zoom:
+                  type: number
+                  label: Maximum Zoom
+                  description: Zooming in closer will remove the basemap from the map.
+                  default: 16
+                  validate:
+                    min: 0
+                    max: 28
+                    step: 1
+                    
+                .min_zoom:
+                  type: number
+                  label: Minimum Zoom
+                  description: Zooming out farther will remove the basemap from the map.
+                  default: 8
+                  validate:
+                    min: 0
+                    max: 28
+                    step: 1
 
         # update:
         #   type: tab

@@ -93,10 +93,17 @@ class LeafletTour {
      * @param $obj The update object, used to access old and new config values.
      */
     public static function handlePluginConfigSave($obj): void {
-        $old_config = (array)(Grav::instance()['config']->get('plugins.leaflet-tour'));
+        // make sure all dataset files exist
+        $data_files = [];
+        foreach ($obj->get('data_files') ?? [] as $key => $file_data) {
+            $filepath = Grav::instance()['locator']->getBase() . '/' . $file_data['path'];
+            if (File::instance($filepath)->exists()) $data_files[$key] = $file_data;
+        }
+        $obj->set('data_files', $data_files);
+        $old_config = Grav::instance()['config']->get('plugins.leaflet-tour');
         // handle dataset uploads - loop through new files, look for files that don't exist in old files list and turn any found into new datasets (prev: checkDatasetUploads)
         $old_files = $old_config['data_files'] ?? [];
-        foreach($obj->get('data_files') ?? [] as $key => $file_data) {
+        foreach($data_files as $key => $file_data) {
             if (!$old_files[$key] && ($json = self::parseDatasetUpload($file_data))) {
                 $dataset = Dataset::fromJson($json);
                 if ($dataset) {
@@ -106,6 +113,23 @@ class LeafletTour {
                 }
             }
         }
+        // make sure all basemap files exist
+        $basemap_files = [];
+        $filenames = [];
+        // $basemap_info = [];
+        foreach ($obj->get('basemap_files') ?? [] as $key => $file_data) {
+            $filepath = Grav::instance()['locator']->getBase() . '/' . $file_data['path'];
+            if (File::instance($filepath)->exists()) {
+                $basemap_files[$key] = $file_data;
+                $filenames[] = $file_data['name'];
+            }
+        }
+        $basemap_info = [];
+        foreach ($obj->get('basemap_info') ?? [] as $info) {
+            if (in_array($info['file'], $filenames)) $basemap_info[] = $info;
+        }
+        $obj->set('basemap_files', $basemap_files);
+        $obj->set('basemap_info', $basemap_info);
     }
     /**
      * Called when dataset page is saved. Performs validation and passes updates to tours and views.

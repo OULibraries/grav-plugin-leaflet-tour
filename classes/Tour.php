@@ -31,7 +31,14 @@ class Tour {
             'attribution' => 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
         ],
     ];
-    private static array $reserved = ['file', 'datasets', 'features', 'all_features', 'included_features', 'merged_features', 'included_datasets', 'merged_datasets', 'tile_server_options'];
+
+    /**
+     * Generated in constructor if not yet set. Only modified when the plugin config page is saved.
+     */
+    private static array $plugin_config = [];
+
+    private static array $reserved = ['file', 'datasets', 'features', 'all_features', 'included_features', 'merged_features', 'included_datasets', 'merged_datasets', 'tile_server_options', 'basemap_info'];
+
     /**
      * tour.md file, never modified
      */
@@ -49,6 +56,7 @@ class Tour {
     private array $tile_server = [];
     private ?string $attribution = null;
     private ?array $start = null;
+    private ?array $basemaps = null;
 
     // calculated and stored properties
     /**
@@ -72,8 +80,13 @@ class Tour {
      * 'url' => string] or value from self::TILE_SERVERS + ['attribution' => string] - set when needed, cleared when plugin/config or tour changes
      */
     private ?array $tile_server_options = null;
+    /**
+     * [$id => array from plugin config basemap_info] for all basemaps in tour and views combined - set when needed, cleared when plugin/config, tour, or views change
+     */
+    private ?array $basemap_info = null;
     
     private function __construct(array $options) {
+        if (!self::$plugin_config) self::updatePluginConfig();
         foreach ($options as $key => $value) {
             $this->$key = $value;
         }
@@ -91,6 +104,13 @@ class Tour {
     }
     public static function fromArray(array $options): Tour {
         return new Tour($options);
+    }
+
+    /**
+     * Should be called from LeafletTour when the plugin config is saved. Tours will still need to be looped through to deal with the actual update.
+     */
+    public static function updatePluginConfig(?array $config = null): void {
+        self::$plugin_config = $config ?? (Grav::instance()['config']->get('plugins.leaflet-tour'));
     }
 
     // object methods
@@ -128,10 +148,13 @@ class Tour {
                     break;
                 case 'tile_server':
                     $this->tile_server = $value;
-                    $this->clearTileServer();
+                    $this->clearBasemaps();
                     break;
                 case 'start':
                     $this->updateStart($value);
+                    break;
+                case 'basemaps':
+                    $this->updateBasemaps($value);
                     break;
                 // everything else
                 default:
@@ -174,11 +197,18 @@ class Tour {
     public function updateDataset(string $id, bool $removed = false): bool {
         if ($removed || $this->getDatasets()[$id]) {
             $this->updateFeatures();
-            $this->save();
             $this->updateDatasetOverrides($id);
+            $this->save();
             return true;
         }
         else return false;
+    }
+    /**
+     * Called by LeafletTour after updating the plugin config (static method) or by the setConfig method. Lets the tour know to clear some values that need to be regenrated
+     */
+    public function updateConfig(): void {
+        $this->updateBasemaps();
+        $this->save();
     }
     public function save(): void {
         if ($this->file) {
@@ -242,6 +272,24 @@ class Tour {
         return $datasets;
     }
     /**
+     * @return array [$file => array]
+     *  - 'bounds' => bounds array (Utils::getBounds)
+     *  - 'options' => ['max_zoom' => int, 'min_zoom' => int]
+     */
+    public function getBasemapData(): array {
+        $basemaps = [];
+        foreach ($this->getBasemapInfo() as $file => $info) {
+            $basemaps[$file] = [
+                'bounds' => Utils::getBounds($info['bounds']),
+                'options' => [
+                    'max_zoom' => $info['max_zoom'] ?? 16,
+                    'min_zoom' => $info['min_zoom'] ?? 8,
+                ],
+            ];
+        }
+        return $basemaps;
+    }
+    /**
      * @return array [$id => array]
      *  - 'type' => 'Feature'
      *  - 'properties' => ['id' => string, 'name' => string, 'dataset' => string, 'has_popup' => bool]
@@ -288,6 +336,7 @@ class Tour {
     public function getTourAsView(): array {
         $options = [
             'features' => [],
+            'basemaps' => $this->getBasemaps(),
         ];
         if ($bounds = $this->calculateStartingBounds($this->start ?? [])) $options['bounds'] = $bounds;
         return $options;
@@ -378,6 +427,18 @@ class Tour {
             $this->start = $start;
         }
     }
+    private function updateBasemaps(?array $basemaps = null): void {
+        $this->clearBasemaps();
+        $files = array_column(self::$plugin_config['basemap_info'] ?? [], 'file');
+        $this->basemaps = array_intersect($basemaps ?? $this->basemaps ?? [], $files);
+        // if ($basemaps) $this->basemaps = $basemaps;
+        // // basemap_info gets all basemaps that have info, so can be checked to validate
+        // $basemaps = [];
+        // foreach ($this->basemaps ?? [] as $file) {
+        //     if ($this->getBasemapInfo()[$file]) $basemaps[] = $file;
+        // }
+        // $this->basemaps = $basemaps;
+    }
     /**
      * called after setting datasets and features - checks any datasets for "add_all" and updates features and datasets lists accordingly
      * clears datasets and features lists
@@ -409,8 +470,8 @@ class Tour {
     private function clearFeatures(): void {
         $this->included_features = $this->all_features = $this->included_datasets = $this->merged_datasets = $this->merged_features = null;
     }
-    private function clearTileServer(): void {
-        $this->tile_server_options = null;
+    private function clearBasemaps(): void {
+        $this->tile_server_options = $this->basemap_info = null;
     }
 
     // calculated and stored getters
@@ -508,6 +569,17 @@ class Tour {
         else if ($options['select'] === 'custom' && ($url = $options['url'])) return ['url' => $url];
         return null;
     }
+    private function getBasemapInfo(): array {
+        if (!$this->basemap_info) {
+            $this->basemap_info = [];
+            $files = $this->getBasemaps();
+            foreach (self::$plugin_config['basemap_info'] ?? [] as $info) {
+                $file = $info['file'];
+                if (in_array($file, $files)) $this->basemap_info[$file] = $info;
+            }
+        }
+        return $this->basemap_info;
+    }
 
     // setters
     /**
@@ -552,6 +624,9 @@ class Tour {
     }
     public function getFeatures(): array {
         return $this->features;
+    }
+    public function getBasemaps(): array {
+        return $this->basemaps ?? [];
     }
     // note: most stored file values do not require separate getters
 }
