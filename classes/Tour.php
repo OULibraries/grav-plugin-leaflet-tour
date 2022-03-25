@@ -52,12 +52,13 @@ class Tour {
      */
     private static array $plugin_config = [];
 
-    private static array $reserved = ['file', 'datasets', 'features', 'all_features', 'included_features', 'merged_features', 'included_datasets', 'merged_datasets', 'tile_server_options', 'basemap_info'];
+    private static array $reserved = ['file', 'all_features', 'included_features', 'merged_features', 'included_datasets', 'merged_datasets', 'tile_server_options', 'basemap_info', 'views'];
 
     /**
      * tour.md file, never modified
      */
     private ?MarkdownFile $file = null;
+    private array $views = [];
 
     // properties from yaml
     /**
@@ -117,7 +118,7 @@ class Tour {
     }
     public static function fromFile(MarkdownFile $file): ?Tour {
         if ($file->exists()) {
-            $options = (array)($file->header());
+            $options = array_diff_key((array)($file->header()), array_flip(self::$reserved));
             $options['file'] = $file;
             return new Tour($options);
         }
@@ -177,6 +178,9 @@ class Tour {
                 case 'basemaps':
                     $this->updateBasemaps($value);
                     break;
+                case 'datasets':
+                case 'features':
+                    break; // already handled
                 // everything else
                 default:
                     $this->$key = $value;
@@ -223,6 +227,10 @@ class Tour {
             return true;
         }
         else return false;
+    }
+    public function removeView(string $id): void {
+        unset($this->views[$id]);
+        $this->clearBasemaps();
     }
     /**
      * Called by LeafletTour after updating the plugin config (static method) or by the setConfig method. Lets the tour know to clear some values that need to be regenrated
@@ -648,6 +656,7 @@ class Tour {
     }
 
     // setters
+
     /**
      * @param string $id Sets $this->id if not yet set
      */
@@ -668,8 +677,13 @@ class Tour {
         $this->datasets = $datasets;
         $this->clearFeatures();
     }
+    public function setViews(array $views): void {
+        $this->views = $views;
+        $this->clearBasemaps();
+    }
 
     // getters
+    
     /**
      * @return null|MarkdownFile $this->file
      */
@@ -693,6 +707,9 @@ class Tour {
     }
     public function getBasemaps(): array {
         return $this->basemaps ?? [];
+    }
+    public function getViews(): array {
+        return $this->views;
     }
     // note: most stored file values do not require separate getters
 

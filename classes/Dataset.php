@@ -61,6 +61,8 @@ class Dataset {
         'className' => 'leaflet-marker '
     ];
 
+    private static array $reserved = ['file', 'upload_file_path', 'id', 'feature_type', 'feature_count'];
+
     /**
      * File storing the dataset, typically created on dataset initialization, never modified once set
      */
@@ -138,7 +140,7 @@ class Dataset {
      */
     public static function fromFile(MarkdownFile $file): ?Dataset {
         if ($file->exists()) {
-            $options = (array)($file->header());
+            $options = array_diff_key((array)($file->header()), array_flip(self::$reserved));
             $options['file'] = $file;
             return self::fromArray($options, true);
         }
@@ -276,7 +278,7 @@ class Dataset {
      */
     public function update(array $yaml): array {
         // remove anything that shouldn't be included
-        $yaml = array_diff_key($yaml, array_flip(['file', 'upload_file_path', 'id', 'feature_type', 'feature_count']));
+        $yaml = array_diff_key($yaml, array_flip(self::$reserved));
         foreach ($yaml as $key => $value) {
             switch ($key) {
                 case 'title':

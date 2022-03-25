@@ -117,9 +117,9 @@ class LeafletTourPlugin extends Plugin {
                 case 'tour':
                     LeafletTour::handleTourPageSave($obj);
                     break;
-                // case 'modular/view':
-                //     $plugin->handleViewPageSave($obj);
-                //     break;
+                case 'modular/view':
+                    LeafletTour::handleViewPageSave($obj);
+                    break;
             }
             // TODO: filter header?
         }
@@ -139,9 +139,9 @@ class LeafletTourPlugin extends Plugin {
                 case 'tour':
                     LeafletTour::handleTourDeletion($obj);
                     break;
-                // case 'modular/view':
-                //     $plugin->handleViewDeletion($obj);
-                //     break;
+                case 'modular/view':
+                    LeafletTour::handleViewDeletion($obj);
+                    break;
             }
         }
     }

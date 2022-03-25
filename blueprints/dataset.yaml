@@ -40,7 +40,7 @@ form:
 
                     header.id:
                       type: hidden
-                      default: 'tmp'
+                      default: 'tmp  id'
                       validate:
                         required: true
 

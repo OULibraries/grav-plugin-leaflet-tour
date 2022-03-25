@@ -19,6 +19,10 @@ class LeafletTour {
      * [$id => Tour]
      */
     private static ?array $tours = null;
+    /**
+     * [$id => View]
+     */
+    private static ?array $views = null;
 
     public function __construct() {
     }
@@ -44,6 +48,10 @@ class LeafletTour {
         if (!self::$tours) self::setTours();
         return self::$tours;
     }
+    private static function getViews(): array {
+        if (!self::$views) self::setTours();
+        return self::$views;
+    }
 
     // set/reset methods
 
@@ -61,8 +69,36 @@ class LeafletTour {
     public static function setTours(): void {
         $files = self::getFiles('tour');
         self::$tours = [];
+        // prepare to store view files
+        self::$views = [];
+        $new_views = []; // View
         foreach ($files as $id => $file) {
-            if ($tour = Tour::fromFile($file)) self::$tours[$id] = $tour;
+            if ($tour = Tour::fromFile($file)) {
+                $tmp_views = [];
+                self::$tours[$id] = $tour;
+                // find views
+                $dir = $file->filename();
+                foreach (glob("$dir/_*") as $folder) {
+                    if ($view = View::fromFile(MarkdownFile::instance("$folder/view.md"))) {
+                        $view->setTour($tour);
+                        if (($id = $view->getId()) && ($id !== 'tmp  id') && (!self::$views[$id]) && (!$tmp_views[$id])) $tmp_views[$id] = $view;
+                        else $new_views[] = $view;
+                    }
+                }
+                // add the views found so far
+                $tour->setViews($tmp_views);
+                self::$views = array_merge(self::$views, $tmp_views);
+            }
+        }
+        // deal with new views
+        foreach ($new_views as $view) {
+            $tour = $view->getTour();
+            $id = self::generateId($tour->getId() . ($view->getTitle() ?: 'view'), array_keys(self::$views));
+            $view->setId($id);
+            $view->save();
+            self::$views[$id] = $view;
+            // make sure the view is added to the tour
+            $tour->setViews(array_merge($tour->getViews(), [$id => $view]));
         }
     }
     // accepts tour or dataset
@@ -73,7 +109,7 @@ class LeafletTour {
         $tmp_files = $new_files = [];
         foreach ($files as $file) {
             $file = MarkdownFile::instance($file);
-            if ($id = $file->header()['id']) $tmp_files[$id] = $file;
+            if (($id = $file->header()['id']) && ($id !== 'tmp  id') && (!$tmp_files[$id])) $tmp_files[$id] = $file;
             else $new_files[] = $file;
         }
         foreach ($new_files as $file) {
@@ -137,31 +173,48 @@ class LeafletTour {
      */
     public static function handleDatasetPageSave($page): void {
         $id = $page->header()->get('id');
-        // perform validation, modify page header
-        $dataset ??= self::getDatasets()[$id];
-        $update = $dataset->update($page->header()->jsonSerialize());
-        $page->header($update);
-        // update tours
-        foreach (self::getTours() as $tour_id => $tour) {
-            $tour->updateDataset($id);
+        if ($id === 'tmp  id' || !self::getDatasets()[$id]) {
+            $id = self::generateId($page->header()->get('title') ?: 'view', array_keys(self::getViews()));
+            $page->header()->set('id', $id);
+            self::$datasets = null; // reset so that new dataset will be added next time getDatasets is called
+        } else {
+            // perform validation, modify page header
+            $dataset = self::getDatasets()[$id];
+            $update = $dataset->update($page->header()->jsonSerialize());
+            $page->header($update);
+            // update tours
+            foreach (self::getTours() as $tour_id => $tour) {
+                $tour->updateDataset($id);
+            }
         }
     }
     public static function handleTourPageSave($page): void {
         // check if new - make sure has id
         $id = $page->header()->get('id');
         if ($id === 'tmp  id' || !self::getTours()[$id]) {
-            // $file = $page->file();
             $id = self::generateId($page->header()->get('title') ?: 'tour', array_keys(self::getTours()));
             $page->header()->set('id', $id);
-            // $page->save();
-            // $tour = Tour::fromFile($file);
-            // self::$tours[$tour->getId()] = $tour;
+            self::$tours = null;
         }
         else {
             // perform validation
             $tour = self::getTours()[$id];
             $update = $tour->update($page->header()->jsonSerialize());
             $page->header($update);
+        }
+    }
+    public static function handleViewPageSave($page): void {
+        // check if new - make sure has id
+        $id = $page->header()->get('id');
+        if ($id === 'tmp  id' || !self::getViews()[$id]) {
+            $id = self::generateId($page->header()->get('title') ?: 'view', array_keys(self::getViews()));
+            $page->header()->set('id', $id);
+            self::$views = self::$tours = null;
+        } else {
+            // validate
+            $view = self::getViews()[$id];
+            $page->header($view->update($page->header()->jsonSerialize()));
+            if ($tour = $view->getTour()) $tour->updateConfig(); // to clear basemaps list
         }
     }
 
@@ -173,6 +226,11 @@ class LeafletTour {
             File::instance(Grav::instance()['locator']->getBase() . "/$path")->delete();
         }
         // TODO: Need to remove file from config, or will that happen automatically when file is removed?
+        // Optional: move page to backup location
+        // $id = $page->header()->get('id');
+        // $dataset = self::getDatasets()[$id];
+        // $dataset->getFile()->filename(Grav::instance()['locator']->findResource('page://') . '/deleted_datasets/' . $dataset->getName() ?? $dataset->getId() . '/default.md');
+        // $dataset->getFile()->save();
         // update tours
         foreach (self::getTours() as $id => $tour) {
             $tour->removeDataset($dataset_id);
@@ -182,6 +240,11 @@ class LeafletTour {
     }
     public static function handleTourDeletion($page): void {
         unset(self::$tours[$page->header()->get('id')]);
+    }
+    public static function handleViewDeletion($page): void {
+        $id = $page->header()->get('id');
+        self::$views[$id]->getTour()->removeView($id);
+        unset(self::$views[$id]);
     }
 
     // id generation
