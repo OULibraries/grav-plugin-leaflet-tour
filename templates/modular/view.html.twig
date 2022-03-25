@@ -1,0 +1,19 @@
+{# <a class="anchor view-anchor" id="{{ view_id }}-anchor"></a> #}
+<div class="step" id="{{ page.header.id }}">
+    <h2>{{ page.header.title }}</h2>
+    {# TODO: Proper wording and focus management #}
+    {# <button data-view="{{ view_id }}" id="show-view-{{ view_id }}" class="btn show-view-btn">Show View</button> #}
+    {{ content|raw }}
+    {# Popup button list #}
+    {# {% set popups_list = tour_data.get_view_popups(view_id, page.content) %}
+    {% if popups_list|length > 0 %}
+        <ul class="list-unstyled" role="list">
+            {% for feature in popups_list %}
+                <li> #}
+                    {# TODO: Better wording #}
+                    {# <button id="{{ view_id }}_{{ feature.id }}_btn" class="btn view-popup-btn" onClick="openDialog('{{ feature.id }}-popup', this)">View {{ feature.name }} popup</button>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %} #}
+</div>

@@ -8,7 +8,7 @@
     {# Set some important map data #}
     <script>
         const tour_options = {{ tour.getTourData()|json_encode|raw }};
-        // let tour_basemaps = new Map(Object.entries({{ tour.getBasemapData()|json_encode|raw }}));
+        let tour_basemaps = new Map(Object.entries({{ tour.getBasemapData()|json_encode|raw }}));
         let tour_datasets = new Map(Object.entries({{ tour.getDatasetData()|json_encode|raw }}));
         const tour_features = new Map(Object.entries({{ tour.getFeatureData()|json_encode|raw }}));
         // let tour_views = new Map(Object.entries({{ tour.getViewData()|json_encode|raw }}));
@@ -84,9 +84,9 @@
                     {% endif %} #}
                 </div>
                 <div id="view-content">
-                    {# {% for view in page.collection() if view.template == 'modular/view' and not view.header.visible is same as (false) %}
-                        {% include 'modules/view.html.twig' with { 'page': view, 'view_id': view.header.id } %}
-                    {% endfor %} #}
+                    {% for view in page.collection() if view.template == 'modular/view' and not view.header.visible is same as (false) %}
+                        {{ view.content|raw }}
+                    {% endfor %}
                 </div>
                 {# TODO: Attribution goes here #}
                 {% block back_to_top %}{{ parent() }}{% endblock %}
