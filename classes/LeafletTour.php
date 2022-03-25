@@ -81,7 +81,12 @@ class LeafletTour {
                 foreach (glob("$dir/_*") as $folder) {
                     if ($view = View::fromFile(MarkdownFile::instance("$folder/view.md"))) {
                         $view->setTour($tour);
-                        if (($id = $view->getId()) && ($id !== 'tmp  id') && (!self::$views[$id]) && (!$tmp_views[$id])) $tmp_views[$id] = $view;
+                        if (($id = $view->getId()) && 
+                            $id !== 'tmp  id' && 
+                            $id !== 'tour' && 
+                            !self::$views[$id] && 
+                            !$tmp_views[$id]
+                        ) $tmp_views[$id] = $view;
                         else $new_views[] = $view;
                     }
                 }
@@ -206,7 +211,7 @@ class LeafletTour {
     public static function handleViewPageSave($page): void {
         // check if new - make sure has id
         $id = $page->header()->get('id');
-        if ($id === 'tmp  id' || !self::getViews()[$id]) {
+        if ($id === 'tmp  id' || !self::getViews()[$id] || $id === 'tour') {
             $id = self::generateId($page->header()->get('title') ?: 'view', array_keys(self::getViews()));
             $page->header()->set('id', $id);
             self::$views = self::$tours = null;
@@ -292,6 +297,14 @@ class LeafletTour {
             // do nothing
         }
         return null;
+    }
+
+    /**
+     * Builds an HTML string for a feature popup button
+     */
+    public static function buildPopupButton(string $feature_id, string $button_id, string $name, ?string $text = null): string {
+        $text ??= $name; // TODO: Determine default text?
+        return "<button id='$button_id' onClick='openDialog(\"$feature_id-popup', this) class='btn view-popup-btn'>$text</button>";
     }
 }
 ?>

@@ -69,6 +69,9 @@ class View {
             $this->file->save();
         }
     }
+    public function getViewData(): array {
+        return [];
+    }
 
     // setters
 

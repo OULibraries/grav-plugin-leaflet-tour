@@ -58,6 +58,9 @@ class Tour {
      * tour.md file, never modified
      */
     private ?MarkdownFile $file = null;
+    /**
+     * [$id => View, ...] for all view modules in the tour
+     */
     private array $views = [];
 
     // properties from yaml
@@ -356,6 +359,17 @@ class Tour {
         return $features;
     }
     /**
+     * @return array [$id => array (from view)]
+     */
+    public function getViewData(): array {
+        $views = [];
+        $views['tour'] = $this->getTourAsView();
+        foreach ($this->views as $id => $view) {
+            $views[$id] = $view->getViewData();
+        }
+        return $views;
+    }
+    /**
      * for each popup: id, name, content
      * @return array
      *  - 'id' => string
@@ -444,10 +458,13 @@ class Tour {
         if ($this->legend['include'] ?? self::DEFAULT_LEGEND['include'] && $this->legend['basemaps'] ?? self::DEFAULT_LEGEND['basemaps']) {
             foreach ($this->getBasemapInfo() as $file => $basemap) {
                 if ($text = $basemap['legend'] ?: $basemap['name']) {
-                    $legend[] = [
+                    $info = [
                         'text' => $text,
-                        'icon' => $file,
+                        'icon' => Utils::BASEMAP_ROUTE . $file,
                     ];
+                    // if ($icon = $basemap['icon']) $info['icon'] .= "icons/$icon";
+                    // else $info['icon'] .= $basemap['file']; // TODO: crop or something?
+                    $legend[] = $info;
                 }
             }
         }
@@ -708,6 +725,9 @@ class Tour {
     public function getBasemaps(): array {
         return $this->basemaps ?? [];
     }
+    /**
+     * @return array [$id => View, ...] - $this->views
+     */
     public function getViews(): array {
         return $this->views;
     }
