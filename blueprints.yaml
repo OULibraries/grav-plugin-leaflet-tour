@@ -48,42 +48,6 @@ form:
               validate:
                 type: bool
 
-            # wide_column:
-            #   type: toggle
-            #   label: Wide Narrative Column
-            #   description: If toggled, will change the narrative width from 33% to 40% of the page width.
-            #   highlight: 1
-            #   default: 0
-            #   options:
-            #     0: PLUGIN_ADMIN.DISABLED
-            #     1: PLUGIN_ADMIN.ENABLED
-            #   validate:
-            #     type: bool
-
-            # map_on_right:
-            #   type: toggle
-            #   label: Map Located on the Right
-            #   description: If toggled, map will be on the right side of the page, with narrative column on the left. Disable this setting to switch their positions.
-            #   highlight: 1
-            #   default: 1
-            #   options:
-            #     1: PLUGIN_ADMIN.ENABLED
-            #     0: PLUGIN_ADMIN.DISABLED
-            #   validate:
-            #     type: bool
-
-            # show_map_location_in_url:
-            #   type: toggle
-            #   label: Show Map Location in URL
-            #   description: If toggled, the current zoom level and center coordinates of the map location will be included in the page URL at the top of a given user's browser.
-            #   highlight: 1
-            #   default: 0
-            #   options:
-            #     0: PLUGIN_ADMIN.DISABLED
-            #     1: PLUGIN_ADMIN.ENABLED
-            #   validate:
-            #     type: bool
-
             data_files:
               type: file
               label: Data Files
@@ -118,44 +82,84 @@ form:
             #   accept:
             #     - image/*
 
-            # attribution:
-            #   type: editor
-            #   label: Default Tour Attribution
-            #   description: Provide some default text to include in the tour footer. Can be overridden by individual tours.
-            #   validate:
-            #     type: textarea
+            tour_options_section:
+              type: section
+              label: General Tour Options
+              description: Individual tours can override these options.
+              underline: true
+
+            tour_options.wide_column:
+              type: toggle
+              label: Wide Narrative Column
+              description: If toggled, will change the narrative width from 33% to 40% of the page width.
+              highlight: 1
+              default: 0
+              options:
+                0: PLUGIN_ADMIN.DISABLED
+                1: PLUGIN_ADMIN.ENABLED
+              validate:
+                type: bool
+
+            tour_options.map_on_right:
+              type: toggle
+              label: Map Located on the Right
+              description: If toggled, map will be on the right side of the page, with narrative column on the left. Disable this setting to switch their positions.
+              highlight: 1
+              default: 1
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+
+            tour_options.show_map_location_in_url:
+              type: toggle
+              label: Show Map Location in URL
+              description: If toggled, the current zoom level and center coordinates of the map location will be included in the page URL at the top of a given user's browser.
+              highlight: 1
+              default: 0
+              options:
+                0: PLUGIN_ADMIN.DISABLED
+                1: PLUGIN_ADMIN.ENABLED
+              validate:
+                type: bool
+
+            attribution:
+              type: textarea
+              label: Default Tour Attribution
+              description: Provide some default text to include in the tour footer.
         
         basemaps:
           type: tab
           title: Basemaps
           fields:
 
-            # tile_server_section:
-            #   type: section
-            #   label: Tile Server
-            #   text: Choose one of the tile servers from the dropdown menu, or input the URL and attribution for a tile server of your choice.
-            #   underline: true
+            tile_server_section:
+              type: section
+              label: Tile Server
+              text: Choose one of the tile servers from the dropdown menu, or input the URL and attribution for a tile server of your choice.
+              underline: true
 
-            # tile_server_select:
-            #   type: select
-            #   label: Select a Tile Server
-            #   default: 'stamenWatercolor'
-            #   data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServerList'
+            tile_server.select:
+              type: select
+              label: Select a Tile Server
+              default: 'stamenWatercolor'
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServerList'
 
-            # tile_server_url:
-            #   type: text
-            #   label: Custom Tile Server URL
-            #   description: Make sure to select "custom" for the tile server to use this field.
+            tile_server.url:
+              type: text
+              label: Custom Tile Server URL
+              description: Make sure to select "custom" for the tile server to use this field.
               
-            # tile_server_attribution:
-            #   type: text
-            #   label: Custom Tile Server Attribution
-            #   description: Add some HTML to include in the tour footer when the custom tile server provided above is used.
+            tile_server.attribution:
+              type: text
+              label: Custom Tile Server Attribution
+              description: Add some HTML to include in the tour footer when the custom tile server provided above is used.
 
-            # basemap_section:
-            #   type: section
-            #   label: Additional Basemap Images
-            #   underline: true
+            basemap_section:
+              type: section
+              label: Additional Basemap Images
+              underline: true
 
             basemap_files:
               type: file

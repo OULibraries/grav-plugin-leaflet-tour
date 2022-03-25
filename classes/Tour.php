@@ -613,9 +613,14 @@ class Tour {
     }
     private function getTileServer(): array {
         if (!$this->tile_server_options) {
+            // tour header
             $server = $this->tileServerHelper($this->tile_server);
             $attr = ($this->tile_server)['attribution'];
-
+            // plugin config
+            if (!$server) {
+                $server = $this->tileServerHelper(self::$plugin_config['tile_server'] ?? []);
+                $attr ??= (self::$plugin_config['tile_server'] ?? [])['attribution'];
+            }
             if (!$server) $server = array_values(self::TILE_SERVERS)[0]; // default
             if ($attr) $server['attribution'] = $attr;
             $this->tile_server_options = $server;
@@ -690,13 +695,17 @@ class Tour {
 
     // a few getters with a tiny bit of logic
     public function getTourAttribution(): ?string {
-        return $this->attribution;
+        return $this->attribution ?? (self::$plugin_config['tour_options'] ?? [])['attribution'];
     }
     public function getLegendToggles(): bool {
         return $this->legend['toggles'] ?? self::DEFAULT_LEGEND['toggles'];
     }
     private function getOverrides(): array {
-        return array_merge(self::DEFAULT_OVERRIDES, $this->overrides);
+        $overrides = [];
+        foreach (self::DEFAULT_OVERRIDES as $key => $value) {
+            $overrides[$key] = $this->overrides[$key] ?? (self::$plugin_config['tour_options'] ?? [])[$key] ?? $value;
+        }
+        return $overrides;
     }
     private function getViewOptions(): array {
         return array_merge(self::DEFAULT_VIEW_OPTIONS, $this->view_options);
