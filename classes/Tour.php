@@ -31,6 +31,21 @@ class Tour {
             'attribution' => 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
         ],
     ];
+    const DEFAULT_LEGEND = [
+        'include' => true,
+        'toggles' => false,
+        'basemaps' => false,
+    ];
+    const DEFAULT_OVERRIDES = [
+        'wide_column' => false,
+        'map_on_right' => true,
+        'show_map_location_in_url' => false,
+    ];
+    const DEFAULT_VIEW_OPTIONS = [
+        'remove_tile_server' =>  true,
+        'only_show_view_features' => false,
+        'list_popup_buttons' => true,
+    ];
 
     /**
      * Generated in constructor if not yet set. Only modified when the plugin config page is saved.
@@ -55,8 +70,14 @@ class Tour {
     private array $features = [];
     private array $tile_server = [];
     private ?string $attribution = null;
-    private ?array $start = null;
+    private array $start = [];
     private ?array $basemaps = null;
+    private array $legend = []; // include, toggles, basemaps
+    private array $overrides = []; // wide_column, map_on_right, show_map_location_in_url
+    private array $view_options = []; // remove_tile_server, only_show_view_features, list_popup_buttons
+    private ?array $max_bounds = null;
+    private ?int $max_zoom = null;
+    private ?int $min_zoom = null;
 
     // calculated and stored properties
     /**
@@ -238,10 +259,21 @@ class Tour {
     }
     
     // "getters"
+    /**
+     * General options, apply to tour and all views
+     * @return array
+     *  - int values for max_zoom and min_zoom if set
+     *  - bool values for show_map_location_in_url, wide_column, and map_on_right
+     *  - 'tile_server' => ['url' => string] or value from self::TILE_SERVERS + ['attribution' => string]
+     *  - 'max_bounds' => bounds array (Utils::getBounds)
+     */
     public function getTourData(): array {
-        $data = [
+        $data = array_merge($this->getOverrides(), [
             'tile_server' => $this->getTileServer(),
-        ];
+            'max_zoom' => $this->max_zoom,
+            'min_zoom' => $this->min_zoom,
+        ]);
+        if ($bounds = Utils::getBounds($this->max_bounds ?? [])) $data['max_bounds'] = $bounds;
         return $data;
     }
     /**
@@ -333,10 +365,18 @@ class Tour {
         }
         return $popups;
     }
+    /**
+     * @return array 
+     * - remove_tile_server => bool
+     * - features => [] (empty)
+     * - basemaps [string $filename, ...]
+     * - bounds => bounds array (Utils::getBounds) if set
+     */
     public function getTourAsView(): array {
         $options = [
             'features' => [],
             'basemaps' => $this->getBasemaps(),
+            'remove_tile_server' => $this->getViewOptions()['remove_tile_server'],
         ];
         if ($bounds = $this->calculateStartingBounds($this->start ?? [])) $options['bounds'] = $bounds;
         return $options;
@@ -351,9 +391,6 @@ class Tour {
         }
         return $datasets;
     }
-    public function getTourAttribution(): ?string {
-        return $this->attribution;
-    }
     /**
      * for each dataset with legend info and at least one included feature (assuming legend is included - should be checked by template before calling but will be checked again): id, symbol_alt, text, icon, path
      * @return array
@@ -365,7 +402,7 @@ class Tour {
      */
     public function getLegendDatasets(): array {
         $legend = [];
-        if (true) {
+        if ($this->legend['include'] ?? self::DEFAULT_LEGEND['include']) {
             foreach ($this->getMergedDatasets() as $id => $dataset) {
                 if ($text = $dataset->getLegend()['text']) {
                     $info = [
@@ -379,6 +416,27 @@ class Tour {
                         $info['path'] = $dataset->getPath();
                     }
                     $legend[] = $info;
+                }
+            }
+        }
+        return $legend;
+    }
+    /**
+     * for each basemap with legend info (assuming legend basemaps are included - should be checked by template before calling but will be checked again)
+     * @return array
+     *  - 'file' => string
+     *  - 'icon' => string
+     *  - 'text' => string
+     */
+    public function getLegendBasemaps(): array {
+        $legend = [];
+        if ($this->legend['include'] ?? self::DEFAULT_LEGEND['include'] && $this->legend['basemaps'] ?? self::DEFAULT_LEGEND['basemaps']) {
+            foreach ($this->getBasemapInfo() as $file => $basemap) {
+                if ($text = $basemap['legend'] ?: $basemap['name']) {
+                    $legend[] = [
+                        'text' => $text,
+                        'icon' => $file,
+                    ];
                 }
             }
         }
@@ -629,5 +687,19 @@ class Tour {
         return $this->basemaps ?? [];
     }
     // note: most stored file values do not require separate getters
+
+    // a few getters with a tiny bit of logic
+    public function getTourAttribution(): ?string {
+        return $this->attribution;
+    }
+    public function getLegendToggles(): bool {
+        return $this->legend['toggles'] ?? self::DEFAULT_LEGEND['toggles'];
+    }
+    private function getOverrides(): array {
+        return array_merge(self::DEFAULT_OVERRIDES, $this->overrides);
+    }
+    private function getViewOptions(): array {
+        return array_merge(self::DEFAULT_VIEW_OPTIONS, $this->view_options);
+    }
 }
 ?>

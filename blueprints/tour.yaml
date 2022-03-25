@@ -81,91 +81,91 @@ form:
               collapsed: false
               fields:
 
-                # legend_section:
-                #   type: section
-                #   title: Legend Options
-                #   underline: true
+                legend_section:
+                  type: section
+                  title: Legend Options
+                  underline: true
 
-                # header.include_legend:
-                #   type: toggle
-                #   label: Include Legend
-                #   description: Adds a legend to the map, as long as at least one legend description is set.
-                #   highlight: 1
-                #   default: 1
-                #   options:
-                #     1: PLUGIN_ADMIN.ENABLED
-                #     0: PLUGIN_ADMIN.DISABLED
-                #   validate:
-                #     type: bool
+                header.legend.include:
+                  type: toggle
+                  label: Include Legend
+                  description: Adds a legend to the map, as long as at least one legend description is set.
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
 
-                # header.legend_toggles:
-                #   type: toggle
-                #   label: Allow Toggling Datasets in Legend
-                #   description: Adds a checkbox for each dataset in the legend, which can be used to show/hide features for that dataset on the map. Requires including a legend.
-                #   highlight: 1
-                #   default: 0
-                #   options:
-                #     0: PLUGIN_ADMIN.DISABLED
-                #     1: PLUGIN_ADMIN.ENABLED
-                #   validate:
-                #     type: bool
+                header.legend.toggles:
+                  type: toggle
+                  label: Allow Toggling Datasets in Legend
+                  description: Adds a checkbox for each dataset in the legend, which can be used to show/hide features for that dataset on the map. Requires including a legend.
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
 
-                # header.legend_basemaps:
-                #   type: toggle
-                #   label: Include Basemaps in Legend
-                #   description: Adds a basemaps section to the legend, listing any basemaps used by the tour. Does not include the tile server. Basemaps will not be toggleable, even if datasets are. Requires include a legend.
-                #   highlight: 1
-                #   default: 0
-                #   options:
-                #     0: PLUGIN_ADMIN.DISABLED
-                #     1: PLUGIN_ADMIN.ENABLED
-                #   validate:
-                #     type: bool
+                header.legend.basemaps:
+                  type: toggle
+                  label: Include Basemaps in Legend
+                  description: Adds a basemaps section to the legend, listing any basemaps used by the tour. Does not include the tile server. Basemaps will not be toggleable, even if datasets are. Requires include a legend.
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
 
-                # plugin_overrides_section:
-                #   type: section
-                #   title: Plugin Options Overrides
-                #   text: These options override the default options set from the plugin configuration.
-                #   underline: true
+                plugin_overrides_section:
+                  type: section
+                  title: Plugin Options Overrides
+                  text: These options override the default options set from the plugin configuration.
+                  underline: true
 
-                # header.wide_column:
-                #   type: toggle
-                #   label: Wide Narrative Column
-                #   description: If toggled, will change the narrative width from 33% to 40% of the page width.
-                #   toggleable: true
-                #   highlight: 1
-                #   default: 0
-                #   options:
-                #     0: PLUGIN_ADMIN.DISABLED
-                #     1: PLUGIN_ADMIN.ENABLED
-                #   validate:
-                #     type: bool
+                header.overrides.wide_column:
+                  type: toggle
+                  label: Wide Narrative Column
+                  description: If toggled, will change the narrative width from 33% to 40% of the page width.
+                  toggleable: true
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
 
-                # header.map_on_right:
-                #   type: toggle
-                #   label: Map Located on the Right
-                #   description: If toggled, map will be on the right side of the page, with narrative column on the left. Disable this setting to switch their positions.
-                #   toggleable: true
-                #   highlight: 1
-                #   default: 1
-                #   options:
-                #     1: PLUGIN_ADMIN.ENABLED
-                #     0: PLUGIN_ADMIN.DISABLED
-                #   validate:
-                #     type: bool
+                header.overrides.map_on_right:
+                  type: toggle
+                  label: Map Located on the Right
+                  description: If toggled, map will be on the right side of the page, with narrative column on the left. Disable this setting to switch their positions.
+                  toggleable: true
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
 
-                # header.show_map_location_in_url:
-                #   type: toggle
-                #   label: Show Map Location in URL
-                #   description: If toggled, the current zoom level and center coordinates of the map location will be included in the page URL at the top of a given user's browser.
-                #   toggleable: true
-                #   highlight: 1
-                #   default: 0
-                #   options:
-                #     0: PLUGIN_ADMIN.DISABLED
-                #     1: PLUGIN_ADMIN.ENABLED
-                #   validate:
-                #     type: bool
+                header.overrides.show_map_location_in_url:
+                  type: toggle
+                  label: Show Map Location in URL
+                  description: If toggled, the current zoom level and center coordinates of the map location will be included in the page URL at the top of a given user's browser.
+                  toggleable: true
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
 
                 tile_server_section:
                   type: section
@@ -176,28 +176,30 @@ form:
                 header.tile_server.select:
                   type: select
                   label: Select a Tile Server
-                  # toggleable: true
+                  toggleable: true
                   default: 'stamenWatercolor'
                   data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServerList'
 
                 header.tile_server.url:
                   type: text
                   label: Custom Tile Server URL
+                  toggleable: true
                   description: Make sure to select "custom" for the tile server (here or in the plugin configuration) to use this field.
 
                 header.tile_server.attribution:
                   type: text
                   label: Custom Tile Server Attribution
+                  toggleable: true
                   description: Add some HTML to include in the tour footer for the custom tile server provided above.
 
-                # header.basemaps:
-                #   type: select
-                #   label: Additional Basemap Images
-                #   description: Select any number of basemaps previously uploaded to the plugin configuration and added to the plugin basemaps information list.
-                #   data-options@: 'Grav\Plugin\LeafletTourPlugin::getBasemapList'
-                #   multiple: true
-                #   validate:
-                #     type: array
+                header.basemaps:
+                  type: select
+                  label: Additional Basemap Images
+                  description: Select any number of basemaps previously uploaded to the plugin configuration and added to the plugin basemaps information list.
+                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getBasemapList'
+                  multiple: true
+                  validate:
+                    type: array
 
             advanced_fieldset:
               type: fieldset
@@ -205,61 +207,23 @@ form:
               collapsible: true
               collapsed: true
               fields:
-              
-                # view_defaults_section:
-                #   type: section
-                #   title: View Defaults
-                #   text: The following set default options for the view. They can be overridden from the view configuration.
-                #   underline: true
-
-                # header.remove_tile_server:
-                #   type: toggle
-                #   label: Remove Tile Server
-                #   description: Removes the tile server from the map entirely when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. This sets behavior for the tour itself when not in any view, as well as the default view behavior.
-                #   highlight: 1
-                #   default: 1
-                #   options:
-                #     1: PLUGIN_ADMIN.ENABLED
-                #     0: PLUGIN_ADMIN.DISABLED
-                #   validate:
-                #     type: bool
-
-                # header.only_show_view_features:
-                #   type: toggle
-                #   label: Only Show Current View Features
-                #   description: When in a specific view, only the features included in that particular view will be displayed on the map.
-                #   highlight: 1
-                #   default: 0
-                #   options:
-                #     0: PLUGIN_ADMIN.DISABLED
-                #     1: PLUGIN_ADMIN.ENABLED
-                #   validate:
-                #     type: bool
-
-                # header.list_popup_buttons:
-                #   type: toggle
-                #   label: List Feature Popup Buttons
-                #   description: Buttons for all feature popups will be added at the end of each view. Any buttons already included in that view's content (using shortcodes) will be excluded from the list to avoid repetition.
-                #   highlight: 1
-                #   default: 1
-                #   options:
-                #     1: PLUGIN_ADMIN.ENABLED
-                #     0: PLUGIN_ADMIN.DISABLED
-                #   validate:
-                #     type: bool
 
                 header.start_fieldset:
                   type: fieldset
                   title: Starting Tour Position
-                  text: By default, the starting bounds for the tour will be determined by all included features. You can override this by providing bounds manually or by choosing a center and a distance (in degrees) from that center. You can choose a Point feature from any dataset included in the tour as the center, or you can set the latitude and longitude manually.
+                  # Don't love this, but fieldset text does not seem to be working
+                  info: By default, starting bounds will be determined by all included features. Here you can override that behavior.
+                  # text: "By default, the starting bounds for the tour will be determined by all included features. You can override this by providing bounds manually or by choosing a center and a distance (in degrees) from that center. You can choose a Point feature from any dataset included in the tour as the center, or you can set the latitude and longitude manually."
+                  name: name
+                  label: label
                   collapsible: true
                   collapsed: true
-                  # underline: true
                   fields:
 
                     header.start_location_fieldset:
                       type: fieldset
                       title: Choose Center and Distance
+                      info: 'Option 1: Choose a center (Point feature or coordinates) and distance (in degrees)'
                       collapsible: true
                       collapsed: false
                       fields:
@@ -308,6 +272,7 @@ form:
                     header.start_bounds_fieldset:
                       type: fieldset
                       title: Choose Start Bounds
+                      info: 'Option 2: Manually provide starting bounds.'
                       collapsible: true
                       collapsed: false
                       fields:
@@ -359,101 +324,150 @@ form:
                                     max: 180
                                     step: .0000001
 
+                attribution_section:
+                  type: section
+                  title: Attribution
+                  underline: true
+
+                # TODO: Could add a toggle for whether or not to include dataset, tile server, basemap attributions - presumably if user is going to provide them manually instead
+
                 header.attribution:
-                  type: editor
+                  type: textarea
                   label: Tour Attribution
-                  description: Provide some text to include in the tour footer.
+                  toggleable: true
+                  description: Provide some text to include in the tour footer. Can be plain text, markdown or HTML.
+              
+                view_defaults_section:
+                  type: section
+                  title: View Defaults
+                  text: The following set default options for the view. They can be overridden from the view configuration.
+                  underline: true
+
+                header.view_options.remove_tile_server:
+                  type: toggle
+                  label: Remove Tile Server
+                  description: Removes the tile server from the map entirely when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. This sets behavior for the tour itself when not in any view, as well as the default view behavior.
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
                   validate:
-                    type: textarea
-                # max_bounds_section:
-                #   type: section
-                #   title: Maximum Map Bounds
-                #   text: These will define how far the map can be panned. All four values must be provided or map bounds will be ignored. If the tour or view bounds exceed the max bounds, the max bounds will be ignored or modified. Provide all values in degrees with a maximum of seven decimal places.
-                #   underline: true
+                    type: bool
+
+                header.view_options.only_show_view_features:
+                  type: toggle
+                  label: Only Show Current View Features
+                  description: When in a specific view, only the features included in that particular view will be displayed on the map.
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
+
+                header.view_options.list_popup_buttons:
+                  type: toggle
+                  label: List Feature Popup Buttons
+                  description: Buttons for all feature popups will be added at the end of each view. Any buttons already included in that view's content (using shortcodes) will be excluded from the list to avoid repetition.
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+
+                max_bounds_section:
+                  type: section
+                  title: Maximum Map Bounds
+                  text: These will define how far the map can be panned. All four values must be provided or map bounds will be ignored. If the tour or view bounds exceed the max bounds, the max bounds will be ignored or modified. Provide all values in degrees with a maximum of seven decimal places.
+                  underline: true
                   
-                # max_bounds_columns:
-                #   type: columns
-                #   fields:
-                #     col1:
-                #       type: column
-                #       fields:
+                max_bounds_columns:
+                  type: columns
+                  fields:
+                    col1:
+                      type: column
+                      fields:
 
-                #         header.max_bounds.north:
-                #           type: number
-                #           label: North
-                #           description: Latitude for the Northern (top) boundary of the map.
-                #           validate:
-                #             min: -90
-                #             max: 90
-                #             step: .0000001
+                        header.max_bounds.north:
+                          type: number
+                          label: North
+                          description: Latitude for the Northern (top) boundary of the map.
+                          validate:
+                            min: -90
+                            max: 90
+                            step: .0000001
 
-                #         header.max_bounds.south:
-                #           type: number
-                #           label: South
-                #           description: Latitude for the Southern (bottom) boundary of the map.
-                #           validate:
-                #             min: -90
-                #             max: 90
-                #             step: .0000001
+                        header.max_bounds.south:
+                          type: number
+                          label: South
+                          description: Latitude for the Southern (bottom) boundary of the map.
+                          validate:
+                            min: -90
+                            max: 90
+                            step: .0000001
 
-                #     col2:
-                #       type: column
-                #       fields:
+                    col2:
+                      type: column
+                      fields:
 
-                #         header.max_bounds.east:
-                #           type: number
-                #           label: East
-                #           description: Longitude for the Eastern (right) boundary of the map.
-                #           validate:
-                #             min: -180
-                #             max: 180
-                #             step: .0000001
+                        header.max_bounds.east:
+                          type: number
+                          label: East
+                          description: Longitude for the Eastern (right) boundary of the map.
+                          validate:
+                            min: -180
+                            max: 180
+                            step: .0000001
 
-                #         header.max_bounds.west:
-                #           type: number
-                #           label: West
-                #           description: Longitude for the Western (left) boundary of the map.
-                #           validate:
-                #             min: -180
-                #             max: 180
-                #             step: .0000001
+                        header.max_bounds.west:
+                          type: number
+                          label: West
+                          description: Longitude for the Western (left) boundary of the map.
+                          validate:
+                            min: -180
+                            max: 180
+                            step: .0000001
 
-                # zoom_section:
-                #   type: section
-                #   title: Zoom
-                #   text: Define the maximum and minimum zoom levels (from 0 to 28) for the map.
-                #   underline: true
+                zoom_section:
+                  type: section
+                  title: Zoom
+                  text: Define the maximum and minimum zoom levels (from 0 to 28) for the map.
+                  underline: true
 
-                # zoom_columns:
-                #   type: columns
-                #   fields:
-                #     col1:
-                #       type: column
-                #       fields:
+                zoom_columns:
+                  type: columns
+                  fields:
+                    col1:
+                      type: column
+                      fields:
 
-                #         header.zoom_max:
-                #           type: number
-                #           label: Maximum Zoom
-                #           description: The map will not zoom in closer than this level. Defaults to 16.
-                #           default: 16
-                #           validate:
-                #             min: 0
-                #             max: 28
-                #             step: 1
+                        header.max_zoom:
+                          type: number
+                          label: Maximum Zoom
+                          description: The map will not zoom in closer than this level. Defaults to 16.
+                          default: 16
+                          validate:
+                            min: 0
+                            max: 28
+                            step: 1
 
-                #     col2:
-                #       type: column
-                #       fields:
+                    col2:
+                      type: column
+                      fields:
 
-                #         header.zoom_min:
-                #           type: number
-                #           label: Minimum Zoom
-                #           description: The map will not zoom out farther than this level. Defaults to 8.
-                #           default: 8
-                #           validate:
-                #             min: 0
-                #             max: 28
-                #             step: 1
+                        header.min_zoom:
+                          type: number
+                          label: Minimum Zoom
+                          description: The map will not zoom out farther than this level. Defaults to 8.
+                          default: 8
+                          validate:
+                            min: 0
+                            max: 28
+                            step: 1
 
             features_fieldset:
               type: fieldset
