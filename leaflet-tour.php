@@ -163,6 +163,14 @@ class LeafletTourPlugin extends Plugin {
         return array_merge($list, ['custom' => 'Custom']);
     }
 
+    public static function getBasemapList(): array {
+        $list = [];
+        foreach (Grav::instance()['config']->get('plugins.leaflet-tour.basemap_info') ?? [] as $info) {
+            $list[$info['file']] = $info['name'] ?: $info['file'];
+        }
+        return $list;
+    }
+
     // getters for dataset blueprints
 
     /**

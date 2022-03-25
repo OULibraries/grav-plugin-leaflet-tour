@@ -124,7 +124,7 @@ form:
               validate:
                 type: bool
 
-            attribution:
+            tour_options.attribution:
               type: textarea
               label: Default Tour Attribution
               description: Provide some default text to include in the tour footer.
@@ -204,9 +204,9 @@ form:
                   label: Basemap Name
                   description: Provide a name to reference the basemap with instead of the image file name. If no legend description is provided, this name will also be used to describe the basemap in a map legend.
 
-                # .legend:
-                #   type: text
-                #   label: Legend Description
+                .legend:
+                  type: text
+                  label: Legend Description
                   
                 # .icon:
                 #   type: filepicker
@@ -216,10 +216,10 @@ form:
                 #   folder: 'user://data/leaflet-tour/images/basemaps/icons'
                 #   # TODO: accept?
 
-                # .attribution:
-                #   type: text
-                #   label: Basemap Attribution
-                #   description: Add some HTML to include in the tour footer when the basemap is used.
+                .attribution:
+                  type: text
+                  label: Basemap Attribution
+                  description: Add some HTML to include in the tour footer when the basemap is used.
 
                 .bounds_section:
                   type: section

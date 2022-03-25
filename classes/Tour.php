@@ -391,6 +391,9 @@ class Tour {
         }
         return $datasets;
     }
+    public function getBasemapsAttribution(): array {
+        return array_filter(array_column($this->getBasemapInfo(), 'attribution'));
+    }
     /**
      * for each dataset with legend info and at least one included feature (assuming legend is included - should be checked by template before calling but will be checked again): id, symbol_alt, text, icon, path
      * @return array
@@ -696,6 +699,9 @@ class Tour {
     // a few getters with a tiny bit of logic
     public function getTourAttribution(): ?string {
         return $this->attribution ?? (self::$plugin_config['tour_options'] ?? [])['attribution'];
+    }
+    public function getTileServerAttribution(): ?string {
+        return $this->getTileServer()['attribution'];
     }
     public function getLegendToggles(): bool {
         return $this->legend['toggles'] ?? self::DEFAULT_LEGEND['toggles'];
