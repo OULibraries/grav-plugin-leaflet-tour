@@ -48,100 +48,100 @@ form:
               collapsed: true
               fields:
 
-                # basemaps_section:
-                #   type: section
-                #   title: Basemaps
-                #   underline: false
+                basemaps_section:
+                  type: section
+                  title: Basemaps
+                  underline: false
 
-                # header.basemaps:
-                #   type: select
-                #   label: Additional Basemap Images
-                #   description: Select any number of basemaps previously uploaded to the plugin configuration and added to the plugin basemaps information list. These basemaps will be used in addition to any provided in the tour basemaps list.
-                #   data-options@: 'Grav\Plugin\LeafletTourPlugin::getBasemapList'
-                #   multiple: true
-                #   validate:
-                #     type: array
+                header.basemaps:
+                  type: select
+                  label: Additional Basemap Images
+                  description: Select any number of basemaps previously uploaded to the plugin configuration and added to the plugin basemaps information list. These basemaps will be used in addition to any provided in the tour basemaps list.
+                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getBasemapList'
+                  multiple: true
+                  validate:
+                    type: array
 
-                # header.no_tour_basemaps:
-                #   type: toggle
-                #   label: Ignore Tour Basemaps
-                #   description: When in the view, any basemaps included in the tour basemaps list but not the view basemaps list will not be displayed.
-                #   highlight: 1
-                #   default: 0
-                #   options:
-                #     0: PLUGIN_ADMIN.DISABLED
-                #     1: PLUGIN_ADMIN.ENABLED
-                #   validate:
-                #     type: bool
+                header.no_tour_basemaps:
+                  type: toggle
+                  label: Ignore Tour Basemaps
+                  description: When in the view, any basemaps included in the tour basemaps list but not the view basemaps list will not be displayed.
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
 
-                # tour_overrides_section:
-                #   type: section
-                #   title: Tour Overrides
-                #   underline: false
+                tour_overrides_section:
+                  type: section
+                  title: Tour Overrides
+                  underline: false
 
-                # header.overrides.remove_tile_server:
-                #   type: toggle
-                #   toggleable: true
-                #   label: Remove Tile Server
-                #   description: Removes the tile server from the map entirely when a custom basemap is currently in use. This will save loading time, but may llok odd if the custom basemap does not cover sufficient area.
-                #   highlight: 1
-                #   default: 1
-                #   options:
-                #     1: PLUGIN_ADMIN.ENABLED
-                #     0: PLUGIN_ADMIN.DISABLED
-                #   validate:
-                #     type: bool
+                header.overrides.remove_tile_server:
+                  type: toggle
+                  toggleable: true
+                  label: Remove Tile Server
+                  description: Removes the tile server from the map entirely when a custom basemap is currently in use. This will save loading time, but may llok odd if the custom basemap does not cover sufficient area.
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
 
-                # header.overrides.only_show_view_features:
-                #   type: toggle
-                #   toggleable: true
-                #   label: Only Show Current View Features
-                #   description: When in a specific view, only the features included in that particular view will be displayed on the map.
-                #   highlight: 1
-                #   default: 0
-                #   options:
-                #     0: PLUGIN_ADMIN.DISABLED
-                #     1: PLUGIN_ADMIN.ENABLED
-                #   validate:
-                #     type: bool
+                header.overrides.only_show_view_features:
+                  type: toggle
+                  toggleable: true
+                  label: Only Show Current View Features
+                  description: When in a specific view, only the features included in that particular view will be displayed on the map.
+                  highlight: 1
+                  default: 0
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
 
-                # header.overrides.list_popup_buttons:
-                #   type: toggle
-                #   toggleable: true
-                #   label: List Feature Popup Buttons
-                #   description: Buttons for all feature popups will be added at the end of the view. Any buttons already included in the view's content (using shortcodes) will be excluded from the list to avoid repetition.
-                #   highlight: 1
-                #   default: 1
-                #   options:
-                #     1: PLUGIN_ADMIN.ENABLED
-                #     0: PLUGIN_ADMIN.DISABLED
-                #   validate:
-                #     type: bool
+                header.overrides.list_popup_buttons:
+                  type: toggle
+                  toggleable: true
+                  label: List Feature Popup Buttons
+                  description: Buttons for all feature popups will be added at the end of the view. Any buttons already included in the view's content (using shortcodes) will be excluded from the list to avoid repetition.
+                  highlight: 1
+                  default: 0
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
 
-            # # TODO: Is list with a single dropdown field better, or a select field with multiple?
-            # features_fieldset:
-            #   type: fieldset
-            #   title: Features
-            #   icon: map-marker
-            #   collapsible: true
-            #   collapsed: true
-            #   fields:
+            # TODO: Is list with a single dropdown field better, or a select field with multiple?
+            features_fieldset:
+              type: fieldset
+              title: Features
+              icon: map-marker
+              collapsible: true
+              collapsed: true
+              fields:
 
-            #     header.features:
-            #       type: list
-            #       label: Included Features
-            #       description: A list of all features included in the view. These features will be used to determine a variety of options, such as the default starting bounds of the view.
-            #       style: vertical
-            #       collapsed: true
-            #       btnLabel: Add Feature
-            #       fields:
+                header.features:
+                  type: list
+                  label: Included Features
+                  description: A list of all features included in the view. These features will be used to determine a variety of options, such as the default starting bounds of the view.
+                  style: vertical
+                  collapsed: true
+                  btnLabel: Add Feature
+                  fields:
 
-            #         .id:
-            #           type: text
-            #           label: Feature (required)
-            #           data-options@: 'Grav\Plugin\LeafletTourPlugin::getViewFeatures'
-            #           validate:
-            #             required: true
+                    .id:
+                      type: select
+                      label: Feature (required)
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getViewFeatures'
+                      validate:
+                        required: true
 
             advanced_fieldset:
               type: fieldset
@@ -150,118 +150,118 @@ form:
               collapsed: true
               fields:
 
-                # header.start_fieldset:
-                #   type: fieldset
-                #   title: Starting View Position
-                #   # Don't love this, but fieldset text does not seem to be working
-                #   info: By default, starting bounds will be determined by all included features. Here you can override that behavior.
-                #   # text: "By default, the starting bounds for the view will be determined by all included features. You can override this by providing bounds manually or by choosing a center and a distance (in degrees) from that center. You can choose a Point feature from any dataset included in the tour (not just the view) as the center, or you can set the latitude and longitude manually."
-                #   name: name
-                #   label: label
-                #   collapsible: true
-                #   collapsed: true
-                #   fields:
+                header.start_fieldset:
+                  type: fieldset
+                  title: Starting View Position
+                  # Don't love this, but fieldset text does not seem to be working
+                  info: By default, starting bounds will be determined by all included features. Here you can override that behavior.
+                  # text: "By default, the starting bounds for the view will be determined by all included features. You can override this by providing bounds manually or by choosing a center and a distance (in degrees) from that center. You can choose a Point feature from any dataset included in the tour (not just the view) as the center, or you can set the latitude and longitude manually."
+                  name: name
+                  label: label
+                  collapsible: true
+                  collapsed: true
+                  fields:
 
-                #     header.start_location_fieldset:
-                #       type: fieldset
-                #       title: Choose Center and Distance
-                #       info: 'Option 1: Choose a center (Point feature or coordinates) and distance (in degrees)'
-                #       collapsible: true
-                #       collapsed: false
-                #       fields:
+                    header.start_location_fieldset:
+                      type: fieldset
+                      title: Choose Center and Distance
+                      info: 'Option 1: Choose a center (Point feature or coordinates) and distance (in degrees)'
+                      collapsible: true
+                      collapsed: false
+                      fields:
 
-                #         header.start.distance:
-                #           type: number
-                #           label: Distance from Center
-                #           description: Use degrees with a maximum of seven decimal places.
-                #           size: long
-                #           validate:
-                #             min: 0
-                #             step: .0000001
+                        header.start.distance:
+                          type: number
+                          label: Distance from Center
+                          description: Use degrees with a maximum of seven decimal places.
+                          size: long
+                          validate:
+                            min: 0
+                            step: .0000001
 
-                #         header.start.location:
-                #           type: select
-                #           label: Center Location
-                #           data-options@: ['Grav\Plugin\LeafletTourPlugin::getViewFeatures', true]
+                        header.start.location:
+                          type: select
+                          label: Center Location
+                          data-options@: ['Grav\Plugin\LeafletTourPlugin::getViewFeatures', true]
                         
-                #         start_cols:
-                #           type: columns
-                #           fields:
-                #             start_col1:
-                #               type: column
-                #               fields:
-                #                 header.start.lng:
-                #                   type: number
-                #                   label: Center Longitude
-                #                   description: Use degrees with a maximum of seven decimal places.
-                #                   validate:
-                #                     min: -180
-                #                     max: 180
-                #                     step: .0000001
+                        start_cols:
+                          type: columns
+                          fields:
+                            start_col1:
+                              type: column
+                              fields:
+                                header.start.lng:
+                                  type: number
+                                  label: Center Longitude
+                                  description: Use degrees with a maximum of seven decimal places.
+                                  validate:
+                                    min: -180
+                                    max: 180
+                                    step: .0000001
 
-                #             start_col2:
-                #               type: column
-                #               fields:
-                #                 header.start.lat:
-                #                   type: number
-                #                   label: Center Latitude
-                #                   description: Use degrees with a maximum of seven decimal places.
-                #                   validate:
-                #                     min: -90
-                #                     max: 90
-                #                     step: .0000001
+                            start_col2:
+                              type: column
+                              fields:
+                                header.start.lat:
+                                  type: number
+                                  label: Center Latitude
+                                  description: Use degrees with a maximum of seven decimal places.
+                                  validate:
+                                    min: -90
+                                    max: 90
+                                    step: .0000001
 
-                #     header.start_bounds_fieldset:
-                #       type: fieldset
-                #       title: Choose Start Bounds
-                #       info: 'Option 2: Manually provide starting bounds.'
-                #       collapsible: true
-                #       collapsed: false
-                #       fields:
+                    header.start_bounds_fieldset:
+                      type: fieldset
+                      title: Choose Start Bounds
+                      info: 'Option 2: Manually provide starting bounds.'
+                      collapsible: true
+                      collapsed: false
+                      fields:
                   
-                #         start_bounds_columns:
-                #           type: columns
-                #           fields:
-                #             s_col1:
-                #               type: column
-                #               fields:
+                        start_bounds_columns:
+                          type: columns
+                          fields:
+                            s_col1:
+                              type: column
+                              fields:
 
-                #                 header.start.bounds.north:
-                #                   type: number
-                #                   label: North
-                #                   description: Latitude for the Northern (top) boundary of the map.
-                #                   validate:
-                #                     min: -90
-                #                     max: 90
-                #                     step: .0000001
+                                header.start.bounds.north:
+                                  type: number
+                                  label: North
+                                  description: Latitude for the Northern (top) boundary of the map.
+                                  validate:
+                                    min: -90
+                                    max: 90
+                                    step: .0000001
 
-                #                 header.start.bounds.south:
-                #                   type: number
-                #                   label: South
-                #                   description: Latitude for the Southern (bottom) boundary of the map.
-                #                   validate:
-                #                     min: -90
-                #                     max: 90
-                #                     step: .0000001
+                                header.start.bounds.south:
+                                  type: number
+                                  label: South
+                                  description: Latitude for the Southern (bottom) boundary of the map.
+                                  validate:
+                                    min: -90
+                                    max: 90
+                                    step: .0000001
 
-                #             s_col2:
-                #               type: column
-                #               fields:
+                            s_col2:
+                              type: column
+                              fields:
 
-                #                 header.start.bounds.east:
-                #                   type: number
-                #                   label: East
-                #                   description: Longitude for the Eastern (right) boundary of the map.
-                #                   validate:
-                #                     min: -180
-                #                     max: 180
-                #                     step: .0000001
+                                header.start.bounds.east:
+                                  type: number
+                                  label: East
+                                  description: Longitude for the Eastern (right) boundary of the map.
+                                  validate:
+                                    min: -180
+                                    max: 180
+                                    step: .0000001
 
-                #                 header.start.bounds.west:
-                #                   type: number
-                #                   label: West
-                #                   description: Longitude for the Western (left) boundary of the map.
-                #                   validate:
-                #                     min: -180
-                #                     max: 180
-                #                     step: .0000001
+                                header.start.bounds.west:
+                                  type: number
+                                  label: West
+                                  description: Longitude for the Western (left) boundary of the map.
+                                  validate:
+                                    min: -180
+                                    max: 180
+                                    step: .0000001

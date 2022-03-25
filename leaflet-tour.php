@@ -218,6 +218,7 @@ class LeafletTourPlugin extends Plugin {
         $route = Utils::getPageRoute(explode('/', Grav::instance()['page']->header()->controller['key']));
         $tour_id = MarkdownFile::instance($route . 'tour.md')->header()['id'];
         $tour = LeafletTour::getTours()[$tour_id];
+        if (!$tour) return [];
         // get datasets
         foreach (array_keys($tour->getDatasets()) as $id) {
             $dataset = LeafletTour::getDatasets()[$id];
@@ -318,19 +319,14 @@ class LeafletTourPlugin extends Plugin {
     }
 
     public static function getTourFeatures(bool $only_points = false): array {
-        $list = [];
         // get tour
         $route = Utils::getPageRoute(explode('/', Grav::instance()['page']->header()->controller['key']));
         $tour_id = MarkdownFile::instance($route . 'tour.md')->header()['id'];
         $tour = LeafletTour::getTours()[$tour_id];
+        if (!$tour) return [];
         $features = $tour->getAllFeatures();
         if ($only_points) return self::getPoints($features);
-        foreach ($features as $id => $feature) {
-            $name = $feature->getName();
-            $dataset = $feature->getDataset()->getTitle();
-            $list[$id] = "$name ... ($dataset)";
-        }
-        return $list;
+        else return self::getFeatures($features);
     }
     private static function getPoints(array $features): array {
         $list = [];
@@ -342,5 +338,30 @@ class LeafletTourPlugin extends Plugin {
             }
         }
         return array_merge(['none' => 'None'], $list);
+    }
+    private static function getFeatures(array $features): array {
+        $list = [];
+        foreach ($features as $id => $feature) {
+            $name = $feature->getName();
+            $dataset = $feature->getDataset()->getTitle();
+            $list[$id] = "$name ... ($dataset)";
+        }
+        return $list;
+    }
+
+    // getters for view blueprints
+
+    public static function getViewFeatures(bool $only_points = false): array {
+        // get tour
+        $keys = explode('/', Grav::instance()['page']->header()->controller['key']);
+        array_pop($keys); // remove the view folder
+        if (($file = MarkdownFile::instance(Utils::getPageRoute($keys) . 'tour.md')) && $file->exists()) {
+            $tour = LeafletTour::getTours()[$file->header()['id']];
+            if (!$tour) return [];
+            $features = $tour->getAllFeatures();
+            if ($only_points) return self::getPoints($features);
+            else return self::getFeatures($features);
+        }
+        else return [];
     }
 }

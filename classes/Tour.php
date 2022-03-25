@@ -44,7 +44,7 @@ class Tour {
     const DEFAULT_VIEW_OPTIONS = [
         'remove_tile_server' =>  true,
         'only_show_view_features' => false,
-        'list_popup_buttons' => true,
+        'list_popup_buttons' => false,
     ];
 
     /**
@@ -136,6 +136,9 @@ class Tour {
      */
     public static function updatePluginConfig(?array $config = null): void {
         self::$plugin_config = $config ?? (Grav::instance()['config']->get('plugins.leaflet-tour'));
+    }
+    public static function getConfig(): array {
+        return self::$plugin_config;
     }
 
     // object methods
@@ -750,7 +753,7 @@ class Tour {
         }
         return $overrides;
     }
-    private function getViewOptions(): array {
+    public function getViewOptions(): array {
         return array_merge(self::DEFAULT_VIEW_OPTIONS, $this->view_options);
     }
 }
