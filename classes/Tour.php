@@ -443,6 +443,7 @@ class Tour {
                         'id' => $id,
                         'symbol_alt' => $dataset->getLegend()['symbol_alt'],
                         'text' => $text,
+                        'class' => 'dataset',
                     ];
                     if ($dataset->getType() === 'Point') {
                         $info['icon'] = $dataset->getIcon()['iconUrl'];
@@ -470,6 +471,7 @@ class Tour {
                     $info = [
                         'text' => $text,
                         'icon' => Utils::BASEMAP_ROUTE . $file,
+                        'class' => 'basemap',
                     ];
                     // if ($icon = $basemap['icon']) $info['icon'] .= "icons/$icon";
                     // else $info['icon'] .= $basemap['file']; // TODO: crop or something?

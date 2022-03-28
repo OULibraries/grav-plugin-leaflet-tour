@@ -16,7 +16,7 @@
             </button>
         </div>
     {% if datasets|length > 0 %}
-        {% if header.legend_toggles %}
+        {% if tour.getLegendToggles() %}
             <fieldset id="legend-data-list">
             {# TODO: Best wording? #}
                 <legend class="sr-only">Included Datasets</legend>

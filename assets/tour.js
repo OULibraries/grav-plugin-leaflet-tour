@@ -13,6 +13,7 @@ const page_state = {
 }
 const tour_state = {
     map_needs_adjusting: true,
+    adjust_labels: false,
 }
 
 // ---------- Classes ---------- //
@@ -71,6 +72,10 @@ class TourFeature {
         this.focus_element.setAttribute("data-feature", this.id);
         this.hover_element.classList.add("hover-el");
         this.focus_element.classList.add("focus-el");
+    }
+    toggleHidden() {
+        let hide = (this.hide_dataset || this.hide_view);
+        this.elements.attr("aria-hidden", hide).css("display", (hide ? "none" : "block"));
     }
 }
 class TourPoint extends TourFeature {
@@ -280,21 +285,40 @@ $(document).ready(function() {
         if (this.getAttribute("data-map-active") === "false") switchToMap(this.id);
         else switchToContent();
     });
+    // legend
     $("#legend-toggle-btn").on("click", function() {
         $("#" + this.getAttribute("data-toggles")).toggleClass("minimized");
         togglePopupButton(this);
     });
     $("#mobile-legend-btn").on("click", toggleMobileLegend);
     $("#legend-close-btn").on("click", toggleMobileLegend);
+    $(".legend-checkbox").on("input", function() {
+        this.setAttribute("aria-checked", this.checked);
+        toggleDataset(this.value, !this.checked);
+    })
+
     $("map-reset-btn").on("click", function() {
         // todo
     });
 });
 
+function toggleDataset(id, hide) {
+    tour.datasets.get(id).features.forEach(function(feature) {
+        feature.hide_dataset = hide;
+        feature.toggleHidden();
+        if (isMobile()) tour_state.adjust_labels = true;
+    });
+    resetTourLabels();
+}
+
 function toggleMobileLegend() {
     $("#map-nav").toggleClass("hide");
     $("#legend-wrapper").toggleClass("desktop-only");
     $("#map").toggleClass("hide");
+    if (tour_state.adjust_labels) {
+        tour_state.adjust_labels = false;
+        resetTourLabels();
+    }
 }
 
 // Modify window.onscroll function from theme

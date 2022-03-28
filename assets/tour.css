@@ -182,15 +182,18 @@
 .legend-wrapper .legend-top #legend-close-btn {
   margin-right: 5px;
 }
-.legend-wrapper .legend li {
+.legend-wrapper .legend fieldset {
+  border: none;
+}
+.legend-wrapper .legend li, .legend-wrapper .legend label {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
 }
-.legend-wrapper .legend li img, .legend-wrapper .legend li svg {
+.legend-wrapper .legend li img, .legend-wrapper .legend li svg, .legend-wrapper .legend label img, .legend-wrapper .legend label svg {
   margin: 10px;
 }
-.legend-wrapper .legend li span {
+.legend-wrapper .legend li span, .legend-wrapper .legend label span {
   padding: 0 10px;
 }
 @media (min-width: 768px) {

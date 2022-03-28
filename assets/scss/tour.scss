@@ -204,7 +204,10 @@ $column-width: 33%;
         }
     }
     .legend {
-        li {
+        fieldset {
+            border: none;
+        }
+        li, label {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
