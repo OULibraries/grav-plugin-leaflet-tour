@@ -71,7 +71,7 @@ class LeafletTour {
         self::$tours = [];
         // prepare to store view files
         self::$views = [];
-        $new_views = []; // View
+        $new_views = []; // Views
         foreach ($files as $id => $file) {
             if ($tour = Tour::fromFile($file)) {
                 $tmp_views = [];
@@ -79,7 +79,13 @@ class LeafletTour {
                 // find views
                 $dir = substr($file->filename(), 0, -8);
                 // self::$test[] = $dir;
-                foreach (glob("$dir/_*") as $folder) {
+                $folders = glob("$dir/*");
+                $modules = [];
+                foreach ($folders as $folder) {
+                    $test = str_replace("$dir/", '', $folder);
+                    if (str_starts_with($test, '_') || str_starts_with(preg_replace('/^[0-9]+\./', '', $test), '_')) $modules[] = $folder;
+                }
+                foreach ($modules as $folder) {
                     if ($view = View::fromFile(MarkdownFile::instance("$folder/view.md"))) {
                         $view->setTour($tour);
                         if (($id = $view->getId()) && 

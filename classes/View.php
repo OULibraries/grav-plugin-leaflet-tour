@@ -52,6 +52,7 @@ class View {
         return new View($options);
     }
     public function update(array $yaml): array {
+        LeafletTour::setTours();
         $yaml = array_diff_key($yaml, array_flip(self::$reserved));
         foreach ($yaml as $key => $value) {
             switch ($key) {
@@ -111,7 +112,7 @@ class View {
         if ($this->getOptions()['list_popup_buttons'] && ($file = $this->getFile()) && ($tour = $this->getTour())) {
             // $content = $file->markdown();
             $tour_popups = array_column($tour->getFeaturePopups(), 'name', 'id');
-            foreach ($this->getFeatures() as $id) {
+            foreach (array_column($this->getFeatures(), 'id') as $id) {
                 if (($name = $tour_popups[$id])/* && !str_contains($content, "[popup-button id='$id'")*/) {
                     $buttons[] = LeafletTour::buildPopupButton($id, "$id-$this->id-popup", $name, 'TODO');
                 }
@@ -137,8 +138,8 @@ class View {
     public function setFeatures(?array $features = null): void {
         $this->features = $features ?? $this->features;
         if ($tour = $this->getTour()) {
-            // $features = array_column($this->features, null, 'id');
-            $features = array_intersect($this->features, $tour->getIncludedFeatures());
+            $features = array_column($this->features, null, 'id');
+            $features = array_intersect_key($features, array_flip($tour->getIncludedFeatures()));
             $this->features = array_values($features);
         }
     }

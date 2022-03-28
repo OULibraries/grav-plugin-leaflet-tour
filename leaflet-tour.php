@@ -360,7 +360,10 @@ class LeafletTourPlugin extends Plugin {
             if (!$tour) return [];
             $features = $tour->getAllFeatures();
             if ($only_points) return self::getPoints($features);
-            else return self::getFeatures($features);
+            else {
+                $features = array_intersect_key($features, array_flip($tour->getIncludedFeatures()));
+                return self::getFeatures($features);
+            }
         }
         else return [];
     }
