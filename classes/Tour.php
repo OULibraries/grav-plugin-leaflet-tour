@@ -464,7 +464,7 @@ class Tour {
      */
     public function getLegendBasemaps(): array {
         $legend = [];
-        if ($this->legend['include'] ?? self::DEFAULT_LEGEND['include'] && $this->legend['basemaps'] ?? self::DEFAULT_LEGEND['basemaps']) {
+        if (($this->legend['include'] ?? self::DEFAULT_LEGEND['include']) && ($this->legend['basemaps'] ?? self::DEFAULT_LEGEND['basemaps'])) {
             foreach ($this->getBasemapInfo() as $file => $basemap) {
                 if ($text = $basemap['legend'] ?: $basemap['name']) {
                     $info = [

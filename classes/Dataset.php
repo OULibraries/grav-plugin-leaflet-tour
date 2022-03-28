@@ -140,7 +140,7 @@ class Dataset {
      */
     public static function fromFile(MarkdownFile $file): ?Dataset {
         if ($file->exists()) {
-            $options = array_diff_key((array)($file->header()), array_flip(self::$reserved));
+            $options = (array)($file->header());
             $options['file'] = $file;
             return self::fromArray($options, true);
         }
@@ -513,8 +513,9 @@ class Dataset {
 
         return $icon;
     }
-    public function getPath(): array {
-        return $this->getPathByType($this->path ?? []);
+    public function getPath(bool $defaults = false): array {
+        if ($defaults) return $this->getPathByType(array_merge(self::DEFAULT_PATH, $this->path ?? []));
+        else return $this->getPathByType($this->path ?? []);
     }
     public function getActivePath(): array {
         return $this->getPathByType($this->active_path ?? []);

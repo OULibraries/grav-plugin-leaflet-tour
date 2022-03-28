@@ -93,9 +93,11 @@
             </div>
             <div id="map-wrapper" role="region" aria-label="Map">
                 {# <a href="#map-end" id="skip-map-link" class="skip-link desktop-only">Skip Map</a> #}
-                {% if not page.header.include_legend is same as (false) %}
+                {# Legend #}
+                {% include 'partials/legend.html.twig' with {'tour':tour} %}
+                {# {% if not page.header.include_legend is same as (false) %} #}
                     {# {% include 'partials/legend.html.twig' with { 'datasets': tour.getLegendDatasets() } %} #}
-                {% endif %}
+                {# {% endif %} #}
                 <div id="map"></div>
                 {# <div id="map-end"></div> #}
             </div>

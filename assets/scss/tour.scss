@@ -185,6 +185,104 @@ $column-width: 33%;
     }
 }
 
+/* legend */
+
+.legend-wrapper {
+    padding: 15px;
+    .legend-top {
+        display: flex;
+        flex-wrap: wrap;
+        border-bottom: 2px solid black; // TODO: color
+        h2 {
+            margin: 0;
+            flex-grow: 1;
+            border: none;
+            padding-top: 10px;
+        }
+        #legend-close-btn {
+            margin-right: 5px;
+        }
+    }
+    .legend {
+        li {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            img, svg {
+                margin: 10px;
+            }
+            span {
+                padding: 0 10px;
+            }
+        }
+    }
+    // mobile
+    @media (max-width: ($mobile - 1)) {
+    }
+    // desktop
+    @media (min-width: $mobile) {
+        z-index: 700;
+        position: absolute;
+        box-sizing: border-box;
+        margin: 10px;
+        margin-right: clamp(10px, 2.5%, 30px);
+        margin-top: clamp(10px, 2.5%, 30px);
+        top: 0;
+        right: 0;
+        width: calc(50% - 30px);
+        max-width: 400px;
+        padding: 10px 0;
+        background-color: white; // TODO: Color
+        border: 2px solid black; // TODO: Color
+        border-radius: 10px;
+        .legend {
+            overflow-y: auto;
+            max-height: calc(100vh - 70px);
+            padding: 5px 15px;
+        }
+        .legend-top {
+            // justify-content: space-between;
+            align-items: center;
+            border-bottom-width: 1px; // maybe
+            padding-bottom: 15px;
+            h2 {
+                padding: 0;
+                font-size: 24px;
+            }
+            #legend-toggle-btn {
+                margin-right: 10px;
+                border-radius: 5px;
+                .fa-plus {
+                    display: none;
+                }
+            }
+        }
+        &.minimized {
+            width: 200px;
+            width: clamp(180px, 30%, 400px);
+            .legend {
+                padding: 0 15px;
+            }
+            .legend-top {
+                padding: 0;
+                border: none;
+                #legend-toggle-btn {
+                    margin-right: 0;
+                    .fa-minus {
+                        display: none;
+                    }
+                    .fa-plus {
+                        display: inline-block;
+                    }
+                }
+            }
+            ul {
+                display: none;
+            }
+        }
+    }
+}
+
 main {
     z-index: 0;
 }

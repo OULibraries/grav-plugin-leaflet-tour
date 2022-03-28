@@ -280,13 +280,22 @@ $(document).ready(function() {
         if (this.getAttribute("data-map-active") === "false") switchToMap(this.id);
         else switchToContent();
     });
-    $("#mobile-legend-btn").on("click", function() {
-        // todo
+    $("#legend-toggle-btn").on("click", function() {
+        $("#" + this.getAttribute("data-toggles")).toggleClass("minimized");
+        togglePopupButton(this);
     });
+    $("#mobile-legend-btn").on("click", toggleMobileLegend);
+    $("#legend-close-btn").on("click", toggleMobileLegend);
     $("map-reset-btn").on("click", function() {
         // todo
     });
 });
+
+function toggleMobileLegend() {
+    $("#map-nav").toggleClass("hide");
+    $("#legend-wrapper").toggleClass("desktop-only");
+    $("#map").toggleClass("hide");
+}
 
 // Modify window.onscroll function from theme
 function doWindowScrollAction() {

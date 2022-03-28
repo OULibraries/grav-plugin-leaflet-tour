@@ -320,7 +320,7 @@ class Feature {
      * @param string $type Hopefully a valid feature type
      * @return string $type, possibly with modified capitalization, or Point if $type was not valid
      */
-    public static function validateFeatureType(string $type): string {
+    public static function validateFeatureType(?string $type): string {
         return self::FEATURE_TYPES[strtolower($type)] ?: 'Point';
     }
     /**

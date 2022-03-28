@@ -1,0 +1,52 @@
+{% set datasets = tour.getLegendDatasets() %}
+{% set basemaps = tour.getLegendBasemaps() %}
+{% if (datasets|length > 0) or (basemaps|length > 0) %}
+<div class="legend-wrapper desktop-only" id="legend-wrapper">
+    <div class="legend">
+        <div class="legend-top">
+            <h2>Legend </h2>
+            <button id="legend-toggle-btn" aria-haspopup="true" class="desktop-only icon-btn" aria-expanded="true" data-toggles="legend-wrapper">
+                <i class="fas fa-minus" aria-hidden="true"></i>
+                <i class="fas fa-plus" aria-hidden="true"></i>
+                <span class="toggle sr-only">Legend</span>
+            </button>
+            <button id="legend-close-btn" class="mobile-only icon-btn">
+                <i class="fas fa-times" aria-hidden="true"></i>
+                <span class="sr-only">Close Legend</span>
+            </button>
+        </div>
+    {% if datasets|length > 0 %}
+        {% if header.legend_toggles %}
+            <fieldset id="legend-data-list">
+            {# TODO: Best wording? #}
+                <legend class="sr-only">Included Datasets</legend>
+                {% for item in datasets %}
+                    <label class="legend-item-wrapper">
+                        <input type="checkbox" class="legend-checkbox" value="{{ item.id }}" aria-checked="true" checked>
+                        {% include 'partials/legend-item.html.twig' with {'item': item} %} {# TODO: with necessary? #}
+                    </label>
+                {% endfor %}
+            </fieldset>
+        {% else %}
+            <ul id="legend-data-list" class="list-unstyled" role="list">
+                {% for item in datasets %}
+                    <li class="legend-item-wrapper">
+                        {% include 'partials/legend-item.html.twig' with {'item': item} %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endif %}
+    {% if basemaps|length > 0 %}
+        <h3>Maps</h3>
+        <ul id="legend-basemap-list" class="list-unstyled" role="list">
+            {% for item in basemaps %}
+                <li class="legend-item-wrapper">
+                    {% include 'partials/legend-item.html.twig' with {'item': item} %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    </div>
+</div>
+{% endif %}

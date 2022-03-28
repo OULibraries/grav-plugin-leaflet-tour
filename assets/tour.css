@@ -164,6 +164,98 @@
     margin: 0;
   }
 }
+/* legend */
+.legend-wrapper {
+  padding: 15px;
+}
+.legend-wrapper .legend-top {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 2px solid black;
+}
+.legend-wrapper .legend-top h2 {
+  margin: 0;
+  flex-grow: 1;
+  border: none;
+  padding-top: 10px;
+}
+.legend-wrapper .legend-top #legend-close-btn {
+  margin-right: 5px;
+}
+.legend-wrapper .legend li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.legend-wrapper .legend li img, .legend-wrapper .legend li svg {
+  margin: 10px;
+}
+.legend-wrapper .legend li span {
+  padding: 0 10px;
+}
+@media (min-width: 768px) {
+  .legend-wrapper {
+    z-index: 700;
+    position: absolute;
+    box-sizing: border-box;
+    margin: 10px;
+    margin-right: clamp(10px, 2.5%, 30px);
+    margin-top: clamp(10px, 2.5%, 30px);
+    top: 0;
+    right: 0;
+    width: calc(50% - 30px);
+    max-width: 400px;
+    padding: 10px 0;
+    background-color: white;
+    border: 2px solid black;
+    border-radius: 10px;
+  }
+  .legend-wrapper .legend {
+    overflow-y: auto;
+    max-height: calc(100vh - 70px);
+    padding: 5px 15px;
+  }
+  .legend-wrapper .legend-top {
+    align-items: center;
+    border-bottom-width: 1px;
+    padding-bottom: 15px;
+  }
+  .legend-wrapper .legend-top h2 {
+    padding: 0;
+    font-size: 24px;
+  }
+  .legend-wrapper .legend-top #legend-toggle-btn {
+    margin-right: 10px;
+    border-radius: 5px;
+  }
+  .legend-wrapper .legend-top #legend-toggle-btn .fa-plus {
+    display: none;
+  }
+  .legend-wrapper.minimized {
+    width: 200px;
+    width: clamp(180px, 30%, 400px);
+  }
+  .legend-wrapper.minimized .legend {
+    padding: 0 15px;
+  }
+  .legend-wrapper.minimized .legend-top {
+    padding: 0;
+    border: none;
+  }
+  .legend-wrapper.minimized .legend-top #legend-toggle-btn {
+    margin-right: 0;
+  }
+  .legend-wrapper.minimized .legend-top #legend-toggle-btn .fa-minus {
+    display: none;
+  }
+  .legend-wrapper.minimized .legend-top #legend-toggle-btn .fa-plus {
+    display: inline-block;
+  }
+  .legend-wrapper.minimized ul {
+    display: none;
+  }
+}
+
 main {
   z-index: 0;
 }
