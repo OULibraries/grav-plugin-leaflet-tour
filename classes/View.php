@@ -15,6 +15,9 @@ class View {
     private ?string $title = null;
     private ?array $basemaps = null;
     private ?bool $no_tour_basemaps = null;
+    /**
+     * remove_tile_server, only_show_view_features, list_popup_buttons
+     */
     private array $overrides = [];
     private array $start = [];
     private array $features = [];
@@ -107,7 +110,7 @@ class View {
         $buttons = [];
         if ($this->getOptions()['list_popup_buttons'] && ($file = $this->getFile()) && ($tour = $this->getTour())) {
             // $content = $file->markdown();
-            $tour_popups = array_column($tour->getFeaturePopups(), 'name');
+            $tour_popups = array_column($tour->getFeaturePopups(), 'name', 'id');
             foreach ($this->getFeatures() as $id) {
                 if (($name = $tour_popups[$id])/* && !str_contains($content, "[popup-button id='$id'")*/) {
                     $buttons[] = LeafletTour::buildPopupButton($id, "$id-$this->id-popup", $name, 'TODO');
@@ -134,8 +137,8 @@ class View {
     public function setFeatures(?array $features = null): void {
         $this->features = $features ?? $this->features;
         if ($tour = $this->getTour()) {
-            $features = array_column($this->features, null, 'id');
-            $features = array_intersect_key($features, array_flip($tour->getIncludedFeatures()));
+            // $features = array_column($this->features, null, 'id');
+            $features = array_intersect($this->features, $tour->getIncludedFeatures());
             $this->features = array_values($features);
         }
     }
@@ -146,7 +149,7 @@ class View {
     public function setStart(?array $start = null): void {
         $this->start = $start ?? $this->start;
         if (($tour = $this->getTour()) && ($location = $this->start['location'])) {
-            if (!$tour->getAllFeatures()[$location]) $this->start['location'] = 'none';
+            if (!(($feature = $tour->getAllFeatures()[$location]) && $feature->getType() === 'Point')) $this->start['location'] = 'none';
         }
     }
 
@@ -174,8 +177,8 @@ class View {
     public function getFeatures(): array { return $this->features; }
     public function getOptions(): array {
         if ($tour = $this->getTour()) {
-            $options = array_merge($this->overrides, $tour->getViewOptions());
-            $options['no_tour_basemaps'] = $this->no_tour_basemaps;
+            $options = array_merge($tour->getViewOptions(), $this->overrides);
+            $options['no_tour_basemaps'] = $this->no_tour_basemaps ?? false;
             return $options;
         }
         return [];

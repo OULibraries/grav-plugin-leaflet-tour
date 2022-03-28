@@ -667,6 +667,9 @@ class Tour {
         if (!$this->basemap_info) {
             $this->basemap_info = [];
             $files = $this->getBasemaps();
+            foreach ($this->getViews() as $id => $view) {
+                $files = array_merge($files, $view->getBasemaps());
+            }
             foreach (self::$plugin_config['basemap_info'] ?? [] as $info) {
                 $file = $info['file'];
                 if (in_array($file, $files)) $this->basemap_info[$file] = $info;
