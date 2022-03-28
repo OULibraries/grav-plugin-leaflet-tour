@@ -230,6 +230,12 @@ class Tour {
             $this->updateFeatures();
             $this->updateDatasetOverrides($id);
             $this->save();
+            foreach ($this->views as $id => $view) {
+                // validates view features and start location
+                $view->setFeatures();
+                $view->setStart();
+                $view->save();
+            }
             return true;
         }
         else return false;
