@@ -19,7 +19,7 @@ const tour_state = {
 // ---------- Classes ---------- //
 class TourFeature {
     // properties
-    id; name; has_popup; alt_text; geometry;
+    id; name; has_popup; geometry;
     // leaflet objects
     layer; dataset;
     // status
@@ -49,6 +49,9 @@ class TourFeature {
             geometry: this.geometry,
             properties: { id: this.id }
         });
+    }
+    get alt_text() {
+        return this.name + (this.dataset.legend_summary ? ", " + this.dataset.legend_summary : "") + (this.has_popup ? ", open popup" : "");
     }
     // called by leaflet layer when a feature is added
     addToLayer(layer) {
@@ -123,8 +126,6 @@ class TourPath extends TourFeature {
         this.buffer = layer;
     }
     modify() {
-        // tmp
-        this.alt_text = this.id;
         // create the focus element
         let focus_element = $('<img class="sr-only" id="' + this.id + '-focus" tabindex="0" alt="' + this.alt_text + '">');
         $(".leaflet-marker-pane").append(this.focus_element);
@@ -165,7 +166,8 @@ function createFeatureLayer() {
             let feature = tour.features.get(json.properties.id);
             return L.marker(latlng, {
                 icon: new L.Icon(feature.icon_options),
-                riseOnHover: true
+                alt: feature.alt_text,
+                riseOnHover: true,
             });
         },
         style: function(json) {

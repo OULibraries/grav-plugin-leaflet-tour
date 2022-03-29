@@ -95,16 +95,13 @@
                 {# <a href="#map-end" id="skip-map-link" class="skip-link desktop-only">Skip Map</a> #}
                 {# Legend #}
                 {% include 'partials/legend.html.twig' with {'tour':tour} %}
-                {# {% if not page.header.include_legend is same as (false) %} #}
-                    {# {% include 'partials/legend.html.twig' with { 'datasets': tour.getLegendDatasets() } %} #}
-                {# {% endif %} #}
                 <div id="map"></div>
                 {# <div id="map-end"></div> #}
             </div>
             {# TODO: feature modal popups #}
-            {# {% for feature in tour.getPopups() %}
+            {% for feature in tour.getFeaturePopups() %}
                 {% include 'partials/modal-popup.html.twig' with {'feature': feature} %}
-            {% endfor %} #}
+            {% endfor %}
         </main>
 
         {% block footer_wrapper %}{{ parent() }}{% endblock %}

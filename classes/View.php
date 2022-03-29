@@ -114,7 +114,7 @@ class View {
             $tour_popups = array_column($tour->getFeaturePopups(), 'name', 'id');
             foreach (array_column($this->getFeatures(), 'id') as $id) {
                 if (($name = $tour_popups[$id])/* && !str_contains($content, "[popup-button id='$id'")*/) {
-                    $buttons[] = LeafletTour::buildPopupButton($id, "$id-$this->id-popup", $name, 'TODO');
+                    $buttons[] = LeafletTour::buildPopupButton($id, "$id-$this->id-popup", $name);
                 }
             }
         }

@@ -48,7 +48,7 @@ class LeafletTour {
         if (!self::$tours) self::setTours();
         return self::$tours;
     }
-    private static function getViews(): array {
+    public static function getViews(): array {
         if (!self::$views) self::setTours();
         return self::$views;
     }
@@ -311,7 +311,7 @@ class LeafletTour {
      */
     public static function buildPopupButton(string $feature_id, string $button_id, string $name, ?string $text = null): string {
         $text ??= $name; // TODO: Determine default text?
-        return "<button id='$button_id' onClick='openDialog(\"$feature_id-popup', this) class='btn view-popup-btn'>$text</button>";
+        return "<button id='$button_id' onClick=\"openDialog('$feature_id-popup', this)\" class='btn view-popup-btn'>$text</button>";
     }
 }
 ?>

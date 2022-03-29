@@ -5,15 +5,16 @@
     {# <button data-view="{{ view_id }}" id="show-view-{{ view_id }}" class="btn show-view-btn">Show View</button> #}
     {{ content|raw }}
     {# Popup button list #}
-    {# {% set popups_list = tour_data.get_view_popups(view_id, page.content) %}
+    {% set popups_list = leaflet_tour.getViews()[page.header.id].getPopupButtonsList() %}
     {% if popups_list|length > 0 %}
         <ul class="list-unstyled" role="list">
-            {% for feature in popups_list %}
-                <li> #}
+            {% for button in popups_list %}
+                <li>
                     {# TODO: Better wording #}
-                    {# <button id="{{ view_id }}_{{ feature.id }}_btn" class="btn view-popup-btn" onClick="openDialog('{{ feature.id }}-popup', this)">View {{ feature.name }} popup</button>
+                    {{ button|raw }}
+                    {# <button id="{{ page.header.id }}_{{ feature.id }}_btn" class="btn view-popup-btn" onClick="openDialog('{{ feature.id }}-popup', this)">View {{ feature.name }} popup</button> #}
                 </li>
             {% endfor %}
         </ul>
-    {% endif %} #}
+    {% endif %}
 </div>
