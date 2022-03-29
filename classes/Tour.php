@@ -350,7 +350,7 @@ class Tour {
     public function getFeatureData(): array {
         $features = [];
         foreach ($this->getIncludedFeatures() as $id) {
-            $feature = $this->getAllFeatures()[$id];
+            $feature = $this->getMergedFeatures()[$id];
             $features[$id] = [
                 'type' => 'Feature',
                 'geometry' => [
