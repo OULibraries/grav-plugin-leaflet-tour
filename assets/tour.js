@@ -32,6 +32,7 @@ class TourFeature {
         this.name = props.name;
         this.hide_view = false;
         this.hide_dataset = false;
+        this.has_popup = props.has_popup;
     }
     // returns all html elements associated with the feature (jquery)
     get elements() {
@@ -69,16 +70,33 @@ class TourFeature {
     }
     // to be called after adding layer when document is ready
     modify() {
-        this.hover_element.id = this.id;
-        this.hover_element.classList.add(this.dataset.id);
-        this.hover_element.setAttribute("data-feature", this.id);
-        this.focus_element.setAttribute("data-feature", this.id);
-        this.hover_element.classList.add("hover-el");
-        this.focus_element.classList.add("focus-el");
+        let hover = this.hover_element;
+        let focus = this.focus_element;
+        hover.id = this.id;
+        hover.classList.add(this.dataset.id);
+        hover.classList.add("hover-el");
+        hover.classList.add(this.has_popup ? "has-popup" : "no-popup");
+        hover.setAttribute("data-feature", this.id);
+        focus.classList.add("focus-el");
+        focus.setAttribute("data-feature", this.id);
+        if (this.has_popup) {
+            focus.setAttribute("role", "button");
+            focus.setAttribute("aria-haspopup", "true");
+        }
     }
     toggleHidden() {
         let hide = (this.hide_dataset || this.hide_view);
         this.elements.attr("aria-hidden", hide).css("display", (hide ? "none" : "block"));
+    }
+    openPopup() {
+        if (this.has_popup) openDialog(this.id+"-popup", this.focus_element);
+        else this.focus_element.focus();
+    }
+    activate() {
+        this.tooltip.classList.add("active");
+    }
+    deactivate() {
+        this.tooltip.classList.remove("active");
     }
 }
 class TourPoint extends TourFeature {
@@ -127,14 +145,28 @@ class TourPath extends TourFeature {
     }
     modify() {
         // create the focus element
-        let focus_element = $('<img class="sr-only" id="' + this.id + '-focus" tabindex="0" alt="' + this.alt_text + '">');
-        $(".leaflet-marker-pane").append(this.focus_element);
-        this.focus_element = focus_element.get(0);
+        let focus;
+        if (this.has_popup) {
+            focus = $('<button class="sr-only">' + this.alt_text + '</button>');
+        } else {
+            focus = $('<div class="sr-only" tabindex="0">' + this.alt_text + '</div>');
+        }
+        focus.attr("id", this.id + "-focus");
+        this.focus_element = focus.get(0);
+        $(".leaflet-marker-pane").append(this.focus_element); // TODO: This should go in a better location
         super.modify();
         // deal with non-point tooltips - without this, tooltips associated with polygons that are much smaller than the starting view may be bound way too far off
         map.flyToBounds(this.layer.getBounds(), { animate: false });
         this.layer.closeTooltip();
         this.layer.openTooltip();
+    }
+    activate() {
+        super.activate();
+        this.layer.setStyle(this.dataset.active_path);
+    }
+    deactivate() {
+        super.deactivate();
+        this.layer.setStyle(this.dataset.path);
     }
 }
 
@@ -224,7 +256,7 @@ tour.tile_layer = createTileLayer();
 tour.datasets = tour_datasets;
 tour.feature_layer = createFeatureLayer();
 tour.buffer_layer = createBufferLayer();
-tour.features = tour_features;
+tour.features = new Map(tour_features);
 tour.features.forEach(createFeature);
 
 // ---------- Scrollama ---------- //
@@ -302,7 +334,27 @@ $(document).ready(function() {
         this.parentElement.classList.toggle("expanded");
         toggleDisplay(this);
     })
-
+    // features
+    $(".leaflet-pane .hover-el").on("click", function(e) {
+        e.stopPropagation();
+        getFeature(this).openPopup();
+    }).on("mouseover", function() {
+        getFeature(this).activate();
+    }).on("mouseout", function() {
+        // only deactivate if feature does not have focus
+        let feature = getFeature(this);
+        if (!(feature.focus_element === document.activeElement))feature.deactivate();
+    });
+    $(".leaflet-pane .focus-el").on("keypress", function() {
+        if (e.which === 32 || e.which === 13) {
+            getFeature(this).openPopup();
+        }
+    }).on("focus", function() {
+        getFeature(this).activate();
+    }).on("blur", function() {
+        getFeature(this).deactivate();
+    });
+    // views
     $("map-reset-btn").on("click", function() {
         // todo
     });
