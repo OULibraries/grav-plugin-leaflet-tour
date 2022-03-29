@@ -296,11 +296,20 @@ $(document).ready(function() {
         this.setAttribute("aria-checked", this.checked);
         toggleDataset(this.value, !this.checked);
     })
+    $("#legend-basemaps-toggle").on("click", function() {
+        this.parentElement.classList.toggle("expanded");
+        toggleDisplay(this);
+    })
 
     $("map-reset-btn").on("click", function() {
         // todo
     });
 });
+
+// TODO: This should really move to the theme depending on how I deal with aria-haspopup
+function toggleDisplay(btn) {
+    btn.setAttribute("aria-expanded", btn.getAttribute("aria-expanded") == "true" ? "false" : "true");
+}
 
 function toggleDataset(id, hide) {
     tour.datasets.get(id).features.forEach(function(feature) {

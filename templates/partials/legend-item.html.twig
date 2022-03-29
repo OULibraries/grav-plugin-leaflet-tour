@@ -1,7 +1,7 @@
 
 {# TODO: Best way to provide alt for img and svg? #}
 {% if item.icon %}
-    <img class="legend-icon" src="{{ item.icon }}" alt="">
+    <img class="legend-icon {{ item.class }}" src="{{ item.icon }}" alt="">
 {% elseif item.path.fillOpacity %} {# Polygon - use complex svg #}
     <svg width='16px' height='16px'>
         <rect   x='2' y='2' width='12' height='12'
