@@ -300,7 +300,7 @@
   .legend-wrapper.minimized .legend-top #legend-toggle-btn .fa-plus {
     display: inline-block;
   }
-  .legend-wrapper.minimized ul {
+  .legend-wrapper.minimized .legend-basemaps, .legend-wrapper.minimized #legend-data-list {
     display: none;
   }
 }

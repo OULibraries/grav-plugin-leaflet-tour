@@ -331,7 +331,7 @@ $column-width: 33%;
                     }
                 }
             }
-            ul {
+            .legend-basemaps, #legend-data-list {
                 display: none;
             }
         }
