@@ -409,6 +409,17 @@ $(document).ready(function() {
     $(".show-view-btn").on("click", function() {
         enterView(this.getAttribute("data-view"));
     });
+    $(".go-to-view-btn").on("click", function() {
+        enterView(this.getAttribute("data-view"));
+        if (isMobile()) switchToMap(this.id);
+        else {
+            $("#back-to-view-btn").attr("href", "#" + this.id).addClass("active");
+            $("#map").focus();
+        }
+    });
+    $("#back-to-view-btn").on("click", function() {
+        this.classList.remove("active");
+    });
     $("map-reset-btn").on("click", function() {
         // todo
     });

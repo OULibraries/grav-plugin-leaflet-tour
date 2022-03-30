@@ -164,6 +164,45 @@
     margin: 0;
   }
 }
+/* content */
+main {
+  z-index: 0;
+}
+@media (min-width: 768px) {
+  main .desktop-btns {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+  main .desktop-btns .go-to-view-btn {
+    opacity: 0;
+    pointer-events: none;
+    transition: none;
+  }
+  main .desktop-btns .go-to-view-btn:focus {
+    opacity: 1;
+    transition: opacity 0.5s;
+  }
+  main #back-to-view-btn {
+    display: none;
+    position: absolute;
+    opacity: 0;
+    z-index: 700;
+    pointer-events: none;
+    bottom: 10px;
+    right: 20px;
+    transition: none;
+  }
+  main #back-to-view-btn.active {
+    display: inline-block;
+  }
+  main #back-to-view-btn:focus {
+    opacity: 1;
+    transition: opacity 0.5s;
+    pointer-events: all;
+  }
+}
+
 /* legend */
 .legend-wrapper {
   padding: 15px;
@@ -305,6 +344,9 @@
   }
 }
 
+#map {
+  height: 100%;
+}
 #map .leaflet-marker-icon {
   padding: 4px;
   top: -4px;
@@ -331,14 +373,6 @@
   box-shadow: 0 0 2px 2px #333, 0 0 2px 3px #fff;
   opacity: 1 !important;
   z-index: 700;
-}
-
-main {
-  z-index: 0;
-}
-
-#map {
-  height: 100%;
 }
 
 /*# sourceMappingURL=tour.css.map */

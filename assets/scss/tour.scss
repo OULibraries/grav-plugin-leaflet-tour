@@ -185,6 +185,53 @@ $column-width: 33%;
     }
 }
 
+/* content */
+main {
+    z-index: 0;
+    // for mobile
+    @media(max-width: ($mobile - 1)) {
+    }
+    // for desktop
+    @media(min-width: $mobile) {
+        .desktop-btns {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+
+            .go-to-view-btn {
+                // font-size: 14px;
+                // padding: 10px 15px;
+                // margin: 10px;
+                opacity: 0;
+                pointer-events: none;
+                transition: none;
+                &:focus {
+                    opacity: 1;
+                    transition: opacity .5s;
+                }
+            }
+        }
+        #back-to-view-btn {
+            display: none;
+            position: absolute;
+            opacity: 0;
+            z-index: 700;
+            pointer-events: none;
+            bottom: 10px;
+            right: 20px;
+            transition: none;
+            &.active {
+                display: inline-block;
+            }
+            &:focus {
+                opacity: 1;
+                transition: opacity .5s;
+                pointer-events: all;
+            }
+        }
+    }
+}
+
 /* legend */
 .legend-wrapper {
     padding: 15px;
@@ -339,6 +386,7 @@ $column-width: 33%;
 
 // map / features
 #map {
+    height: 100%;
     .leaflet-marker-icon {
         padding: 4px;
         // padding moves the icon, to move it back:
@@ -374,11 +422,4 @@ $column-width: 33%;
             z-index: 700;
         }
     }
-}
-
-main {
-    z-index: 0;
-}
-#map {
-    height: 100%;
 }

@@ -97,6 +97,7 @@
                 {% include 'partials/legend.html.twig' with {'tour':tour} %}
                 <div id="map"></div>
                 {# <div id="map-end"></div> #}
+                <a href="#" id="back-to-view-btn" class="skip-link desktop-only">Back to View</a>
             </div>
             {# feature modal popups #}
             {% for feature in tour.getFeaturePopups() %}

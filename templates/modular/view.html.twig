@@ -3,8 +3,10 @@
 <div class="step" id="{{ id }}">
     <h2>{{ page.header.title }}</h2>
     {# TODO: Proper wording and focus management #}
-    <button data-view="{{ id }}" id="show-view-{{ id }}" class="btn show-view-btn desktop-only">Show View on Map</button>
-    {# <button data-view="{{ id }}" id="go-to-view-{{ id }}" class="mobile-btn go-to-map-view-btn desktop-skip-link">Go to Map</button> #}
+    <div class="desktop-btns">
+        <button data-view="{{ id }}" id="show-view-{{ id }}" class="btn show-view-btn desktop-only">Show View on Map</button>
+        <button data-view="{{ id }}" id="go-to-view-{{ id }}" class="go-to-view-btn btn">Go to Map</button>
+    </div>
     {{ content|raw }}
     {# Popup button list #}
     {% set popups_list = leaflet_tour.getViews()[id].getPopupButtonsList() %}
