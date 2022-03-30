@@ -11,7 +11,7 @@
         let tour_basemaps = new Map(Object.entries({{ tour.getBasemapData()|json_encode|raw }}));
         let tour_datasets = new Map(Object.entries({{ tour.getDatasetData()|json_encode|raw }}));
         const tour_features = new Map(Object.entries({{ tour.getFeatureData()|json_encode|raw }}));
-        // let tour_views = new Map(Object.entries({{ tour.getViewData()|json_encode|raw }}));
+        let tour_views = new Map(Object.entries({{ tour.getViewData()|json_encode|raw }}));
     </script>
 {% endblock starting_scripts %}
 
@@ -98,7 +98,7 @@
                 <div id="map"></div>
                 {# <div id="map-end"></div> #}
             </div>
-            {# TODO: feature modal popups #}
+            {# feature modal popups #}
             {% for feature in tour.getFeaturePopups() %}
                 {% include 'partials/modal-popup.html.twig' with {'feature': feature} %}
             {% endfor %}

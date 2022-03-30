@@ -1,18 +1,18 @@
 {# <a class="anchor view-anchor" id="{{ view_id }}-anchor"></a> #}
-<div class="step" id="{{ page.header.id }}">
+{% set id = page.header.id %}
+<div class="step" id="{{ id }}">
     <h2>{{ page.header.title }}</h2>
     {# TODO: Proper wording and focus management #}
-    {# <button data-view="{{ view_id }}" id="show-view-{{ view_id }}" class="btn show-view-btn">Show View</button> #}
+    <button data-view="{{ id }}" id="show-view-{{ id }}" class="btn show-view-btn desktop-only">Show View on Map</button>
+    {# <button data-view="{{ id }}" id="go-to-view-{{ id }}" class="mobile-btn go-to-map-view-btn desktop-skip-link">Go to Map</button> #}
     {{ content|raw }}
     {# Popup button list #}
-    {% set popups_list = leaflet_tour.getViews()[page.header.id].getPopupButtonsList() %}
+    {% set popups_list = leaflet_tour.getViews()[id].getPopupButtonsList() %}
     {% if popups_list|length > 0 %}
         <ul class="list-unstyled" role="list">
             {% for button in popups_list %}
                 <li>
-                    {# TODO: Better wording #}
                     {{ button|raw }}
-                    {# <button id="{{ page.header.id }}_{{ feature.id }}_btn" class="btn view-popup-btn" onClick="openDialog('{{ feature.id }}-popup', this)">View {{ feature.name }} popup</button> #}
                 </li>
             {% endfor %}
         </ul>

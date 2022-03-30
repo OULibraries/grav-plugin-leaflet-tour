@@ -91,7 +91,7 @@ class View {
     public function getViewData(): array {
         $tour = $this->getTour();
         $options = array_intersect_key($this->getOptions(), array_flip(['remove_tile_server', 'only_show_view_features']));
-        $options['features'] = $this->getFeatures();
+        $options['features'] = array_column($this->getFeatures(), 'id');
         $basemaps = $this->getBasemaps() ?? [];
         if (!$this->getOptions()['no_tour_basemaps'] && $tour) {
             foreach ($tour->getBasemaps() as $file) {

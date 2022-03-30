@@ -14,6 +14,8 @@ const page_state = {
 const tour_state = {
     map_needs_adjusting: true,
     adjust_labels: false,
+    view: null,
+    basemaps: [], // active basemaps
 }
 
 // ---------- Classes ---------- //
@@ -111,8 +113,9 @@ class TourPoint extends TourFeature {
     // each point may have slightly different options that the generic dataset icon options
     get icon_options() {
         // don't modify dataset's options!
-        let options = { ...this.dataset.icon };
-        return options;
+        // let options = { ...this.dataset.icon };
+        // return options;
+        return this.dataset.icon;
     }
     addToLayer(layer) {
         super.addToLayer(layer);
@@ -192,6 +195,9 @@ function createTileLayer() {
     map.addLayer(layer);
     return layer;
 }
+function createBasemaps() {
+    // TODO
+}
 function createFeatureLayer() {
     let layer = L.geoJson(null, {
         pointToLayer: function(json, latlng) {
@@ -241,10 +247,47 @@ function createFeature(value, key, map) {
         if (feature.buffer) tour.buffer_layer.addData(feature.geoJson);
     }
 }
+function setupViews(views) {
+    // deal with tour "view" first (id = 'tour')
+    tour_bounds = views.get('tour').bounds;
+    if (!tour_bounds) tour_bounds = tour.feature_layer.getBounds();
+    // the rest (repeats tour as well, which is fine)
+    views.forEach(function(view) {
+        // replace view feature ids with references to the actual features
+        // let features = view.features;
+        // view.features = [];
+        // for (let feature of features) {
+        //     view.features.push(tour.features.get(feature.id));
+        // }
+        // TODO: replace view basemap files with references to the actual basemaps
+        // make sure that each view has bounds
+        if (!view.bounds) {
+            view.bounds = setupBounds(view.features, tour_bounds);
+        }
+    });
+}
+function setupBounds(feature_ids, bounds) {
+    if (feature_ids.length > 0) {
+        let group = new L.FeatureGroup();
+        for (let id of feature_ids) {
+            group.addLayer(tour.features.get(id).layer);
+        }
+        return group.getBounds();
+    }
+    return bounds;
+}
 function adjustMap() {
     map.invalidateSize();
     // TODO: This should invoke the current view bounds
     map.flyToBounds(tour.feature_layer.getBounds(), { padding: FLY_TO_PADDING, animate: false });
+}
+function adjustBasemaps(view) {
+    // remove currently active basemaps
+    // for (let basemap of tour_state.basemaps) {
+    //     map.removeLayer(basemap);
+    // }
+    // tour_state.basemaps = [];
+    // use view and zoom level to determine which basemaps to add
 }
 function resetTourLabels() {
     resetLabels([ tour.feature_layer ]);
@@ -256,8 +299,10 @@ tour.tile_layer = createTileLayer();
 tour.datasets = tour_datasets;
 tour.feature_layer = createFeatureLayer();
 tour.buffer_layer = createBufferLayer();
-tour.features = new Map(tour_features);
+tour.features = tour_features;
 tour.features.forEach(createFeature);
+tour.views = tour_views;
+setupViews(tour.views);
 
 // ---------- Scrollama ---------- //
 const SCROLLAMA_OFFSET = 0.33;
@@ -295,14 +340,16 @@ map.on("zoomend", function() {
 // ---------- General Setup ---------- //
 $(document).ready(function() {
     map.invalidateSize();
-    map.flyToBounds(tour.feature_layer.getBounds(), { padding: FLY_TO_PADDING, animate: false });
+    let view = tour.views.get('tour');
+    if (view) map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING, animate: false });
     
     // features
     for (let feature of tour.features.values()) {
         feature.modify();
     }
 
-    adjustMap(); // todo: enter view here or above
+    adjustMap();
+    enterView('tour');
 
     // move map controls for more sensible DOM order
     let controls = $(".leaflet-control-container");
@@ -355,6 +402,9 @@ $(document).ready(function() {
         getFeature(this).deactivate();
     });
     // views
+    $(".show-view-btn").on("click", function() {
+        enterView(this.getAttribute("data-view"));
+    });
     $("map-reset-btn").on("click", function() {
         // todo
     });
@@ -363,6 +413,43 @@ $(document).ready(function() {
 // TODO: This should really move to the theme depending on how I deal with aria-haspopup
 function toggleDisplay(btn) {
     btn.setAttribute("aria-expanded", btn.getAttribute("aria-expanded") == "true" ? "false" : "true");
+}
+
+function enterView(id) {
+    let view = tour.views.get(id);
+    if (!view) return;
+    // If the new view is differnt, exit the old one
+    if (tour_state.view && (tour_state.view.id !== view)) exitView();
+    // set new view
+    tour_state.view = view;
+    toggleViewFeatures(view, true);
+    // if applicable, fly to view bounds
+    if (view.bounds && !isMobile()) {
+        map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING });
+    }
+    // TODO: invalidate map size on mobile?
+    else if (isMobile()) {
+        // map.invalidateSize();
+        tour_state.map_needs_adjusting = true; // TODO: maybe?
+    }
+    adjustBasemaps(view);
+    resetTourLabels();
+}
+function exitView() {
+    // unhide previously hidden features
+    toggleViewFeatures(tour_state.view, false);
+}
+function toggleViewFeatures(view, hide) {
+    // console.log(view);
+    if (view.only_show_view_features && (view.features.length > 0)) {
+        // console.log('hiding');
+        tour.features.forEach(function(feature) {
+            if (!view.features.includes(feature.id)) {
+                feature.hide_view = hide;
+                feature.toggleHidden();
+            }
+        });
+    }
 }
 
 function toggleDataset(id, hide) {
