@@ -318,9 +318,13 @@ if ($("#scrolly .step").length > 0) {
         offset: SCROLLAMA_OFFSET,
         debug: SCROLLAMA_DEBUG,
     }).onStepEnter(function(e) {
-        // TODO
-    }).onStepExit(function() {
-        // TODO: Try removing
+        if (!isMobile()) {
+            scrolly_temp_view = e.element.id;
+            // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
+            setTimeout(function() {
+                enterView(scrolly_temp_view);
+            }, SCROLLAMA_ENTER_VIEW_WAIT);
+        }
     });
 }
 
