@@ -512,13 +512,11 @@ function toggleMobileLegend() {
 // Modify window.onscroll function from theme
 function doWindowScrollAction() {
     if (isMobile()) {
-        console.log("mobile");
         toggleBackToTop();
         if (page_state.save_scroll_pos) page_state.scroll_pos = window.scrollY;
         // save scroll position for mobile
         checkMapToggleScroll();
     } else {
-        console.log("desktop: " + document.getElementById("tour-wrapper").scrollTop);
         // have to check a different element for scroll position for back to top
         if (document.getElementById("tour-wrapper").scrollTop > BACK_TO_TOP_Y) $("#back-to-top").addClass("active");
         else $("#back-to-top").removeClass("active");
