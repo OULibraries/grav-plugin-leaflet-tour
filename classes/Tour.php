@@ -332,6 +332,7 @@ class Tour {
         $basemaps = [];
         foreach ($this->getBasemapInfo() as $file => $info) {
             $basemaps[$file] = [
+                'url' => Utils::BASEMAP_ROUTE . $file,
                 'bounds' => Utils::getBounds($info['bounds']),
                 'options' => [
                     'max_zoom' => $info['max_zoom'] ?? 16,

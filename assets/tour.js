@@ -195,8 +195,9 @@ function createTileLayer() {
     map.addLayer(layer);
     return layer;
 }
-function createBasemaps() {
-    // TODO
+function createBasemap(value, key, map) {
+    let layer = L.imageOverlay(value.url, value.bounds, value.options);
+    map.set(key, layer);
 }
 function createFeatureLayer() {
     let layer = L.geoJson(null, {
@@ -253,13 +254,12 @@ function setupViews(views) {
     if (!tour_bounds) tour_bounds = tour.feature_layer.getBounds();
     // the rest (repeats tour as well, which is fine)
     views.forEach(function(view) {
-        // replace view feature ids with references to the actual features
-        // let features = view.features;
-        // view.features = [];
-        // for (let feature of features) {
-        //     view.features.push(tour.features.get(feature.id));
-        // }
-        // TODO: replace view basemap files with references to the actual basemaps
+        // replace view basemap files with references to the actual basemaps
+        let basemaps = [];
+        for (let file of view.basemaps) {
+            basemaps.push(tour.basemaps.get(file));
+        }
+        view.basemaps = basemaps;
         // make sure that each view has bounds
         if (!view.bounds) {
             view.bounds = setupBounds(view.features, tour_bounds);
@@ -282,12 +282,22 @@ function adjustMap() {
     map.flyToBounds(tour.feature_layer.getBounds(), { padding: FLY_TO_PADDING, animate: false });
 }
 function adjustBasemaps(view) {
+    if (!view) return;
     // remove currently active basemaps
-    // for (let basemap of tour_state.basemaps) {
-    //     map.removeLayer(basemap);
-    // }
-    // tour_state.basemaps = [];
+    for (let basemap of tour_state.basemaps) {
+        map.removeLayer(basemap);
+    }
+    tour_state.basemaps = [];
     // use view and zoom level to determine which basemaps to add
+    for (let basemap of view.basemaps) {
+        if (map.getZoom() >= basemap.options.min_zoom && map.getZoom() <= basemap.options.max_zoom) {
+            tour_state.basemaps.push(basemap);
+            map.addLayer(basemap);
+        }
+    }
+    // tile server
+    if (!tour_state.basemaps.length || !view.remove_tile_server) map.addLayer(tour.tile_layer);
+    else map.removeLayer(tour.tile_layer);
 }
 function resetTourLabels() {
     resetLabels([ tour.feature_layer ]);
@@ -296,6 +306,8 @@ function resetTourLabels() {
 // ---------- Map/Tour Initialization ---------- //
 const map = createMap();
 tour.tile_layer = createTileLayer();
+tour.basemaps = tour_basemaps;
+tour.basemaps.forEach(createBasemap);
 tour.datasets = tour_datasets;
 tour.feature_layer = createFeatureLayer();
 tour.buffer_layer = createBufferLayer();
@@ -333,8 +345,8 @@ map.on("layeradd", resetTourLabels);
 map.on("layerremove", resetTourLabels);
 map.on("zoomend", function() {
     resetTourLabels();
-    // todo: reset basemaps
-    // todo: adjust zoom buttons?
+    adjustBasemaps(tour_state.view);
+    // adjust zoom buttons
     $(".leaflet-control-zoom a").removeAttr("aria-disabled");
     $(".leaflet-disabled").attr("aria-disabled", true);
 });
