@@ -60,16 +60,20 @@ class TourFeature {
     // called by leaflet layer when a feature is added
     addToLayer(layer) {
         this.layer = layer;
+        // let sticky = (this.type != 'Point');
         // tooltip
+        // TODO: aria-hidden here, or on the whole pane?
         this.layer.bindTooltip(String('<div aria-hidden="true">' + this.name) + '</div>', {
-            permanent: true,
+            permanent: false,
             className: this.dataset.id,
+            // opacity: 0,
+            sticky: false,
         });
         // this just comes from the code qgis2web generated
-        labels.push(this.layer);
-        addLabel(this.layer, totalMarkers);
-        this.layer.added = true;
-        totalMarkers++;
+        // labels.push(this.layer);
+        // addLabel(this.layer, totalMarkers);
+        // this.layer.added = true;
+        // totalMarkers++;
     }
     // to be called after adding layer when document is ready
     modify() {
@@ -96,10 +100,12 @@ class TourFeature {
         else this.focus_element.focus();
     }
     activate() {
-        this.tooltip.classList.add("active");
+        // this.tooltip.classList.add("active");
+        this.layer.openTooltip();
     }
     deactivate() {
-        this.tooltip.classList.remove("active");
+        // this.tooltip.classList.remove("active");
+        this.layer.closeTooltip();
     }
 }
 class TourPoint extends TourFeature {
@@ -160,9 +166,9 @@ class TourPath extends TourFeature {
         $(".leaflet-marker-pane").append(this.focus_element); // TODO: This should go in a better location
         super.modify();
         // deal with non-point tooltips - without this, tooltips associated with polygons that are much smaller than the starting view may be bound way too far off
-        map.flyToBounds(this.layer.getBounds(), { animate: false });
-        this.layer.closeTooltip();
-        this.layer.openTooltip();
+        // map.flyToBounds(this.layer.getBounds(), { animate: false });
+        // this.layer.closeTooltip();
+        // this.layer.openTooltip();
     }
     activate() {
         super.activate();
@@ -302,7 +308,7 @@ function adjustBasemaps(view) {
     else map.removeLayer(tour.tile_layer);
 }
 function resetTourLabels() {
-    resetLabels([ tour.feature_layer ]);
+    // resetLabels([ tour.feature_layer ]);
 }
 
 // ---------- Map/Tour Initialization ---------- //
@@ -409,7 +415,8 @@ $(document).ready(function() {
         getFeature(this).openPopup();
     }).on("mouseover", function() {
         getFeature(this).activate();
-    }).on("mouseout", function() {
+    }).on("mouseout", function(e) {
+        e.stopPropagation();
         // only deactivate if feature does not have focus
         let feature = getFeature(this);
         if (!(feature.focus_element === document.activeElement))feature.deactivate();

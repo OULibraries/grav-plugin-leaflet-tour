@@ -29,12 +29,12 @@
     {{ parent() }}
     {# JS to add after page HTML #}
     {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/leaflet.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/leaflet.rotatedMarker.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/leaflet.pattern.js', {group:'bottom'}) %}
+    {# {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/leaflet.rotatedMarker.js', {group:'bottom'}) %} #}
+    {# {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/leaflet.pattern.js', {group:'bottom'}) %} #}
     {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/leaflet-hash.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/rbush.min.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/labelgun.min.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/labels.js', {group:'bottom'}) %}
+    {# {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/labelgun.min.js', {group:'bottom'}) %} #}
+    {# {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/labels.js', {group:'bottom'}) %} #}
 
     {% do assets.addJs('https://unpkg.com/intersection-observer', {group:'bottom'}) %}
     {% do assets.addJs('https://unpkg.com/scrollama', {group:'bottom'}) %}
