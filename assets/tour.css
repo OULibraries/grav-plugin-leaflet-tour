@@ -168,6 +168,10 @@
 main {
   z-index: 0;
 }
+main #back-to-top {
+  bottom: 8%;
+  bottom: clamp(25px, 8%, 100px);
+}
 @media (min-width: 768px) {
   main .desktop-btns {
     display: flex;
@@ -206,8 +210,6 @@ main {
     float: right;
     right: 20px;
     transform: none;
-    bottom: 8%;
-    bottom: clamp(25px, 8%, 100px);
   }
 }
 

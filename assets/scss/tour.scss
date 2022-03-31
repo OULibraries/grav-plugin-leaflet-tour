@@ -188,6 +188,10 @@ $column-width: 33%;
 /* content */
 main {
     z-index: 0;
+    #back-to-top {
+        bottom: 8%;
+        bottom: clamp(25px, 8%, 100px);
+    }
     // for mobile
     @media(max-width: ($mobile - 1)) {
     }
@@ -234,8 +238,6 @@ main {
             float: right;
             right: 20px;
             transform: none;
-            bottom: 8%;
-            bottom: clamp(25px, 8%, 100px);
         }
     }
 }
