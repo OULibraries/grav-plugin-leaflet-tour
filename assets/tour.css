@@ -201,6 +201,14 @@ main {
     transition: opacity 0.5s;
     pointer-events: all;
   }
+  main #back-to-top {
+    position: sticky;
+    float: right;
+    right: 20px;
+    transform: none;
+    bottom: 8%;
+    bottom: clamp(25px, 8%, 100px);
+  }
 }
 
 /* legend */

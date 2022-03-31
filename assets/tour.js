@@ -351,7 +351,7 @@ map.on("zoomend", function() {
     $(".leaflet-disabled").attr("aria-disabled", true);
 });
 
-// todo: enter view
+let window_scroll_tick = false;
 
 // ---------- General Setup ---------- //
 $(document).ready(function() {
@@ -435,6 +435,17 @@ $(document).ready(function() {
     $("map-reset-btn").on("click", function() {
         // todo
     });
+
+    // scrolling (desktop)
+    $("#tour-wrapper").on("scroll", function() {
+        if (!window_scroll_tick) {
+            setTimeout(function() {
+                doWindowScrollAction();
+                window_scroll_tick = false;
+            }, 100);
+        }
+        window_scroll_tick = true;
+    });
 });
 
 // TODO: This should really move to the theme depending on how I deal with aria-haspopup
@@ -500,19 +511,25 @@ function toggleMobileLegend() {
 
 // Modify window.onscroll function from theme
 function doWindowScrollAction() {
-    toggleBackToTop();
-    // save scroll position for mobile
-    if (isMobile() && page_state.save_scroll_pos) page_state.scroll_pos = window.scrollY;
-    checkMapToggleScroll();
+    if (isMobile()) {
+        console.log("mobile");
+        toggleBackToTop();
+        if (page_state.save_scroll_pos) page_state.scroll_pos = window.scrollY;
+        // save scroll position for mobile
+        checkMapToggleScroll();
+    } else {
+        console.log("desktop: " + document.getElementById("tour-wrapper").scrollTop);
+        // have to check a different element for scroll position for back to top
+        if (document.getElementById("tour-wrapper").scrollTop > BACK_TO_TOP_Y) $("#back-to-top").addClass("active");
+        else $("#back-to-top").removeClass("active");
+    }
 }
 
 function checkMapToggleScroll() {
-    if (isMobile()) {
-        let height = $("header").get(0).offsetHeight + parseFloat($(".tour-wrapper").first().css("padding-top")) + document.getElementById("main-nav").offsetHeight;
-        if (window.scrollY >= height) {
-            $("#map-nav").addClass('scrolled');
-        } else $('#map-nav').removeClass('scrolled');
-    }
+    let height = $("header").get(0).offsetHeight + parseFloat($(".tour-wrapper").first().css("padding-top")) + document.getElementById("main-nav").offsetHeight;
+    if (window.scrollY >= height) {
+        $("#map-nav").addClass('scrolled');
+    } else $('#map-nav').removeClass('scrolled');
 }
 
 // overwrite function from theme to do nothing
