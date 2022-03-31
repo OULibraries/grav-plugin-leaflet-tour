@@ -50,7 +50,36 @@
         <header id="top">
             {% block header %}{{ parent() }}{% endblock %}
             {# TODO: Options button #}
+            <button id="open-settings-btn" class="desktop-only icon-btn" aria-haspopup="true" onClick="openDialog('settings-modal', this)">
+                <i class="fas fa-cog" aria-hidden="true"></i>
+                <span class="sr-only">Settings</span>
+            </button>
             {# TODO: Options modal #}
+            <div class="dialog-backdrop">
+                <div role="dialog" id="settings-modal" aria-labelledby="settings-label" aria-modal="true" class="hidden">
+                    <div class="dialog-top">
+                        <h2 id="setting-label" class="dialog-label">Settings</h2>
+                        <button id="settings-close-btn" class="icon-btn" onClick="closeDialog(this)">
+                            <i class="fas fa-times" aria-hidden="true"></i>
+                            <span class="sr-only">Close</span>
+                        </button>
+                    </div>
+                    <div class="dialog-content">
+                        <div class="option">
+                            <label class="toggle-switch">
+                                <span class="switch">
+                                    <input id="map-animation-toggle" type="checkbox" class="sr-only" aria-checked="true" checked>
+                                    <span class="slider" aria-hidden="true"></span>
+                                </span>
+                                <span class="label">Map automatically changes when scrolling</span>
+                            </label>
+                        </div>
+                        <div class="option">
+                            <button id="reset-view-btn" class="btn reset-view-btn">Reset Map</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </header>
         {# Navigation will not be shown in mobile map view #}
         {% block navigation %}{{ parent() }}{% endblock %}
@@ -66,7 +95,7 @@
             <div id="map-nav-options">
                 <button id="map-toggle-btn" class="btn" data-map-active="false">View Map</button>
                 <button id="mobile-legend-btn" aria-haspopup="true" class="map-only btn">Open Legend</button>
-                <button id="map-reset-btn" class="map-only btn reset-view-btn">Reset View</button>
+                <button id="map-reset-btn" class="map-only btn reset-view-btn">Reset Map</button>
             </div>
         </nav>
 

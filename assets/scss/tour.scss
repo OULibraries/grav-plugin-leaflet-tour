@@ -141,6 +141,74 @@ $column-width: 33%;
     
 }
 
+// settings
+#top .dialog-backdrop {
+    z-index: 700;
+}
+#settings-modal {
+    .dialog-content {
+        padding-top: 0;
+        margin: 10px 30px;
+        .option {
+            margin: 30px 10px;
+            label {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                cursor: pointer;
+                .label {
+                    padding: 0;
+                    margin-left: 10px;
+                }
+            }
+        }
+    }
+}
+/* code for toggle-switch comes primarily from W3Schools */
+.toggle-switch .switch {
+    position: relative;
+    display: inline-block;
+    box-sizing: border-box;
+    width: 50px;
+    height: 28px;
+    /* Note: input element should be hidden using sr-only for simplicity */
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        -webkit-transition: .4s;
+        transition: .4s;
+        border-radius: 28px;
+        &:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+    }
+    input:checked + .slider {
+        background-color: #2196F3;
+        &:before {
+            -webkit-transform: translateX(22px);
+            -ms-transform: translateX(22px);
+            transform: translateX(22px);
+        }
+    }
+    input:focus + .slider {
+        box-shadow: 0 0 1px #2196F3;
+    }
+}
+
 /* map-nav (content unscrolled vs. content scrolled vs. map) */
 @media(max-width: ($mobile - 1)) {
     #map-nav {

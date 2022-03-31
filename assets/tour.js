@@ -382,6 +382,9 @@ $(document).ready(function() {
         if (this.getAttribute("data-map-active") === "false") switchToMap(this.id);
         else switchToContent();
     });
+    $("#map-animation-toggle").on("input", function() {
+        this.setAttribute("aria-checked", this.checked);
+    })
     // legend
     $("#legend-toggle-btn").on("click", function() {
         $("#" + this.getAttribute("data-toggles")).toggleClass("minimized");
