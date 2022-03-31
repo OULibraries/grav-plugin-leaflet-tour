@@ -13,6 +13,7 @@ const page_state = {
 }
 const tour_state = {
     map_needs_adjusting: true,
+    animation: true,
     adjust_labels: false,
     view: null,
     basemaps: [], // active basemaps
@@ -278,8 +279,9 @@ function setupBounds(feature_ids, bounds) {
 }
 function adjustMap() {
     map.invalidateSize();
-    // TODO: This should invoke the current view bounds
-    map.flyToBounds(tour.feature_layer.getBounds(), { padding: FLY_TO_PADDING, animate: false });
+    if ((view = tour_state.view) && (bounds = view.bounds)) map.flyToBounds(bounds, { padding: FLY_TO_PADDING, animate: false });
+    else map.flyToBounds(tour.feature_layer.getBounds(), { padding: FLY_TO_PADDING, animate: false });
+    resetTourLabels();
 }
 function adjustBasemaps(view) {
     if (!view) return;
@@ -330,7 +332,7 @@ if ($("#scrolly .step").length > 0) {
         offset: SCROLLAMA_OFFSET,
         debug: SCROLLAMA_DEBUG,
     }).onStepEnter(function(e) {
-        if (!isMobile()) {
+        if (!isMobile() && tour_state.animation) {
             scrolly_temp_view = e.element.id;
             // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
             setTimeout(function() {
@@ -384,7 +386,8 @@ $(document).ready(function() {
     });
     $("#map-animation-toggle").on("input", function() {
         this.setAttribute("aria-checked", this.checked);
-    })
+        tour_state.animation = this.checked;
+    });
     // legend
     $("#legend-toggle-btn").on("click", function() {
         $("#" + this.getAttribute("data-toggles")).toggleClass("minimized");
@@ -435,8 +438,8 @@ $(document).ready(function() {
     $("#back-to-view-btn").on("click", function() {
         this.classList.remove("active");
     });
-    $("map-reset-btn").on("click", function() {
-        // todo
+    $(".reset-view-btn").on("click", function() {
+        enterView('tour');
     });
 
     // scrolling (desktop)
@@ -470,6 +473,7 @@ function enterView(id) {
     }
     // TODO: invalidate map size on mobile?
     else if (isMobile()) {
+        map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING, animate: false });
         // map.invalidateSize();
         tour_state.map_needs_adjusting = true; // TODO: maybe?
     }
