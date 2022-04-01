@@ -768,5 +768,12 @@ class Tour {
     public function getViewOptions(): array {
         return array_merge(self::DEFAULT_VIEW_OPTIONS, $this->view_options);
     }
+    public function getBodyClasses(): string {
+        $classes = $this->body_classes ?? '';
+        $overrides = $this->getOverrides();
+        if ($overrides['wide_column']) $classes .= ' wide-column';
+        if (!$overrides['map_on_right']) $classes .= ' map-on-left';
+        return $classes;
+    }
 }
 ?>

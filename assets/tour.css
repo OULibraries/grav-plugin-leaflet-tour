@@ -76,6 +76,22 @@
     height: 100vh;
     width: 67%;
   }
+
+  .wide-column .tour-wrapper {
+    width: 40%;
+  }
+  .wide-column #map-wrapper {
+    width: 60%;
+  }
+
+  .map-on-left .tour-wrapper {
+    position: absolute;
+    right: 0;
+  }
+  .map-on-left #map-wrapper {
+    right: unset;
+    left: 0;
+  }
 }
 /* ----- padding ----- */
 #main-nav {
