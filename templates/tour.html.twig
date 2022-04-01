@@ -116,6 +116,7 @@
                         {{ view.content|raw }}
                     {% endfor %}
                 </div>
+                {% include 'partials/tour-attribution.html.twig' with {'tour':tour} %}
                 {# TODO: Attribution goes here #}
                 {% block back_to_top %}{{ parent() }}{% endblock %}
             </div>
