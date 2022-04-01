@@ -49,12 +49,11 @@
     <div id="tour-wrapper" class="tour-wrapper">
         <header id="top">
             {% block header %}{{ parent() }}{% endblock %}
-            {# TODO: Options button #}
+            {# Options button and modal #}
             <button id="open-settings-btn" class="desktop-only icon-btn" aria-haspopup="true" onClick="openDialog('settings-modal', this)">
                 <i class="fas fa-cog" aria-hidden="true"></i>
                 <span class="sr-only">Settings</span>
             </button>
-            {# TODO: Options modal #}
             <div class="dialog-backdrop">
                 <div role="dialog" id="settings-modal" aria-labelledby="settings-label" aria-modal="true" class="hidden">
                     <div class="dialog-top">
@@ -121,11 +120,11 @@
                 {% block back_to_top %}{{ parent() }}{% endblock %}
             </div>
             <div id="map-wrapper" role="region" aria-label="Map">
-                {# <a href="#map-end" id="skip-map-link" class="skip-link desktop-only">Skip Map</a> #}
+                <a href="#map-end" id="skip-map-link" class="skip-link desktop-only">Skip Map</a>
                 {# Legend #}
                 {% include 'partials/legend.html.twig' with {'tour':tour} %}
                 <div id="map"></div>
-                {# <div id="map-end"></div> #}
+                <div id="map-end"></div>
                 <a href="#" id="back-to-view-btn" class="skip-link desktop-only">Back to View</a>
             </div>
             {# feature modal popups #}

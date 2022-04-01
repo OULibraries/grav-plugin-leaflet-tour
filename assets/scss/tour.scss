@@ -464,6 +464,16 @@ main {
 }
 
 // map / features
+#skip-map-link {
+    position: absolute;
+    top: -70px;
+    transition: top .5s ease;
+    left: 20px;
+    z-index: 700;
+    &:focus {
+        top: 20px;
+    }
+}
 #map {
     height: 100%;
     .leaflet-marker-icon {
