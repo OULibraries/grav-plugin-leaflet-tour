@@ -182,10 +182,15 @@ class TourPath extends TourFeature {
 
 // ---------- Tour and Tour Setup Functions ---------- //
 function createMap() {
-    return L.map('map', {
+    let m = L.map('map', {
         zoomControl: true,
         attributionControl: false,
     });
+    if (max = tour_options.max_zoom) m.setMaxZoom(max);
+    if (min = tour_options.min_zoom) m.setMinZoom(min);
+    if (tour_options.show_map_location_in_url) hash = new L.Hash(m);
+    if (bounds = tour_options.max_bounds) m.setMaxBounds(bounds);
+    return m;
 }
 function createTileLayer() {
     let options = tour_options.tile_server;

@@ -79,7 +79,7 @@ class Tour {
     private array $legend = []; // include, toggles, basemaps
     private array $overrides = []; // wide_column, map_on_right, show_map_location_in_url
     private array $view_options = []; // remove_tile_server, only_show_view_features, list_popup_buttons
-    private ?array $max_bounds = null;
+    private array $max_bounds = [];
     private ?int $max_zoom = null;
     private ?int $min_zoom = null;
 
@@ -293,7 +293,7 @@ class Tour {
             'max_zoom' => $this->max_zoom,
             'min_zoom' => $this->min_zoom,
         ]);
-        if ($bounds = Utils::getBounds($this->max_bounds ?? [])) $data['max_bounds'] = $bounds;
+        if ($bounds = Utils::getBounds($this->max_bounds)) $data['max_bounds'] = $bounds;
         return $data;
     }
     /**
