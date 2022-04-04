@@ -70,17 +70,17 @@ form:
               accept:
                 - image/*
 
-            # popup_files:
-            #   type: file
-            #   label: Popup Content Images
-            #   description: "Upload images to use in feature popup content. Reference them in markdown by typing `image://` in front of the image name. Example: `![Image alt text](image://image_name.jpg)`"
-            #   markdown: true
-            #   style: vertical
-            #   destination: 'image://'
-            #   multiple: true
-            #   limit: 500
-            #   accept:
-            #     - image/*
+            popup_files:
+              type: file
+              label: Popup Content Images
+              description: "Upload images to use in feature popup content. Reference them in markdown by typing `image://` in front of the image name. Example: `![Image alt text](image://image_name.jpg)`"
+              markdown: true
+              style: vertical
+              destination: 'image://'
+              multiple: true
+              limit: 500
+              accept:
+                - image/*
 
             tour_options_section:
               type: section

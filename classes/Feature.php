@@ -250,7 +250,8 @@ class Feature {
         // if both, put them together, otherwise return one
         $full = '';
         if ($auto) $full .= $auto;
-        if ($popup) $full .= "<div>$popup</div>";
+        // TODO: Maybe use shortcode to put div around it?
+        if ($popup) $full .= "\n\n$popup";
         return $full;
     }
     /**
