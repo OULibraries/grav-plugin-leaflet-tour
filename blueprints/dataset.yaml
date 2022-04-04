@@ -45,11 +45,7 @@ form:
                         required: true
 
                     header.feature_type:
-                      type: text
-                      label: Dataset Feature Type
-                      readonly: true
-                      validate:
-                        required: true
+                      type: hidden
                         
                     header.title:
                       type: text
@@ -133,7 +129,7 @@ form:
 
                 .id:
                   type: hidden
-                  default: 'tmp'
+                  default: 'tmp  id'
                   validate:
                     required: true
 

@@ -277,15 +277,19 @@ class Dataset {
      * @return array Updated yaml to save
      */
     public function update(array $yaml): array {
-        // remove anything that shouldn't be included
-        $yaml = array_diff_key($yaml, array_flip(self::$reserved));
+        // set certain expected values
+        $this->updateFeaturesYaml($yaml['features'] ?? []);
+        $this->properties = $yaml['properties'] ?? [];
+        $this->auto_popup_properties = $yaml['auto_popup_properties'];
+        $this->name_property = $yaml['name_property'];
+        $this->attribution = $yaml['attribution'];
+        // remove reserved values and expected (handled) values
+        $remove = array_merge(self::$reserved, ['features']);
+        $yaml = array_diff_key($yaml, array_flip($remove));
         foreach ($yaml as $key => $value) {
             switch ($key) {
                 case 'title':
                     $this->setTitle($value);
-                    break;
-                case 'features':
-                    $this->updateFeaturesYaml($value);
                     break;
                 // generic - no special set methods
                 default:

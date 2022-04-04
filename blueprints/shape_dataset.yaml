@@ -5,6 +5,23 @@ form:
   fields:
     tabs:
       fields:
+        options:
+          fields:
+            cols:
+              fields:
+                col1:
+                  fields:
+                    header.feature_type:
+                      type: select
+                      label: Dataset Feature Type
+                      description: This cannot be changed once set.
+                      options:
+                        LineString: LineString
+                        MultiLineString: MultiLineString
+                        Polygon: Polygon
+                        MultiPolygon: MultiPolygon
+                      validate:
+                        required: true
         features:
           fields:
             header.features:

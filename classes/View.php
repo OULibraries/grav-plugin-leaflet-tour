@@ -53,18 +53,13 @@ class View {
     }
     public function update(array $yaml): array {
         LeafletTour::setTours();
-        $yaml = array_diff_key($yaml, array_flip(self::$reserved));
+        $this->setFeatures($yaml['features'] ?? []);
+        $this->setBasemaps($yaml['basemaps'] ?? []);
+        $this->setStart($yaml['start'] ?? []);
+        $remove = array_merge(self::$reserved, ['features', 'basemaps', 'start']);
+        $yaml = array_diff_key($yaml, array_flip($remove));
         foreach ($yaml as $key => $value) {
             switch ($key) {
-                case 'features':
-                    $this->setFeatures($value);
-                    break;
-                case 'basemaps':
-                    $this->setBasemaps($value);
-                    break;
-                case 'start':
-                    $this->setStart($value);
-                    break;
                 case 'id':
                     $this->setId($value);
                     break;

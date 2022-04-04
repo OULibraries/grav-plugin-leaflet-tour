@@ -159,12 +159,20 @@ class Tour {
      * Takes yaml update array from tour header and validates it. Also clears some options that will need to be regenerated.
      */
     public function update(array $yaml): array {
-        // order matters for a few things - update datasets before features, check for/update dataset add_all after features
-        if ($datasets = $yaml['datasets']) $this->setDatasets($datasets);
-        if ($features = $yaml['features']) $this->updateFeatures($features);
+        // set certain expected values
+        // update datasets before features, check for/update dataset add_all after features
+        $this->setDatasets($yaml['datasets'] ?? []);
+        $this->updateFeatures($yaml['features'] ?? []);
         $this->handleDatasetsAddAll();
+        $this->tile_server = $yaml['tile_server'] ?? [];
+        $this->updateBasemaps($yaml['basemaps'] ?? []);
+        // updateBasemaps should already call clearBasemaps()
+        $this->attribution = $yaml['attribution'];
+        $this->max_zoom = $yaml['max_zoom'];
+        $this->min_zoom = $yaml['min_zoom'];
         // remove a few properties that should not be included in the yaml, just in case, as well as properties previously dealt with
-        $yaml = array_diff_key($yaml, array_flip(self::$reserved));
+        $remove = array_merge(self::$reserved, ['datasets', 'features', 'basemaps', 'tile_server', 'attribution', 'max_zoom', 'min_zoom']);
+        $yaml = array_diff_key($yaml, array_flip($remove));
         foreach ($yaml as $key => $value) {
             switch ($key) {
                 // TODO: a few properties with specific setters
@@ -174,19 +182,9 @@ class Tour {
                 case 'dataset_overrides':
                     $this->dataset_overrides = array_merge($this->dataset_overrides, $value);
                     break;
-                case 'tile_server':
-                    $this->tile_server = $value;
-                    $this->clearBasemaps();
-                    break;
                 case 'start':
                     $this->updateStart($value);
                     break;
-                case 'basemaps':
-                    $this->updateBasemaps($value);
-                    break;
-                case 'datasets':
-                case 'features':
-                    break; // already handled
                 // everything else
                 default:
                     $this->$key = $value;
@@ -494,8 +492,8 @@ class Tour {
      */
     private function updateFeatures(?array $features = null): void {
         $this->clearFeatures();
-        if ($features) $features = array_column($features, null, 'id');
-        else $features = $this->features;
+        if ($features && !empty($features)) $features = array_column($features, null, 'id');
+        else if ($features === null) $features = $this->features;
         // getAllFeatures only gets features from datasets - does not pay attention to features list
         $all_features = $this->getAllFeatures();
         $this->features = [];

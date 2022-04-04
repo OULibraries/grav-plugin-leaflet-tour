@@ -5,6 +5,19 @@ form:
   fields:
     tabs:
       fields:
+        options:
+          fields:
+            cols:
+              fields:
+                col1:
+                  fields:
+                    header.feature_type:
+                      type: text
+                      label: Dataset Feature Type
+                      default: 'Point'
+                      readonly: true
+                      validate:
+                        required: true
         features:
           fields:
             header.features:
