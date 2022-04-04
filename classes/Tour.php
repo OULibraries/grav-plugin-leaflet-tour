@@ -194,6 +194,7 @@ class Tour {
         }
         $this->updateDatasetOverrides();
         $this->clearFeatures();
+        $this->updateViews();
         return array_merge($yaml, $this->asYaml());
     }
     /**
@@ -230,15 +231,18 @@ class Tour {
             $this->updateFeatures();
             $this->updateDatasetOverrides($id);
             $this->save();
-            foreach ($this->views as $id => $view) {
-                // validates view features and start location
-                $view->setFeatures();
-                $view->setStart();
-                $view->save();
-            }
+            $this->updateViews();
             return true;
         }
         else return false;
+    }
+    public function updateViews(): void {
+        foreach ($this->views as $id => $view) {
+            // validates view features and start location
+            $view->setFeatures();
+            $view->setStart();
+            $view->save();
+        }
     }
     public function removeView(string $id): void {
         unset($this->views[$id]);

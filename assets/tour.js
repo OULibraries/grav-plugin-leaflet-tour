@@ -290,9 +290,10 @@ function setupBounds(feature_ids, bounds) {
 }
 function adjustMap() {
     map.invalidateSize();
-    if ((view = tour_state.view) && (bounds = view.bounds)) map.flyToBounds(bounds, { padding: FLY_TO_PADDING, animate: false });
-    else map.flyToBounds(tour.feature_layer.getBounds(), { padding: FLY_TO_PADDING, animate: false });
-    resetTourLabels();
+    view = tour_state.view ?? tour.views.get('tour');
+    if ((bounds = view.bounds)) map.flyToBounds(bounds, { padding: FLY_TO_PADDING, animate: false });
+    // else map.flyToBounds(tour.feature_layer.getBounds(), { padding: FLY_TO_PADDING, animate: false });
+    // resetTourLabels();
 }
 function adjustBasemaps(view) {
     if (!view) return;
@@ -312,9 +313,9 @@ function adjustBasemaps(view) {
     if (!tour_state.basemaps.length || !view.remove_tile_server) map.addLayer(tour.tile_layer);
     else map.removeLayer(tour.tile_layer);
 }
-function resetTourLabels() {
-    // resetLabels([ tour.feature_layer ]);
-}
+// function resetTourLabels() {
+//     // resetLabels([ tour.feature_layer ]);
+// }
 
 // ---------- Map/Tour Initialization ---------- //
 const map = createMap();
@@ -354,10 +355,10 @@ if ($("#scrolly .step").length > 0) {
 }
 
 // map "on" functions
-map.on("layeradd", resetTourLabels);
-map.on("layerremove", resetTourLabels);
+// map.on("layeradd", resetTourLabels);
+// map.on("layerremove", resetTourLabels);
 map.on("zoomend", function() {
-    resetTourLabels();
+    // resetTourLabels();
     adjustBasemaps(tour_state.view);
     // adjust zoom buttons
     $(".leaflet-control-zoom a").removeAttr("aria-disabled");
@@ -368,6 +369,28 @@ let window_scroll_tick = false;
 
 // ---------- General Setup ---------- //
 $(document).ready(function() {
+    if (!isMobile()) {
+        // make sure "tour" size and last view size are sufficient for all views to be enterable via scrollama
+        // "tour" view
+        let top_height = document.getElementById("top").offsetHeight + document.getElementById("main-nav").offsetHeight + document.getElementById("tour").offsetHeight;
+        let target = (window.innerHeight * 2) / 5;
+        let diff = target - top_height;
+        if (diff > 0) {
+            $("#tour").css("padding-bottom", diff + "px");
+        }
+        // last view
+        let last_height = Array.from(document.getElementsByClassName("step")).pop().offsetHeight;
+        for (let id of ['attribution', 'footer']) {
+            let el = document.getElementById(id);
+            if (el) last_height += el.offsetHeight;
+        }
+        target = (window.innerHeight * 3) / 4;
+        diff = target - last_height;
+        if (diff > 0) {
+            $("#view-content").css("padding-bottom", diff + "px");
+        }
+    }
+
     map.invalidateSize();
     let view = tour.views.get('tour');
     if (view) map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING, animate: false });
@@ -490,7 +513,7 @@ function enterView(id) {
         tour_state.map_needs_adjusting = true; // TODO: maybe?
     }
     adjustBasemaps(view);
-    resetTourLabels();
+    // resetTourLabels();
 }
 function exitView() {
     // unhide previously hidden features
@@ -515,7 +538,7 @@ function toggleDataset(id, hide) {
         feature.toggleHidden();
         if (isMobile()) tour_state.adjust_labels = true;
     });
-    resetTourLabels();
+    // resetTourLabels();
 }
 
 function toggleMobileLegend() {
@@ -524,7 +547,7 @@ function toggleMobileLegend() {
     $("#map").toggleClass("hide");
     if (tour_state.adjust_labels) {
         tour_state.adjust_labels = false;
-        resetTourLabels();
+        // resetTourLabels();
     }
 }
 

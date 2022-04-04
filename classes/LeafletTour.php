@@ -88,6 +88,7 @@ class LeafletTour {
                 foreach ($modules as $folder) {
                     if ($view = View::fromFile(MarkdownFile::instance("$folder/view.md"))) {
                         $view->setTour($tour);
+                        // view must have an id that is not the default 'tmp  id', does not already exist (either in this tour's views or in all views as a whole) and does not equal the reserved id 'tour'
                         if (($id = $view->getId()) && 
                             $id !== 'tmp  id' && 
                             $id !== 'tour' && 
@@ -121,6 +122,7 @@ class LeafletTour {
         $tmp_files = $new_files = [];
         foreach ($files as $file) {
             $file = MarkdownFile::instance($file);
+            // file must have id that is not the same as an existing file's id and is not equal to the default 'tmp  id' - otherwise a new id will be generated
             if (($id = $file->header()['id']) && ($id !== 'tmp  id') && (!$tmp_files[$id])) $tmp_files[$id] = $file;
             else $new_files[] = $file;
         }
