@@ -36,6 +36,7 @@ form:
                   type: number
                   label: Longitude (required)
                   description: Use degrees with a maximum of seven decimal places.
+                  ordering@: .custom_name
                   validate:
                     required: true
                     min: -180
@@ -50,6 +51,7 @@ form:
                   type: number
                   label: Latitude (required)
                   description: Use degrees with a maximum of seven decimal places.
+                  ordering@: .coordinates.lng
                   validate:
                     required: true
                     min: -90
