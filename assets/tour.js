@@ -99,7 +99,7 @@ class TourFeature {
         if (this.has_popup) openDialog(this.id+"-popup", this.focus_element);
         else this.focus_element.focus();
     }
-    activate() {
+    activate(e) {
         // this.tooltip.classList.add("active");
         this.layer.openTooltip();
     }
@@ -127,19 +127,30 @@ class TourPoint extends TourFeature {
     addToLayer(layer) {
         super.addToLayer(layer);
     }
+    activate(e) {
+        super.activate(e);
+        if (!map.getBounds().contains(this.layer.getLatLng())) {
+            map.panTo(this.layer.getLatLng(), { animate: true });
+        }
+    }
 }
 class TourPath extends TourFeature {
     buffer; svg;
     focus_element;
+    tmp_tooltip;
     constructor(feature, datasets) {
         super(feature, datasets);
         // if weight is below buffer cutoff, set buffer true
         if (this.dataset.path.weight < BUFFER_WEIGHT) {
             // if polygon, only set buffer true if there is also no fill
-            let type = this.type.toLowerCase();
-            if (type === 'linestring' || type === 'multilinestring') this.buffer = true;
+            // let type = this.type.toLowerCase();
+            if (this.is_line) this.buffer = true;
             else if (!(this.dataset.path.fill ?? true)) this.buffer = true;
         }
+    }
+    get is_line() {
+        let type = this.type.toLowerCase();
+        return (type === 'linestring' || type === 'multilinestring');
     }
     get elements() {
         // if buffer, the hover_element will be the buffer, but svg will still store the original svg, so must also be returned
@@ -170,13 +181,51 @@ class TourPath extends TourFeature {
         // this.layer.closeTooltip();
         // this.layer.openTooltip();
     }
-    activate() {
-        super.activate();
+    activate(e) {
+        // open initial tooltip
+        if (this.tmp_tooltip) this.layer.openTooltip(this.tmp_tooltip);
+        else this.layer.openTooltip();
         this.layer.setStyle(this.dataset.active_path);
+
+        if (!map.getBounds().contains(this.layer.getTooltip().getLatLng())) {
+            this.layer.openTooltip(); // reset tooltip
+            // if hover: move tooltip to mouse location (by modifying offset)
+            if (this.focus_element !== document.activeElement) {
+                this.tmp_tooltip = map.mouseEventToLatLng(e);
+            } 
+            else {
+                // if bounding box is in view, try moving tooltip to the closest layer point
+                if (map.getBounds().intersects(this.layer.getBounds())) {
+                    let point = this.layer.closestLayerPoint(map.latLngToLayerPoint(map.getCenter()));
+                    let latlng = map.layerPointToLatLng([point['x'], point['y']]);
+                    if (map.getBounds().contains(latlng)) this.tmp_tooltip = latlng;
+                }
+                if (!this.tmp_tooltip) {
+                    // either bounding box is not in view or it is, but the closest layer point is not - pan and possibly zoom to feature
+                    map.panTo(this.layer.getCenter(), { animate: true });
+                    tour_state.tmp_feature = this;
+                    setTimeout(function() {
+                        let feature = tour_state.tmp_feature;
+                        tour_state.tmp_feature = null;
+                        if (!map.getBounds().contains(feature.layer.getBounds())) map.flyToBounds(feature.layer.getBounds(), { animate: true, noMoveStart: true });
+                    }, 250); // wait for .25s (animation duration) before checking
+                }
+            }
+
+            if (this.tmp_tooltip) {
+                this.layer.openTooltip(this.tmp_tooltip);
+            }
+        } 
     }
     deactivate() {
         super.deactivate();
         this.layer.setStyle(this.dataset.path);
+        // if tooltip offset was previously modified, reset it
+        // if (this.old_offset) {
+        //     this.layer.getTooltip().options.offset = this.old_offset;
+        //     this.old_offset = null;
+        // }
+        this.tmp_tooltip = null;
     }
 }
 
@@ -358,6 +407,9 @@ if ($("#scrolly .step").length > 0) {
 // map.on("layeradd", resetTourLabels);
 // map.on("layerremove", resetTourLabels);
 map.on("zoomend", function() {
+    // if (tour_state.tmp_active_feature) {
+    //     tour_state.tmp_active_feature.deactivate();
+    // }
     // resetTourLabels();
     adjustBasemaps(tour_state.view);
     // adjust zoom buttons
@@ -441,21 +493,25 @@ $(document).ready(function() {
     $(".leaflet-pane .hover-el").on("click", function(e) {
         e.stopPropagation();
         getFeature(this).openPopup();
-    }).on("mouseover", function() {
-        getFeature(this).activate();
+    }).on("mouseover", function(e) {
+        e.stopPropagation();
+        getFeature(this).activate(e);
     }).on("mouseout", function(e) {
         e.stopPropagation();
         // only deactivate if feature does not have focus
         let feature = getFeature(this);
         if (!(feature.focus_element === document.activeElement))feature.deactivate();
     });
-    $(".leaflet-pane .focus-el").on("keypress", function() {
+    $(".leaflet-pane .focus-el").on("keypress", function(e) {
+        e.stopPropagation();
         if (e.which === 32 || e.which === 13) {
             getFeature(this).openPopup();
         }
-    }).on("focus", function() {
-        getFeature(this).activate();
-    }).on("blur", function() {
+    }).on("focus", function(e) {
+        e.stopPropagation();
+        getFeature(this).activate(e);
+    }).on("blur", function(e) {
+        e.stopPropagation(e);
         getFeature(this).deactivate();
     });
     // views
