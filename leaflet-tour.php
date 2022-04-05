@@ -57,9 +57,9 @@ class LeafletTourPlugin extends Plugin {
         }
 
         // Enable other events
-        // $this->enable([
-        //     'onShortcodeHandlers' => ['onShortcodeHandlers', 0]
-        // ]);
+        $this->enable([
+            'onShortcodeHandlers' => ['onShortcodeHandlers', 0]
+        ]);
     }
     
     /**
@@ -93,12 +93,12 @@ class LeafletTourPlugin extends Plugin {
         $types->scanBlueprints(__DIR__ . '/blueprints');
     }
 
-    // /**
-    //  * Add new shortcodes (from shortcodes directory)
-    //  */
-    // public function onShortcodeHandlers() {
-    //     $this->grav['shortcode']->registerAllShortcodes(__DIR__.'/shortcodes');
-    // }
+    /**
+     * Add new shortcode(s) (from shortcodes directory)
+     */
+    public function onShortcodeHandlers() {
+        $this->grav['shortcode']->registerAllShortcodes(__DIR__.'/shortcodes');
+    }
 
     /**
      * Handle page and plugin data on save. LeafletTour object will deal with this.

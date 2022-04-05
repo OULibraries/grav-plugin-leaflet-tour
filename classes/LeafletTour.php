@@ -312,7 +312,7 @@ class LeafletTour {
      * Builds an HTML string for a feature popup button
      */
     public static function buildPopupButton(string $feature_id, string $button_id, string $name, ?string $text = null): string {
-        $text ??= $name; // TODO: Determine default text?
+        $text = $text ?: $name; // TODO: Determine default text?
         return "<button id='$button_id' onClick=\"openDialog('$feature_id-popup', this)\" class='btn view-popup-btn'>$text</button>";
     }
 }

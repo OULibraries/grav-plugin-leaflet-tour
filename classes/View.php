@@ -105,10 +105,10 @@ class View {
     public function getPopupButtonsList(): array {
         $buttons = [];
         if ($this->getOptions()['list_popup_buttons'] && ($file = $this->getFile()) && ($tour = $this->getTour())) {
-            // $content = $file->markdown();
+            $content = $file->markdown();
             $tour_popups = array_column($tour->getFeaturePopups(), 'name', 'id');
             foreach (array_column($this->getFeatures(), 'id') as $id) {
-                if (($name = $tour_popups[$id])/* && !str_contains($content, "[popup-button id='$id'")*/) {
+                if (($name = $tour_popups[$id]) && !str_contains($content, "[popup-button id=$id") && !str_contains($content, "[popup-button id=\"$id\"")) {
                     $buttons[] = LeafletTour::buildPopupButton($id, "$id-$this->id-popup", $name);
                 }
             }

@@ -18,7 +18,7 @@ license: MIT
 dependencies:
   - { name: grav, version: '>=1.7.0' }
   - { name: admin, version: '>=1.10.24' }
-  # - { name: shortcode-core, version: '>=5.0.7' }
+  - { name: shortcode-core, version: '>=5.0.7' }
 
 form:
   validation: loose
