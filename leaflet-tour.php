@@ -171,6 +171,22 @@ class LeafletTourPlugin extends Plugin {
         return $list;
     }
 
+    /**
+     * Returns select_optgroup options
+     */
+    public static function getUpdatePropertiesList(): array {
+        $list = [];
+        foreach (LeafletTour::getDatasets() as $id => $dataset) {
+            $name = $dataset->getTitle();
+            $sublist = [];
+            foreach ($dataset->getProperties() as $prop) {
+                $sublist["$id--prop--$prop"] = $prop;
+            }
+            $list[] = [$name => $sublist];
+        }
+        return array_merge(['none' => 'None', 'coords' => 'Coordinates'], $list);
+    }
+
     // getters for dataset blueprints
 
     /**

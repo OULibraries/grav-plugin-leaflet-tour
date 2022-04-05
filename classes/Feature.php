@@ -288,7 +288,7 @@ class Feature {
      * @param string $dataset Sets $this->dataset if not already set
      */
     public function setDataset(Dataset $dataset): void {
-        $this->dataset ??= $dataset;
+        $this->dataset = $dataset;
     }
     /**
      * @param mixed $coordinates Json-encoded string or array with lng and lat to determine new coordinates, only set if valid

@@ -61,7 +61,7 @@ class Dataset {
         'className' => 'leaflet-marker '
     ];
 
-    private static array $reserved = ['file', 'upload_file_path', 'id', 'feature_type', 'feature_count'];
+    private static array $reserved = ['file', 'upload_file_path', 'id', 'feature_type', 'feature_count', 'ready_for_update'];
 
     /**
      * File storing the dataset, typically created on dataset initialization, never modified once set
@@ -120,6 +120,8 @@ class Dataset {
      */
     private ?array $path = null;
     private ?array $active_path = null;
+
+    private bool $ready_for_update = false;
 
     /**
      * Never called directly by anything but the construction methods (and clone) - construction methods will take care of any necessary validation
@@ -300,6 +302,7 @@ class Dataset {
         // validate name property and auto popup properties
         if (!in_array($this->name_property, $this->properties)) $this->name_property = 'none';
         if ($props = $this->auto_popup_properties) $this->auto_popup_properties = array_values(array_intersect($props, $this->properties));
+        $this->ready_for_update = false;
         return array_merge($yaml, $this->asYaml());
     }
     /**
@@ -406,7 +409,126 @@ class Dataset {
         else return null;
     }
 
-    // TODO: functions for applying updates
+    // updates
+
+    public function applyUpdate(Dataset $update): void {
+        // set features, properties, and feature_count
+        $this->features = $update->getFeatures();
+        $this->setProperties($update->getProperties());
+        $this->feature_count = $update->getFeatureCount();
+        $this->save();
+    }
+
+    public function updateReplace(string $dataset_prop, ?string $file_prop, Dataset $update): array {
+        $update_features = [];
+        $matches = $this->matchFeatures($dataset_prop, $file_prop, $update->getFeatures(), $update_features);
+        $modified = $this->modifyMatches($matches);
+        $features = [];
+        // add matches first
+        foreach ($matches as $id => $match) {
+            // modifies coordinates and properties
+            $feature = $this->features[$id]->clone();
+            $feature->setProperties($match->getProperties());
+            $feature->setCoordinatesJson($match->getCoordinatesJson());
+            $features[$id] = $feature;
+        }
+        // then add any new features
+        foreach ($update_features as $feature) {
+            $id = $this->nextFeatureId();
+            $feature->setId($id);
+            $feature->setDataset($this);
+            $features[$id] = $feature;
+        }
+        $this->features = $features;
+        $this->properties = $update->getProperties();
+        return $modified;
+    }
+
+    public function updateRemove(string $dataset_prop, ?string $file_prop, Dataset $update): array {
+        $update_features = [];
+        $matches = $this->matchFeatures($dataset_prop, $file_prop, $update->getFeatures(), $update_features);
+        $modified = $this->modifyMatches($matches);
+        $features = [];
+        foreach ($this->features as $id => $feature) {
+            if (!$matches[$id]) $features[$id] = $feature;
+        }
+        $this->features = $features;
+        return $modified;
+    }
+
+    public function updateStandard(string $dataset_prop, ?string $file_prop, ?bool $add, ?bool $modify, ?bool $remove, Dataset $update): array {
+        $update_features = [];
+        $matches = $this->matchFeatures($dataset_prop, $file_prop, $update->getFeatures(), $update_features);
+        $modified = $this->modifyMatches($matches);
+        $features = [];
+        // modify and remove
+        foreach ($this->features as $id => $feature) {
+            if ($match = $matches[$id]) {
+                if ($modify) {
+                    // modify coordinates and properties
+                    $feature->setProperties(array_merge($feature->getProperties(), $match->getProperties()));
+                    $feature->setCoordinatesJson($match->getCoordinatesJson());
+                }
+                $features[$id] = $feature;
+            } else if (!$remove) {
+                $features[$id] = $feature;
+            }
+        }
+        // add features
+        foreach ($update_features as $feature) {
+            $id = $this->nextFeatureId();
+            $feature->setId($id);
+            $feature->setDataset($this);
+            $features[$id] = $feature;
+        }
+        $this->features = $features;
+        $properties = $this->getProperties();
+        if ($modify || $add) $properties = array_merge($properties, $update->getProperties());
+        return $modified;
+    }
+
+    private function matchFeatures(string $dataset_prop, ?string $file_prop, array $update_features, &$new): array {
+        $matches = [];
+        if ($dataset_prop === 'coords') {
+            // index current features by coords
+            $coords_index = [];
+            // fix php json?
+            foreach($this->features as $id => $feature) {
+                $coords = json_encode($feature->getCoordinatesJson());
+                $coords_index[$coords] = $id;
+            }
+            // look for matches
+            foreach ($update_features as $feature) {
+                $coords = json_encode($feature->getCoordinatesJson());
+                if ($id = $coords_index[$coords]) {
+                    $matches[$id] = $feature;
+                } else {
+                    $new[] = $feature;
+                }
+            }
+        } else {
+            // set file_prop
+            if (!$file_prop) $file_prop = $dataset_prop;
+            // index current features by property
+            $index = [];
+            foreach ($this->features as $id => $feature) {
+                if (!empty($val = $feature->getProperty($dataset_prop))) $index[$val] = $id;
+            }
+            // look for matches
+            foreach ($update_features as $feature) {
+                if (!empty($val = $feature->getProperty($file_prop)) && ($id = $index[$val])) $matches[$id] = $feature;
+                else $new[] = $feature;
+            }
+        }
+        return $matches;
+    }
+    private function modifyMatches(array $matches): array {
+        $new = [];
+        foreach ($matches as $id => $feature) {
+            $new[$id] = $this->features[$id]->getName();
+        }
+        return $new;
+    }
 
     // getters
     
@@ -433,6 +555,9 @@ class Dataset {
      */
     public function getTitle(): ?string {
         return $this->title;
+    }
+    public function getName(): ?string {
+        return $this->title ?: $this->id;
     }
     /**
      * @return string $this->feature_type This should never be null.
@@ -530,14 +655,17 @@ class Dataset {
         }
         else return $path;
     }
+    public function isReadyForUpdate(): bool {
+        return $this->ready_for_update;
+    }
 
     // setters
     
     /**
-     * @param MarkdownFile $file Sets $this->file if not already set
+     * @param MarkdownFile $file Sets $this->file
      */
     public function setFile(MarkdownFile $file): void {
-        $this->file ??= $file;
+        $this->file = $file;
     }
     public function setId(string $id): void {
         $this->id ??= $id;
@@ -561,6 +689,10 @@ class Dataset {
     public function setProperties(?array $properties): void {
         $this->properties = $properties ?? [];
         if (!in_array($this->name_property, $this->properties)) $this->name_property = 'none';
+        if ($props = $this->auto_popup_properties) $this->auto_popup_properties = array_values(array_intersect($props, $this->properties));
+    }
+    public function setReadyForUpdate(bool $ready): void {
+        $this->ready_for_update = $ready;
     }
 
     // static methods
