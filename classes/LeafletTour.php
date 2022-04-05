@@ -215,6 +215,17 @@ class LeafletTour {
             $tour = self::getTours()[$id];
             $update = $tour->update($page->header()->jsonSerialize());
             $page->header($update);
+            // popups page
+            $file = MarkdownFile::instance($page->path() . '/popups/popups_page.md');
+            // if tour has popups and page does not exist, create page
+            if (!empty($tour->getFeaturePopups()) && !$file->exists()) {
+                $file->header(['visible' => 0]);
+                $file->save();
+            }
+            // if tour does not have popups and page exists, remove page
+            else if (empty($tour->getFeaturePopups()) && $file->exists()) {
+                $file->delete();
+            }
         }
     }
     public static function handleViewPageSave($page): void {
@@ -254,6 +265,8 @@ class LeafletTour {
     }
     public static function handleTourDeletion($page): void {
         unset(self::$tours[$page->header()->get('id')]);
+        // popups page
+        MarkdownFile::instance($page->path() . '/popups/popups_page.md')->delete();
     }
     public static function handleViewDeletion($page): void {
         $id = $page->header()->get('id');

@@ -1,0 +1,24 @@
+{% extends 'partials/base.html.twig' %}
+
+{% set tour = leaflet_tour.getTour(page.parent().header.id) %}
+
+{% set title = tour.getTitle()  ~ ' Popup Content' %}
+
+{% block page_title %}
+    <title>{{ title }}</title>
+{% endblock %}
+
+{% block title %}
+    <h1>{{ title }}</h1>
+{% endblock %}
+
+{% block content %}
+    {# add link to return to tour #}
+    <a href="{{ page.parent().url(true)|e }}" class="btn">Return to Tour</a>
+    {% for feature in tour.getFeaturePopups() %}
+        <h2 id="{{ feature.id }}">{{ feature.name }}</h2>
+        <div class="popup-content">
+            {{ feature.popup|markdown }}
+        </div>
+    {% endfor %}
+{% endblock %}

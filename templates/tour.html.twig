@@ -104,12 +104,12 @@
                 <div id="tour" class="scroll-top step">
                     <h1>{{ page.title }}</h1>
                     {{ content|raw }}
-                    {# {% if tour.hasPopupContent() %}
-                    <div> #}
+                    {% if tour.getFeaturePopups()|length > 0 %}
+                    <div>
                         {# TODO: Clearer indication of what this is/does or something #}
-                        {# <a class="btn link-btn" href="{{ page.url }}/popup">All popup content</a>
+                        <a class="btn link-btn" href="{{ page.url }}/popups">All popup content</a>
                     </div>
-                    {% endif %} #}
+                    {% endif %}
                 </div>
                 <div id="view-content">
                     {% for view in page.collection() if view.template == 'modular/view' and not view.header.visible is same as (false) %}
