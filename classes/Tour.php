@@ -237,9 +237,7 @@ class Tour {
     public function updateViews(): void {
         foreach ($this->views as $id => $view) {
             // validates view features and start location
-            $view->setFeatures();
-            $view->setStart();
-            $view->save();
+            $view->updateAll();
         }
     }
     public function removeView(string $id): void {

@@ -21,6 +21,7 @@ class View {
     private array $overrides = [];
     private array $start = [];
     private array $features = [];
+    private string $shortcodes_list = '';
 
     private function __construct(array $options) {
         foreach ($options as $key => $value) {
@@ -56,7 +57,8 @@ class View {
         $this->setFeatures($yaml['features'] ?? []);
         $this->setBasemaps($yaml['basemaps'] ?? []);
         $this->setStart($yaml['start'] ?? []);
-        $remove = array_merge(self::$reserved, ['features', 'basemaps', 'start']);
+        $this->updateShortcodes();
+        $remove = array_merge(self::$reserved, ['features', 'basemaps', 'start', 'shortcodes_list']);
         $yaml = array_diff_key($yaml, array_flip($remove));
         foreach ($yaml as $key => $value) {
             switch ($key) {
@@ -114,6 +116,29 @@ class View {
             }
         }
         return $buttons;
+    }
+    private function updateShortcodes(): void {
+        if ($tour = $this->getTour()) {
+            $features = [];
+            $popups = array_column($tour->getFeaturePopups(), 'name', 'id');
+            foreach (array_column($this->getFeatures(), 'id') as $id) {
+                if ($name = $popups[$id]) {
+                    $features[] = "[popup-button id=$id] $name [/popup-button]"; // TODO: Change text??
+                }
+            }
+            // turn array into string
+            if (!empty($features)) $this->shortcodes_list = implode("\r\n", $features);
+            else $this->shortcodes_list = 'There is nothing here. Add some features to the view first.';
+        }
+    }
+    /**
+     * Called when tour or dataset is saved.
+     */
+    public function updateAll(): void {
+        $this->setFeatures();
+        $this->setBasemaps();
+        $this->updateShortcodes();
+        $this->save();
     }
 
     // setters

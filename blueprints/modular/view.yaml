@@ -17,23 +17,22 @@ form:
               validate:
                 required: true
 
-            # shortcodes_fieldset:
-            #   type: fieldset
-            #   title: Feature Popup Button Shortcodes
-            #   ordering@: header.title
-            #   collapsible: true
-            #   collapsed: true
-            #   fields:
+            shortcodes_fieldset:
+              type: fieldset
+              title: Feature Popup Button Shortcodes
+              ordering@: header.title
+              collapsible: true
+              collapsed: true
+              fields:
 
-            #     # TODO: Does the text inside matter?
-            #     header.shortcodes_list:
-            #       type: textarea
-            #       label: Shortcodes List
-            #       description: This is a list of shortcodes for all features added to the view that have popup content of some sort. It is updated whenever the view or its tour is saved. Copy and paste these codes into your content to manually add the feature popup buttons where you want them.
-            #       readonly: true
-            #       rows: 12
-            #       style: vertical
-            #       default: 'There is nothing here. Add some features to the view and save it first.'
+                header.shortcodes_list:
+                  type: textarea
+                  label: Shortcodes List
+                  description: This is a list of shortcodes for all features added to the view that have popup content of some sort. It is updated whenever the view, its tour, or a tour dataset is saved. Copy and paste these codes into your content to add the feature popup buttons where you want them.
+                  readonly: true
+                  rows: 12
+                  style: vertical
+                  default: 'There is nothing here. Add some features to the view and save it first.'
         
         view:
           type: tab
