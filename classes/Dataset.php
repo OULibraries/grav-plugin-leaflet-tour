@@ -61,7 +61,7 @@ class Dataset {
         'className' => 'leaflet-marker '
     ];
 
-    private static array $reserved = ['file', 'upload_file_path', 'id', 'feature_type', 'feature_count', 'ready_for_update'];
+    private static array $reserved = ['file', 'upload_file_path', 'id', 'feature_type', 'feature_count'];
 
     /**
      * File storing the dataset, typically created on dataset initialization, never modified once set
@@ -175,6 +175,7 @@ class Dataset {
             if ($property = $json['name_property']) $dataset->setNameProperty($property);
             return $dataset;
         }
+        // TODO: Possibly go back and check for points that aren't listed as points
         else return null;
     }
     /**
@@ -183,10 +184,9 @@ class Dataset {
      * @param bool
      * @return Dataset New Dataset with any provided options
      */
-    public static function fromArray(?array $options, bool $yaml): Dataset {
+    public static function fromArray(?array $options, bool $yaml = true): Dataset {
         // validate feature type (if provided)
-        $options['feature_type'] = Feature::validateFeatureType($options['feature_type'] ?? $options['type']);
-        // for a few values, save and clear from options (so not set when creating dataset)
+        $options['feature_type'] = Feature::validateFeatureType($options['feature_type'] ?? $options['type'] ?? 'point');
         $features = [];
         foreach ($options['features'] ?? [] as $feature) {
             if (!$yaml) $feature['coordinates'] = Feature::coordinatesToYaml($feature['coordinates'] ?? [], $options['feature_type']);
@@ -202,6 +202,12 @@ class Dataset {
         }
         return $dataset;
     }
+    /**
+     * Builds a dataset by combining a Dataset object with an array of overrides from a tour
+     * @param Dataset $original The original dataset (added to the tour)
+     * @param array $yaml The dataset overrides from the tour header
+     * @return Dataset Dataset with merged icon, path, active_path, attribution, auto_popup_properties, and/or legend
+     */
     public static function fromTour(Dataset $original, array $yaml): Dataset {
         $dataset = $original->clone();
         $dataset->features = [];
@@ -267,6 +273,7 @@ class Dataset {
             'feature_count' => $this->getFeatureCount(),
             'attribution' => $this->attribution,
             'legend' => $this->legend,
+            'ready_for_update' => $this->ready_for_update,
         ];
         foreach (['icon', 'path', 'active_path'] as $key) {
             if ($value = $this->$key) $yaml[$key] = $value;
@@ -282,11 +289,12 @@ class Dataset {
         // set certain expected values
         $this->updateFeaturesYaml($yaml['features'] ?? []);
         $this->properties = $yaml['properties'] ?? [];
-        $this->auto_popup_properties = $yaml['auto_popup_properties'];
-        $this->name_property = $yaml['name_property'];
+        $this->setAutoPopupProperties($yaml['auto_popup_properties']);
+        $this->setNameProperty($yaml['name_property']);
         $this->attribution = $yaml['attribution'];
+        $this->ready_for_update = false;
         // remove reserved values and expected (handled) values
-        $remove = array_merge(self::$reserved, ['features']);
+        $remove = array_merge(self::$reserved, ['features', 'properties', 'auto_popup_properties', 'name_property', 'attribution', 'ready_for_update']);
         $yaml = array_diff_key($yaml, array_flip($remove));
         foreach ($yaml as $key => $value) {
             switch ($key) {
@@ -299,10 +307,6 @@ class Dataset {
                     break;
             }
         }
-        // validate name property and auto popup properties
-        if (!in_array($this->name_property, $this->properties)) $this->name_property = 'none';
-        if ($props = $this->auto_popup_properties) $this->auto_popup_properties = array_values(array_intersect($props, $this->properties));
-        $this->ready_for_update = false;
         return array_merge($yaml, $this->asYaml());
     }
     /**
@@ -411,6 +415,9 @@ class Dataset {
 
     // updates
 
+    /**
+     * Updates an existing dataset with features, properties, and feature_count from an update. Called after confirmation of an update (from uploading an update file in the admin config)
+     */
     public function applyUpdate(Dataset $update): void {
         // set features, properties, and feature_count
         $this->features = $update->getFeatures();
@@ -419,9 +426,17 @@ class Dataset {
         $this->save();
     }
 
+    /**
+     * Modifies a temporary dataset with changes from a replacement update.
+     * @param string $dataset_prop The property for identifying features from the dataset
+     * @param null|string $file_prop The property for identifying features from the file (if different)
+     * @param Dataset $update The parsed upload file defining the changes
+     * @return array [id => name] of matched features
+     */
     public function updateReplace(string $dataset_prop, ?string $file_prop, Dataset $update): array {
         $update_features = [];
-        $matches = $this->matchFeatures($dataset_prop, $file_prop, $update->getFeatures(), $update_features);
+        if ($dataset_prop !== 'none') $matches = $this->matchFeatures($dataset_prop, $file_prop, $update->getFeatures(), $update_features);
+        else $matches = [];
         $modified = $this->modifyMatches($matches);
         $features = [];
         // add matches first
@@ -475,20 +490,22 @@ class Dataset {
             }
         }
         // add features
-        foreach ($update_features as $feature) {
-            $id = $this->nextFeatureId();
-            $feature->setId($id);
-            $feature->setDataset($this);
-            $features[$id] = $feature;
+        if ($add) {
+            foreach ($update_features as $feature) {
+                $id = $this->nextFeatureId();
+                $feature->setId($id);
+                $feature->setDataset($this);
+                $features[$id] = $feature;
+            }
         }
         $this->features = $features;
-        $properties = $this->getProperties();
-        if ($modify || $add) $properties = array_merge($properties, $update->getProperties());
+        if ($modify || $add) $this->properties = array_unique(array_merge($this->properties, $update->getProperties()));
         return $modified;
     }
 
     private function matchFeatures(string $dataset_prop, ?string $file_prop, array $update_features, &$new): array {
         $matches = [];
+        $new = [];
         if ($dataset_prop === 'coords') {
             // index current features by coords
             $coords_index = [];
@@ -643,7 +660,7 @@ class Dataset {
         return $icon;
     }
     public function getPath(bool $defaults = false): array {
-        if ($defaults) return $this->getPathByType(array_merge(self::DEFAULT_PATH, $this->path ?? []));
+        if ($defaults) return $this->getPathByType($this->mergeArrays(self::DEFAULT_PATH, $this->path ?? []));
         else return $this->getPathByType($this->path ?? []);
     }
     public function getActivePath(): array {
@@ -681,6 +698,7 @@ class Dataset {
      */
     public function setNameProperty(?string $property): void {
         if (!$property || $property === 'none' || in_array($property, $this->getProperties())) $this->name_property = $property;
+        else $this->name_property = 'none';
     }
     /**
      * Sets $this->properties. Removes name_property if no longer valid.
@@ -688,11 +706,15 @@ class Dataset {
      */
     public function setProperties(?array $properties): void {
         $this->properties = $properties ?? [];
-        if (!in_array($this->name_property, $this->properties)) $this->name_property = 'none';
-        if ($props = $this->auto_popup_properties) $this->auto_popup_properties = array_values(array_intersect($props, $this->properties));
+        $this->setNameProperty($this->getNameProperty());
+        $this->setAutoPopupProperties($this->getAutoPopupProperties());
     }
     public function setReadyForUpdate(bool $ready): void {
         $this->ready_for_update = $ready;
+    }
+    public function setAutoPopupProperties(?array $auto_popup_properties): void {
+        if ($auto_popup_properties) $this->auto_popup_properties = array_values(array_intersect($auto_popup_properties, $this->properties));
+        else $this->auto_popup_properties = null;
     }
 
     // static methods

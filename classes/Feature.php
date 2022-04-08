@@ -54,6 +54,8 @@ class Feature {
      */
     private ?string $type = null;
 
+    private static array $reserved = ['dataset', 'name', 'type'];
+
     /**
      * Never called directly by anything but the construction methods (and clone) - construction methods will validate coordinates before calling.
      * @param array $options - sets object properties
@@ -143,22 +145,18 @@ class Feature {
      * @return array Feature yaml array that can be saved in dataset features list. [id, name, custom_name, hide, popup_content, properties, coordinates]
      */
     public function asYaml(): array {
-        return [
-            'id' => $this->getId(),
-            'name' => $this->getName(),
-            'custom_name' => $this->custom_name,
-            'coordinates' => $this->getCoordinatesYaml(),
-            'properties' => $this->getProperties(),
-            'hide' => $this->isHidden(),
-            'popup_content' => $this->popup_content,
-        ];
+        $yaml = get_object_vars($this);
+        $yaml = array_diff_key($yaml, array_flip(self::$reserved));
+        $yaml['name'] = $this->getName();
+        $yaml['coordinates'] = $this->getCoordinatesYaml();
+        return $yaml;
     }
     /**
      * Validates update content and updates the object
      * @param array $yaml Update data
      */
     public function update(array $yaml): void {
-        $yaml = array_diff_key($yaml, array_flip(['id', 'dataset', 'type']));
+        $yaml = array_diff_key($yaml, array_flip(['id', 'dataset', 'type', 'name']));
         foreach ($yaml as $key => $value) {
             switch ($key) {
                 case 'coordinates':
@@ -314,6 +312,15 @@ class Feature {
             }
         }
     }
+    public function setProperties(?array $properties): void {
+        $this->properties = array_merge($this->properties, $properties ?? []);
+    }
+    public function setPopupContent(?string $content): void {
+        $this->popup_content = $content;
+    }
+    public function setCustomName(?string $name): void {
+        $this->custom_name = $name;
+    }
 
     // static methods
 
@@ -322,7 +329,7 @@ class Feature {
      * @return string $type, possibly with modified capitalization, or Point if $type was not valid
      */
     public static function validateFeatureType(?string $type): string {
-        return self::FEATURE_TYPES[strtolower($type)] ?: 'Point';
+        return self::FEATURE_TYPES[strtolower($type ?? 'Point')] ?: 'Point';
     }
     /**
      * @param array $geometry ['coordinates' => array, 'type' => string]
@@ -330,7 +337,7 @@ class Feature {
      * @return null|array ['coordinates' => valid coordinates array, 'type' => string] if coordinates and type are valid
      */
     public static function validateJsonGeometry(array $geometry, ?string $feature_type = null): ?array {
-        if (($type = ($geometry['type'])) && $coordinates = self::validateJsonCoordinates($geometry['coordinates'] ?? [], $type)) {
+        if (($type = ($geometry['type'])) && ($coordinates = self::validateJsonCoordinates($geometry['coordinates'] ?? [], $type))) {
             $type = self::validateFeatureType($type);
             // also make sure that types match, if $feature_type was provided
             if (!$feature_type || ($type === self::validateFeatureType($feature_type))) {
@@ -346,7 +353,9 @@ class Feature {
      */
     public static function validateJsonCoordinates(array $coordinates, string $type): ?array {
         switch (self::validateFeatureType($type)) {
-            case 'Point': if (Utils::isValidPoint($coordinates)) return $coordinates;
+            case 'Point':
+                if (Utils::isValidPoint($coordinates)) return $coordinates;
+                break;
             case 'LineString': return self::validateLineString($coordinates);
             case 'MultiLineString': return self::validateMultiLineString($coordinates);
             case 'Polygon': return self::validatePolygon($coordinates);

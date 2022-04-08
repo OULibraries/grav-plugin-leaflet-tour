@@ -319,6 +319,7 @@ class LeafletTour {
     }
     public static function handleViewDeletion($page): void {
         $id = $page->header()->get('id');
+        // TODO: Would self::getViews()[$id] work better?
         if ($tour = self::$views[$id]->getTour()) $tour->removeView($id);
         unset(self::$views[$id]);
     }
@@ -381,7 +382,7 @@ class LeafletTour {
     }
 
     // dataset update
-    private static function handleDatasetUpdate(array $old, array $new): array {
+    public static function handleDatasetUpdate(array $old, array $new): array {
         // cancel update?
         if ($new['cancel']) return self::clearUpdate();
         // get/parse uploaded dataset
@@ -505,19 +506,21 @@ class LeafletTour {
         $dataset = self::getDatasets()[$new['dataset']];
         // Check for issue: No dataset selected
         if (empty($dataset)) $issues[] = self::UPDATE_MSGS['no_dataset_selected'];
-        // Check for issue: Invalid feature type
-        if ($dataset->getType() !== $update_dataset->getType()) $issues[] = sprintf(self::UPDATE_MSGS['invalid_feature_type'], $update_dataset->getType(), $dataset->getType());
-        // Check for issue: No dataset property (only applies if this is not a replacement update)
-        $prop = self::getDatasetProp($new['dataset_prop']);
-        if ((empty($prop) || $prop === 'none') && $new['type'] !== 'replacement') $issues[] = self::UPDATE_MSGS['no_dataset_prop'];
-        else if (!empty($prop) && !in_array($prop, ['none', 'coords'])) {
-            // Check for issue: Invalid dataset property
-            if (!in_array($prop, $dataset->getProperties())) $issues[] = sprintf(self::UPDATE_MSGS['invalid_dataset_prop'], $prop, $dataset->getName());
-            // Check for issue: Invalid file property
-            if (!in_array($new['file_prop'], $update_dataset->getProperties())) $issues[] = sprintf(self::UPDATE_MSGS['invalid_file_prop'], $new['file_prop']);
+        else {
+            // Check for issue: Invalid feature type
+            if ($dataset->getType() !== $update_dataset->getType()) $issues[] = sprintf(self::UPDATE_MSGS['invalid_feature_type'], $update_dataset->getType(), $dataset->getType());
+            // Check for issue: No dataset property (only applies if this is not a replacement update)
+            $prop = self::getDatasetProp($new['dataset_prop']);
+            if ((empty($prop) || $prop === 'none') && $new['type'] !== 'replacement') $issues[] = self::UPDATE_MSGS['no_dataset_prop'];
+            else if (!empty($prop) && !in_array($prop, ['none', 'coords'])) {
+                // Check for issue: Invalid dataset property
+                if (!in_array($prop, $dataset->getProperties())) $issues[] = sprintf(self::UPDATE_MSGS['invalid_dataset_prop'], $prop, $dataset->getName());
+                // Check for issue: Invalid file property
+                if ($new['file_prop'] && !in_array($new['file_prop'], $update_dataset->getProperties())) $issues[] = sprintf(self::UPDATE_MSGS['invalid_file_prop'], $new['file_prop']);
+            }
+            // Check for issue: Standard update with no settings
+            if ($new['type'] === 'standard' && !$new['modify'] && !$new['add'] && !$new['remove']) $issues[] = self::UPDATE_MSGS['no_standard_settings'];
         }
-        // Check for issue: Standard update with no settings
-        if ($new['type'] === 'standard' && !$new['modify'] && !$new['add'] && !$new['remove']) $issues[] = self::UPDATE_MSGS['no_standard_settings'];
         if ($issues) {
             $msg = self::UPDATE_MSGS['issues_list'] . "\r\n";
             foreach ($issues as $issue) {

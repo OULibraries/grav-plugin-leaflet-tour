@@ -242,6 +242,12 @@ function createMap() {
     return m;
 }
 function createTileLayer() {
+    /**
+     * TODO
+     * - check for custom
+     * - check for leaflet provider
+     * - either way, make sure to include any options provided
+     */
     let options = tour_options.tile_server;
     let layer;
     if (options.name) {
@@ -442,6 +448,10 @@ $(document).ready(function() {
             $("#view-content").css("padding-bottom", diff + "px");
         }
     }
+
+    /**
+     * TODO: If there is a tile server attribution placeholder, pull attribution from tile layer to use there
+     */
 
     map.invalidateSize();
     let view = tour.views.get('tour');

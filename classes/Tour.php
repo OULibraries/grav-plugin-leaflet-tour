@@ -8,6 +8,7 @@ use RocketTheme\Toolbox\File\MarkdownFile;
 class Tour {
 
     /**
+     * TODO: Remove
      * List of tile servers provided by this plugin. Will change as leaflet providers is implemented.
      *  - key => [options?, attribution, type?, select, name?]
      */
@@ -69,16 +70,37 @@ class Tour {
      */
     private ?string $id = null;
     private ?string $title = null;
+    /**
+     * id, include_all, add_all
+     */
     private array $datasets = [];
+    /**
+     * popup props, attribution, legend, icon/path
+     */
     private array $dataset_overrides = [];
+    /**
+     * id, popup_content, remove_popup
+     */
     private array $features = [];
     private array $tile_server = [];
     private ?string $attribution = null;
+    /**
+     * location, lng, lat, distance, bounds
+     */
     private array $start = [];
     private ?array $basemaps = null;
-    private array $legend = []; // include, toggles, basemaps
-    private array $overrides = []; // wide_column, map_on_right, show_map_location_in_url
-    private array $view_options = []; // remove_tile_server, only_show_view_features, list_popup_buttons
+    /**
+     * include, toggles, basemaps
+     */
+    private array $legend = [];
+    /**
+     * wide_column, map_on_right, show_map_location_in_url
+     */
+    private array $overrides = [];
+    /**
+     * remove_tile_server, only_show_view_features, list_popup_buttons
+     */
+    private array $view_options = [];
     private array $max_bounds = [];
     private ?int $max_zoom = null;
     private ?int $min_zoom = null;
@@ -171,14 +193,10 @@ class Tour {
         $this->max_zoom = $yaml['max_zoom'];
         $this->min_zoom = $yaml['min_zoom'];
         // remove a few properties that should not be included in the yaml, just in case, as well as properties previously dealt with
-        $remove = array_merge(self::$reserved, ['datasets', 'features', 'basemaps', 'tile_server', 'attribution', 'max_zoom', 'min_zoom']);
+        $remove = array_merge(self::$reserved, ['datasets', 'features', 'basemaps', 'tile_server', 'attribution', 'max_zoom', 'min_zoom', 'id']);
         $yaml = array_diff_key($yaml, array_flip($remove));
         foreach ($yaml as $key => $value) {
             switch ($key) {
-                // TODO: a few properties with specific setters
-                case 'id':
-                    $this->setId($value);
-                    break;
                 case 'dataset_overrides':
                     $this->dataset_overrides = array_merge($this->dataset_overrides, $value);
                     break;
@@ -213,9 +231,6 @@ class Tour {
     public function removeDataset(string $id): bool {
         if ($this->getDatasets()[$id]) {
             unset($this->datasets[$id]);
-            // $this->updateFeatures();
-            // $this->save();
-            // return true;
             return $this->updateDataset($id, true);
         }
         else return false;
@@ -474,8 +489,10 @@ class Tour {
                         'icon' => Utils::BASEMAP_ROUTE . $file,
                         'class' => 'basemap',
                     ];
+                    // TODO: Use icon if provided
+                    // TODO: If icon is not provided, crop or reduce size of basemap file before using as icon
                     // if ($icon = $basemap['icon']) $info['icon'] .= "icons/$icon";
-                    // else $info['icon'] .= $basemap['file']; // TODO: crop or something?
+                    // else $info['icon'] .= $basemap['file'];
                     $legend[] = $info;
                 }
             }
@@ -501,6 +518,9 @@ class Tour {
         // validate start location
         $this->updateStart();
     }
+    /**
+     * Checks all dataset overrides or just the one specified by id. Removes  override if the dataset no longer exists, validates auto popup properties if it does.
+     */
     private function updateDatasetOverrides(?string $id = null): void {
         if ($id) $ids = [$id];
         else $ids = array_keys($this->dataset_overrides);
@@ -529,13 +549,6 @@ class Tour {
         $this->clearBasemaps();
         $files = array_column(self::$plugin_config['basemap_info'] ?? [], 'file');
         $this->basemaps = array_intersect($basemaps ?? $this->basemaps ?? [], $files);
-        // if ($basemaps) $this->basemaps = $basemaps;
-        // // basemap_info gets all basemaps that have info, so can be checked to validate
-        // $basemaps = [];
-        // foreach ($this->basemaps ?? [] as $file) {
-        //     if ($this->getBasemapInfo()[$file]) $basemaps[] = $file;
-        // }
-        // $this->basemaps = $basemaps;
     }
     /**
      * called after setting datasets and features - checks any datasets for "add_all" and updates features and datasets lists accordingly
@@ -633,7 +646,6 @@ class Tour {
                 if ($dataset = LeafletTour::getDatasets()[$id]) {
                     // should merge icon, path, legend, attribution, auto popup properties
                     $this->merged_datasets[$id] = Dataset::fromTour($dataset, $this->dataset_overrides[$id] ?? []);
-                    // $this->merged_datasets[$id] = Dataset::fromTour($dataset, []);
                 }
             }
         }
@@ -651,6 +663,18 @@ class Tour {
         }
         return $this->merged_features;
     }
+    /**
+     * TODO: No longer reference list of TILE_SERVERS. Instead, just check if needs to be custom or leaflet provider option. Make sure to pass that info on. Also still need to check for custom attribution and other custom options.
+     * - check for tour setting - custom + URL
+     * - check for tour setting - other + text
+     * - check for tour selection
+     * - check for tour options (attribution etc.)
+     * - if no tour setting/selection:
+     *     - check for plugin setting - custom + URL
+     *     - check for plugin setting - other + text
+     *     - check for plugin selection
+     *     - check for plugin options (attribution etc., but don't overwrite anything from tour)
+     */
     private function getTileServer(): array {
         if (!$this->tile_server_options) {
             // tour header
@@ -696,7 +720,7 @@ class Tour {
         $this->id ??= $id;
     }
     public function setFile(MarkdownFile $file): void {
-        $this->file ??= $file;
+        $this->file = $file;
     }
     private function setDatasets(array $yaml) {
         $datasets = [];

@@ -173,6 +173,8 @@ form:
                   text: Choose one of the tile servers from the dropdown menu, or input the URL and attribution for a tile server of your choice. You can also select additional basemaps to add. The tile server options will override the defaults from the plugin configuration.
                   underline: true
 
+                # TODO: Change default?
+                # TODO: Add more description regarding the Leaflet Providers options
                 header.tile_server.select:
                   type: select
                   label: Select a Tile Server
@@ -185,6 +187,10 @@ form:
                   label: Custom Tile Server URL
                   toggleable: true
                   description: Make sure to select "custom" for the tile server (here or in the plugin configuration) to use this field.
+                
+                # TODO: Add textbox for other leaflet provider option
+
+                # TODO: Replace attribution with a list of key-value pairs. Mention the most common uses: attribution, apikey, accessToken
 
                 header.tile_server.attribution:
                   type: text

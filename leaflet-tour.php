@@ -158,6 +158,7 @@ class LeafletTourPlugin extends Plugin {
     }
 
     public static function getTileServerList(): array {
+        // TODO: Return simple list of Leaflet providers options (include Custom URL and Other Leaflet Provider Map)
         $servers = Tour::TILE_SERVERS;
         $list = array_combine(array_keys($servers), array_column($servers, 'select'));
         return array_merge($list, ['custom' => 'Custom']);
@@ -177,7 +178,7 @@ class LeafletTourPlugin extends Plugin {
     public static function getUpdatePropertiesList(): array {
         $list = [];
         foreach (LeafletTour::getDatasets() as $id => $dataset) {
-            $name = $dataset->getTitle();
+            $name = $dataset->getName();
             $sublist = [];
             foreach ($dataset->getProperties() as $prop) {
                 $sublist["$id--prop--$prop"] = $prop;

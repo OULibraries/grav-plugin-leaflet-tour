@@ -147,7 +147,7 @@ class View {
      * @param string $id Sets $this->id if not yet set
      */
     public function setId(string $id): void {
-        $this->id ??= $id;
+        $this->id = $id;
     }
     public function setFile(MarkdownFile $file): void {
         $this->file ??= $file;

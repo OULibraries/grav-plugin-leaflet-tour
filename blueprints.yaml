@@ -140,6 +140,8 @@ form:
               text: Choose one of the tile servers from the dropdown menu, or input the URL and attribution for a tile server of your choice.
               underline: true
 
+            # TODO: Change default?
+            # TODO: Add more description regarding the Leaflet Providers options
             tile_server.select:
               type: select
               label: Select a Tile Server
@@ -150,6 +152,10 @@ form:
               type: text
               label: Custom Tile Server URL
               description: Make sure to select "custom" for the tile server to use this field.
+
+            # TODO: Add textbox for other leaflet provider option
+
+            # TODO: Replace attribution with a list of key-value pairs. Mention the most common uses: attribution, apikey, accessToken
               
             tile_server.attribution:
               type: text
