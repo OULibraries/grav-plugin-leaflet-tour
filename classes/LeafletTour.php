@@ -477,9 +477,18 @@ class LeafletTour {
             return $update;
         }
         // Check for confirmation
-        if (!$new['confirm']) return $new;
+        if (!$new['confirm']) {
+            // make sure to remove any issue messages
+            $msg = $new['msg'];
+            foreach (['dataset_modified_no_issues', 'file_not_created'] as $key) {
+                $msg = str_replace(self::UPDATE_MSGS[$key] . "\r\n\r\n", '', $msg);
+            }
+            $new['msg'] = $msg;
+            return $new;
+        }
         // apply update
         $dataset->applyUpdate($tmp_dataset);
+        $dataset->save();
         foreach (self::getTours() as $id => $tour) {
             $tour->updateDataset($new['dataset']);
         }
@@ -489,7 +498,7 @@ class LeafletTour {
         // values that need to be checked for changes
         $keys = ['file', 'dataset', 'type', 'dataset_prop'];
         // if dataset_prop is not 'none' or 'coords' then also need to check file_prop
-        if (!in_array($new['dataset_propo'], ['none', 'coords'])) $keys[] = 'file_prop';
+        if (!in_array($new['dataset_prop'], ['none', 'coords'])) $keys[] = 'file_prop';
         // if update is standard then also need to check standard options
         if ($new['type'] === 'standard') $keys = array_merge($keys, ['modify', 'add', 'remove']);
         // check for changes
@@ -552,15 +561,19 @@ class LeafletTour {
         $prop = self::getDatasetProp($update['dataset_prop']);
         // update tmp dataset and set msg
         switch ($update['type']) {
-            case 'replace':
+            case 'replacement':
                 $msg = self::UPDATE_MSGS['replacement'] . "\r\n\r\n";
-                if ($prop && ($prop !== 'none')) $msg .= self::getMatchingMsg($prop, $update['file_prop']) . ' ' . self::UPDATE_MSGS['replace_prop'];
-                else $msg .= self::UPDATE_MSGS['replace_no_prop'];
-                $msg .= "\r\n\r\n";
-                $matches = $tmp_dataset->updateReplace($prop, $update['file_prop'], $update_dataset);
-                $msg .= self::printMatches($matches, 'replace_matches', 'replace_no_matches');
+                if ($prop && ($prop !== 'none')) {
+                    $msg .= self::getMatchingMsg($prop, $update['file_prop']) . ' ' . self::UPDATE_MSGS['replace_prop'] . "\r\n\r\n";
+                    $matches = $tmp_dataset->updateReplace($prop, $update['file_prop'], $update_dataset);
+                    $msg .= self::printMatches($matches, 'replace_matches', 'replace_no_matches');
+                }
+                else {
+                    $msg .= self::UPDATE_MSGS['replace_no_prop'];
+                    $tmp_dataset->updateReplace('none', null, $update_dataset);
+                }
                 break;
-            case 'remove':
+            case 'removal':
                 $msg = self::UPDATE_MSGS['removal'] . "\r\n\r\n" . self::getMatchingMsg($prop, $update['file_prop']) . "\r\n\r\n";
                 $matches = $tmp_dataset->updateRemove($prop,  $update['file_prop'], $update_dataset);
                 $msg .= self::printMatches($matches, 'remove_matches', 'remove_no_matches');
@@ -570,6 +583,7 @@ class LeafletTour {
                 if ($update['add']) $msg .= ' ' . self::UPDATE_MSGS['standard_add'];
                 if ($update['modify']) $msg .= ' ' . self::UPDATE_MSGS['standard_modify'];
                 if ($update['remove']) $msg .= ' ' . self::UPDATE_MSGS['standard_remove'];
+                $msg .= "\r\n\r\n" . self::getMatchingMsg($prop, $update['file_prop']);
                 $matches = $tmp_dataset->updateStandard($prop, $update['file_prop'], $update['add'], $update['modify'], $update['remove'], $update_dataset);
                 if ($update['add']) {
                     $added = count($update_dataset->getFeatures()) - count($matches);
@@ -580,13 +594,14 @@ class LeafletTour {
                 }
                 if ($update['remove']) {
                     $removed = [];
-                    foreach ($update_dataset->getFeatures() as $id => $feature) {
+                    foreach ($dataset->getFeatures() as $id => $feature) {
                         if (!$matches[$id]) $removed[$id] = $feature->getName();
                     }
                     $msg .= "\r\n\r\n" . self::printMatches($removed, 'standard_removed', 'standard_removed_none');
                 }
         }
         $tmp_dataset->setFile(MarkdownFile::instance(self::getUpdateFolder() . '/tmp.md'));
+        $tmp_dataset->save();
         $msg = self::UPDATE_MSGS['update_warning'] . "\r\n\r\n" . $msg;
         $dataset->setReadyForUpdate(true);
         return [

@@ -390,11 +390,9 @@ class Dataset {
      * 
      * @param bool $generate - If set to true, will generate yaml whether or not file header is empty
      */
-    public function save(bool $generate = false): void {
+    public function save(): void {
         if ($file = $this->file) {
-            if (!$file->exists() || empty($file->header() || $generate)) {
-                $file->header($this->asYaml());
-            }
+            $file->header($this->asYaml());
             $file->save();
         }
     }
@@ -436,7 +434,10 @@ class Dataset {
     public function updateReplace(string $dataset_prop, ?string $file_prop, Dataset $update): array {
         $update_features = [];
         if ($dataset_prop !== 'none') $matches = $this->matchFeatures($dataset_prop, $file_prop, $update->getFeatures(), $update_features);
-        else $matches = [];
+        else {
+            $matches = [];
+            $update_features = $update->getFeatures();
+        }
         $modified = $this->modifyMatches($matches);
         $features = [];
         // add matches first
