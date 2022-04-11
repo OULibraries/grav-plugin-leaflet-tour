@@ -486,13 +486,12 @@ class Tour {
                 if ($text = $basemap['legend'] ?: $basemap['name']) {
                     $info = [
                         'text' => $text,
-                        'icon' => Utils::BASEMAP_ROUTE . $file,
+                        'icon' => Utils::BASEMAP_ROUTE,
                         'class' => 'basemap',
                     ];
-                    // TODO: Use icon if provided
-                    // TODO: If icon is not provided, crop or reduce size of basemap file before using as icon
-                    // if ($icon = $basemap['icon']) $info['icon'] .= "icons/$icon";
-                    // else $info['icon'] .= $basemap['file'];
+                    // Use icon if provided
+                    if ($icon = $basemap['icon']) $info['icon'] .= "icons/$icon";
+                    else $info['icon'] .= $file;
                     $legend[] = $info;
                 }
             }

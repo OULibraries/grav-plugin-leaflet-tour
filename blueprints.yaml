@@ -178,16 +178,16 @@ form:
               accept:
                 - image/*
 
-            # basemap_icon_files:
-            #   type: file
-            #   label: Basemap Icons
-            #   description: Upload smaller icons to associate with specific basemaps in order to customize the basemap image displayed in the map legend.
-            #   style: vertical
-            #   destination: 'user://data/leaflet-tour/images/basemaps/icons'
-            #   multiple: true
-            #   limit: 50
-            #   accept:
-            #     - image/*
+            basemap_icon_files:
+              type: file
+              label: Basemap Icons
+              description: Upload smaller icons to associate with specific basemaps in order to customize the basemap image displayed in the map legend.
+              style: vertical
+              destination: 'user://data/leaflet-tour/images/basemaps/icons'
+              multiple: true
+              limit: 50
+              accept:
+                - image/*
 
             basemap_info:
               type: list
@@ -214,13 +214,12 @@ form:
                   type: text
                   label: Legend Description
                   
-                # .icon:
-                #   type: filepicker
-                #   label: Basemap Icon
-                #   description: Choose an icon to represent the basemap in a map legend. If no icon is provided, a small version or a portion of the original basemap will be used instead.
-                #   preview_images: true
-                #   folder: 'user://data/leaflet-tour/images/basemaps/icons'
-                #   # TODO: accept?
+                .icon:
+                  type: filepicker
+                  label: Basemap Icon
+                  description: Choose an icon to represent the basemap in a map legend. If no icon is provided, a small version or a portion of the original basemap will be used instead.
+                  preview_images: true
+                  folder: 'user://data/leaflet-tour/images/basemaps/icons'
 
                 .attribution:
                   type: text
