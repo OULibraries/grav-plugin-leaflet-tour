@@ -51,6 +51,10 @@ form:
                       type: text
                       label: Dataset Name
 
+                    route:
+                      type: parents
+                      label: PLUGIN_ADMIN.PARENT
+
                     header.attribution:
                       type: text
                       label: Dataset Attribution

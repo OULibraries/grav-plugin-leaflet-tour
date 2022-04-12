@@ -52,6 +52,7 @@ class LeafletTourPlugin extends Plugin {
                 'onGetPageBlueprints' => ['onGetPageBlueprints', 0],
                 'onAdminSave' => ['onAdminSave', 0],
                 'onAdminAfterDelete' => ['onAdminAfterDelete', 0],
+                'onAdminPageTypes' => ['onAdminPageTypes', 0],
             ]);
             return;
         }
@@ -144,6 +145,15 @@ class LeafletTourPlugin extends Plugin {
                     break;
             }
         }
+    }
+
+    /**
+     * Hide certain page types
+     */
+    public function onAdminPageTypes(Event $event) {
+        $types = $event['types'];
+        unset($types['dataset']);
+        $event['types'] = $types;
     }
 
     // getters for any blueprints

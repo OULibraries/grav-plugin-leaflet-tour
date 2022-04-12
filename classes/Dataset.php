@@ -321,7 +321,7 @@ class Dataset {
         foreach ($features_yaml as $feature_yaml) {
             $id = $feature_yaml['id'];
             // existing features - call feature's update function and add to list (make sure not a duplicate, though)
-            if (($feature = $this->features[$id]) && (!$features[$id])) {
+            if (($feature = $this->features[$id]) && (!$features[$id]) && ($id !== 'tmp  id')) {
                 $feature->update($feature_yaml);
                 $features[$id] = $feature;
             }
