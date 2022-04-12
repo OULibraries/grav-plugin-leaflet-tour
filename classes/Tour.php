@@ -609,8 +609,10 @@ class Tour {
      */
     public function getIncludedFeatures(): array {
         if (!$this->included_features) {
-            $this->included_features = [];
+            // $this->included_features = [];
             $this->included_datasets = [];
+            // start with all features in the features list
+            $this->included_features = array_keys($this->getFeatures());
             foreach ($this->datasets as $dataset_id => $header_dataset) {
                 if ($dataset = LeafletTour::getDatasets()[$dataset_id]) {
                     // check for included features
@@ -623,6 +625,8 @@ class Tour {
                     }
                     // if features, also add included dataset
                     if (!empty($features)) {
+                        // first clear out any features already in the included features list
+                        $features = array_diff($features, $this->included_features);
                         $this->included_features = array_merge($this->included_features, $features);
                         $this->included_datasets[] = $dataset_id;
                     }
