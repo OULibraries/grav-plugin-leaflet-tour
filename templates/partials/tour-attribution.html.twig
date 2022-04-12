@@ -13,9 +13,13 @@
     {% endif %}
     {# TODO: Check for provided attribution. If not present, check for leaflet provider option. If that exists, instead input a placeholder. If no attribution or leaflet provider option is set, then don't add the div #}
     {% if server_attr %}
-        <div id="server-attribution" class="attribution-section">
-            <span>Tile Server: {{ server_attr|raw }}</span>
-        </div>
+        {% if server_attr != 'placeholder' %}
+            <div id="server-attribution" class="attribution-section">
+                <span>Tile Server: {{ server_attr|raw }}</span>
+            </div>
+        {% else %}
+            <div id="server-attribution" class="attribution-section"></div>
+        {% endif %}
     {% endif %}
     {% if map_attr|length > 0 %}
         <div id="basemaps-attribution" class="attribution-section">

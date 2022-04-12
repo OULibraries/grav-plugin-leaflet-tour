@@ -12,26 +12,26 @@ class Tour {
      * List of tile servers provided by this plugin. Will change as leaflet providers is implemented.
      *  - key => [options?, attribution, type?, select, name?]
      */
-    const TILE_SERVERS = [
-        'stamenWatercolor' => [
-            'type'=>'stamen',
-            'select'=>'Stamen Watercolor',
-            'name'=>'watercolor',
-            'attribution'=>'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.',
-        ],
-        'stamenToner' => [
-            'type' => 'stamen',
-            'select' => 'Stamen Toner',
-            'name' => 'toner',
-            'attribution' => 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
-        ],
-        'stamenTerrain' => [
-            'type' => 'stamen',
-            'select' => 'Stamen Terrain',
-            'name' => 'terrain',
-            'attribution' => 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
-        ],
-    ];
+    // const TILE_SERVERS = [
+    //     'stamenWatercolor' => [
+    //         'type'=>'stamen',
+    //         'select'=>'Stamen Watercolor',
+    //         'name'=>'watercolor',
+    //         'attribution'=>'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.',
+    //     ],
+    //     'stamenToner' => [
+    //         'type' => 'stamen',
+    //         'select' => 'Stamen Toner',
+    //         'name' => 'toner',
+    //         'attribution' => 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
+    //     ],
+    //     'stamenTerrain' => [
+    //         'type' => 'stamen',
+    //         'select' => 'Stamen Terrain',
+    //         'name' => 'terrain',
+    //         'attribution' => 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
+    //     ],
+    // ];
     const DEFAULT_LEGEND = [
         'include' => true,
         'toggles' => false,
@@ -47,6 +47,7 @@ class Tour {
         'only_show_view_features' => false,
         'list_popup_buttons' => false,
     ];
+    const DEFAULT_TILE_SERVER = 'OpenTopoMap';
 
     /**
      * Generated in constructor if not yet set. Only modified when the plugin config page is saved.
@@ -663,36 +664,58 @@ class Tour {
         return $this->merged_features;
     }
     /**
-     * TODO: No longer reference list of TILE_SERVERS. Instead, just check if needs to be custom or leaflet provider option. Make sure to pass that info on. Also still need to check for custom attribution and other custom options.
-     * - check for tour setting - custom + URL
-     * - check for tour setting - other + text
-     * - check for tour selection
-     * - check for tour options (attribution etc.)
-     * - if no tour setting/selection:
-     *     - check for plugin setting - custom + URL
-     *     - check for plugin setting - other + text
-     *     - check for plugin selection
-     *     - check for plugin options (attribution etc., but don't overwrite anything from tour)
+     * Check if server set by tour or plugin. If neither, use default provider. If set, use appropriate selection/other provider name/custom url. If set by tour, use tour settings, otherwise combine tour and plugin settings.
+     * @return array 
+     * - url => string (if custom/url)
+     * - provider => string (if select or other/name or default)
+     * - key => ?string
+     * - id => ?string
+     * - attribution => ?string
      */
     private function getTileServer(): array {
         if (!$this->tile_server_options) {
-            // tour header
-            $server = $this->tileServerHelper($this->tile_server);
-            $attr = ($this->tile_server)['attribution'];
-            // plugin config
-            if (!$server) {
-                $server = $this->tileServerHelper(self::$plugin_config['tile_server'] ?? []);
-                $attr ??= (self::$plugin_config['tile_server'] ?? [])['attribution'];
+            // check if tile server set by tour or plugin
+            ;
+            if ($server = $this->getServerSelection($this->tile_server)) { // set by tour
+                // return only tour settings
+                $settings = $this->tile_server;
+            } else {
+                $tile_server = self::$plugin_config['tile_server'] ?? [];
+                $server = ($this->getServerSelection($tile_server)) ?? ['provider' => self::DEFAULT_TILE_SERVER];
+                $settings = array_merge($tile_server, $this->tile_server);
             }
-            if (!$server) $server = array_values(self::TILE_SERVERS)[0]; // default
-            if ($attr) $server['attribution'] = $attr;
-            $this->tile_server_options = $server;
+            // remove extraneous values
+            $settings = array_diff_key($settings, array_flip(['select', 'url', 'name']));
+            $this->tile_server_options = array_merge($settings, $server);
+            // // tour header
+            // $server = $this->tileServerHelper($this->tile_server);
+            // $attr = ($this->tile_server)['attribution'];
+            // // plugin config
+            // if (!$server) {
+            //     $server = $this->tileServerHelper(self::$plugin_config['tile_server'] ?? []);
+            //     $attr ??= (self::$plugin_config['tile_server'] ?? [])['attribution'];
+            // }
+            // if (!$server) $server = array_values(self::TILE_SERVERS)[0]; // default
+            // if ($attr) $server['attribution'] = $attr;
+            // $this->tile_server_options = $server;
         }
         return $this->tile_server_options;
     }
-    private function tileServerHelper(array $options): ?array {
-        if (($select = $options['select']) && ($server = self::TILE_SERVERS[$select])) return $server;
-        else if ($options['select'] === 'custom' && ($url = $options['url'])) return ['url' => $url];
+    // private function tileServerHelper(array $options): ?array {
+    //     if (($select = $options['select']) && ($server = self::TILE_SERVERS[$select])) return $server;
+    //     else if ($options['select'] === 'custom' && ($url = $options['url'])) return ['url' => $url];
+    //     return null;
+    // }
+    private function getServerSelection(array $options): ?array {
+        if ($select = $options['select']) {
+            if ($select === 'custom') {
+                if ($url = $options['url']) return ['url' => $url];
+            } else if ($select === 'other') {
+                if ($name = $options['name']) return ['provider' => $name];
+            } else {
+                return ['provider' => $select];
+            }
+        }
         return null;
     }
     private function getBasemapInfo(): array {
@@ -776,7 +799,9 @@ class Tour {
         return $this->attribution ?? (self::$plugin_config['tour_options'] ?? [])['attribution'];
     }
     public function getTileServerAttribution(): ?string {
-        return $this->getTileServer()['attribution'];
+        if ($attr = $this->getTileServer()['attribution']) return $attr;
+        else if ($this->getTileServer()['provider']) return 'placeholder';
+        else return null;
     }
     public function getLegendToggles(): bool {
         return $this->legend['toggles'] ?? self::DEFAULT_LEGEND['toggles'];

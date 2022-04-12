@@ -179,7 +179,9 @@ form:
                   type: select
                   label: Select a Tile Server
                   toggleable: true
-                  default: 'stamenWatercolor'
+                  default: 'OpenTopoMap'
+                  description: "This dropdown provides a few options from Leaflet Providers. Go to the [Leaflet Providers GitHub page](https://github.com/leaflet-extras/leaflet-providers) for additional options and information. Please note that some options require additional information or actions. For example, to use Esri/ArcGIS maps you must register and abide by their terms of service."
+                  markdown: true
                   data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServerList'
 
                 header.tile_server.url:
@@ -187,16 +189,30 @@ form:
                   label: Custom Tile Server URL
                   toggleable: true
                   description: Make sure to select "custom" for the tile server (here or in the plugin configuration) to use this field.
-                
-                # TODO: Add textbox for other leaflet provider option
 
-                # TODO: Replace attribution with a list of key-value pairs. Mention the most common uses: attribution, apikey, accessToken
+                header.tile_server.name:
+                  type: text
+                  label: Name of Leaflet Provider Tile Server
+                  toggleable: true
+                  description: Use this if the server you want to use is not listed in the dropdown. Check the Leaflet Providers documentation for information on available maps.
+
+                header.tile_server.key:
+                  type: text
+                  label: API Key / Access Token
+                  toggleable: true
+                  description: If required, provide an API key or access token. Required for HEREv3, Jawg Maps, Mapbox, MapTiler Cloud, Thunderforest, TomTom, and Geoportail France.
+
+                header.tile_server.id:
+                  type: text
+                  label: ID or Variant
+                  toggleable: true
+                  description: "If relevant, provide an id or variant. Providers: Jawg Maps, Mapbox, Geoportail France"
 
                 header.tile_server.attribution:
                   type: text
                   label: Custom Tile Server Attribution
                   toggleable: true
-                  description: Add some HTML to include in the tour footer for the custom tile server provided above.
+                  description: Add some HTML to include in the tour footer. Will overwrite the default tile server attribution for Leaflet Providers maps.
 
                 header.basemaps:
                   type: select

@@ -12,7 +12,7 @@ use RocketTheme\Toolbox\File\MarkdownFile;
 use Grav\Plugin\LeafletTour\LeafletTour;
 use Grav\Plugin\LeafletTour\Utils;
 use Grav\Plugin\LeafletTour\Feature;
-use Grav\Plugin\LeafletTour\Tour;
+// use Grav\Plugin\LeafletTour\Tour;
 
 /**
  * @package Grav\Plugin
@@ -158,10 +158,26 @@ class LeafletTourPlugin extends Plugin {
     }
 
     public static function getTileServerList(): array {
+        return [
+            'custom' => 'Custom URL',
+            'other' => 'Other Leaflet Providers Tile Server',
+            'Esri.WorldImagery' => 'Esri World Imagery',
+            'OpenTopoMap' => 'OpenTopoMap',
+            'OPNVKarte' => 'OPNVKarte',
+            'Stamen.Toner' => 'Stamen Toner',
+            'Stamen.TonerBackground' => 'Stamen Toner Background',
+            'Stamen.TonerLight' => 'Stamen Toner - Light',
+            'Stamen.Watercolor' => 'Stamen Watercolor',
+            'Stamen.Terrain' => 'Stamen Terrain',
+            'Stamen.TerrainBackground' => 'Stamen Terrain Background',
+            'USGS.USTopo' => 'USGS: US Topo',
+            'USGS.USImageryTopo' => 'USGS: US Imagery',
+            'USGS.USImagery' => 'USGS: US Imagery Background',
+        ];
         // TODO: Return simple list of Leaflet providers options (include Custom URL and Other Leaflet Provider Map)
-        $servers = Tour::TILE_SERVERS;
-        $list = array_combine(array_keys($servers), array_column($servers, 'select'));
-        return array_merge($list, ['custom' => 'Custom']);
+        // $servers = Tour::TILE_SERVERS;
+        // $list = array_combine(array_keys($servers), array_column($servers, 'select'));
+        // return array_merge($list, ['custom' => 'Custom']);
     }
 
     public static function getBasemapList(): array {

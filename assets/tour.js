@@ -242,23 +242,43 @@ function createMap() {
     return m;
 }
 function createTileLayer() {
+    let options = tour_options.tile_server;
+    let layer;
+    if (options.provider) {
+        // settings/options
+        let settings = {};
+        // set options - don't know for sure what value is needed, but seems like providing extra wouldn't hurt
+        let id = options.id;
+        if (id) {
+            settings.id = id;
+            settings.variant = id;
+        }
+        let key = options.key;
+        if (key) {
+            settings.key = key;
+            settings.apiKey = key;
+            settings.accessToken = key;
+        }
+        layer = new L.tileLayer.provider(options.provider, settings);
+        // check for attribution
+    } else {
+        layer = new L.tileLayer(options.url);
+    }
     /**
      * TODO
      * - check for custom
      * - check for leaflet provider
      * - either way, make sure to include any options provided
      */
-    let options = tour_options.tile_server;
-    let layer;
-    if (options.name) {
-        layer = new L.StamenTileLayer(options.name, {
-            minZoom: 1,
-            maxZoom: 18,
-            maxNativeZoom: 13
-        });
-    } else {
-        layer = new L.tileLayer(options.url);
-    }
+    // if (options.name) {
+    //     layer = new L.StamenTileLayer(options.name, {
+    //         minZoom: 1,
+    //         maxZoom: 18,
+    //         maxNativeZoom: 13
+    //     });
+    // } else {
+    //     layer = new L.tileLayer(options.url);
+    // }
     map.addLayer(layer);
     return layer;
 }
@@ -427,6 +447,12 @@ let window_scroll_tick = false;
 
 // ---------- General Setup ---------- //
 $(document).ready(function() {
+    // set tile server attribution if needed
+    let section = $("#server-attribution");
+    if (!section.html()) {
+        let a = tour.tile_layer.options.attribution;
+        if (a) section.html(a);
+    }
     if (!isMobile()) {
         // make sure "tour" size and last view size are sufficient for all views to be enterable via scrollama
         // "tour" view
