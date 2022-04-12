@@ -319,8 +319,7 @@ class LeafletTour {
     }
     public static function handleViewDeletion($page): void {
         $id = $page->header()->get('id');
-        // TODO: Would self::getViews()[$id] work better?
-        if ($tour = self::$views[$id]->getTour()) $tour->removeView($id);
+        if ($tour = self::$tours[$page->parent()->header()->get('id')]) $tour->removeView($id);
         unset(self::$views[$id]);
     }
 
