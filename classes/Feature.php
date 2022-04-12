@@ -2,6 +2,8 @@
 
 namespace Grav\Plugin\LeafletTour;
 
+use Grav\Common\Grav;
+
 class Feature {
 
     /**
@@ -113,10 +115,21 @@ class Feature {
         }
         else return null;
     }
-    public static function fromTour(Feature $original, array $yaml, Dataset $dataset): Feature {
+    public static function fromTour(Feature $original, array $yaml, Dataset $dataset, ?string $tour_filename = null): Feature {
         $feature = $original->clone();
-        if ($yaml['popup_content']) $feature->popup_content = $yaml['popup_content'];
+        if ($yaml['popup_content']) {
+            $feature->popup_content = $yaml['popup_content'];
+            // $image_path = str_replace($pages, '', $tour_filename);
+            $image_path = $tour_filename;
+        }
         else if ($yaml['remove_popup']) $feature->popup_content = null;
+        // else $image_path  = str_replace($pages, '', $dataset->getFile()->filename());
+        else $image_path = $dataset->getFile()->filename();
+        if ($image_path) {
+            $pages = Grav::instance()['locator']->findResource('page://');
+            $image_path = str_replace($pages, '', $image_path);
+            $feature->modifyImagePaths(dirname($image_path));
+        }
         $feature->dataset = $dataset; // auto popup properties may have changed
         return $feature;
     }
@@ -170,6 +183,29 @@ class Feature {
                     break;
             }
         }
+    }
+
+    private function modifyImagePaths(string $path): void {
+        // search for markdown images - format: ![alt text](image_file.ext?action&action2=x&action3=y "title")
+        $split = explode('![', $this->popup_content ?? '');
+        $content = array_shift($split); // ignore first
+        foreach ($split as $image_start) {
+            // look for beginning of the image url
+            $pieces = explode('](', $image_start, 2);
+            if (count($pieces) > 1) { // it had better be, but you never know
+                $url_start = $pieces[1];
+                // decide if new path needs to be applied
+                if (!str_starts_with($url_start, '.') && !str_starts_with($url_start, '/') && !str_contains($url_start, '://')) {
+                    // build back the string but with the new path added
+                    $added = true;
+                    $content .= '![' . $pieces[0] . "](page:/$path/$url_start";
+                }
+            }
+            if (!$added) {
+                $content .= "![$image_start";
+            }
+        }
+        $this->popup_content = $content;
     }
 
     // getters

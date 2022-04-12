@@ -171,3 +171,7 @@ form:
                   description: If this field is blank and the feature has no properties selected to automatically add, then the feature will not have a popup window. Note that current content may not show up until you click inside the text area.
                   validate:
                     type: textarea
+
+            header.media_order:
+              type: pagemedia
+              label: PLUGIN_ADMIN.PAGE_MEDIA

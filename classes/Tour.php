@@ -662,7 +662,8 @@ class Tour {
                 $feature = $this->getAllFeatures()[$feature_id];
                 $dataset_id = $feature->getDataset()->getId();
                 // popup content/settings, dataset reference
-                $this->merged_features[$feature_id] = Feature::fromTour($feature, $this->getFeatures()[$feature_id] ?? [], $this->getMergedDatasets()[$dataset_id]);
+                if ($file = $this->getFile()) $filename = $file->filename();
+                $this->merged_features[$feature_id] = Feature::fromTour($feature, $this->getFeatures()[$feature_id] ?? [], $this->getMergedDatasets()[$dataset_id], $filename);
             }
         }
         return $this->merged_features;
