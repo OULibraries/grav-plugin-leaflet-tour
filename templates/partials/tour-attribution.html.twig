@@ -11,7 +11,7 @@
             {{ tour_attr|markdown }}
         </div>
     {% endif %}
-    {# TODO: Check for provided attribution. If not present, check for leaflet provider option. If that exists, instead input a placeholder. If no attribution or leaflet provider option is set, then don't add the div #}
+    {# Check for provided attribution. If present, add it. If not check for leaflet provider option. If present, add a placeholder div. #}
     {% if server_attr %}
         {% if server_attr != 'placeholder' %}
             <div id="server-attribution" class="attribution-section">

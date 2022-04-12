@@ -7,31 +7,6 @@ use RocketTheme\Toolbox\File\MarkdownFile;
 
 class Tour {
 
-    /**
-     * TODO: Remove
-     * List of tile servers provided by this plugin. Will change as leaflet providers is implemented.
-     *  - key => [options?, attribution, type?, select, name?]
-     */
-    // const TILE_SERVERS = [
-    //     'stamenWatercolor' => [
-    //         'type'=>'stamen',
-    //         'select'=>'Stamen Watercolor',
-    //         'name'=>'watercolor',
-    //         'attribution'=>'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>.',
-    //     ],
-    //     'stamenToner' => [
-    //         'type' => 'stamen',
-    //         'select' => 'Stamen Toner',
-    //         'name' => 'toner',
-    //         'attribution' => 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
-    //     ],
-    //     'stamenTerrain' => [
-    //         'type' => 'stamen',
-    //         'select' => 'Stamen Terrain',
-    //         'name' => 'terrain',
-    //         'attribution' => 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.',
-    //     ],
-    // ];
     const DEFAULT_LEGEND = [
         'include' => true,
         'toggles' => false,

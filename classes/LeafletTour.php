@@ -299,12 +299,6 @@ class LeafletTour {
         if ($path = $page->header()->get('upload_file_path')) {
             File::instance(Grav::instance()['locator']->getBase() . "/$path")->delete();
         }
-        // TODO: Need to remove file from config, or will that happen automatically when file is removed?
-        // Optional: move page to backup location
-        // $id = $page->header()->get('id');
-        // $dataset = self::getDatasets()[$id];
-        // $dataset->getFile()->filename(Grav::instance()['locator']->findResource('page://') . '/deleted_datasets/' . $dataset->getName() ?? $dataset->getId() . '/default.md');
-        // $dataset->getFile()->save();
         // update tours
         foreach (self::getTours() as $id => $tour) {
             $tour->removeDataset($dataset_id);
@@ -532,7 +526,6 @@ class LeafletTour {
         if ($issues) {
             $msg = self::UPDATE_MSGS['issues_list'] . "\r\n";
             foreach ($issues as $issue) {
-                // todo: see if better way to get proper markdown support
                 $msg .= "\r\n\t- $issue";
             }
             return [

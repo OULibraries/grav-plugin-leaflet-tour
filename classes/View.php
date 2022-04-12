@@ -75,8 +75,6 @@ class View {
     public function asYaml(): array {
         $yaml = get_object_vars($this);
         $yaml = array_diff_key($yaml, array_flip(self::$reserved));
-        // TODO: shortcodes list
-        // $yaml['shortcodes_list'] = $this->generateShortcodesList();
         return $yaml;
     }
     public function save(): void {

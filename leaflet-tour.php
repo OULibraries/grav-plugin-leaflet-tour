@@ -83,7 +83,6 @@ class LeafletTourPlugin extends Plugin {
     public function onGetPageTemplates(Event $event) {
         $types = $event->types;
         $types->register('tour');
-        // TODO: What is the point of this? Should I also register other types? Seems like it's automatically pulling things as it is...
     }
     
     /**
@@ -122,7 +121,6 @@ class LeafletTourPlugin extends Plugin {
                     LeafletTour::handleViewPageSave($obj);
                     break;
             }
-            // TODO: filter header?
         }
     }
 
@@ -184,10 +182,6 @@ class LeafletTourPlugin extends Plugin {
             'USGS.USImageryTopo' => 'USGS: US Imagery',
             'USGS.USImagery' => 'USGS: US Imagery Background',
         ];
-        // TODO: Return simple list of Leaflet providers options (include Custom URL and Other Leaflet Provider Map)
-        // $servers = Tour::TILE_SERVERS;
-        // $list = array_combine(array_keys($servers), array_column($servers, 'select'));
-        // return array_merge($list, ['custom' => 'Custom']);
     }
 
     public static function getBasemapList(): array {
@@ -219,7 +213,7 @@ class LeafletTourPlugin extends Plugin {
     /**
      * Get all properties for a given dataset. Must be called from a dataset page blueprint!
      * - Include option for 'none' (optional, useful for something like name_prop where this might be desirable)
-     * @return array [$prop => $prop] TODO: try simple w/strings
+     * @return array [$prop => $prop]
      */
     public static function getDatasetPropertyList(bool $include_none = false): array {
         if (($file = Utils::getDatasetFile()) && $file->exists()) {

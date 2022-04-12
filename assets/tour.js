@@ -388,9 +388,6 @@ function adjustBasemaps(view) {
     if (!tour_state.basemaps.length || !view.remove_tile_server) map.addLayer(tour.tile_layer);
     else map.removeLayer(tour.tile_layer);
 }
-// function resetTourLabels() {
-//     // resetLabels([ tour.feature_layer ]);
-// }
 
 // ---------- Map/Tour Initialization ---------- //
 const map = createMap();
@@ -429,14 +426,8 @@ if ($("#scrolly .step").length > 0) {
     });
 }
 
-// map "on" functions
-// map.on("layeradd", resetTourLabels);
-// map.on("layerremove", resetTourLabels);
+
 map.on("zoomend", function() {
-    // if (tour_state.tmp_active_feature) {
-    //     tour_state.tmp_active_feature.deactivate();
-    // }
-    // resetTourLabels();
     adjustBasemaps(tour_state.view);
     // adjust zoom buttons
     $(".leaflet-control-zoom a").removeAttr("aria-disabled");
@@ -474,10 +465,6 @@ $(document).ready(function() {
             $("#view-content").css("padding-bottom", diff + "px");
         }
     }
-
-    /**
-     * TODO: If there is a tile server attribution placeholder, pull attribution from tile layer to use there
-     */
 
     map.invalidateSize();
     let view = tour.views.get('tour');
@@ -605,7 +592,6 @@ function enterView(id) {
         tour_state.map_needs_adjusting = true; // TODO: maybe?
     }
     adjustBasemaps(view);
-    // resetTourLabels();
 }
 function exitView() {
     // unhide previously hidden features
@@ -630,7 +616,6 @@ function toggleDataset(id, hide) {
         feature.toggleHidden();
         if (isMobile()) tour_state.adjust_labels = true;
     });
-    // resetTourLabels();
 }
 
 function toggleMobileLegend() {
@@ -639,7 +624,6 @@ function toggleMobileLegend() {
     $("#map").toggleClass("hide");
     if (tour_state.adjust_labels) {
         tour_state.adjust_labels = false;
-        // resetTourLabels();
     }
 }
 
@@ -679,7 +663,6 @@ function switchToMap(focus_id) {
     page_state.save_scroll_pos = false; // don't want scrolling to affect position when returning to content
     $("#map").focus(); // TODO: Ensure that this is the sensible/expected decision
     $("#map-toggle-btn").attr("data-focus", focus_id).attr("data-map-active", "true").text("Leave Map");
-    // todo: adjust map if needed
     if (tour_state.map_needs_adjusting) {
         adjustMap();
         tour_state.map_needs_adjusting = false;

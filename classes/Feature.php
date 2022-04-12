@@ -119,11 +119,9 @@ class Feature {
         $feature = $original->clone();
         if ($yaml['popup_content']) {
             $feature->popup_content = $yaml['popup_content'];
-            // $image_path = str_replace($pages, '', $tour_filename);
             $image_path = $tour_filename;
         }
         else if ($yaml['remove_popup']) $feature->popup_content = null;
-        // else $image_path  = str_replace($pages, '', $dataset->getFile()->filename());
         else $image_path = $dataset->getFile()->filename();
         if ($image_path) {
             $pages = Grav::instance()['locator']->findResource('page://');
@@ -405,7 +403,6 @@ class Feature {
      * @return null|array coordinates array if valid (json)
      */
     public static function validateYamlCoordinates($coordinates, string $type): ?array {
-        // todo: fix php's bad json handling?
         // turn $coordinates into a json array to pass to validateJsonCoordinates
         if (is_array($coordinates)) $coordinates = [$coordinates['lng'], $coordinates['lat']];
         else {
