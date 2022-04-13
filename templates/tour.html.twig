@@ -78,7 +78,7 @@
         {# Sticky options - only for mobile, changes between content and map views #}
         <nav aria-label="Map" id="map-nav" class="mobile-only">
             {# Toggle button - could change position and formatting, but for now will go with a hamburger style #}
-            <button id="mobile-map-toggle-btn" aria-haspopup="true" class="map-only icon-btn hamburger-btn" data-toggles="map-nav-options">
+            <button id="mobile-map-toggle-btn" aria-expanded="false" aria-controls="map-nav-options" class="map-only icon-btn hamburger-btn" data-toggles="map-nav-options">
                 <i class="fas fa-minus" aria-hidden="true"></i>
                 <i class="fas fa-bars" aria-hidden="true"></i>
                 {# TODO: Options or Menu? #}

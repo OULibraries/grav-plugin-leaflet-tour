@@ -95,21 +95,7 @@ class Utils {
      */
     public static function calculateBounds($coords, float $dist): ?array {
         if (!self::isValidPoint($coords)) return null;
-        // $bounds = [
-        //     'north' => min($coords[1] + $dist, 90), // cap at 90
-        //     'south' => max($coords[1] - $dist, -90), // cap at -90
-        //     'east' => self::addToLng($coords[0], $dist),
-        //     'west' => self::addToLng($coords[0], -$dist)
-        // ];
         return [[max($coords[1] - $dist, -90), $coords[0] - $dist], [min($coords[1] + $dist, 90), $coords[0] + $dist]];
-        // return self::getBounds($bounds);
     }
-    // private static function addToLng($lng, $dist) {
-    //     // cap at -360 to 360 - return 0 instead
-    //     $lng = $lng + $dist;
-    //     if (abs($lng) >= 360) return 0;
-    //     // get value between -180 and 180
-    //     return fmod($lng, 180) + ((int)($lng / 180)) * -180;
-    // }
 }
 ?>

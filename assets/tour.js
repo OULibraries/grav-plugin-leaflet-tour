@@ -14,7 +14,6 @@ const page_state = {
 const tour_state = {
     map_needs_adjusting: true,
     animation: true,
-    adjust_labels: false,
     view: null,
     basemaps: [], // active basemaps
 }
@@ -487,7 +486,8 @@ $(document).ready(function() {
     $("#nav-toggle-btn").on("click", checkMapToggleScroll);
     $("#mobile-map-toggle-btn").on("click", function() {
         $(this).parent().toggleClass('expanded');
-        togglePopupButton(this); // function from theme
+        this.setAttribute("aria-expanded", )
+        toggleExpanded(this); // function from theme
     });
     $("#map-toggle-btn").on("click", function() {
         if (this.getAttribute("data-map-active") === "false") switchToMap(this.id);
@@ -499,8 +499,8 @@ $(document).ready(function() {
     });
     // legend
     $("#legend-toggle-btn").on("click", function() {
-        $("#" + this.getAttribute("data-toggles")).toggleClass("minimized");
-        togglePopupButton(this);
+        $("#" + this.getAttribute("aria-controls")).toggleClass("minimized");
+        toggleExpanded(this);
     });
     $("#mobile-legend-btn").on("click", toggleMobileLegend);
     $("#legend-close-btn").on("click", toggleMobileLegend);
@@ -510,7 +510,7 @@ $(document).ready(function() {
     })
     $("#legend-basemaps-toggle").on("click", function() {
         this.parentElement.classList.toggle("expanded");
-        toggleDisplay(this);
+        toggleExpanded(this);
     })
     // features
     $(".leaflet-pane .hover-el").on("click", function(e) {
@@ -569,7 +569,7 @@ $(document).ready(function() {
 });
 
 // TODO: This should really move to the theme depending on how I deal with aria-haspopup
-function toggleDisplay(btn) {
+function toggleExpanded(btn) {
     btn.setAttribute("aria-expanded", btn.getAttribute("aria-expanded") == "true" ? "false" : "true");
 }
 
@@ -614,7 +614,6 @@ function toggleDataset(id, hide) {
     tour.datasets.get(id).features.forEach(function(feature) {
         feature.hide_dataset = hide;
         feature.toggleHidden();
-        if (isMobile()) tour_state.adjust_labels = true;
     });
 }
 
@@ -622,9 +621,6 @@ function toggleMobileLegend() {
     $("#map-nav").toggleClass("hide");
     $("#legend-wrapper").toggleClass("desktop-only");
     $("#map").toggleClass("hide");
-    if (tour_state.adjust_labels) {
-        tour_state.adjust_labels = false;
-    }
 }
 
 // Modify window.onscroll function from theme
