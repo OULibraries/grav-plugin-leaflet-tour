@@ -61,84 +61,136 @@ class Dataset {
         'className' => 'leaflet-marker '
     ];
 
-    private static array $reserved = ['file', 'upload_file_path', 'id', 'feature_type', 'feature_count'];
+    /**
+     * Values that are stored in the yaml file but should never be set by the user. True reserved value is 'file'
+     */
+    private static array $reserved_keys = ['id', 'upload_file_path', 'feature_type', 'feature_count', 'ready_for_update'];
+    /**
+     * Values that are stored in the yaml file and can be set by the user
+     */
+    private static array $blueprint_keys = ['title', 'attribution', 'legend', 'properties', 'name_property', 'auto_popup_properties', 'features', 'icon', 'path', 'active_path'];
 
     /**
-     * File storing the dataset, typically created on dataset initialization, never modified once set
+     * @var MarkdownFile|null File storing the dataset, typically created on dataset initialization
      */
-    private ?MarkdownFile $file = null;
-    /**
-     * Optional value to enable deleting unnecessary files if dataset is deleted, only set in fromJson
-     */
-    private ?string $upload_file_path = null;
-    /**
-     * Unique identifier, created on dataset initialization using the upload file name, never modified once set
-     */
-    private ?string $id = null;
-    /**
-     * Identifies the dataset to users
-     */
-    private ?string $title = null;
-    /**
-     * Point, LineString, MultiLineString, Polygon, or MultiPolygon, set in fromJson, never modified
-     */
-    private ?string $feature_type = null;
-    /**
-     * [$id => Feature, ...], the features contained by the dataset, must have valid coordinates for the dataset feature_type, never directly set, but can be updated
-     */
-    private array $features = [];
-    /**
-     * A running total of all dataset features, includes features that have been removed, used to create unique ids for new features, never modified directly
-     */
-    private ?int $feature_count = null;
-    /**
-     * A list of property keys that each feature should have / is allowed to have
-     */
-    private array $properties = [];
-    /**
-     * Properties used to generate auto popup content for features. Must be in the dataset properties list
-     */
-    private ?array $auto_popup_properties = null;
-    /**
-     * The property used to determine a feature's name when its custom_name is not set, must be in the dataset properties list
-     */
-    private ?string $name_property = null;
-    /**
-     * Text to provide attribution for the dataset, will be added automatically to tours that use it
-     */
-    private ?string $attribution = null;
-    /**
-     * [text, summary, symbol_alt]
-     */
-    private ?array $legend = null;
-    /**
-     * Icon options, based on Leaflet icon options, but the yaml for storage is slightly different
-     */
-    private ?array $icon = null;
-    /**
-     * Path options from Leaflet path options
-     */
-    private ?array $path = null;
-    private ?array $active_path = null;
-
-    private bool $ready_for_update = false;
+    private $file;
 
     /**
-     * Never called directly by anything but the construction methods (and clone) - construction methods will take care of any necessary validation
+     * @var string|null Unique identifier, created on dataset initialization using the upload file name, never modified once set
+     */
+    private $id;
+    /**
+     * @var string|null Optional value to enable deleting unnecessary files if dataset is deleted, only set when parsing original file upload
+     */
+    private $upload_file_path;
+    /**
+     * @var string|null Point, LineString, MultiLineString, Polygon, or MultiPolygon, set in fromJson, never modified
+     */
+    private $feature_type;
+    /**
+     * @var int|null A running total of all dataset features, including features that have been removed, used to create unique ids for new features, never modified directly
+     */
+    private $feature_count;
+    /**
+     * @var bool|null Set true whenever a dataset update process (from plugin) begins and false whenever the dataset is updated (from page). Used in dataset update process to indicate that update changes should be reviewed again before confirmation.
+     */
+    private $ready_for_update;
+    /**
+     * @var string|null Identifies the dataset to users
+     */
+    private $title;
+    /**
+     * @var string|null Text to provide attribution for the dataset, will be added automatically to tours that use it
+     */
+    private $attribution;
+    /**
+     * @var array|null [text, summary, symbol_alt]
+     */
+    private $legend;
+    /**
+     * @var array [$id => Feature, ...], the features contained by the dataset, must have valid coordinates for the dataset feature_type, never directly set, but can be updated
+     */
+    private $features;
+    /**
+     * @var array A list of property keys that each feature should have / is allowed to have
+     */
+    private $properties;
+    /**
+     * @var string|null The property used to determine a feature's name when its custom_name is not set, must be in the dataset properties list
+     */
+    private $name_property;
+    /**
+     * @var array|null Properties used to generate auto popup content for features. Must be in the dataset properties list
+     */
+    private $auto_popup_properties;
+    /**
+     * @var array|null Icon options, based on Leaflet icon options, but the yaml for storage is slightly different
+     */
+    private $icon;
+    /**
+     * @var array|null Path options from Leaflet path options
+     */
+    private $path, $active_path;
+
+    /**
+     * @var array|null Any values not reserved or part of blueprint
+     */
+    private $extras;
+
+    /**
+     * Sets all provided values. Validation needs differ based on how the dataset is being created and so will be handled outside of this function.
+     * 
+     * @param array $options
      */
     private function __construct(array $options) {
         foreach ($options as $key => $value) {
-            try {
-                $this->$key = $value;
-            } catch (\Throwable $t) {
-                // do nothing
-            }
+            $this->$key = $value;
         }
     }
+
+    // Constructor Methods
+
     /**
-     * Builds a dataset from an existing markdown file. Validates the options set in the header.
+     * Creates a new dataset from an uploaded json file. Determines feature_type, features, and properties. May also set name, name_property, upload_file_path and feature_count if provided.
+     * 
+     * @param array $json GeoJson array with features
+     * 
+     * @return Dataset|null New Dataset if at least one feature is valid
+     */
+    public static function fromJson(array $json): ?Dataset {
+        // loop through json features and try creating new Feature objects
+        $type = null; // to be set by first valid feature
+        $features = $properties = []; // to be filled
+        foreach ($json['features'] ?? [] as $feature_json) {
+            if ($feature = Feature::fromJson($feature_json, $type)) {
+                $type ??= $feature->getType(); // set type if this is the first valid feature
+                $features[] = $feature;
+                $properties = array_merge($properties, $feature->getProperties());
+            }
+        }
+        if (!empty($features)) {
+            $options = [
+                'feature_type' => $type,
+                'features' => $features,
+                'properties' => array_keys($properties)
+            ];
+            // set optional values
+            if ($name = $json['name']) $options['title'] = $name;
+            if ($count = $json['feature_count']) $options['feature_count'] = $count;
+            if ($path = $json['upload_file_path']) $options['upload_file_path'] = $path;
+            $dataset = new Dataset($options);
+            // if name_property, validate first
+            $dataset->setNameProperty($json['name_property']);
+            return $dataset;
+        }
+        else return null;
+    }
+    /**
+     * Builds a dataset from an existing markdown file. Calls fromArray to validate options from the file header.
+     * 
      * @param MarkdownFile $file The file with the dataset
-     * @return null|Dataset New Dataset if provided file exists
+     * 
+     * @return Dataset|null New Dataset if provided file exists
      */
     public static function fromFile(MarkdownFile $file): ?Dataset {
         if ($file->exists()) {
@@ -149,68 +201,38 @@ class Dataset {
         else return null;
     }
     /**
-     * Creates a new dataset from an uploaded json file. Determines feature_type, features, and properties. May also set name, name_property, upload_file_path and feature_count if provided.
-     * @param array $json GeoJson array with features
-     * @return null|Dataset New Dataset if at least one feature is valid
-     */
-    public static function fromJson(array $json): ?Dataset {
-        // loop through json features and try creating new Feature objects
-        $type = null; // set by first valid feature
-        $features = $properties = []; // to fill
-        foreach ($json['features'] ?? [] as $feature_json) {
-            if ($feature = Feature::fromJson($feature_json, $type)) {
-                $type ??= $feature->getType();
-                $features[] = $feature;
-                $properties = array_merge($properties, $feature->getProperties());
-            }
-        }
-        if (!empty($features)) {
-            $options = ['feature_type' => $type, 'features' => $features, 'properties' => array_keys($properties)];
-            // set optional values
-            if ($name = $json['name']) $options['title'] = $name;
-            if ($count = $json['feature_count']) $options['feature_count'] = $count;
-            if ($path = $json['upload_file_path']) $options['upload_file_path'] = $path;
-            $dataset = new Dataset($options);
-            // if name_property, validate first
-            if ($property = $json['name_property']) $dataset->setNameProperty($property);
-            return $dataset;
-        }
-        // TODO: Possibly go back and check for points that aren't listed as points
-        else return null;
-    }
-    /**
-     * Builds a dataset from an array, but does some validation on feature_type and features. Can also be used to create a blank dataset. If no feature_type is found, no features will be considered valid.
-     * @param null|array $options Properties the newly created dataset object will have
-     * @param bool
+     * Builds a dataset from an array. Validates various values. If no feature_type is found, no features will be considered valid. Can also be used to create a blank dataset.
+     * 
+     * @param array $options (can be blank)
+     * @param bool $yaml Indicates whether features are provided with yaml or json coordinates, default true
+     * 
      * @return Dataset New Dataset with any provided options
      */
-    public static function fromArray(?array $options, bool $yaml = true): Dataset {
-        // validate feature type (if provided)
-        $options['feature_type'] = Feature::validateFeatureType($options['feature_type'] ?? $options['type'] ?? 'point');
-        $features = [];
-        foreach ($options['features'] ?? [] as $feature) {
-            if (!$yaml) $feature['coordinates'] = Feature::coordinatesToYaml($feature['coordinates'] ?? [], $options['feature_type']);
-            if ($feature = Feature::fromDataset($feature, null, $options['feature_type'])) {
-                if ($id = $feature->getId()) $features[$id] = $feature;
-                else $features[] = $feature;
-            }
-        }
-        $options['features'] = $features;
-        $dataset = new Dataset($options);
-        foreach ($dataset->getFeatures() as $id => $feature) {
-            $feature->setDataset($dataset);
-        }
+    public static function fromArray(array $options, bool $yaml = true): Dataset {
+        $dataset = new Dataset([]);
+        // set reserved options
+        if ($file = $options['file']) $dataset->setFile($file);
+        if ($id = $options['id']) $dataset->setId($id);
+        if ($path = $options['upload_file_path']) $dataset->upload_file_path = $path;
+        $dataset->feature_type = Feature::validateFeatureType($options['feature_type'] ?? $options['type']);
+        if (is_numeric($count = $options['feature_count'])) $dataset->feature_count = $count;
+        if (is_bool($ready = $options['ready_for_update'])) $dataset->ready_for_update = $ready;
+        // set standard blueprint options
+        $dataset->setValues($options);
+        $dataset->setFeatures($options['features'] ?? [], $yaml);
         return $dataset;
     }
     /**
      * Builds a dataset by combining a Dataset object with an array of overrides from a tour
+     * 
      * @param Dataset $original The original dataset (added to the tour)
      * @param array $yaml The dataset overrides from the tour header
+     * 
      * @return Dataset Dataset with merged icon, path, active_path, attribution, auto_popup_properties, and/or legend
      */
     public static function fromTour(Dataset $original, array $yaml): Dataset {
         $dataset = $original->clone();
-        $dataset->features = [];
+        $dataset->setFeatures([]); // no need to store features
         // merge icon and path options
         foreach (['icon', 'path', 'active_path'] as $key) {
             if ($yaml[$key]) $dataset->$key = self::mergeArrays($dataset->$key, $yaml[$key]);
@@ -227,95 +249,33 @@ class Dataset {
         if ($summary) $dataset->legend['summary'] = $summary;
         return $dataset;
     }
-    // replace null or empty string with other value
-    private static function mergeArrays(?array $a1, ?array $a2): array {
-        $a1 ??= [];
-        $a2 ??= [];
-        $merged = [];
-        foreach (array_keys(array_merge($a1, $a2)) as $key) {
-            if ($a2[$key] === '') $a2[$key] = null;
-            $merged[$key] = $a2[$key] ?? $a1[$key];
-        }
-        return $merged;
-    }
 
-    // object methods
-    
-    /**
-     * Creates an identical copy of the dataset
-     */
-    public function clone(): Dataset {
-        $options = [];
-        foreach (get_object_vars($this) as $key => $value) {
-            $options[$key] = $value;
-        }
-        // make sure features is a deep copy
-        $features = [];
-        foreach ($this->features ?? [] as $id => $feature) {
-            $features[$id] = $feature->clone();
-        }
-        $options['features'] = $features;
-        return new Dataset($options);
-    }
-    /**
-     * @return array Dataset yaml array that can be saved in dataset.md. Potentially any and all values from self::YAML
-     */
-    public function asYaml(): array {
-        $yaml = [
-            'id' => $this->getId(),
-            'upload_file_path' => $this->getUploadFilePath(),
-            'feature_type' => $this->getType(),
-            'title' => $this->getTitle(),
-            'name_property' => $this->getNameProperty(),
-            'properties' => $this->getProperties(),
-            'auto_popup_properties' => $this->auto_popup_properties,
-            'features' => $this->getFeaturesYaml(),
-            'feature_count' => $this->getFeatureCount(),
-            'attribution' => $this->attribution,
-            'legend' => $this->legend,
-            'ready_for_update' => $this->ready_for_update,
-        ];
-        foreach (['icon', 'path', 'active_path'] as $key) {
-            if ($value = $this->$key) $yaml[$key] = $value;
-        }
-        return $yaml;
-    }
+    // Object Methods
+
     /**
      * Takes yaml update array from dataset header and validates it.
-     * @param array $update Dataset header
+     * 
+     * @param array $yaml Dataset header info
+     * 
      * @return array Updated yaml to save
      */
     public function update(array $yaml): array {
-        // set certain expected values
-        $this->updateFeaturesYaml($yaml['features'] ?? []);
-        $this->properties = $yaml['properties'] ?? [];
-        $this->setAutoPopupProperties($yaml['auto_popup_properties']);
-        $this->setNameProperty($yaml['name_property']);
-        $this->attribution = $yaml['attribution'];
-        $this->ready_for_update = false;
-        // remove reserved values and expected (handled) values
-        $remove = array_merge(self::$reserved, ['features', 'properties', 'auto_popup_properties', 'name_property', 'attribution', 'ready_for_update']);
-        $yaml = array_diff_key($yaml, array_flip($remove));
-        foreach ($yaml as $key => $value) {
-            switch ($key) {
-                case 'title':
-                    $this->setTitle($value);
-                    break;
-                // generic - no special set methods
-                default:
-                    $this->$key = $value;
-                    break;
-            }
-        }
-        return array_merge($yaml, $this->asYaml());
+        $this->setValues($yaml);
+        $this->updateFeatures($yaml['features']);
+        $this->ready_for_update = false; // changes have happened
+        return $this->toYaml();
     }
     /**
-     * Updates features based on changes from dataset config. 
      * Updates features based on changes from dataset config. Any features not in yaml list will be removed. Any existing features in yaml list will be updated (only valid changes). Any new features will be given new ids and added.
      * 
      * @param array $yaml Features yaml from dataset.md
      */
-    public function updateFeaturesYaml(array $features_yaml): void {
+    public function updateFeatures($features_yaml): void {
+        if (null === $features_yaml) {
+            $this->features = [];
+            return;
+        }
+        else if (!is_array($features_yaml)) return;
         $features = [];
         // loop through list to find existing and new features
         foreach ($features_yaml as $feature_yaml) {
@@ -325,12 +285,11 @@ class Dataset {
                 $feature->update($feature_yaml);
                 $features[$id] = $feature;
             }
-            // new features - remove id before creating new object
+            // new features
             else {
-                unset($feature_yaml['id']);
-                if ($feature = Feature::fromDataset($feature_yaml, $this)) {
+                if ($feature = Feature::fromArray($feature_yaml, $this->getType())) {
                     $id = $this->nextFeatureId();
-                    $feature->setId($id);
+                    $feature->setId($id, true);
                     $features[$id] = $feature;
                 }
             }
@@ -339,6 +298,7 @@ class Dataset {
     }
     /**
      * Turns a temporary dataset created from a json file upload into a proper dataset page - sets id, title, route/file, name_property, etc.
+     * 
      * @param string $file_name Name of uploaded file (for creating id and possibly name)
      * @param array $dataset_ids To ensure that created id is unique
      */
@@ -351,7 +311,7 @@ class Dataset {
             $id = "$base_id-$count";
             $count++;
         }
-        $this->id = $id;
+        $this->setId($id, true);
         // determine title and route, make sure route is unique
         $name = $base_name = $this->getTitle() ?: $id;
         $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
@@ -366,14 +326,14 @@ class Dataset {
             $count++;
         }
         $this->setTitle($name);
-        $this->file = MarkdownFile::instance($route);
+        $this->setFile(MarkdownFile::instance($route));
         // set ids, dataset for features
         $features = [];
         foreach ($this->features as $feature) {
             $id = $this->nextFeatureId();
-            $feature->setId($id);
+            $feature->setId($id, true);
             $feature->setDataset($this);
-            $features[$feature->getId()] = $feature;
+            $features[$id] = $feature;
         }
         $this->features = $features;
         // set path defaults
@@ -381,54 +341,39 @@ class Dataset {
             $this->path = self::DEFAULT_PATH;
             $this->active_path = self::DEFAULT_ACTIVE_PATH;
         }
-        $this->name_property ??= self::determineNameProperty($this->properties);
+        if (!$this->getNameProperty() || $this->getNameProperty() === 'none') $this->setNameProperty(self::determineNameProperty($this->getProperties()));
     }
     /**
-     * If the dataset's file does not yet exist or has an empty header, first generates yaml content to add to header.
-     * 
-     * Only works if the dataset has a file object set.
-     * 
-     * @param bool $generate - If set to true, will generate yaml whether or not file header is empty
+     * Only works if the dataset has a file object set. Generates yaml content and saves it to the file header.
      */
     public function save(): void {
         if ($file = $this->file) {
-            $file->header($this->asYaml());
+            $file->header($this->toYaml());
             $file->save();
         }
     }
     /**
-     * The only way feature_count should be modified. Combines dataset id and feature_count, then increments the count
-     */
-    private function nextFeatureId(): ?string {
-        if ($this->id) { // just in case, should be checked before calling
-            $this->feature_count ??= 0; // just in case, may not be set when first feature is initialized
-            do {
-                $id = $this->id . '--' . $this->feature_count;
-                $this->feature_count++;
-            } while ($this->features[$id]);
-            return $id;
-        }
-        else return null;
-    }
-
-    // updates
-
-    /**
      * Updates an existing dataset with features, properties, and feature_count from an update. Called after confirmation of an update (from uploading an update file in the admin config)
+     * 
+     * @param Dataset $update The temporary dataset with the updated information to transfer
      */
     public function applyUpdate(Dataset $update): void {
         // set features, properties, and feature_count
         $this->features = $update->getFeatures();
         $this->setProperties($update->getProperties());
+        // trigger property validation
+        $this->setNameProperty($this->getNameProperty());
+        $this->setAutoPopupProperties($this->getAutoPopupProperties());
         $this->feature_count = $update->getFeatureCount();
         $this->save();
     }
-
     /**
      * Modifies a temporary dataset with changes from a replacement update.
+     * 
      * @param string $dataset_prop The property for identifying features from the dataset
      * @param null|string $file_prop The property for identifying features from the file (if different)
      * @param Dataset $update The parsed upload file defining the changes
+     * 
      * @return array [id => name] of matched features
      */
     public function updateReplace(string $dataset_prop, ?string $file_prop, Dataset $update): array {
@@ -443,15 +388,15 @@ class Dataset {
         // add matches first
         foreach ($matches as $id => $match) {
             // modifies coordinates and properties
-            $feature = $this->features[$id]->clone();
-            $feature->setProperties($match->getProperties());
+            $feature = $this->getFeatures()[$id]->clone();
+            $feature->setProperties(array_merge($feature->getProperties(), $match->getProperties()));
             $feature->setCoordinatesJson($match->getCoordinatesJson());
             $features[$id] = $feature;
         }
         // then add any new features
         foreach ($update_features as $feature) {
             $id = $this->nextFeatureId();
-            $feature->setId($id);
+            $feature->setId($id, true);
             $feature->setDataset($this);
             $features[$id] = $feature;
         }
@@ -459,7 +404,6 @@ class Dataset {
         $this->properties = $update->getProperties();
         return $modified;
     }
-
     public function updateRemove(string $dataset_prop, ?string $file_prop, Dataset $update): array {
         $update_features = [];
         $matches = $this->matchFeatures($dataset_prop, $file_prop, $update->getFeatures(), $update_features);
@@ -471,7 +415,6 @@ class Dataset {
         $this->features = $features;
         return $modified;
     }
-
     public function updateStandard(string $dataset_prop, ?string $file_prop, ?bool $add, ?bool $modify, ?bool $remove, Dataset $update): array {
         $update_features = [];
         $matches = $this->matchFeatures($dataset_prop, $file_prop, $update->getFeatures(), $update_features);
@@ -503,14 +446,12 @@ class Dataset {
         if ($modify || $add) $this->properties = array_unique(array_merge($this->properties, $update->getProperties()));
         return $modified;
     }
-
     private function matchFeatures(string $dataset_prop, ?string $file_prop, array $update_features, &$new): array {
         $matches = [];
         $new = [];
         if ($dataset_prop === 'coords') {
             // index current features by coords
             $coords_index = [];
-            // fix php json?
             foreach($this->features as $id => $feature) {
                 $coords = json_encode($feature->getCoordinatesJson());
                 $coords_index[$coords] = $id;
@@ -542,95 +483,116 @@ class Dataset {
     }
     private function modifyMatches(array $matches): array {
         $new = [];
-        foreach ($matches as $id => $feature) {
+        foreach (array_keys($matches) as $id) {
             $new[$id] = $this->features[$id]->getName();
         }
         return $new;
     }
-
-    // getters
+    /**
+     * The only way feature_count should be modified. Combines dataset id and feature_count, then increments the count
+     * 
+     * @return string|null A string in the form of dataset_id--number where number is equal to the current feature_count (assuming there is not already a feature with that id), null if the dataset does not have an id
+     */
+    private function nextFeatureId(): ?string {
+        if ($this->id) { // just in case, should be checked before calling
+            $this->feature_count ??= 0; // just in case, may not be set when first feature is initialized
+            do {
+                $id = $this->id . '--' . $this->feature_count;
+                $this->feature_count++;
+            } while ($this->features[$id]);
+            return $id;
+        }
+        else return null;
+    }
+    // replace null or empty string with other value
+    private static function mergeArrays(?array $a1, ?array $a2): array {
+        $a1 ??= [];
+        $a2 ??= [];
+        $merged = [];
+        foreach (array_keys(array_merge($a1, $a2)) as $key) {
+            if ($a2[$key] === '') $a2[$key] = null;
+            $merged[$key] = $a2[$key] ?? $a1[$key];
+        }
+        return $merged;
+    }
     
     /**
-     * @return null|MarkdownFile $this->file
+     * Creates an identical copy of the dataset
      */
-    public function getFile(): ?MarkdownFile {
-        return $this->file;
+    public function clone(): Dataset {
+        $dataset = new Dataset([]);
+        foreach (get_object_vars($this) as $key => $value) {
+            $dataset->$key = $value;
+        }
+        // make sure features is a deep copy and references the correct dataset
+        $features = [];
+        foreach ($this->features ?? [] as $id => $feature) {
+            $feature = $feature->clone();
+            $feature->setDataset($dataset);
+            $features[$id] = $feature;
+        }
+        $dataset->features = $features;
+        return $dataset;
+    }
+    public function __toString() {
+        return json_encode($this->toYaml());
+    }
+    public function equals(Dataset $other): bool {
+        $vars1 = get_object_vars($this);
+        $vars1['features'] = $this->getFeaturesYaml();
+        $vars2 = get_object_vars($other);
+        $vars2['features'] = $other->getFeaturesYaml();
+        return ($vars1 == $vars2);
     }
     /**
-     * @return null|string $this->id
+     * @return array Dataset yaml array that can be saved in dataset.md. Potentially any and all values from self::YAML
      */
-    public function getId(): ?string {
-        return $this->id;
+    public function toYaml(): array {
+        $yaml = get_object_vars($this);
+        // remove file
+        unset($yaml['file']);
+        $yaml['features'] = $this->getFeaturesYaml();
+        // remove and replace extras
+        unset($yaml['extras']);
+        $yaml = array_merge($this->getExtras() ?? [], $yaml);
+        return $yaml;
+        // $yaml = [
+        //     'id' => $this->getId(),
+        //     'upload_file_path' => $this->getUploadFilePath(),
+        //     'feature_type' => $this->getType(),
+        //     'title' => $this->getTitle(),
+        //     'name_property' => $this->getNameProperty(),
+        //     'properties' => $this->getProperties(),
+        //     'auto_popup_properties' => $this->auto_popup_properties,
+        //     'features' => $this->getFeaturesYaml(),
+        //     'feature_count' => $this->getFeatureCount(),
+        //     'attribution' => $this->attribution,
+        //     'legend' => $this->legend,
+        //     'ready_for_update' => $this->ready_for_update,
+        // ];
+        // foreach (['icon', 'path', 'active_path'] as $key) {
+        //     if ($value = $this->$key) $yaml[$key] = $value;
+        // }
+        // return $yaml;
     }
+
+    // Calculated Getters
+
     /**
-     * @return null|string $this->file_upload_path
+     * @return string|null title or id if available
      */
-    public function getUploadFilePath(): ?string {
-        return $this->upload_file_path;
-    }
-    /**
-     * @return null|string $this->title
-     */
-    public function getTitle(): ?string {
-        return $this->title;
-    }
     public function getName(): ?string {
         return $this->title ?: $this->id;
     }
     /**
-     * @return string $this->feature_type This should never be null.
+     * @return array $this->features in the form they would be saved to the dataset file
      */
-    public function getType(): string {
-        return $this->feature_type;
-    }
-    /**
-     * @return array [$id => Feature], $this->features
-     */
-    public function getFeatures(): array {
-        return $this->features;
-    }
     public function getFeaturesYaml(): array {
         $yaml = [];
         foreach ($this->getFeatures() as $id => $feature) {
-            $yaml[] = $feature->asYaml();
+            $yaml[] = $feature->toYaml();
         }
         return $yaml;
-    }
-    /**
-     * @return int $feature_count, 0 if null
-     */
-    public function getFeatureCount(): int {
-        return $this->feature_count ??= 0;
-    }
-    /**
-     * @return array $this->properties
-     */
-    public function getProperties(): array {
-        return $this->properties;
-    }
-    /**
-     * @return null|string $this->name_property
-     */
-    public function getNameProperty(): ?string {
-        return $this->name_property;
-    }
-    /**
-     * @return null|array $this->auto_popup_properties
-     */
-    public function getAutoPopupProperties(): ?array {
-        return $this->auto_popup_properties;
-    }
-    /**
-     * @return null|string $this->attribution
-     */
-    public function getAttribution(): ?string {
-        return $this->attribution;
-    }
-    /**
-     * @return null|array $this->legend
-     */
-    public function getLegend(): array {
-        return $this->legend ?? [];
     }
     /**
      * @return array $this->icon with defaults filled in
@@ -673,56 +635,236 @@ class Dataset {
         }
         else return $path;
     }
-    public function isReadyForUpdate(): bool {
+
+    // Getters
+    
+    /**
+     * @return MarkdownFile|null $this->file
+     */
+    public function getFile(): ?MarkdownFile {
+        return $this->file;
+    }
+    /**
+     * @return string|null $this->id
+     */
+    public function getId(): ?string {
+        return $this->id;
+    }
+    /**
+     * @return string|null $this->file_upload_path
+     */
+    public function getUploadFilePath(): ?string {
+        return $this->upload_file_path;
+    }
+    /**
+     * @return string $this->feature_type This should never be null.
+     */
+    public function getType(): string {
+        return $this->feature_type;
+    }
+    /**
+     * @return int $this->feature_count, 0 if null
+     */
+    public function getFeatureCount(): int {
+        return $this->feature_count ??= 0;
+    }
+    /**
+     * @return bool|null $this->ready_for_update
+     */
+    public function isReadyForUpdate(): ?bool {
         return $this->ready_for_update;
+    }
+    /**
+     * @return string|null $this->title
+     */
+    public function getTitle(): ?string {
+        return $this->title;
+    }
+    /**
+     * @return string|null $this->attribution
+     */
+    public function getAttribution(): ?string {
+        return $this->attribution;
+    }
+    /**
+     * @return array $this->legend
+     */
+    public function getLegend(): array {
+        return $this->legend ?? [];
+    }
+    /**
+     * @return array [$id => Feature], $this->features
+     */
+    public function getFeatures(): array {
+        return $this->features;
+    }
+    /**
+     * @return array $this->properties
+     */
+    public function getProperties(): array {
+        return $this->properties ?? [];
+    }
+    /**
+     * @return string|null $this->name_property
+     */
+    public function getNameProperty(): ?string {
+        return $this->name_property;
+    }
+    /**
+     * @return array|null $this->auto_popup_properties
+     */
+    public function getAutoPopupProperties(): ?array {
+        return $this->auto_popup_properties;
+    }
+    /**
+     * @return array|null An array with all non-reserved and non-blueprint properties attached to the object, if any.
+     */
+    public function getExtras(): ?array {
+        return $this->extras;
+    }
+
+    // Setters
+
+    /**
+     * Sets blueprint key values (except features) and extras array. Ignores reserved values (and file).
+     * 
+     * @param array $options Array of values to set
+     */
+    public function setValues(array $options): void {
+        // set blueprint key values (except features)
+        $this->setTitle($options['title']);
+        $this->setAttribution($options['attribution']);
+        $this->setLegend($options['legend']);
+        $this->setProperties($options['properties']);
+        $this->setNameProperty($options['name_property']);
+        $this->setAutoPopupProperties($options['auto_popup_properties']);
+        $this->setIcon($options['icon']);
+        $this->setPath($options['path']);
+        $this->setActivePath($options['active_path']);
+        // set extras
+        $this->setExtras($options);
     }
 
     // setters
-    
     /**
      * @param MarkdownFile $file Sets $this->file
      */
     public function setFile(MarkdownFile $file): void {
         $this->file = $file;
     }
-    public function setId(string $id): void {
-        $this->id ??= $id;
-    }
     /**
-     * @param string $title Sets $this->title (empty string ignored)
+     * Will not set id to null
+     * 
+     * @param string $id Sets $this->id (by default only if not already set)
+     * @param bool $overwrite - if true, $this->id will be set even if already set
      */
-    public function setTitle(string $title): void {
-        $this->title = $title ?: $this->title;
-    }
-    /**
-     * @param null|string $property Sets name_property if valid, null, or 'none'
-     */
-    public function setNameProperty(?string $property): void {
-        if (!$property || $property === 'none' || in_array($property, $this->getProperties())) $this->name_property = $property;
-        else $this->name_property = 'none';
-    }
-    /**
-     * Sets $this->properties. Removes name_property if no longer valid.
-     * @param null|array $properties Sets $this->properties, null becomes empty array
-     */
-    public function setProperties(?array $properties): void {
-        $this->properties = $properties ?? [];
-        $this->setNameProperty($this->getNameProperty());
-        $this->setAutoPopupProperties($this->getAutoPopupProperties());
+    public function setId($id, $overwrite = false): void {
+        if(is_string($id) && !empty($id)) {
+            if (!$this->id || $overwrite) $this->id = $id;
+        }
     }
     public function setReadyForUpdate(bool $ready): void {
         $this->ready_for_update = $ready;
     }
-    public function setAutoPopupProperties(?array $auto_popup_properties): void {
-        if ($auto_popup_properties) $this->auto_popup_properties = array_values(array_intersect($auto_popup_properties, $this->properties));
-        else $this->auto_popup_properties = null;
+    /**
+     * @param string $title Sets $this->title (empty string ignored)
+     */
+    public function setTitle($title): void {
+        if (is_string($title) && !empty($title)) $this->title = $title;
+    }
+    /**
+     * @param string|null $text
+     */
+    public function setAttribution($text): void {
+        if (is_string($text)) $this->attribution = $text;
+        else if (null === $text) unset($this->attribution);
+    }
+    /**
+     * @param array|null $legend
+     */
+    public function setLegend($legend): void {
+        if (is_array($legend)) $this->legend = $legend;
+        else if (null === $legend) unset($this->legend);
+    }
+    /**
+     * Sets features - does not use array of Feature objects but creates them from array. Not used when updating dataset.
+     * 
+     * @param array $features Array of feature data
+     * @param bool $yaml Indicates whether feature coordinates are in yaml or json form, defaul true
+     */
+    public function setFeatures(array $features, bool $yaml = true): void {
+        $this->features = [];
+        foreach ($features as $feature) {
+            if ($feature = Feature::fromArray($feature, $this->getType(), $yaml)) {
+                // valid feature - add to array and set dataset
+                $feature->setDataset($this);
+                if ($id = $feature->getId()) $this->features[$id] = $feature;
+                else $this->features[] = $feature;
+            }
+        }
+    }
+    /**
+     * @param array|null $properties
+     */
+    public function setProperties($properties): void {
+        if (is_array($properties) || (null === $properties)) $this->properties = $properties ?? [];
+    }
+    /**
+     * @param string|null $property Sets name_property if valid, null, or 'none'
+     */
+    public function setNameProperty($property): void {
+        if (is_string($property)) {
+            if ($property === 'none' || in_array($property, $this->getProperties())) $this->name_property = $property;
+            else $this->name_property = 'none';
+        }
+        else if (null === $property) unset($this->name_property);
+    }
+    /**
+     * @param array|null $properties - sets and validates
+     */
+    public function setAutoPopupProperties($properties): void {
+        if (is_array($properties)) {
+            $this->auto_popup_properties = array_values(array_intersect($properties, $this->getProperties()));
+        }
+        else if (null === $properties) unset($this->auto_popup_properties);
+    }
+    /**
+     * @param array|null $icon
+     */
+    public function setIcon($icon): void {
+        if (is_array($icon)) $this->icon = $icon;
+        else if (null === $icon) unset($this->icon);
+    }
+    /**
+     * @param array|null $path
+     */
+    public function setPath($path): void {
+        if (is_array($path)) $this->path = $path;
+        else if (null === $path) unset($this->path);
+    }
+    /**
+     * @param array|null $path
+     */
+    public function setActivePath($path): void {
+        if (is_array($path)) $this->active_path = $path;
+        else if (null === $path) unset($this->active_path);
+    }
+    /**
+     * @param array|null $extras
+     */
+    public function setExtras($extras) {
+        if (is_array($extras)) {
+            $this->extras = array_diff_key($extras, array_flip(array_merge(self::$reserved_keys, self::$blueprint_keys, ['file'])));
+            if (empty($this->extras)) unset($this->extras);
+        }
+        else if (null === $extras) unset($this->extras);
     }
 
     // static methods
 
     /**
      * First priority is property called name, next is property beginning or ending with name, and last resort is first property, if available
-     * @return null|string The value for the name_property
+     * @return string|null The value for the name_property
      */
     public static function determineNameProperty(array $properties): ?string {
         $name_prop = '';

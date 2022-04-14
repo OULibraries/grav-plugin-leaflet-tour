@@ -11,6 +11,8 @@ class Utils {
     const UPDATE_ROUTE = '/leaflet-tour/datasets/update/';
     const IMAGE_ROUTE = 'user/data/leaflet-tour/images/';
 
+    const STREAMS = ['user', 'page', 'image', 'account', 'environment', 'asset', 'blueprints', 'config', 'plugins', 'themes', 'theme', 'languages', 'user-data', 'system', 'cache', 'log', 'backup', 'tmp'];
+
     /**
      * Search a directory recursively for any files matching the provided key.
      * 

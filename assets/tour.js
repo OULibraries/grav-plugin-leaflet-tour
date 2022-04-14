@@ -1,8 +1,4 @@
-// ---------- Constants ---------- //
-const BUFFER_WEIGHT = 21;
-const FLY_TO_PADDING = [10, 10];
-
-// and state
+// tour state
 const tour = {
     tile_layer: null,
     feature_layer: null,
@@ -402,10 +398,6 @@ tour.views = tour_views;
 setupViews(tour.views);
 
 // ---------- Scrollama ---------- //
-const SCROLLAMA_OFFSET = 0.33;
-const SCROLLAMA_DEBUG = false;
-const SCROLLAMA_ENTER_VIEW_WAIT = 500; // half a second
-
 let scrolly_temp_view = null;
 
 if ($("#scrolly .step").length > 0) {

@@ -131,8 +131,8 @@ class LeafletTour {
                     if (str_starts_with($test, '_') || str_starts_with(preg_replace('/^[0-9]+\./', '', $test), '_')) $modules[] = $folder;
                 }
                 foreach ($modules as $folder) {
-                    if ($view = View::fromFile(MarkdownFile::instance("$folder/view.md"))) {
-                        $view->setTour($tour);
+                    if ($view = View::fromFile(MarkdownFile::instance("$folder/view.md"), $tour)) {
+                        // $view->setTour($tour);
                         // view must have an id that is not the default 'tmp  id', does not already exist (either in this tour's views or in all views as a whole) and does not equal the reserved id 'tour'
                         if (($id = $view->getId()) && 
                             $id !== 'tmp  id' && 
@@ -288,7 +288,7 @@ class LeafletTour {
             // validate
             $view = self::getViews()[$id];
             $page->header($view->update($page->header()->jsonSerialize()));
-            if ($tour = $view->getTour()) $tour->updateConfig(); // to clear basemaps list
+            // if ($tour = $view->getTour()) $tour->updateConfig(); // to clear basemaps list
         }
     }
 
