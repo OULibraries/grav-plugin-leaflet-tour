@@ -378,27 +378,29 @@ class Dataset {
      */
     public function updateReplace(string $dataset_prop, ?string $file_prop, Dataset $update): array {
         $update_features = [];
-        if ($dataset_prop !== 'none') $matches = $this->matchFeatures($dataset_prop, $file_prop, $update->getFeatures(), $update_features);
+        $new = [];
+        if ($dataset_prop !== 'none') $matches = $this->matchFeatures($dataset_prop, $file_prop, $update->getFeatures(), $new, $update_features);
         else {
             $matches = [];
             $update_features = $update->getFeatures();
         }
         $modified = $this->modifyMatches($matches);
         $features = [];
-        // add matches first
-        foreach ($matches as $id => $match) {
-            // modifies coordinates and properties
-            $feature = $this->getFeatures()[$id]->clone();
-            $feature->setProperties(array_merge($feature->getProperties(), $match->getProperties()));
-            $feature->setCoordinatesJson($match->getCoordinatesJson());
-            $features[$id] = $feature;
-        }
-        // then add any new features
-        foreach ($update_features as $feature) {
-            $id = $this->nextFeatureId();
-            $feature->setId($id, true);
-            $feature->setDataset($this);
-            $features[$id] = $feature;
+        // keep features in the order they have in replacement file
+        foreach ($update_features as $update_feature) {
+            // check if match
+            if (($id = $update_feature->getId()) && ($match = $matches[$id])) {
+                $feature = $this->getFeatures()[$id]->clone();
+                $feature->setProperties(array_merge($feature->getProperties(), $match->getProperties()));
+                $feature->setCoordinatesJson($match->getCoordinatesJson());
+                $features[$id] = $feature;
+            } else {
+                // add new feature
+                $id = $this->nextFeatureId();
+                $update_feature->setId($id, true);
+                $update_feature->setDataset($this);
+                $features[$id] = $update_feature;
+            }
         }
         $this->features = $features;
         $this->properties = $update->getProperties();
@@ -446,9 +448,10 @@ class Dataset {
         if ($modify || $add) $this->properties = array_unique(array_merge($this->properties, $update->getProperties()));
         return $modified;
     }
-    private function matchFeatures(string $dataset_prop, ?string $file_prop, array $update_features, &$new): array {
+    private function matchFeatures(string $dataset_prop, ?string $file_prop, array $update_features, &$new, &$all = null): array {
         $matches = [];
         $new = [];
+        $has_all = (null !== $all);
         if ($dataset_prop === 'coords') {
             // index current features by coords
             $coords_index = [];
@@ -461,8 +464,13 @@ class Dataset {
                 $coords = json_encode($feature->getCoordinatesJson());
                 if ($id = $coords_index[$coords]) {
                     $matches[$id] = $feature;
+                    if ($has_all) {
+                        $feature->setId($id);
+                        $all[] = $feature;
+                    }
                 } else {
                     $new[] = $feature;
+                    if ($has_all) $all[] = $feature;
                 }
             }
         } else {
@@ -475,8 +483,17 @@ class Dataset {
             }
             // look for matches
             foreach ($update_features as $feature) {
-                if (!empty($val = $feature->getProperty($file_prop)) && ($id = $index[$val])) $matches[$id] = $feature;
-                else $new[] = $feature;
+                if (!empty($val = $feature->getProperty($file_prop)) && ($id = $index[$val])) {
+                    $matches[$id] = $feature;
+                    if ($has_all) {
+                        $feature->setId($id);
+                        $all[] = $feature;
+                    }
+                }
+                else{
+                    $new[] = $feature;
+                    if ($has_all) $all[] = $feature;
+                }
             }
         }
         return $matches;
