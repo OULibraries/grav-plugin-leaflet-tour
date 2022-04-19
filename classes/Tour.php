@@ -559,7 +559,7 @@ class Tour {
      * @return string any additional classes to attach to the <body> element
      */
     public function getBodyClasses(): string {
-        $classes = $this->body_classes ?? '';
+        $classes = $this->getExtras()['body_classes'] ?? '';
         $overrides = $this->getOverrides();
         if ($overrides['wide_column']) $classes .= ' wide-column';
         if (!$overrides['map_on_right']) $classes .= ' map-on-left';
