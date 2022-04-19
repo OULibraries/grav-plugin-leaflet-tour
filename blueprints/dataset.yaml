@@ -129,6 +129,7 @@ form:
               style: vertical
               collapsed: true
               btnLabel: Add New Feature
+              controls: both
               fields:
 
                 .id:

@@ -15,51 +15,45 @@ class View {
     private static array $blueprint_keys = ['id', 'title', 'basemaps', 'no_tour_basemaps', 'overrides', 'start', 'features', 'shortcodes_list'];
 
     /**
-     * @var MarkdownFile|null File storing the view, should be stored below a tour page
+     * File storing the view, should be stored below a tour page
      */
-    private $file;
+    private ?MarkdownFile $file = null;
     /**
-     * @var Tour|null The tour this view exists in
+     * The tour this view exists in
      */
-    private $tour;
+    private ?Tour $tour = null;
 
     /**
-     * @var string|null Unique identifier, created on first view save (should be unique for all views, not just views in a given tour)
+     * Unique identifier, created on first view save (should be unique for all views, not just views in a given tour)
      */
-    private $id;
+    private ?string $id = null;
+    private ?string $title = null;
     /**
-     * @var string|null
+     * [filename, ...]
      */
-    private $title;
+    private array $basemaps = [];
+    private ?bool $no_tour_basemaps = null;
     /**
-     * @var array|null [filename, ...]
+     * [remove_tile_server, only_show_view_features, list_popup_buttons]
      */
-    private $basemaps;
+    private array $overrides = [];
     /**
-     * @var bool|null
+     * [location, distance, lng, lat, bounds]
      */
-    private $no_tour_basemaps;
+    private array $start = [];
     /**
-     * @var array|null [remove_tile_server, only_show_view_features, list_popup_buttons]
+     * In yaml [['id' => string], ...] but [$id, ...] here for convenience (using array_column)
      */
-    private $overrides;
+    private array $features = [];
     /**
-     * @var array|null [location, distance, lng, lat, bounds]
+     * Stores information for user so they know what features can actually use shortcodes and can copy and paste the shortcodes, never modified by the user
      */
-    private $start;
-    /**
-     * @var array|null In yaml [['id' => string], ...] but [$id, ...] here for convenience (using array_column)
-     */
-    private $features;
-    /**
-     * @var string|null Stores information for user so they know what features can actually use shortcodes and can copy and paste the shortcodes, never modified by the user
-     */
-    private $shortcodes_list; // it looks like it's not used but it is
+    private string $shortcodes_list = ''; // it looks like it's not used but it is
 
     /**
-     * @var array|null Any values not reserved or part of blueprint
+     * Any values not reserved or part of blueprint
      */
-    private $extras;
+    private array $extras = [];
 
     /**
      * Sets and validates all provided values. Note that validation will only really occur if a tour has been provided
@@ -113,30 +107,12 @@ class View {
         $this->setValues($yaml);
         $this->updateShortcodes();
         return $this->toYaml();
-        // LeafletTour::setTours();
-        // $this->setFeatures($yaml['features'] ?? []);
-        // $this->setBasemaps($yaml['basemaps'] ?? []);
-        // $this->setStart($yaml['start'] ?? []);
-        // $this->updateShortcodes();
-        // $remove = array_merge(self::$reserved, ['features', 'basemaps', 'start', 'shortcodes_list']);
-        // $yaml = array_diff_key($yaml, array_flip($remove));
-        // foreach ($yaml as $key => $value) {
-        //     switch ($key) {
-        //         case 'id':
-        //             $this->setId($value);
-        //             break;
-        //         default:
-        //             $this->$key = $value;
-        //             break;
-        //     }
-        // }
-        // return array_merge($yaml, $this->asYaml());
     }
     /**
      * Called when tour or dataset is saved. Lets the view know to recheck various values.
      */
     public function updateAll(): void {
-        $this->setFeatures($this->getFeatures());
+        $this->setFeatures($this->getFeatures(), false);
         $this->setBasemaps($this->getBasemaps());
         $this->updateShortcodes();
         $this->save();
@@ -282,9 +258,9 @@ class View {
     public function getBasemaps(): array { return $this->basemaps ?? []; }
     public function getFeatures(): array { return $this->features ?? []; }
     /**
-     * @return array|null An array with all non-reserved and non-blueprint properties attached to the object, if any.
+     * @return array An array with all non-reserved and non-blueprint properties attached to the object, if any.
      */
-    public function getExtras(): ?array {
+    public function getExtras(): array {
         return $this->extras;
     }
 
@@ -302,7 +278,7 @@ class View {
         $this->setNoTourBasemaps($options['no_tour_basemaps']);
         $this->setOverrides($options['overrides']);
         $this->setStart($options['start']);
-        $this->setFeatures($options['features']);
+        $this->setFeatures($options['features'], true);
         $this->updateShortcodes();
         $this->setExtras($options);
     }
@@ -347,21 +323,21 @@ class View {
                 $this->basemaps = array_intersect($this->basemaps, array_column($tour->getConfig()['basemap_info'] ?? [], 'file'));
             }
         }
-        else unset($this->basemaps);
+        else $this->basemaps = [];
     }
     /**
      * @param bool|null $value
      */
     public function setNoTourBasemaps($value): void {
         if (is_bool($value)) $this->no_tour_basemaps = $value;
-        else unset($this->no_tour_basemaps);
+        else $this->no_tour_basemaps = null;
     }
     /**
      * @param array|null $overrides
      */
     public function setOverrides($overrides): void {
         if (is_array($overrides)) $this->overrides = $overrides;
-        else unset($this->overrides);
+        else $this->overrides = [];
     }
     /**
      * Sets start and validates location.
@@ -375,21 +351,23 @@ class View {
                 if (!(($feature = $tour->getAllFeatures()[$location]) && $feature->getType() === 'Point')) $this->start['location'] = 'none';
             }
         }
-        else unset($this->start);
+        else $this->start = [];
     }
     /**
      * Turns features list into a simple list of ids. If tour is set, makes sure that all features are included in the tour.
      * 
      * @param array|null $features [['id' => $id], ...]
+     * @param bool $from_yaml If yes, need to use array_column on features list, otherwise no
      */
-    public function setFeatures($features): void {
+    public function setFeatures($features, bool $from_yaml): void {
         if (is_array($features)) {
-            $this->features = array_column($features, 'id');
+            if ($from_yaml) $this->features = array_column($features, 'id');
+            else $this->features = $features;
             if ($tour = $this->getTour()) {
                 $this->features = array_intersect($this->features, $tour->getIncludedFeatures());
             }
         }
-        else unset($this->features);
+        else $this->features = [];
     }
     /**
      * @param array|null $extras
@@ -397,9 +375,8 @@ class View {
     public function setExtras($extras) {
         if (is_array($extras)) {
             $this->extras = array_diff_key($extras, array_flip(array_merge(self::$reserved_keys, self::$blueprint_keys)));
-            if (empty($this->extras)) unset($this->extras);
         }
-        else if (null === $extras) unset($this->extras);
+        else $this->extras = [];
     }
 }
 

@@ -110,7 +110,7 @@ class LeafletTourPlugin extends Plugin {
         // page config has method 'template'
         else if (method_exists($obj, 'template')) {
             switch ($obj->template()) {
-                // case 'shape_dataset':
+                case 'shape_dataset':
                 case 'point_dataset':
                     LeafletTour::handleDatasetPageSave($obj);
                     break;
@@ -131,8 +131,8 @@ class LeafletTourPlugin extends Plugin {
         $obj = $event['object'];
         if (method_exists($obj, 'template')) {
             switch ($obj->template()) {
-                // case 'shape_dataset':
                 case 'point_dataset':
+                case 'shape_dataset':
                     LeafletTour::handleDatasetDeletion($obj);
                     break;
                 case 'tour':

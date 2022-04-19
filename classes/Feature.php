@@ -33,43 +33,36 @@ class Feature {
     private static array $blueprint_keys = ['id', 'coordinates', 'properties', 'custom_name', 'hide', 'popup_content'];
 
     /**
-     * @var string|null Unique identifier created on dataset initialization in the form of dataset_id--number. Should exist for any features from standard dataset pages. Should never be modified once set.
+     * Unique identifier created on dataset initialization in the form of dataset_id--number. Should exist for any features from standard dataset pages. Should never be modified once set.
      */
-    private $id;
+    private ?string $id = null;
     /**
-     * @var array coordinates in json form, required, must be valid
+     * coordinates in json form, required, must be valid
      */
-    private $coordinates;
+    private array $coordinates = [];
     /**
-     * @var array [$key => $value, ...], contents are entirely dynamic
+     * [$key => $value, ...], contents are entirely dynamic
      */
-    private $properties;
+    private array $properties = [];
+    private ?string $custom_name = null;
     /**
-     * @var string|null
+     * sets behavior for feature in tours when include_all or add_all is set for a dataset
      */
-    private $custom_name;
-    /**
-     * @var bool|null sets behavior for feature in tours when include_all or add_all is set for a dataset
-     */
-    private $hide;
+    private bool $hide = false;
     /** 
-     * @var string|null can be overridden by tour value, not the full popup (auto popup is not stored)
+     * can be overridden by tour value, not the full popup (auto popup is not stored)
      */
-    private $popup_content;
+    private ?string $popup_content = null;
 
     /**
-     * @var Dataset|null Reference to the dataset that created the feature. Will always exist for saved features, but may not initially exist for new or temporary features.
+     * Reference to the dataset that created the feature. Will always exist for saved features, but may not initially exist for new or temporary features.
      */
-    private $dataset;
-    /**
-     * @var string|null Optional temporary property, only used when feature is created from uploaded json file and therefore does not have a dataset to reference to get type
-     */
-    private $type;
+    private ?Dataset $dataset = null;
 
     /**
-     * @var array|null Any values not included in reserved or blueprint keys
+     * Any values not included in reserved or blueprint keys
      */
-    private $extras;
+    private array $extras = [];
 
     /**
      * Sets and validates all provided values. Extra values will be placed into the extras array.
@@ -106,7 +99,7 @@ class Feature {
 
             $feature = new Feature($options, false);
             // feature will only have coordinates set if type was provided (valid) and coordinates were valid json for the type
-            if ($feature->getCoordinatesJson()) return $feature;
+            if (!empty($feature->getCoordinatesJson())) return $feature;
         } catch (\Throwable $t) {}
         return null; // error encountered or invalid geometry
     }
@@ -125,7 +118,7 @@ class Feature {
         $feature = new Feature($options, $yaml);
 
         // feature will only have coordinates set if type and coordinates were valid
-        if ($feature->getCoordinatesJson()) return $feature;
+        if (!empty($feature->getCoordinatesJson())) return $feature;
         else return null;
     }
 
@@ -177,6 +170,7 @@ class Feature {
         $split = explode('![', $this->getPopupContent() ?? '');
         $content = array_shift($split); // ignore first
         foreach ($split as $image_start) {
+            $added = false;
             // look for beginning of the image url
             $pieces = explode('](', $image_start, 2);
             if (count($pieces) > 1) { // it had better be, but you never know
@@ -317,7 +311,8 @@ class Feature {
      * @return array $this->coordinates
      */
     public function getCoordinatesJson(): ?array {
-        return $this->coordinates;
+        if (!empty($coords = $this->coordinates)) return $coords;
+        else return null;
     }
     /**
      * @return mixed coordinates: Point feature will return ['lng' => float, 'lat' => float], non-point will return json-encoded string
@@ -329,7 +324,7 @@ class Feature {
      * @return array $this->properties, [$key => $value]
      */
     public function getProperties(): array {
-        return $this->properties ?? [];
+        return $this->properties;
     }
     /**
      * @param string $property Property key to look for
@@ -346,9 +341,9 @@ class Feature {
         return $this->custom_name;
     }
     /**
-     * @return bool|null $this->hide
+     * @return bool $this->hide
      */
-    public function getHide(): ?bool {
+    public function getHide(): bool {
         return $this->hide;
     }
     /**
@@ -371,9 +366,9 @@ class Feature {
         else return $this->type;
     }
     /**
-     * @return array|null An array with all non-reserved and non-blueprint properties attached to the object, if any.
+     * @return array An array with all non-reserved and non-blueprint properties attached to the object, if any.
      */
-    public function getExtras(): ?array {
+    public function getExtras(): array {
         return $this->extras;
     }
 
@@ -441,25 +436,29 @@ class Feature {
      * @param array|null $properties
      */
     public function setProperties($properties): void {
-        if (is_array($properties) || null === $properties) $this->properties = $properties;
+        if (is_array($properties)) $this->properties = $properties;
+        else $this->properties = [];
     }
     /**
      * @param string|null $name
      */
     public function setCustomName($name): void {
-        if (is_string($name) || null === $name) $this->custom_name = $name;
+        if (is_string($name)) $this->custom_name = $name;
+        else $this->custom_name = null;
     }
     /**
      * @param bool|null $hide
      */
     public function setHide($hide): void {
-        if (is_bool($hide) || null === $hide) $this->hide = $hide;
+        if (is_bool($hide)) $this->hide = $hide;
+        else $this->hide = false;
     }
     /**
      * @param string|null $content
      */
     public function setPopupContent($content): void {
-        if (is_string($content) || null === $content) $this->popup_content = $content;
+        if (is_string($content)) $this->popup_content = $content;
+        else $this->popup_content = null;
     }
     /**
      * Sets $this->dataset and unsets $this->type
@@ -473,12 +472,11 @@ class Feature {
     /**
      * @param array|null $extras
      */
-    public function setExtras($extras) {
-        if (is_array($extras)) {
-            $this->extras = array_diff_key($extras, array_flip(array_merge(self::$reserved_keys, self::$blueprint_keys)));
-            if (empty($this->extras)) $this->extras = null;
+    public function setExtras($options) {
+        if (is_array($options)) {
+            $this->extras = array_diff_key($options, array_flip(array_merge(self::$reserved_keys, self::$blueprint_keys)));
         }
-        else if (null === $extras) $this->extras = null;
+        else $this->extras = [];
     }
 
     // static methods
@@ -537,6 +535,10 @@ class Feature {
         if (is_array($yaml)) $coordinates = [$yaml['lng'], $yaml['lat']];
         else {
             try {
+                // fix php's bad json handling
+                if (version_compare(phpversion(), '7.1', '>=')) {
+                    ini_set( 'serialize_precision', -1 );
+                }
                 $coordinates = json_decode($yaml);
             } catch (\Throwable $t) {
                 return null;

@@ -7,12 +7,7 @@
     {{ parent() }}
     {# Set some important map data #}
     <script>
-        const SCROLLAMA_OFFSET = {{ header.scrollama.offset ?? plugin_config.scrollama.offset ?? 0.33 }};
-        const SCROLLAMA_DEBUG = false;
-        const SCROLLAMA_ENTER_VIEW_WAIT = 500; // half a second
-        const BUFFER_WEIGHT = 21;
-        const FLY_TO_PADDING = [10, 10];
-
+        let tour_padding = '{{ plugin_config.fly_to_padding ?? header.fly_to_padding }}';
         const tour_options = {{ tour.getTourData()|json_encode|raw }};
         let tour_basemaps = new Map(Object.entries({{ tour.getBasemapData()|json_encode|raw }}));
         let tour_datasets = new Map(Object.entries({{ tour.getDatasetData()|json_encode|raw }}));

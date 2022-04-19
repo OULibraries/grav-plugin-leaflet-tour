@@ -1,3 +1,13 @@
+// constants
+const SCROLLAMA_OFFSET = 0.33; // note: There are a couple things that rely on this number, so be careful if modifying
+const SCROLLAMA_DEBUG = false; // Never modify this - setting to true makes it impossible to scroll
+const SCROLLAMA_ENTER_VIEW_WAIT =  500; // half a second
+const BUFFER_WEIGHT = 21;
+
+tour_padding = parseInt(tour_padding);
+if (isNaN(tour_padding)) tour_padding = 10;
+const FLY_TO_PADDING = [tour_padding, tour_padding];
+
 // tour state
 const tour = {
     tile_layer: null,
@@ -149,7 +159,7 @@ class TourPath extends TourFeature {
     }
     get elements() {
         // if buffer, the hover_element will be the buffer, but svg will still store the original svg, so must also be returned
-        if (this.buffer) return super.elements.add(this.svg);
+        if (this.buffer) return super.elements.add(this.layer._path);
         else return super.elements;
     }
     get hover_element() { 
@@ -399,6 +409,8 @@ setupViews(tour.views);
 
 // ---------- Scrollama ---------- //
 let scrolly_temp_view = null;
+// for some reason scrollama is triggered twice at the beginning, needs to be ignored both times
+let scrolly_wait = 2;
 
 if ($("#scrolly .step").length > 0) {
     scroller = scrollama();
@@ -407,7 +419,10 @@ if ($("#scrolly .step").length > 0) {
         offset: SCROLLAMA_OFFSET,
         debug: SCROLLAMA_DEBUG,
     }).onStepEnter(function(e) {
-        if (!isMobile() && tour_state.animation) {
+        if (scrolly_wait) {
+            scrolly_wait--;
+        }
+        else if (!isMobile() && tour_state.animation) {
             scrolly_temp_view = e.element.id;
             // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
             setTimeout(function() {
@@ -416,19 +431,32 @@ if ($("#scrolly .step").length > 0) {
         }
     });
 }
-
+// function printMapState() {
+//     console.log('zoom: ' + map.getZoom() + ', center: ' + parseFloat(map.getCenter().lat.toFixed(4)) + ', ' + parseFloat(map.getCenter().lng.toFixed(4)));
+// }
 
 map.on("zoomend", function() {
     adjustBasemaps(tour_state.view);
     // adjust zoom buttons
     $(".leaflet-control-zoom a").removeAttr("aria-disabled");
     $(".leaflet-disabled").attr("aria-disabled", true);
+    // save zoom level
+    sessionStorage.setItem('map_zoom', map.getZoom());
+});
+map.on("moveend", function() {
+    // save center
+    sessionStorage.setItem('map_center_lng', map.getCenter().lng);
+    sessionStorage.setItem('map_center_lat', map.getCenter().lat);
 });
 
 let window_scroll_tick = false;
 
 // ---------- General Setup ---------- //
 $(document).ready(function() {
+    let lng = parseFloat(sessionStorage.getItem('map_center_lng'));
+    let lat = parseFloat(sessionStorage.getItem('map_center_lat'));
+    let zoom = parseInt(sessionStorage.getItem('map_zoom'));
+
     // set tile server attribution if needed
     let section = $("#server-attribution");
     if (!section.html()) {
@@ -455,19 +483,29 @@ $(document).ready(function() {
         if (diff > 0) {
             $("#view-content").css("padding-bottom", diff + "px");
         }
+        // return to previous scroll position if applicable
+        let scroll_top = sessionStorage.getItem('scroll_top');
+        document.getElementById("tour-wrapper").scrollTop = scroll_top ?? 0;
     }
+    // check for saved view, use 'tour' if no valid view is saved
+    let view_id = sessionStorage.getItem('tour_view') ?? 'tour';
+    if (!tour.views.get(view_id)) view_id = 'tour';
 
-    map.invalidateSize();
-    let view = tour.views.get('tour');
-    if (view) map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING, animate: false });
+    // map.invalidateSize();
+    // go to view bounds or saved bounds - need to set map center and zoom before modifying features
+    if (lng && lat) map.flyTo([lat, lng], zoom ?? map.getZoom(), { animate: false });
+    else {
+        map.flyToBounds(tour.views.get(view_id).bounds, { padding: FLY_TO_PADDING, animate: false, duration: 0 });
+        if (zoom) map.setZoom(zoom, { animate: false });
+    }
     
     // features
     for (let feature of tour.features.values()) {
         feature.modify();
     }
 
-    adjustMap();
-    enterView('tour');
+    // set view - no flyTo, but need to handle other aspects of setting view
+    enterView(view_id, false);
 
     // move map controls for more sensible DOM order
     let controls = $(".leaflet-control-container");
@@ -478,8 +516,7 @@ $(document).ready(function() {
     $("#nav-toggle-btn").on("click", checkMapToggleScroll);
     $("#mobile-map-toggle-btn").on("click", function() {
         $(this).parent().toggleClass('expanded');
-        this.setAttribute("aria-expanded", )
-        toggleExpanded(this); // function from theme
+        toggleExpanded(this);
     });
     $("#map-toggle-btn").on("click", function() {
         if (this.getAttribute("data-map-active") === "false") switchToMap(this.id);
@@ -488,10 +525,13 @@ $(document).ready(function() {
     $("#map-animation-toggle").on("input", function() {
         this.setAttribute("aria-checked", this.checked);
         tour_state.animation = this.checked;
+        sessionStorage.setItem('animation', this.checked);
     });
+    // load animation settings
+    if (sessionStorage.getItem('animation') === 'false') $("#map-animation-toggle").click();
     // legend
     $("#legend-toggle-btn").on("click", function() {
-        $("#" + this.getAttribute("aria-controls")).toggleClass("minimized");
+        $("#" + this.getAttribute("data-toggles")).toggleClass("minimized");
         toggleExpanded(this);
     });
     $("#mobile-legend-btn").on("click", toggleMobileLegend);
@@ -565,7 +605,7 @@ function toggleExpanded(btn) {
     btn.setAttribute("aria-expanded", btn.getAttribute("aria-expanded") == "true" ? "false" : "true");
 }
 
-function enterView(id) {
+function enterView(id, fly_to = true) {
     let view = tour.views.get(id);
     if (!view) return;
     // If the new view is differnt, exit the old one
@@ -574,25 +614,27 @@ function enterView(id) {
     tour_state.view = view;
     toggleViewFeatures(view, true);
     // if applicable, fly to view bounds
-    if (view.bounds && !isMobile()) {
-        map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING });
-    }
-    // TODO: invalidate map size on mobile?
-    else if (isMobile()) {
-        map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING, animate: false });
-        // map.invalidateSize();
-        tour_state.map_needs_adjusting = true; // TODO: maybe?
+    if (fly_to) {
+        if (view.bounds && !isMobile()) {
+            map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING });
+        }
+        // TODO: invalidate map size on mobile?
+        else if (isMobile()) {
+            map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING, animate: false });
+            // map.invalidateSize();
+            tour_state.map_needs_adjusting = true; // TODO: maybe?
+        }
     }
     adjustBasemaps(view);
+    sessionStorage.setItem('tour_view', id);
 }
 function exitView() {
     // unhide previously hidden features
     toggleViewFeatures(tour_state.view, false);
+    sessionStorage.setItem('tour_view', '');
 }
 function toggleViewFeatures(view, hide) {
-    // console.log(view);
     if (view.only_show_view_features && (view.features.length > 0)) {
-        // console.log('hiding');
         tour.features.forEach(function(feature) {
             if (!view.features.includes(feature.id)) {
                 feature.hide_view = hide;
@@ -624,8 +666,11 @@ function doWindowScrollAction() {
         checkMapToggleScroll();
     } else {
         // have to check a different element for scroll position for back to top
-        if (document.getElementById("tour-wrapper").scrollTop > BACK_TO_TOP_Y) $("#back-to-top").addClass("active");
+        let scroll_top = document.getElementById("tour-wrapper").scrollTop;
+        if (scroll_top > BACK_TO_TOP_Y) $("#back-to-top").addClass("active");
         else $("#back-to-top").removeClass("active");
+        // save scroll position for session
+        sessionStorage.setItem('scroll_top', scroll_top);
     }
 }
 

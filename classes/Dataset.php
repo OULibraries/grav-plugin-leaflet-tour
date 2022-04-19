@@ -76,66 +76,67 @@ class Dataset {
     private $file;
 
     /**
-     * @var string|null Unique identifier, created on dataset initialization using the upload file name, never modified once set
+     * Unique identifier, created on dataset initialization using the upload file name, never modified once set
      */
-    private $id;
+    private ?string $id = null;
     /**
-     * @var string|null Optional value to enable deleting unnecessary files if dataset is deleted, only set when parsing original file upload
+     * Optional value to enable deleting unnecessary files if dataset is deleted, only set when parsing original file upload
      */
-    private $upload_file_path;
+    private ?string $upload_file_path = null;
     /**
-     * @var string|null Point, LineString, MultiLineString, Polygon, or MultiPolygon, set in fromJson, never modified
+     * Point, LineString, MultiLineString, Polygon, or MultiPolygon, set in fromJson, never modified
      */
-    private $feature_type;
+    private ?string $feature_type = null;
     /**
-     * @var int|null A running total of all dataset features, including features that have been removed, used to create unique ids for new features, never modified directly
+     * A running total of all dataset features, including features that have been removed, used to create unique ids for new features, never modified directly
      */
-    private $feature_count;
+    private ?int $feature_count = null;
     /**
-     * @var bool|null Set true whenever a dataset update process (from plugin) begins and false whenever the dataset is updated (from page). Used in dataset update process to indicate that update changes should be reviewed again before confirmation.
+     * Set true whenever a dataset update process (from plugin) begins and false whenever the dataset is updated (from page). Used in dataset update process to indicate that update changes should be reviewed again before confirmation.
      */
-    private $ready_for_update;
+    private bool $ready_for_update = false;
     /**
-     * @var string|null Identifies the dataset to users
+     * Identifies the dataset to users
      */
-    private $title;
+    private ?string $title = null;
     /**
-     * @var string|null Text to provide attribution for the dataset, will be added automatically to tours that use it
+     * Text to provide attribution for the dataset, will be added automatically to tours that use it
      */
-    private $attribution;
+    private ?string $attribution = null;
     /**
-     * @var array|null [text, summary, symbol_alt]
+     * [text, summary, symbol_alt]
      */
-    private $legend;
+    private array $legend = [];
     /**
-     * @var array [$id => Feature, ...], the features contained by the dataset, must have valid coordinates for the dataset feature_type, never directly set, but can be updated
+     * [$id => Feature, ...], the features contained by the dataset, must have valid coordinates for the dataset feature_type, never directly set, but can be updated
      */
-    private $features;
+    private array $features = [];
     /**
-     * @var array A list of property keys that each feature should have / is allowed to have
+     * A list of property keys that each feature should have / is allowed to have
      */
-    private $properties;
+    private array $properties = [];
     /**
-     * @var string|null The property used to determine a feature's name when its custom_name is not set, must be in the dataset properties list
+     * The property used to determine a feature's name when its custom_name is not set, must be in the dataset properties list
      */
-    private $name_property;
+    private ?string $name_property = null;
     /**
-     * @var array|null Properties used to generate auto popup content for features. Must be in the dataset properties list
+     * Properties used to generate auto popup content for features. Must be in the dataset properties list
      */
-    private $auto_popup_properties;
+    private array $auto_popup_properties = [];
     /**
-     * @var array|null Icon options, based on Leaflet icon options, but the yaml for storage is slightly different
+     * Icon options, based on Leaflet icon options, but the yaml for storage is slightly different
      */
-    private $icon;
+    private array $icon = [];
     /**
-     * @var array|null Path options from Leaflet path options
+     * Path options from Leaflet path options
      */
-    private $path, $active_path;
+    private array $path = [];
+    private array $active_path = [];
 
     /**
-     * @var array|null Any values not reserved or part of blueprint
+     * Any values not reserved or part of blueprint
      */
-    private $extras;
+    private array $extras = [];
 
     /**
      * Sets all provided values. Validation needs differ based on how the dataset is being created and so will be handled outside of this function.
@@ -174,11 +175,11 @@ class Dataset {
                 'features' => $features,
                 'properties' => array_keys($properties)
             ];
-            // set optional values
-            if ($name = $json['name']) $options['title'] = $name;
-            if ($count = $json['feature_count']) $options['feature_count'] = $count;
-            if ($path = $json['upload_file_path']) $options['upload_file_path'] = $path;
             $dataset = new Dataset($options);
+            // set optional values
+            if ($name = $json['name']) $dataset->setTitle($name);
+            if (is_int($count = $json['feature_count'])) $dataset->feature_count = $count;
+            if (is_string($path = $json['upload_file_path'])) $dataset->upload_file_path = $path;
             // if name_property, validate first
             $dataset->setNameProperty($json['name_property']);
             return $dataset;
@@ -194,9 +195,9 @@ class Dataset {
      */
     public static function fromFile(MarkdownFile $file): ?Dataset {
         if ($file->exists()) {
-            $options = (array)($file->header());
-            $options['file'] = $file;
-            return self::fromArray($options, true);
+            $dataset = self::fromArray((array)($file->header()), true);
+            $dataset->setFile($file);
+            return $dataset;
         }
         else return null;
     }
@@ -213,7 +214,7 @@ class Dataset {
         // set reserved options
         if ($file = $options['file']) $dataset->setFile($file);
         if ($id = $options['id']) $dataset->setId($id);
-        if ($path = $options['upload_file_path']) $dataset->upload_file_path = $path;
+        if (is_string($path = $options['upload_file_path'])) $dataset->upload_file_path = $path;
         $dataset->feature_type = Feature::validateFeatureType($options['feature_type'] ?? $options['type']);
         if (is_numeric($count = $options['feature_count'])) $dataset->feature_count = $count;
         if (is_bool($ready = $options['ready_for_update'])) $dataset->ready_for_update = $ready;
@@ -243,7 +244,8 @@ class Dataset {
         }
         // merge legend options - summary is special
         // todo: provide summary even if not text? use symbol alt as backup?
-        $legend = $yaml['legend'] ?? [];
+        if (is_array($yaml['legend'])) $legend = $yaml['legend'];
+        else $legend = [];
         $dataset->legend = self::mergeArrays($original->getLegend(), $legend);
         $summary = $legend['summary'] ?: $legend['text'] ?: $original->getLegend()['summary'] ?: $original->getLegend()['text'] ?: $dataset->getLegend()['symbol_alt'];
         if ($summary) $dataset->legend['summary'] = $summary;
@@ -281,7 +283,7 @@ class Dataset {
         foreach ($features_yaml as $feature_yaml) {
             $id = $feature_yaml['id'];
             // existing features - call feature's update function and add to list (make sure not a duplicate, though)
-            if (($feature = $this->features[$id]) && (!$features[$id]) && ($id !== 'tmp  id')) {
+            if (($feature = $this->getFeatures()[$id]) && (!$features[$id]) && ($id !== 'tmp  id')) {
                 $feature->update($feature_yaml);
                 $features[$id] = $feature;
             }
@@ -572,25 +574,13 @@ class Dataset {
         // remove and replace extras
         unset($yaml['extras']);
         $yaml = array_merge($this->getExtras() ?? [], $yaml);
+        if ($this->getType() === 'Point') {
+            unset($yaml['path']);
+            unset($yaml['active_path']);
+        } else {
+            unset($yaml['icon']);
+        }
         return $yaml;
-        // $yaml = [
-        //     'id' => $this->getId(),
-        //     'upload_file_path' => $this->getUploadFilePath(),
-        //     'feature_type' => $this->getType(),
-        //     'title' => $this->getTitle(),
-        //     'name_property' => $this->getNameProperty(),
-        //     'properties' => $this->getProperties(),
-        //     'auto_popup_properties' => $this->auto_popup_properties,
-        //     'features' => $this->getFeaturesYaml(),
-        //     'feature_count' => $this->getFeatureCount(),
-        //     'attribution' => $this->attribution,
-        //     'legend' => $this->legend,
-        //     'ready_for_update' => $this->ready_for_update,
-        // ];
-        // foreach (['icon', 'path', 'active_path'] as $key) {
-        //     if ($value = $this->$key) $yaml[$key] = $value;
-        // }
-        // return $yaml;
     }
 
     // Calculated Getters
@@ -674,9 +664,9 @@ class Dataset {
         return $this->upload_file_path;
     }
     /**
-     * @return string $this->feature_type This should never be null.
+     * @return string|null $this->feature_type This should never be null, but it theoretically could.
      */
-    public function getType(): string {
+    public function getType(): ?string {
         return $this->feature_type;
     }
     /**
@@ -686,9 +676,9 @@ class Dataset {
         return $this->feature_count ??= 0;
     }
     /**
-     * @return bool|null $this->ready_for_update
+     * @return bool $this->ready_for_update
      */
-    public function isReadyForUpdate(): ?bool {
+    public function isReadyForUpdate(): bool {
         return $this->ready_for_update;
     }
     /**
@@ -728,15 +718,15 @@ class Dataset {
         return $this->name_property;
     }
     /**
-     * @return array|null $this->auto_popup_properties
+     * @return array $this->auto_popup_properties
      */
-    public function getAutoPopupProperties(): ?array {
+    public function getAutoPopupProperties(): array {
         return $this->auto_popup_properties;
     }
     /**
-     * @return array|null An array with all non-reserved and non-blueprint properties attached to the object, if any.
+     * @return array An array with all non-reserved and non-blueprint properties attached to the object, if any.
      */
-    public function getExtras(): ?array {
+    public function getExtras(): array {
         return $this->extras;
     }
 
@@ -794,14 +784,14 @@ class Dataset {
      */
     public function setAttribution($text): void {
         if (is_string($text)) $this->attribution = $text;
-        else if (null === $text) unset($this->attribution);
+        else $this->attribution = null;
     }
     /**
      * @param array|null $legend
      */
     public function setLegend($legend): void {
         if (is_array($legend)) $this->legend = $legend;
-        else if (null === $legend) unset($this->legend);
+        else $this->legend = [];
     }
     /**
      * Sets features - does not use array of Feature objects but creates them from array. Not used when updating dataset.
@@ -824,7 +814,8 @@ class Dataset {
      * @param array|null $properties
      */
     public function setProperties($properties): void {
-        if (is_array($properties) || (null === $properties)) $this->properties = $properties ?? [];
+        if (is_array($properties)) $this->properties = $properties;
+        else $this->properties = [];
     }
     /**
      * @param string|null $property Sets name_property if valid, null, or 'none'
@@ -834,7 +825,7 @@ class Dataset {
             if ($property === 'none' || in_array($property, $this->getProperties())) $this->name_property = $property;
             else $this->name_property = 'none';
         }
-        else if (null === $property) unset($this->name_property);
+        else $this->name_property = null;
     }
     /**
      * @param array|null $properties - sets and validates
@@ -843,28 +834,28 @@ class Dataset {
         if (is_array($properties)) {
             $this->auto_popup_properties = array_values(array_intersect($properties, $this->getProperties()));
         }
-        else if (null === $properties) unset($this->auto_popup_properties);
+        else $this->auto_popup_properties = [];
     }
     /**
      * @param array|null $icon
      */
     public function setIcon($icon): void {
         if (is_array($icon)) $this->icon = $icon;
-        else if (null === $icon) unset($this->icon);
+        else $this->icon = [];
     }
     /**
      * @param array|null $path
      */
     public function setPath($path): void {
         if (is_array($path)) $this->path = $path;
-        else if (null === $path) unset($this->path);
+        else $this->path = [];
     }
     /**
      * @param array|null $path
      */
     public function setActivePath($path): void {
         if (is_array($path)) $this->active_path = $path;
-        else if (null === $path) unset($this->active_path);
+        else $this->active_path = [];
     }
     /**
      * @param array|null $extras
@@ -872,9 +863,8 @@ class Dataset {
     public function setExtras($extras) {
         if (is_array($extras)) {
             $this->extras = array_diff_key($extras, array_flip(array_merge(self::$reserved_keys, self::$blueprint_keys, ['file'])));
-            if (empty($this->extras)) unset($this->extras);
         }
-        else if (null === $extras) unset($this->extras);
+        else $this->extras = [];
     }
 
     // static methods
