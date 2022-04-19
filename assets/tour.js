@@ -3,6 +3,7 @@ const SCROLLAMA_OFFSET = 0.33; // note: There are a couple things that rely on t
 const SCROLLAMA_DEBUG = false; // Never modify this - setting to true makes it impossible to scroll
 const SCROLLAMA_ENTER_VIEW_WAIT =  500; // half a second
 const BUFFER_WEIGHT = 21;
+const DEFAULT_TILE_SERVER = 'OpenTopoMap';
 
 tour_padding = parseInt(tour_padding);
 if (isNaN(tour_padding)) tour_padding = 10;
@@ -264,27 +265,17 @@ function createTileLayer() {
             settings.apiKey = key;
             settings.accessToken = key;
         }
-        layer = new L.tileLayer.provider(options.provider, settings);
-        // check for attribution
+        try {
+            layer = new L.tileLayer.provider(options.provider, settings);
+        } catch (error) {
+            // something went wrong, so use the default tile server instead
+            layer = new L.tileLayer.provider(DEFAULT_TILE_SERVER, {});
+        }
     } else {
         layer = new L.tileLayer(options.url);
     }
-    /**
-     * TODO
-     * - check for custom
-     * - check for leaflet provider
-     * - either way, make sure to include any options provided
-     */
-    // if (options.name) {
-    //     layer = new L.StamenTileLayer(options.name, {
-    //         minZoom: 1,
-    //         maxZoom: 18,
-    //         maxNativeZoom: 13
-    //     });
-    // } else {
-    //     layer = new L.tileLayer(options.url);
-    // }
     map.addLayer(layer);
+    console.log(layer.isLoading());
     return layer;
 }
 function createBasemap(value, key, map) {
