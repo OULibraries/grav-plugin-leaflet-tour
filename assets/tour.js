@@ -437,21 +437,23 @@ map.on("zoomend", function() {
     $(".leaflet-control-zoom a").removeAttr("aria-disabled");
     $(".leaflet-disabled").attr("aria-disabled", true);
     // save zoom level
-    sessionStorage.setItem('map_zoom', map.getZoom());
+    sessionStorage.setItem(window.location.pathname + '_zoom', map.getZoom());
 });
 map.on("moveend", function() {
     // save center
-    sessionStorage.setItem('map_center_lng', map.getCenter().lng);
-    sessionStorage.setItem('map_center_lat', map.getCenter().lat);
+    let loc = window.location.pathname;
+    sessionStorage.setItem(loc + '_lng', map.getCenter().lng);
+    sessionStorage.setItem(loc + '_lat', map.getCenter().lat);
 });
 
 let window_scroll_tick = false;
 
 // ---------- General Setup ---------- //
 $(document).ready(function() {
-    let lng = parseFloat(sessionStorage.getItem('map_center_lng'));
-    let lat = parseFloat(sessionStorage.getItem('map_center_lat'));
-    let zoom = parseInt(sessionStorage.getItem('map_zoom'));
+    let loc = window.location.pathname;
+    let lng = parseFloat(sessionStorage.getItem(loc + '_lng'));
+    let lat = parseFloat(sessionStorage.getItem(loc + '_lat'));
+    let zoom = parseInt(sessionStorage.getItem(loc + '_zoom'));
 
     // set tile server attribution if needed
     let section = $("#server-attribution");
