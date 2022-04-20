@@ -275,7 +275,6 @@ function createTileLayer() {
         layer = new L.tileLayer(options.url);
     }
     map.addLayer(layer);
-    console.log(layer.isLoading());
     return layer;
 }
 function createBasemap(value, key, map) {
@@ -335,6 +334,10 @@ function setupViews(views) {
     // deal with tour "view" first (id = 'tour')
     tour_bounds = views.get('tour').bounds;
     if (!tour_bounds) tour_bounds = tour.feature_layer.getBounds();
+    else if (tour_bounds.distance) {
+        // I think needs to be multiplied by two to match expectations
+        tour_bounds = L.latLng(tour_bounds.lat, tour_bounds.lng).toBounds(tour_bounds.distance);
+    }
     // the rest (repeats tour as well, which is fine)
     views.forEach(function(view) {
         // replace view basemap files with references to the actual basemaps
@@ -346,6 +349,8 @@ function setupViews(views) {
         // make sure that each view has bounds
         if (!view.bounds) {
             view.bounds = setupBounds(view.features, tour_bounds);
+        } else if (view.bounds.distance) {
+            view.bounds = L.latLng(view.bounds.lat, view.bounds.lng).toBounds(view.bounds.distance);
         }
     });
 }
@@ -583,6 +588,7 @@ $(document).ready(function() {
     $("#tour-wrapper").on("scroll", function() {
         if (!window_scroll_tick) {
             setTimeout(function() {
+                scrolly_wait = 0;
                 doWindowScrollAction();
                 window_scroll_tick = false;
             }, 100);

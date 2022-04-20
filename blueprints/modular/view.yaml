@@ -155,7 +155,7 @@ form:
                   title: Starting View Position
                   # Don't love this, but fieldset text does not seem to be working
                   info: By default, starting bounds will be determined by all included features. Here you can override that behavior.
-                  # text: "By default, the starting bounds for the view will be determined by all included features. You can override this by providing bounds manually or by choosing a center and a distance (in degrees) from that center. You can choose a Point feature from any dataset included in the tour (not just the view) as the center, or you can set the latitude and longitude manually."
+                  # text: "By default, the starting bounds for the view will be determined by all included features. You can override this by providing bounds manually or by choosing a center and a distance from that center. You can choose a Point feature from any dataset included in the tour (not just the view) as the center, or you can set the latitude and longitude manually."
                   name: name
                   label: label
                   collapsible: true
@@ -170,15 +170,35 @@ form:
                       collapsed: false
                       fields:
 
-                        header.start.distance:
-                          type: number
-                          label: Distance from Center
-                          description: Use degrees with a maximum of seven decimal places.
-                          size: long
-                          validate:
-                            min: 0
-                            step: .0000001
+                        start_cols0:
+                          type: columns
+                          fields:
+                            start_col0_1:
+                              type: column
+                              fields:
+                                header.start.distance:
+                                  type: number
+                                  label: Distance from Center
+                                  description: Max of seven decimal places
+                                  size: long
+                                  validate:
+                                    min: 0
+                                    step: .0000001
 
+                            start_col0_2:
+                              type: column
+                              fields:
+                                header.start.units:
+                                  type: select
+                                  label: Distance Units
+                                  size: long
+                                  default: meters
+                                  options:
+                                    meters: Meters (m)
+                                    kilometers: Kilometers (km)
+                                    feet: Feet (ft)
+                                    Miles: Miles (mi)
+                                    
                         header.start.location:
                           type: select
                           label: Center Location

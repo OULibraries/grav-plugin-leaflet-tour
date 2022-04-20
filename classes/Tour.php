@@ -254,10 +254,29 @@ class Tour {
         if (!$bounds && ($dist = $start['distance']) && $dist > 0) {
             // next priority: point location
             if (($id = $start['location']) && ($feature = $this->getAllFeatures()[$id]) && ($feature->getType() === 'Point')) {
-                $bounds = Utils::calculateBounds($feature->getCoordinatesJson(), $dist);
+                $bounds = [
+                    'lng' => $feature->getCoordinatesJson()[0],
+                    'lat' => $feature->getCoordinatesJson()[1]
+                ];
             }
             // otherwise try coordinates
-            if (!$bounds) $bounds = Utils::calculateBounds([$start['lng'], $start['lat']], $dist);
+            if (!$bounds && ($lng = $start['lng']) && ($lat = $start['lat'])) $bounds = ['lng' => $lng, 'lat' => $lat];
+            // if something was valid, make sure distance is in meters
+            if ($bounds) {
+                switch ($start['units']) {
+                    case 'kilometers':
+                        $bounds['distance'] = $dist * 1000;
+                        break;
+                    case 'feet':
+                        $bounds['distance'] = $dist / 0.3048;
+                        break;
+                    case 'miles':
+                        $bounds['distance'] = $dist * 1609.34;
+                        break;
+                    default:
+                        $bounds['distance'] = $dist;
+                }
+            }
         }
         return $bounds;
     }
