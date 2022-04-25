@@ -132,17 +132,17 @@ form:
               controls: both
               fields:
 
-                .id:
-                  type: hidden
-                  default: 'tmp  id'
-                  validate:
-                    required: true
-
                 .name:
                   type: text
                   label: Name
                   description: The current value for the feature name. To change this, modify the custom name or the value of the feature's name property.
                   readonly: true
+
+                .id:
+                  type: text
+                  readonly: true
+                  label: ID 
+                  description: set automatically on save
 
                 .custom_name:
                   type: text
