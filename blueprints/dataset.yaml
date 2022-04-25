@@ -113,6 +113,13 @@ form:
               validate:
                 type: commalist
 
+            header.rename_properties:
+              type: fieldset
+              title: Rename Properties
+              collapsed: true
+              collapsible: true
+              data-fields@: 'Grav\Plugin\LeafletTourPlugin::getFeaturePropertiesFields'
+
             header.auto_popup_properties:
               type: select
               label: Add Properties to Popup Content

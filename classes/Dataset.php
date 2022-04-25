@@ -69,7 +69,7 @@ class Dataset {
     /**
      * Values that are stored in the yaml file but should never be set by the user. True reserved value is 'file'
      */
-    private static array $reserved_keys = ['id', 'upload_file_path', 'feature_type', 'feature_count', 'ready_for_update'];
+    private static array $reserved_keys = ['id', 'upload_file_path', 'feature_type', 'feature_count', 'ready_for_update', 'rename_properties'];
     /**
      * Values that are stored in the yaml file and can be set by the user
      */
@@ -271,6 +271,7 @@ class Dataset {
     public function update(array $yaml): array {
         $this->setValues($yaml);
         $this->updateFeatures($yaml['features']);
+        $this->renameProperties($yaml['rename_properties']);
         $this->ready_for_update = false; // changes have happened
         return $this->toYaml();
     }
@@ -304,6 +305,37 @@ class Dataset {
             }
         }
         $this->features = $features;
+    }
+    /**
+     * Renames any properties where values are provided, assuming the value does not match an existing property name.
+     * 
+     * @param array $rename_properties
+     */
+    public function renameProperties($rename_properties): void {
+        if (!is_array($rename_properties)) return;
+        foreach ($rename_properties as $old => $new) {
+            // if value, make sure that it does not match an existing property
+            $props = $this->getProperties();
+            $keys = array_keys($props, $old, true);
+            if ($new && !in_array($new, $props) && !empty($keys)) {
+                // replace property in $this->properties
+                $this->properties[$keys[0]] = $new;
+                // replace property in name_property and auto_popup_properties
+                if ($this->getNameProperty() === $old) $this->setNameProperty($new);
+                if (in_array($old, $this->getAutoPopupProperties())) {
+                    $this->setAutoPopupProperties(array_merge($this->getAutoPopupProperties(), [$new]));
+                }
+                // replace property for all features
+                foreach ($this->getFeatures() as $id => $feature) {
+                    $props = $feature->getProperties();
+                    if ($value = $props[$old]) {
+                        unset($props[$old]);
+                        $props[$new] = $value;
+                        $feature->setProperties($props);
+                    }
+                }
+            }
+        }
     }
     /**
      * Turns a temporary dataset created from a json file upload into a proper dataset page - sets id, title, route/file, name_property, etc.
