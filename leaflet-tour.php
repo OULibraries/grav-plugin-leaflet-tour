@@ -8,7 +8,7 @@ use Grav\Common\Plugin;
 // use Grav\Common\Page\Header;
 use RocketTheme\Toolbox\Event\Event;
 use RocketTheme\Toolbox\File\MarkdownFile;
-// use Grav\Plugin\LeafletTour\Dataset;
+use Grav\Plugin\LeafletTour\Dataset;
 use Grav\Plugin\LeafletTour\LeafletTour;
 use Grav\Plugin\LeafletTour\Utils;
 use Grav\Plugin\LeafletTour\Feature;
@@ -247,6 +247,19 @@ class LeafletTourPlugin extends Plugin {
         else return $default;
     }
 
+    public static function getDatasetDefaults(string $key) {
+        $header = Utils::getDatasetFile()->header();
+        switch ($key) {
+            case 'path_fillColor':
+            case 'active_path_color':
+                // default: path color ?? default color
+                return ($header['path'] ?? [])['color'] ?? Dataset::DEFAULT_PATH['color'];
+            case 'active_path_fillColor':
+                // default: active path color
+                return ($header['active_path'] ?? [])['color'] ?? self::getDatasetDefaults('active_path_color');
+        }
+    }
+
     // getters for tour blueprints
 
     public static function getTourDatasetFields(): array {
@@ -271,11 +284,13 @@ class LeafletTourPlugin extends Plugin {
                     'validate' => [
                         'type' => 'array'
                     ],
+                    'default' => $dataset->getAutoPopupProperties(),
                 ],
                 "$name.attribution" => [
                     'type' => 'text',
                     'label' => 'Dataset Attribution',
                     'toggleable' => true,
+                    'default' => $dataset->getAttribution(),
                 ],
                 'legend_section' => [
                     'type' => 'section',
@@ -286,18 +301,21 @@ class LeafletTourPlugin extends Plugin {
                     'label' => 'Description for Legend',
                     'description' => 'If this field is set then any legend summary from the dataset will be ignored, whether or not the legend summary override is set.',
                     'toggleable' => true,
+                    'default' => $dataset->getLegend()['text'],
                 ],
                 "$name.legend.summary" => [
                     'type' => 'text',
                     'label' => 'Legend Summary',
                     'description' => 'Optional shorter version of the legend description.',
                     'toggleable' => true,
+                    'default' => $dataset->getLegend()['summary'],
                 ],
                 "$name.legend.symbol_alt" => [
                     'type' => 'text',
                     'label' => 'Legend Symbol Alt Text',
                     'description' => 'A brief description of the icon/symbol/shape used for each feature.',
                     'toggleable' => true,
+                    'default' => $dataset->getLegend()['symbol_alt'],
                 ],
             ];
             // add icon or path options
@@ -316,6 +334,8 @@ class LeafletTourPlugin extends Plugin {
                     'folder' => 'user://data/leaflet-tour/images/icons',
                     'toggleable' => true,
                 ];
+                if ($file = $dataset->getIcon(true)['file']) $options["$name.icon.file"]['default'] = $file;
+                $icon = $dataset->getIcon();
                 $options["$name.icon.width"] = [
                     'type' => 'number',
                     'label' => 'Icon Width (pixels)',
@@ -323,6 +343,7 @@ class LeafletTourPlugin extends Plugin {
                     'validate' => [
                         'min' => 1
                     ],
+                    'default' => $icon['width'],
                 ];
                 $options["$name.icon.height"] = [
                     'type' => 'number',
@@ -331,6 +352,7 @@ class LeafletTourPlugin extends Plugin {
                     'validate' => [
                         'min' => 1
                     ],
+                    'default' => $icon['height'],
                 ];
             } else {
                 $options['path_section'] = [
@@ -341,13 +363,14 @@ class LeafletTourPlugin extends Plugin {
                 $options["$name.path.color"] = [
                     'type' => 'colorpicker',
                     'label' => 'Shape Color',
-                    // 'default' => $dataset->getPath()['color'],
+                    'default' => $dataset->getStrokeOptions()['color'],
                     'toggleable' => true,
                 ];
                 $options["$name.border.color"] = [
                     'type' => 'colorpicker',
                     'label' => 'Border Color',
                     'toggleable' => true,
+                    'default' => $dataset->getBorderOptions()['color'],
                 ];
             }
             $fields[$name] = [

@@ -134,6 +134,7 @@ form:
                   label: Fill Color
                   description: Defaults to stroke color.
                   toggleable: true
+                  data-default@: ['Grav\Plugin\LeafletTourPlugin::getDatasetDefaults', 'path_fillColor']
 
                 header.path.fillOpacity:
                   type: number
@@ -174,7 +175,7 @@ form:
               type: colorpicker
               label: Stroke Color
               toggleable: true
-              default: "#3388ff"
+              data-default@: ['Grav\Plugin\LeafletTourPlugin::getDatasetDefaults', 'active_path_color']
 
             header.active_path.weight:
               type: number
@@ -218,6 +219,7 @@ form:
                   label: Fill Color
                   description: Defaults to stroke color.
                   toggleable: true
+                  data-default@: ['Grav\Plugin\LeafletTourPlugin::getDatasetDefaults', 'active_path_fillColor']
 
                 header.active_path.fillOpacity:
                   type: number

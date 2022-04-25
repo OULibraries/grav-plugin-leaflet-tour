@@ -644,7 +644,8 @@ class Dataset {
     /**
      * @return array $this->icon with defaults filled in
      */
-    public function getIcon(): array {
+    public function getIcon(bool $yaml = false): array {
+        if ($yaml) return $this->icon ?? [];
         $icon = $this->icon ?? [];
         // set appropriate defaults to reference
         if ($icon['file']) $icon = array_merge(self::CUSTOM_MARKER_FALLBACKS, $icon);
