@@ -12,7 +12,7 @@ class Dataset {
      */
     const DEFAULT_PATH = [
         'stroke' => true,
-        'color' => '#3388ff',
+        'color' => '#0051C2',
         'weight' => 3,
         'opacity' => 1,
         'fill' => true,
@@ -24,6 +24,11 @@ class Dataset {
     const DEFAULT_ACTIVE_PATH = [
         'weight' => 5,
         'fillOpacity' => 0.4
+    ];
+    const DEFAULT_BORDER = [
+        'stroke' => true,
+        'color' => '#ffffff',
+        'weight' => 2,
     ];
     /**
      * For creating icon options in merged (fromTour) dataset: Used if default Leaflet marker icon is used. Same as defaults from Leaflet, but modified to match icon yaml values for cleaner code when dealing with icon options
@@ -68,7 +73,7 @@ class Dataset {
     /**
      * Values that are stored in the yaml file and can be set by the user
      */
-    private static array $blueprint_keys = ['title', 'attribution', 'legend', 'properties', 'name_property', 'auto_popup_properties', 'features', 'icon', 'path', 'active_path'];
+    private static array $blueprint_keys = ['title', 'attribution', 'legend', 'properties', 'name_property', 'auto_popup_properties', 'features', 'icon', 'path', 'active_path', 'border', 'active_border'];
 
     /**
      * @var MarkdownFile|null File storing the dataset, typically created on dataset initialization
@@ -132,6 +137,8 @@ class Dataset {
      */
     private array $path = [];
     private array $active_path = [];
+    private array $border = [];
+    private array $active_border = [];
 
     /**
      * Any values not reserved or part of blueprint
@@ -235,7 +242,7 @@ class Dataset {
         $dataset = $original->clone();
         $dataset->setFeatures([]); // no need to store features
         // merge icon and path options
-        foreach (['icon', 'path', 'active_path'] as $key) {
+        foreach (['icon', 'path', 'active_path', 'border', 'active_border'] as $key) {
             if ($yaml[$key]) $dataset->$key = self::mergeArrays($dataset->$key, $yaml[$key]);
         }
         // overwrite attribution, auto_popup_properties if set
@@ -342,6 +349,7 @@ class Dataset {
         if ($this->feature_type !== 'Point') {
             $this->path = self::DEFAULT_PATH;
             $this->active_path = self::DEFAULT_ACTIVE_PATH;
+            $this->border = self::DEFAULT_BORDER;
         }
         if (!$this->getNameProperty() || $this->getNameProperty() === 'none') $this->setNameProperty(self::determineNameProperty($this->getProperties()));
     }
@@ -629,18 +637,76 @@ class Dataset {
 
         return $icon;
     }
-    public function getPath(bool $defaults = false): array {
-        if ($defaults) return $this->getPathByType($this->mergeArrays(self::DEFAULT_PATH, $this->path ?? []));
-        else return $this->getPathByType($this->path ?? []);
+    /**
+     * @return array [color => string, weight => number] - any other non-fill values will be included
+     */
+    public function getStrokeOptions(): array {
+        $path = array_merge(self::DEFAULT_PATH, $this->path);
+        return $this->removeFill($path);
     }
-    public function getActivePath(): array {
-        return $this->getPathByType($this->active_path ?? []);
+    /**
+     * @return array [color => string, weight => number] - any other non-fill values will be included
+     */
+    public function getActiveStrokeOptions(): array {
+        $path = array_merge(self::DEFAULT_PATH, $this->path, $this->active_path);
+        return $this->removeFill($path);
     }
-    private function getPathByType(array $path): array {
-        if (str_contains(strtolower($this->getType()), 'linestring')) {
-            return array_intersect_key($path, array_flip(['stroke', 'weight', 'color', 'opacity']));
+    public function getBorderOptions(): array {
+        if ($this->hasBorder()) {
+            $stroke = $this->getStrokeOptions();
+            $path = array_merge($stroke, $this->border);
+            // set weight
+            $width = $this->border['weight'] ?? self::DEFAULT_BORDER['weight'];
+            if ($stroke['stroke']) $path['weight'] = $stroke['weight'] + ($width * 2);
+            else $path['weight'] = $width;
+            return $this->removeFill($path);
         }
-        else return $path;
+        else return [];
+    }
+    public function getActiveBorderOptions(): array {
+        if ($this->hasBorder()) {
+            $stroke = $this->getActiveStrokeOptions();
+            $path = array_merge($stroke, $this->border, $this->active_border);
+            // set weight
+            $width = $this->active_border['weight'] ?? $this->border['weight'] ?? self::DEFAULT_BORDER['weight'];
+            if ($stroke['stroke']) $path['weight'] = $stroke['weight'] + ($width * 2);
+            else $path['weight'] = $width;
+            return $this->removeFill($path);
+        }
+        else return [];
+    }
+    public function getFillOptions(): array {
+        if ($this->isLine()) return [];
+        else return [
+            'fill' => $this->path['fill'] ?? self::DEFAULT_PATH['fill'],
+            'fillColor' => $this->path['fillColor'] ?? $this->path['color'] ?? self::DEFAULT_PATH['color'],
+            'fillOpacity' => $this->path['fillOpacity'] ?? self::DEFAULT_PATH['fillOpacity']
+        ];
+    }
+    public function getActiveFillOptions(): array {
+        if ($this->isLine()) return [];
+        $fill = $this->getFillOptions();
+        return [
+            'fill' => $this->active_path['fill'] ?? $fill['fill'],
+            'fillColor' => $this->active_path['fillColor'] ?? $this->active_path['color'] ?? $fill['fillColor'],
+            'fillOpacity' => $this->active_path['fillOpacity'] ?? $fill['fillOpacity']
+        ];
+    }
+    public function hasBorder(): bool {
+        return ($this->border['stroke'] && $this->border['color']);
+    }
+    private function removeFill(array $path): array {
+        $path['fill'] = false;
+        unset($path['fillColor']);
+        unset($path['fillOpacity']);
+        // if ($path['fill']) {
+        //     $path['fill'] = false;
+        //     $path['fillColor'] = 'transparent';
+        // }
+        return $path;
+    }
+    private function isLine(): bool {
+        return (str_contains($this->getType(), 'LineString'));
     }
 
     // Getters
@@ -729,6 +795,18 @@ class Dataset {
     public function getExtras(): array {
         return $this->extras;
     }
+    public function getPath(): array {
+        return $this->path;
+    }
+    public function getActivePath(): array {
+        return $this->active_path;
+    }
+    public function getBorder(): array {
+        return $this->border;
+    }
+    public function getActiveBorder(): array {
+        return $this->active_border;
+    }
 
     // Setters
 
@@ -748,6 +826,8 @@ class Dataset {
         $this->setIcon($options['icon']);
         $this->setPath($options['path']);
         $this->setActivePath($options['active_path']);
+        $this->setBorder($options['border']);
+        $this->setActiveBorder($options['active_border']);
         // set extras
         $this->setExtras($options);
     }
@@ -865,6 +945,20 @@ class Dataset {
             $this->extras = array_diff_key($extras, array_flip(array_merge(self::$reserved_keys, self::$blueprint_keys, ['file'])));
         }
         else $this->extras = [];
+    }
+    /**
+     * @param array|null $path
+     */
+    public function setBorder($path): void {
+        if (is_array($path)) $this->border = $path;
+        else $this->border = [];
+    }
+    /**
+     * @param array|null $path
+     */
+    public function setActiveBorder($path): void {
+        if (is_array($path)) $this->active_border = $path;
+        else $this->active_border = [];
     }
 
     // static methods

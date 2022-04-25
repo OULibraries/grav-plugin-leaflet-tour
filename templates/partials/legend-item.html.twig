@@ -2,23 +2,29 @@
 {# TODO: Best way to provide alt for img and svg? #}
 {% if item.icon %}
     <img class="legend-icon {{ item.class }}" src="{{ item.icon }}" alt="">
-{% elseif item.path.fillOpacity %} {# Polygon - use complex svg #}
-    <svg width='16px' height='16px'>
-        <rect   x='2' y='2' width='12' height='12'
-            {% if item.path.stroke %}
-                stroke='{{ item.path.color }}'
-                stroke-width='{{ item.path.weight }}'
-                stroke-opacity='{{ item.path.opacity }}'
+{% else %} {# Line or Plygon - use svg #}
+    {% set size = 28 %}
+    <svg width="{{ size }}px" height="{{ size }}px" style="margin: 5px;">
+        {# {% set options = '' %} #}
+        {% if item.polygon %}
+            {% if item.fill.fill %}
+                <rect x="0" y="0" width="{{ size }}" height="{{ size }}" fill="{{ item.fill.fillColor }}" fill-opacity="{{ item.fill.fillOpacity }}" />
             {% endif %}
-            {% if item.path.fill %}
-                fill='{{ item.path.fillColor }}'
-                fill-opacity='{{ item.path.fillOpacity }}'
+            {% set offset = 3 %}
+            {# {% set offset = item.border|length ? offset + 2 : offset %}
+            {% set offset = item.stroke.stroke ? offset + 1 : offset %} #}
+            {% set size = size - (2 * offset) %}
+            {# {% if item.border|length %} #}
+                <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" stroke="{{ item.border.color ?? item.stroke.color }}" stroke-width="{{ offset * 2 }}" fill="transparent" />
+            {# {% endif %} #}
+            {% if item.stroke.stroke %}
+                <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" stroke="{{ item.stroke.color }}" stroke-width="2" fill="transparent" />
             {% endif %}
-        />
-    </svg>
-{% else %} {# Line - use simple svg #}
-    <svg width="14px" height="14px">
-        <rect x="0" y="0" width="14" height="14" fill="{{ item.path.color }}" />
+        {% else %}
+            {% set offset = item.border|length ? 2 : 0 %}
+            {% set size = size - (2 * offset) %}
+            <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" {% if item.border|length %} stroke="{{ item.border.color }}" stroke-width="4" {% endif %} fill="{{ item.stroke.color }}" />
+        {% endif %}
     </svg>
 {% endif %}
 {% if item.symbol_alt %}

@@ -142,16 +142,19 @@ class TourPoint extends TourFeature {
 }
 class TourPath extends TourFeature {
     buffer; svg;
+    stroke; // only separate from regular path if the feature has a border
     focus_element;
     tmp_tooltip;
     constructor(feature, datasets) {
         super(feature, datasets);
+        if (this.dataset.stroke) this.stroke = true;
         // if weight is below buffer cutoff, set buffer true
-        if (this.dataset.path.weight < BUFFER_WEIGHT) {
+        if ((this.dataset.path.weight < BUFFER_WEIGHT) || this.stroke) {
             // if polygon, only set buffer true if there is also no fill
             // let type = this.type.toLowerCase();
-            if (this.is_line) this.buffer = true;
-            else if (!(this.dataset.path.fill ?? true)) this.buffer = true;
+            // if (this.is_line) this.buffer = true;
+            // else if (!(this.dataset.path.fill ?? true)) this.buffer = true;
+            this.buffer = true;
         }
     }
     get is_line() {
@@ -160,12 +163,17 @@ class TourPath extends TourFeature {
     }
     get elements() {
         // if buffer, the hover_element will be the buffer, but svg will still store the original svg, so must also be returned
-        if (this.buffer) return super.elements.add(this.layer._path);
-        else return super.elements;
+        let elements = super.elements;
+        if (this.stroke) elements = elements.add(this.stroke._path);
+        if (this.buffer) elements = elements.add(this.layer._path);
+        return elements;
     }
     get hover_element() { 
         if (this.buffer) return this.buffer._path;
         else return this.layer._path;
+    }
+    addToStrokeLayer(layer) {
+        this.stroke = layer;
     }
     addToBufferLayer(layer) {
         this.buffer = layer;
@@ -192,6 +200,7 @@ class TourPath extends TourFeature {
         if (this.tmp_tooltip) this.layer.openTooltip(this.tmp_tooltip);
         else this.layer.openTooltip();
         this.layer.setStyle(this.dataset.active_path);
+        if (this.stroke) this.stroke.setStyle(this.dataset.active_stroke);
 
         if (!map.getBounds().contains(this.layer.getTooltip().getLatLng())) {
             this.layer.openTooltip(); // reset tooltip
@@ -226,6 +235,7 @@ class TourPath extends TourFeature {
     deactivate() {
         super.deactivate();
         this.layer.setStyle(this.dataset.path);
+        if (this.stroke) this.stroke.setStyle(this.dataset.stroke);
         // if tooltip offset was previously modified, reset it
         // if (this.old_offset) {
         //     this.layer.getTooltip().options.offset = this.old_offset;
@@ -302,10 +312,25 @@ function createFeatureLayer() {
     map.addLayer(layer);
     return layer;
 }
+function createStrokeLayer() {
+    let layer = L.geoJson(null, {
+        style: function(json) {
+            return tour.features.get(json.properties.id).dataset.stroke;
+        },
+        onEachFeature: function(json, layer) {
+            tour.features.get(json.properties.id).addToStrokeLayer(layer);
+        }
+    });
+    map.addLayer(layer);
+    return layer;
+}
 function createBufferLayer() {
     let layer = L.geoJson(null, {
         style: function(json) {
-            return { stroke: true, weight: BUFFER_WEIGHT, opacity: 0, fill: false };
+            if (tour.features.get(json.properties.id).is_line) {
+                return { stroke: true, weight: BUFFER_WEIGHT, opacity: 0, fill: false };
+            }
+            else return { stroke: true, weight: BUFFER_WEIGHT, opacity: 0, fill: true, fillColor: 'transparent' };
         },
         onEachFeature: function(json, layer) {
             tour.features.get(json.properties.id).addToBufferLayer(layer);
@@ -326,6 +351,8 @@ function createFeature(value, key, map) {
         tour.feature_layer.addData(feature.geoJson);
         // also add feature ref to dataset
         feature.dataset.features.push(feature);
+        // also add stroke if applicable
+        if (feature.stroke) tour.stroke_layer.addData(feature.geoJson);
         // also add buffer if applicable
         if (feature.buffer) tour.buffer_layer.addData(feature.geoJson);
     }
@@ -397,6 +424,7 @@ tour.basemaps = tour_basemaps;
 tour.basemaps.forEach(createBasemap);
 tour.datasets = tour_datasets;
 tour.feature_layer = createFeatureLayer();
+tour.stroke_layer = createStrokeLayer();
 tour.buffer_layer = createBufferLayer();
 tour.features = tour_features;
 tour.features.forEach(createFeature);

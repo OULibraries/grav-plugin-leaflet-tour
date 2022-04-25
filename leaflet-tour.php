@@ -341,6 +341,12 @@ class LeafletTourPlugin extends Plugin {
                 $options["$name.path.color"] = [
                     'type' => 'colorpicker',
                     'label' => 'Shape Color',
+                    // 'default' => $dataset->getPath()['color'],
+                    'toggleable' => true,
+                ];
+                $options["$name.border.color"] = [
+                    'type' => 'colorpicker',
+                    'label' => 'Border Color',
                     'toggleable' => true,
                 ];
             }

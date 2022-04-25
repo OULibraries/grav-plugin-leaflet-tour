@@ -395,8 +395,16 @@ class Tour {
             if ($dataset->getType() === 'Point') {
                 $info['icon'] = $dataset->getIcon();
             } else {
-                $info['path'] = $dataset->getPath();
-                $info['active_path'] = $dataset->getActivePath();
+                if ($dataset->hasBorder()) {
+                    $info['path'] = array_merge($dataset->getBorderOptions(), $dataset->getFillOptions());
+                    $info['active_path'] = array_merge($dataset->getActiveBorderOptions(), $dataset->getActiveFillOptions());
+                    $info['stroke'] = $dataset->getStrokeOptions();
+                    $info['active_stroke'] = $dataset->getActiveStrokeOptions();
+                }
+                else {
+                    $info['path'] = array_merge($dataset->getStrokeOptions(), $dataset->getFillOptions());
+                    $info['active_path'] = array_merge($dataset->getActiveStrokeOptions(), $dataset->getActiveFillOptions());
+                }
             }
             $datasets[$id] = $info;
         }
@@ -536,7 +544,11 @@ class Tour {
                     if ($dataset->getType() === 'Point') {
                         $info['icon'] = $dataset->getIcon()['iconUrl'];
                     } else {
-                        $info['path'] = $dataset->getPath();
+                        $info['polygon'] = str_contains($dataset->getType(), 'Polygon');
+                        $info['stroke'] = $dataset->getStrokeOptions();
+                        $info['fill'] = $dataset->getFillOptions();
+                        // $info['path'] = array_merge($info['stroke'], $info['fill']);
+                        $info['border'] = $dataset->getBorderOptions();
                     }
                     $legend[] = $info;
                 }
