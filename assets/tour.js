@@ -363,7 +363,7 @@ function setupViews(views) {
     if (!tour_bounds) tour_bounds = tour.feature_layer.getBounds();
     else if (tour_bounds.distance) {
         // I think needs to be multiplied by two to match expectations
-        tour_bounds = L.latLng(tour_bounds.lat, tour_bounds.lng).toBounds(tour_bounds.distance);
+        tour_bounds = L.latLng(tour_bounds.lat, tour_bounds.lng).toBounds(tour_bounds.distance * 2);
     }
     // the rest (repeats tour as well, which is fine)
     views.forEach(function(view) {
@@ -377,7 +377,7 @@ function setupViews(views) {
         if (!view.bounds) {
             view.bounds = setupBounds(view.features, tour_bounds);
         } else if (view.bounds.distance) {
-            view.bounds = L.latLng(view.bounds.lat, view.bounds.lng).toBounds(view.bounds.distance);
+            view.bounds = L.latLng(view.bounds.lat, view.bounds.lng).toBounds(view.bounds.distance * 2);
         }
     });
 }
@@ -600,8 +600,11 @@ $(document).ready(function() {
         enterView(this.getAttribute("data-view"));
     });
     $(".go-to-view-btn").on("click", function() {
-        enterView(this.getAttribute("data-view"));
-        if (isMobile()) switchToMap(this.id);
+        // enterView(this.getAttribute("data-view"));
+        if (isMobile()) {
+            enterView(this.getAttribute("data-view"));
+            switchToMap(this.id);
+        }
         else {
             $("#back-to-view-btn").attr("href", "#" + this.id).addClass("active");
             $("#map").focus();

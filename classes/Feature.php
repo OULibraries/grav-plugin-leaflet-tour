@@ -135,7 +135,7 @@ class Feature {
     public static function fromTour(Feature $original, array $tour_options, Dataset $merged_dataset, ?string $tour_filename = null): Feature {
         $feature = $original->clone();
         if ($content = $tour_options['popup_content']) {
-            $feature->setPopupContent($content);
+            $feature->setPopupContent($tour_options);
             $image_path = $tour_filename;
         }
         else if ($tour_options['remove_popup']) $feature->setPopupContent(null);
@@ -190,7 +190,8 @@ class Feature {
                 $content .= "![$image_start";
             }
         }
-        $this->setPopupContent($content);
+        $this->popup_content = $content;
+        // $this->setPopupContent($content);
     }
 
     /**
@@ -229,6 +230,9 @@ class Feature {
         $yaml['coordinates'] = $this->getCoordinatesYaml();
         // add name
         $yaml['name'] = $this->getName();
+        // nest popup content 
+        $yaml['popup'] = ['popup_content' => $this->getPopupContent()];
+        unset($yaml['popup_content']);
         // remove and replace extras
         unset($yaml['extras']);
         $yaml = array_merge($this->getExtras() ?? [], $yaml);
@@ -388,7 +392,7 @@ class Feature {
         $this->setProperties($options['properties']);
         $this->setCustomName($options['custom_name']);
         $this->setHide($options['hide']);
-        $this->setPopupContent($options['popup_content']);
+        $this->setPopupContent($options['popup']);
         // set extras
         $this->setExtras($options);
     }
@@ -456,8 +460,8 @@ class Feature {
     /**
      * @param string|null $content
      */
-    public function setPopupContent($content): void {
-        if (is_string($content)) $this->popup_content = $content;
+    public function setPopupContent($popup): void {
+        if (is_array($popup) && ($content = $popup['popup_content']) && is_string($content)) $this->popup_content = $content;
         else $this->popup_content = null;
     }
     /**

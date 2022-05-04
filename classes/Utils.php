@@ -16,7 +16,7 @@ class Utils {
     /**
      * Search a directory recursively for any files matching the provided key.
      * 
-     * @param string $key The name of the template file (or other file, really) to look for. Passing '*dataset.md' would get any file ending in 'dataset.md'
+     * @param string $key The name of the template file (or other file, really) to look for. Passing 'dataset.md' would get any file ending in 'dataset.md'
      * @param array $results List of pages found so far. If calling this the first time, pass an empty array.
      * @param null|string $dir Optional: Specify the directory to start the search in. If not provided, the pages folder will be used.
      */
@@ -95,9 +95,9 @@ class Utils {
      * @param float $distance The radius of the circle
      * @return null|array [[float, float], [float, float]] (southwest, northeast) if valid
      */
-    public static function calculateBounds($coords, float $dist): ?array {
-        if (!self::isValidPoint($coords)) return null;
-        return [[max($coords[1] - $dist, -90), $coords[0] - $dist], [min($coords[1] + $dist, 90), $coords[0] + $dist]];
-    }
+    // public static function calculateBounds($coords, float $dist): ?array {
+    //     if (!self::isValidPoint($coords)) return null;
+    //     return [[max($coords[1] - $dist, -90), $coords[0] - $dist], [min($coords[1] + $dist, 90), $coords[0] + $dist]];
+    // }
 }
 ?>

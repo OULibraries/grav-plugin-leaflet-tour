@@ -300,6 +300,7 @@ class Dataset {
                 if ($feature = Feature::fromArray($feature_yaml, $this->getType())) {
                     $id = $this->nextFeatureId();
                     $feature->setId($id, true);
+                    $feature->setDataset($this);
                     $features[$id] = $feature;
                 }
             }
@@ -617,6 +618,8 @@ class Dataset {
         if ($this->getType() === 'Point') {
             unset($yaml['path']);
             unset($yaml['active_path']);
+            unset($yaml['border']);
+            unset($yaml['active_border']);
         } else {
             unset($yaml['icon']);
         }
@@ -732,10 +735,6 @@ class Dataset {
         $path['fill'] = false;
         unset($path['fillColor']);
         unset($path['fillOpacity']);
-        // if ($path['fill']) {
-        //     $path['fill'] = false;
-        //     $path['fillColor'] = 'transparent';
-        // }
         return $path;
     }
     private function isLine(): bool {
@@ -910,7 +909,7 @@ class Dataset {
      * Sets features - does not use array of Feature objects but creates them from array. Not used when updating dataset.
      * 
      * @param array $features Array of feature data
-     * @param bool $yaml Indicates whether feature coordinates are in yaml or json form, defaul true
+     * @param bool $yaml Indicates whether feature coordinates are in yaml or json form, default true
      */
     public function setFeatures(array $features, bool $yaml = true): void {
         $this->features = [];

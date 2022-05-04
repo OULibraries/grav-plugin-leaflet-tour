@@ -85,7 +85,7 @@ class Tour {
      * [remove_tile_server, only_show_view_features, list_popup_buttons]
      */
     private array $view_options = [];
-    private ?array $max_bounds = null;
+    private array $max_bounds = [];
     private ?int $max_zoom = null;
     private ?int $min_zoom = null;
 
@@ -547,7 +547,6 @@ class Tour {
                         $info['polygon'] = str_contains($dataset->getType(), 'Polygon');
                         $info['stroke'] = $dataset->getStrokeOptions();
                         $info['fill'] = $dataset->getFillOptions();
-                        // $info['path'] = array_merge($info['stroke'], $info['fill']);
                         $info['border'] = $dataset->getBorderOptions();
                     }
                     $legend[] = $info;
@@ -890,7 +889,8 @@ class Tour {
                 if ($this->getDatasets()[$id] && ($dataset = LeafletTour::getDatasets()[$id])) {
                     // validate auto popup properties
                     if (!empty($props = $values['auto_popup_properties'])) {
-                        $values['auto_popup_properties'] = array_values(array_intersect($props, $dataset->getProperties()));
+                        $allowed = array_merge($dataset->getProperties(), ['none']);
+                        $values['auto_popup_properties'] = array_values(array_intersect($props, $allowed));
                     }
                     $this->dataset_overrides[$id] = $values;
                 }
@@ -981,7 +981,7 @@ class Tour {
      */
     public function setMaxBounds($bounds): void {
         if (is_array($bounds)) $this->max_bounds = $bounds;
-        else $this->max_bounds = null;
+        else $this->max_bounds = [];
     }
     /**
      * @param int|null $zoom

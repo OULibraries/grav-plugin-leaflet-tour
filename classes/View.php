@@ -203,9 +203,8 @@ class View {
         ];
         if ($tour = $this->getTour()) {
             if (!$options['no_tour_basemaps']) {
-                foreach ($tour->getBasemaps() as $file) {
-                    if (!in_array($file, $data['basemaps'])) $data['basemaps'][] = $file;
-                }
+                $maps = array_diff($tour->getBasemaps(), $data['basemaps']); // get any not already added
+                $data['basemaps'] = array_merge($maps, $data['basemaps']);
             }
             if ($bounds = $tour->calculateStartingBounds($this->start ?? [])) $data['bounds'] = $bounds;
         }
