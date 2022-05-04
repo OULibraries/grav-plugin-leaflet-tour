@@ -189,6 +189,15 @@ class Dataset {
             if (is_string($path = $json['upload_file_path'])) $dataset->upload_file_path = $path;
             // if name_property, validate first
             $dataset->setNameProperty($json['name_property']);
+
+            // for point dataset, make sure that coordinates are not provided with too many decimal places
+            if ($dataset->getType() === 'Point') {
+                foreach ($dataset->getFeatures() as $feature) {
+                    $coords = $feature->getCoordinatesJson();
+                    $feature->setCoordinatesJson([round($coords[0], 7), round($coords[1], 7)]);
+                }
+            }
+
             return $dataset;
         }
         else return null;
