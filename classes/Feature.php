@@ -26,7 +26,7 @@ class Feature {
     /**
      * Values that should not be stored in the yaml at all.
      */
-    private static array $reserved_keys = ['dataset', 'name', 'type'];
+    private static array $reserved_keys = ['dataset', 'name', 'type', 'popup'];
     /**
      * Values that are specifically meant to be stored in the yaml
      */
@@ -82,7 +82,7 @@ class Feature {
     /**
      * Builds a feature from json data. Called when a new json file has been uploaded and the initial dataset is being built. Sets properties, coordinates, and type.
      * 
-     * @param array $json Should contain properties array of $key => $value pairs, geometry array with type and coordinates
+     * @param array $json Must contain geometry array with type and coordinates, may contain properties array of $key => $value pairs
      * @param string|null $dataset_type Optional, geometry type must match this if provided
      * 
      * @return Feature|null New Feature if provided geometry is valid
@@ -109,7 +109,7 @@ class Feature {
      * 
      * @param array $options The yaml (or other array) data, must contain 'coordinates'
      * @param string|null $type Used to validate coordinates, not necessary if type is already in $options
-     * @param bool $yaml Indicated whether coordinates in $options are in yaml or json format, default true
+     * @param bool $yaml Indicates whether coordinates in $options are in yaml or json format, default true
      * 
      * @return Feature|null New Feature object if coordinates and type are valid
      */
@@ -123,23 +123,23 @@ class Feature {
     }
 
     /**
-     * Merges a feature from a dataset with feature settings from a tour. Determines whether original popup_content will be used, ignored, or replaced. Also searches for markdown images in the popup_content without set paths and sets the path to the dataset or tour, depending on which is providing the content.
+     * Merges a feature from a dataset with feature settings from a tour. Determines whether original popup_content will be used, ignored, or replaced. Also searches for markdown images in the popup_content without set paths and sets the path to the dataset or tour, depending on which is providing the content (calls modifyImagePaths).
      * 
-     * @param Feature $original The original feature object from the dataset
+     * @param Feature $original The original feature object from the dataset, will not be modified directly
      * @param array $tour_options The yaml data from the tour
      * @param Dataset $merged_dataset The new dataset object created by combining the original dataset with tour options, mostly necessary because auto popup properties may have been modified
      * @param string|null $tour_filename The path to the tour file, if applicable
      * 
-     * @return Feature The new merged feature
+     * @return Feature The new merged/modified feature
      */
     public static function fromTour(Feature $original, array $tour_options, Dataset $merged_dataset, ?string $tour_filename = null): Feature {
         $feature = $original->clone();
-        if ($content = $tour_options['popup_content']) {
+        if ($tour_options['popup_content']) {
             $feature->setPopupContent($tour_options);
             $image_path = $tour_filename;
         }
         else if ($tour_options['remove_popup']) $feature->setPopupContent(null);
-        else $image_path = $feature->getDataset()->getFile()->filename();
+        else if ($feature->getPopupContent() && ($file = $merged_dataset->getFile())) $image_path = $file->filename();
         if ($image_path) {
             $pages = Grav::instance()['locator']->findResource('page://');
             $image_path = str_replace($pages, '', $image_path);
@@ -152,7 +152,7 @@ class Feature {
     // Object Methods
 
     /**
-     * Validates update content and updates the object
+     * Validates update content and updates the object. Calls setValues, which calls setId and setCoordinatesYaml, sets properties, custom_name, hide, popup_content, and extras, and ignores/does not set name, dataset, or type.
      * 
      * @param array $yaml Update data
      */
@@ -161,7 +161,7 @@ class Feature {
     }
 
     /**
-     * Checks popup_content for any markdown images that do not have a path set (indicated by image name starting with a stream, a dot, or a slash). For any found, the image name is appended by page stream and provided $path
+     * Checks popup_content for any markdown images that do not have a path set (indicated by image name starting with a (valid) stream, a dot, or a slash). For any found, the image name is prepended by page stream and provided $path. Valid streams are listed in the Utils class.
      * 
      * @param string $path The path (starting after the user/pages directory) to the tour or dataset folder where the popup content is from
      */
@@ -212,6 +212,11 @@ class Feature {
         if ($dataset = $vars['dataset']) $vars['dataset'] = $dataset->getId();
         return json_encode($vars);
     }
+    /**
+     * @param Feature $other The feature to compare this one to
+     * 
+     * @return bool true if all property values are considered equal (datasets are considered equal if they have the same ID)
+     */
     public function equals(Feature $other): bool {
         $vars1 = get_object_vars($this);
         if ($dataset = $vars1['dataset']) $vars1['dataset'] = $dataset->getId();
@@ -220,7 +225,7 @@ class Feature {
         return ($vars1 == $vars2);
     }
     /**
-     * @return array The yaml array that can be saved in the dataset features list (will not contain any reserved values)
+     * @return array The yaml array that can be saved in the dataset features list. Should contain all typical blueprint values, any extra values, and no reserved values. Coordinates will be provided as yaml, popup_content as 'popup' => ['popup_content' => string/null], and 'name' as calculated value.
      */
     public function toYaml(): array {
         $yaml = get_object_vars($this);
@@ -248,10 +253,10 @@ class Feature {
         return json_encode($array);
     }
     /**
-     * @return array GeoJSON array
+     * @return array GeoJSON array with geometry and properties. Properties will include popup_content and/or custom_name if the relevant values are set.
      */
     public function toGeoJson(): array {
-        return [
+        $json = [
             'type' => 'Feature',
             'geometry' => [
                 'coordinates' => $this->getCoordinatesJson(),
@@ -259,12 +264,15 @@ class Feature {
             ],
             'properties' => $this->getProperties(),
         ];
+        if ($content = $this->getPopupContent()) $json['properties']['popup_content'] = $content;
+        if ($name = $this->getCustomName()) $json['properties']['custom_name'] = $name;
+        return $json;
     }
 
     // Calculated Getters
 
     /**
-     * @return string|null Formatted auto popup (using dataset auto popup properties) if the feature has any auto popup property values
+     * @return string|null HTML list of auto popup property names and values, if any exist. Returns null if feature does not have a dataset or the dataset does not have any auto popup properties set.
      */
     public function getAutoPopup(): ?string {
         if ($this->getDataset() && ($props = $this->getDataset()->getAutoPopupProperties())) {
@@ -280,7 +288,7 @@ class Feature {
         return null;
     }
     /**
-     * @return string|null popup content generated from auto popup and regular popup if either exist
+     * @return string|null popup content generated from auto popup and/or regular popup if either exist
      */
     public function getFullPopup(): ?string {
         $auto = $this->getAutoPopup();
@@ -295,7 +303,7 @@ class Feature {
         return $full;
     }
     /**
-     * @return string|null Feature name. Priority goes to custom_name, then properties[name_property], then id. Returns null if nothing is found.
+     * @return string|null Feature name. Priority goes to custom_name, then properties[name_property] (if feature has dataset with name property set), then id. Returns null if nothing is found.
      */
     public function getName(): ?string {
         if ($name = $this->getCustomName()) return $name;
@@ -379,7 +387,7 @@ class Feature {
     // Setters
 
     /**
-     * Sets blueprint key values and extras array. Ignores reserved values.
+     * Sets blueprint key values and extras array. Ignores reserved values. Called by update function and constructor.
      * 
      * @param array $options Array of values to set
      * @param bool $yaml Indicates whether coordinates are in yaml or json format, default true
@@ -398,10 +406,10 @@ class Feature {
     }
     
     /**
-     * Will not set id to null
+     * Sets $this->id if input is valid and either id is not yet set or $overwrite is true. Will not set id to null.
      * 
-     * @param string $id Sets $this->id (by default only if not already set)
-     * @param bool $overwrite - if true, $this->id will be set even if already set
+     * @param string $id For $this->id
+     * @param bool $overwrite If true, $id will replace existing $this->id value
      */
     public function setId($id, $overwrite = false): void {
         if(is_string($id) && !empty($id)) {
@@ -409,7 +417,7 @@ class Feature {
         }
     }
     /**
-     * Only sets coordinates if valid
+     * Only sets coordinates if valid. Feature must have dataset or type to check for validity.
      * 
      * @param array $coordinates in json form
      */
@@ -423,7 +431,7 @@ class Feature {
         }
     }
     /**
-     * Only sets coordinates if valid
+     * Only sets coordinates if valid. Feature must have dataset or type to check for validity.
      * 
      * @param mixed $coordinates Json-encoded string (for non-points) or array with lng and lat (for points)
      */
@@ -458,10 +466,11 @@ class Feature {
         else $this->hide = false;
     }
     /**
-     * @param string|null $content
+     * @param array|string|null $content If array, must have 'popup_content' => string
      */
     public function setPopupContent($popup): void {
         if (is_array($popup) && ($content = $popup['popup_content']) && is_string($content)) $this->popup_content = $content;
+        else if (is_string($popup)) $this->popup_content = $popup;
         else $this->popup_content = null;
     }
     /**
@@ -497,24 +506,9 @@ class Feature {
         else return null;
     }
     /**
-     * @param array $geometry ['coordinates' => array, 'type' => string]
-     * @param null|string $feature_type If provided, geometry['type'] must match
-     * @return null|array ['coordinates' => valid coordinates array, 'type' => string] if coordinates and type are valid
-     */
-    // public static function validateJsonGeometry($geometry, $feature_type = null): ?array {
-    //     if (($type = ($geometry['type'])) && ($coordinates = self::validateJsonCoordinates($geometry['coordinates'] ?? [], $type))) {
-    //         $type = self::validateFeatureType($type);
-    //         // also make sure that types match, if $feature_type was provided
-    //         if (!$feature_type || ($type === self::validateFeatureType($feature_type))) {
-    //             return ['coordinates' => $coordinates, 'type' => $type];
-    //         }
-    //     }
-    //     return null;
-    // }
-    /**
      * @param array $coordinates (json array)
-     * @param string $type (feature type)
-     * @return null|array coordinates array if valid
+     * @param string $type (feature type) Must be a string, if value does not match one of the valid types, will be replaced with 'Point'
+     * @return null|array coordinates array if coordinates and type valid
      */
     public static function validateJsonCoordinates($coordinates, $type): ?array {
         if (!is_string($type) && is_array($coordinates)) return null;
@@ -531,8 +525,8 @@ class Feature {
     }
     /**
      * @param mixed $yaml (string with json or ['lng', 'lat'])
-     * @param string $type (feature type)
-     * @return null|array coordinates array if valid (json)
+     * @param string $type (feature type) Must be a string, if value does not match one of the valid types, will be replaced with 'Point'
+     * @return null|array coordinates array (json) if coordinates and type are valid
      */
     public static function validateYamlCoordinates($yaml, $type): ?array {
         // turn $coordinates into a json array to pass to validateJsonCoordinates
@@ -560,7 +554,10 @@ class Feature {
         try {
             $type = self::validateFeatureType($type);
             // Point => make array
-            if ($type === 'Point') return ['lng' => $coordinates[0], 'lat' => $coordinates[1]];
+            if ($type === 'Point') {
+                if (is_array($coordinates) && count($coordinates) == 2) return ['lng' => $coordinates[0], 'lat' => $coordinates[1]];
+                else return null;
+            }
             // not point
             else return json_encode($coordinates);
         } catch (\Throwable $t) {
