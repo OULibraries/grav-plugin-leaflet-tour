@@ -27,7 +27,7 @@ class Tour {
      * Values that should not be stored in the yaml file or modified by the user
      */
     private static array $reserved_keys = ['file', 'views', 'all_features', 'included_features', 'merged_features', 'included_datasets', 'merged_datasets', 'tile_server_options', 'basemap_info'];
-    private static array $blueprint_keys = ['id', 'title', 'datasets', 'dataset_overrides', 'features', 'attribution', 'legend', 'tile_server', 'basemaps', 'start', 'overrides', 'view_options', 'max_bounds', 'max_zoom', 'min_zoom', 'column_width'];
+    private static array $blueprint_keys = ['id', 'title', 'datasets', 'dataset_overrides', 'features', 'attribution', 'legend', 'tile_server', 'basemaps', 'start', 'overrides', 'view_options', 'max_bounds', 'max_zoom', 'min_zoom', 'column_width', 'no_attribution'];
     /**
      * Generated in constructor if not yet set. Only modified when the plugin config page is saved.
      */
@@ -60,6 +60,7 @@ class Tour {
      */
     private array $features = [];
     private ?string $attribution = null;
+    private bool $no_attribution = false;
     /**
      * [include, toggles, basemaps]
      */
@@ -828,6 +829,7 @@ class Tour {
         $this->setMaxBounds($options['max_bounds']);
         $this->setMaxZoom($options['max_zoom']);
         $this->setMinZoom($options['min_zoom']);
+        $this->setNoAttribution($options['no_attribution']);
         $this->setExtras($options);
     }
     /**
@@ -1002,6 +1004,13 @@ class Tour {
     public function setMinZoom($zoom): void {
         if (is_int($zoom)) $this->min_zoom = $zoom;
         else $this->min_zoom = null;
+    }
+    /**
+     * @param bool|null $no_attribution
+     */
+    public function setNoAttribution($no_attribution): void {
+        if (is_bool($no_attribution)) $this->no_attribution = $no_attribution;
+        else $this->no_attribution = false;
     }
     /**
      * @param array|null $extras

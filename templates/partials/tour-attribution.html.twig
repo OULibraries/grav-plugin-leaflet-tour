@@ -1,45 +1,47 @@
-{% set tour_attr = tour.getTourAttribution() %}
-{% set server_attr = tour.getTileServerAttribution() %}
-{% set map_attr = tour.getBasemapsAttribution() %}
-{% set data_attr = tour.getDatasetsAttribution() %}
-{# Determine if attribution section will exist at all #}
-{% if tour_attr or server_attr or (map_attr|length > 0) or (data_attr|length > 0) %}
-<div id="attribution">
-    <h2>Resources Used</h2>
-    {% if tour_attr %}
-        <div id="tour-attribution" class="attribution-section">
-            {{ tour_attr|markdown }}
-        </div>
-    {% endif %}
-    {# Check for provided attribution. If present, add it. If not check for leaflet provider option. If present, add a placeholder div. #}
-    {% if server_attr %}
-        {% if server_attr != 'placeholder' %}
-            <div id="server-attribution" class="attribution-section">
-                <span>Tile Server: {{ server_attr|raw }}</span>
+{% if not header.no_attribution %}
+    {% set tour_attr = tour.getTourAttribution() %}
+    {% set server_attr = tour.getTileServerAttribution() %}
+    {% set map_attr = tour.getBasemapsAttribution() %}
+    {% set data_attr = tour.getDatasetsAttribution() %}
+    {# Determine if attribution section will exist at all #}
+    {% if tour_attr or server_attr or (map_attr|length > 0) or (data_attr|length > 0) %}
+    <div id="attribution">
+        <h2>Resources Used</h2>
+        {% if tour_attr %}
+            <div id="tour-attribution" class="attribution-section">
+                {{ tour_attr|markdown }}
             </div>
-        {% else %}
-            <div id="server-attribution" class="attribution-section"></div>
         {% endif %}
+        {# Check for provided attribution. If present, add it. If not check for leaflet provider option. If present, add a placeholder div. #}
+        {% if server_attr %}
+            {% if server_attr != 'placeholder' %}
+                <div id="server-attribution" class="attribution-section">
+                    <span>Tile Server: {{ server_attr|raw }}</span>
+                </div>
+            {% else %}
+                <div id="server-attribution" class="attribution-section"></div>
+            {% endif %}
+        {% endif %}
+        {% if map_attr|length > 0 %}
+            <div id="basemaps-attribution" class="attribution-section">
+                <h3>Basemaps</h3>
+                <ul class="attribution-list">
+                    {% for item in map_attr %}
+                        <li>{{ item|raw }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        {% if data_attr|length > 0 %}
+            <div id="datasets-attribution" class="attribution-section">
+                <h3>Datasets</h3>
+                <ul class="attribution-list">
+                    {% for item in data_attr %}
+                        <li>{{ item|raw }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    </div>
     {% endif %}
-    {% if map_attr|length > 0 %}
-        <div id="basemaps-attribution" class="attribution-section">
-            <h3>Basemaps</h3>
-            <ul class="attribution-list">
-                {% for item in map_attr %}
-                    <li>{{ item|raw }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endif %}
-    {% if data_attr|length > 0 %}
-        <div id="datasets-attribution" class="attribution-section">
-            <h3>Datasets</h3>
-            <ul class="attribution-list">
-                {% for item in data_attr %}
-                    <li>{{ item|raw }}</li>
-                {% endfor %}
-            </ul>
-        </div>
-    {% endif %}
-</div>
 {% endif %}
