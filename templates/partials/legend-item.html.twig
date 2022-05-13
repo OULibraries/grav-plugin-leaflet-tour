@@ -30,4 +30,4 @@
 {% if item.symbol_alt %}
     <span class="sr-only">Image: {{ item.icon_alt }}</span>
 {% endif %}
-<span>{{ item.text }}</span>
+<span>{{ leaflet_tour.stripParagraph(item.text|markdown)|raw }}</span>

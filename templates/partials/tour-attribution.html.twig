@@ -16,7 +16,7 @@
         {% if server_attr %}
             {% if server_attr != 'placeholder' %}
                 <div id="server-attribution" class="attribution-section">
-                    <span>Tile Server: {{ server_attr|raw }}</span>
+                    <span>Tile Server: {{ server_attr|markdown }}</span>
                 </div>
             {% else %}
                 <div id="server-attribution" class="attribution-section"></div>
@@ -27,7 +27,7 @@
                 <h3>Basemaps</h3>
                 <ul class="attribution-list">
                     {% for item in map_attr %}
-                        <li>{{ item|raw }}</li>
+                        <li>{{ leaflet_tour.stripParagraph(item|markdown)|raw }}</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -37,7 +37,7 @@
                 <h3>Datasets</h3>
                 <ul class="attribution-list">
                     {% for item in data_attr %}
-                        <li>{{ item|raw }}</li>
+                        <li>{{ leaflet_tour.stripParagraph(item|markdown)|raw }}</li>
                     {% endfor %}
                 </ul>
             </div>
