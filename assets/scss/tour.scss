@@ -10,7 +10,6 @@ $large: 1440px; // large monitor
 $mobile: 768px;
 
 $column-width: 33%;
-$wide-column-width: 40%;
 
 /* ----- grid layout (and display) ----- */
 .map-only {
@@ -89,14 +88,6 @@ $wide-column-width: 40%;
         right: 0;
         height: 100vh;
         width: 100% - $column-width;
-    }
-    .wide-column {
-        .tour-wrapper {
-            width: $wide-column-width;
-        }
-        #map-wrapper {
-            width: 100% - $wide-column-width;
-        }
     }
     .map-on-left {
         .tour-wrapper {

@@ -128,18 +128,15 @@ form:
                   text: These options override the default options set from the plugin configuration.
                   underline: true
 
-                header.overrides.wide_column:
-                  type: toggle
-                  label: Wide Narrative Column
-                  description: If toggled, will change the narrative width from 33% to 40% of the page width.
+                header.column_width:
+                  type: number
+                  label: Narrative Column Width
+                  description: Can set the desired percentage of the available viewport width for the narrative column to use.
                   toggleable: true
-                  highlight: 1
-                  default: 0
-                  options:
-                    0: PLUGIN_ADMIN.DISABLED
-                    1: PLUGIN_ADMIN.ENABLED
                   validate:
-                    type: bool
+                    min: 0
+                    max: 100
+                    step: 1
 
                 header.overrides.map_on_right:
                   type: toggle

@@ -13,7 +13,6 @@ class Tour {
         'basemaps' => false,
     ];
     const DEFAULT_OVERRIDES = [
-        'wide_column' => false,
         'map_on_right' => true,
         'show_map_location_in_url' => false,
     ];
@@ -28,7 +27,7 @@ class Tour {
      * Values that should not be stored in the yaml file or modified by the user
      */
     private static array $reserved_keys = ['file', 'views', 'all_features', 'included_features', 'merged_features', 'included_datasets', 'merged_datasets', 'tile_server_options', 'basemap_info'];
-    private static array $blueprint_keys = ['id', 'title', 'datasets', 'dataset_overrides', 'features', 'attribution', 'legend', 'tile_server', 'basemaps', 'start', 'overrides', 'view_options', 'max_bounds', 'max_zoom', 'min_zoom'];
+    private static array $blueprint_keys = ['id', 'title', 'datasets', 'dataset_overrides', 'features', 'attribution', 'legend', 'tile_server', 'basemaps', 'start', 'overrides', 'view_options', 'max_bounds', 'max_zoom', 'min_zoom', 'column_width'];
     /**
      * Generated in constructor if not yet set. Only modified when the plugin config page is saved.
      */
@@ -78,13 +77,14 @@ class Tour {
      */
     private array $start = [];
     /**
-     * [wide_column, map_on_right, show_map_location_in_url]
+     * [map_on_right, show_map_location_in_url]
      */
     private array $overrides = [];
     /**
      * [remove_tile_server, only_show_view_features, list_popup_buttons]
      */
     private array $view_options = [];
+    private ?int $column_width = null;
     private array $max_bounds = [];
     private ?int $max_zoom = null;
     private ?int $min_zoom = null;
@@ -362,13 +362,15 @@ class Tour {
      * 
      * @return array
      *  - int values for max_zoom and min_zoom if set
-     *  - bool values for show_map_location_in_url, wide_column, and map_on_right
+     *  - int value for column_width
+     *  - bool values for show_map_location_in_url, and map_on_right
      *  - 'tile_server' => ['url' => string] or value from self::TILE_SERVERS + ['attribution' => string]
      *  - 'max_bounds' => bounds array (Utils::getBounds)
      */
     public function getTourData(): array {
         $data = array_merge($this->getOverrides(), [
             'tile_server' => $this->getTileServerOptions(),
+            'column_width' => $this->column_width ?? ($this->getConfig()['tour_options'] ?? [])['column_width'] ?? 33,
             'max_zoom' => $this->max_zoom,
             'min_zoom' => $this->min_zoom,
         ]);
@@ -592,7 +594,6 @@ class Tour {
     public function getBodyClasses(): string {
         $classes = $this->getExtras()['body_classes'] ?? '';
         $overrides = $this->getOverrides();
-        if ($overrides['wide_column']) $classes .= ' wide-column';
         if (!$overrides['map_on_right']) $classes .= ' map-on-left';
         return $classes;
     }
@@ -823,6 +824,7 @@ class Tour {
         $this->setStart($options['start']);
         $this->setOverrides($options['overrides']);
         $this->setViewOptions($options['view_options']);
+        $this->setColumnWidth($options['column_width']);
         $this->setMaxBounds($options['max_bounds']);
         $this->setMaxZoom($options['max_zoom']);
         $this->setMinZoom($options['min_zoom']);
@@ -972,6 +974,13 @@ class Tour {
     public function setViewOptions($options): void {
         if (is_array($options)) $this->view_options = $options;
         else $this->view_options = [];
+    }
+    /**
+     * @param int|null $width
+     */
+    public function setColumnWidth($width): void {
+        if (is_int($width)) $this->column_width = $width;
+        else $this->column_width = null;
     }
     /**
      * @param array|null $bounds

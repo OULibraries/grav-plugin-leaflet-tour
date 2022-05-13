@@ -490,6 +490,12 @@ $(document).ready(function() {
         if (a) section.html(a);
     }
     if (!isMobile()) {
+        // adjust column width
+        let width = tour_options.column_width;
+        if (width && width != 33) {
+            $('.tour-wrapper').css('width', width + '%');
+            $('#map-wrapper').css('width', (100 - width) + '%');
+        }
         // make sure "tour" size and last view size are sufficient for all views to be enterable via scrollama
         // "tour" view
         let top_height = document.getElementById("top").offsetHeight + document.getElementById("main-nav").offsetHeight + document.getElementById("tour").offsetHeight;

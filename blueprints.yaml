@@ -88,17 +88,15 @@ form:
               description: Individual tours can override these options.
               underline: true
 
-            tour_options.wide_column:
-              type: toggle
-              label: Wide Narrative Column
-              description: If toggled, will change the narrative width from 33% to 40% of the page width.
-              highlight: 1
-              default: 0
-              options:
-                0: PLUGIN_ADMIN.DISABLED
-                1: PLUGIN_ADMIN.ENABLED
+            tour_options.column_width:
+              type: number
+              label: Narrative Column Width
+              description: Can set the desired percentage of the available viewport width for the narrative column to use.
+              default: 33
               validate:
-                type: bool
+                min: 0
+                max: 100
+                step: 1
 
             tour_options.map_on_right:
               type: toggle
