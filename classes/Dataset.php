@@ -307,10 +307,11 @@ class Dataset {
             // new features
             else {
                 if ($feature = Feature::fromArray($feature_yaml, $this->getType())) {
-                    $id = $this->nextFeatureId();
-                    $feature->setId($id, true);
-                    $feature->setDataset($this);
-                    $features[$id] = $feature;
+                    if ($id = $this->nextFeatureId()) {
+                        $feature->setId($id, true);
+                        $feature->setDataset($this);
+                        $features[$id] = $feature;
+                    }
                 }
             }
         }
@@ -324,16 +325,19 @@ class Dataset {
     public function renameProperties($rename_properties): void {
         if (!is_array($rename_properties)) return;
         foreach ($rename_properties as $old => $new) {
+            if (!$new) continue;
             // if value, make sure that it does not match an existing property
             $props = $this->getProperties();
             $keys = array_keys($props, $old, true);
-            if ($new && !in_array($new, $props) && !empty($keys)) {
+            if (!in_array($new, $props) && !empty($keys)) {
                 // replace property in $this->properties
                 $this->properties[$keys[0]] = $new;
                 // replace property in name_property and auto_popup_properties
                 if ($this->getNameProperty() === $old) $this->setNameProperty($new);
-                if (in_array($old, $this->getAutoPopupProperties())) {
-                    $this->setAutoPopupProperties(array_merge($this->getAutoPopupProperties(), [$new]));
+                $auto = $this->getAutoPopupProperties();
+                if (in_array($old, $auto)) {
+                    $auto[array_keys($auto, $old)[0]] = $new;
+                    $this->setAutoPopupProperties($auto);
                 }
                 // replace property for all features
                 foreach ($this->getFeatures() as $id => $feature) {
@@ -354,30 +358,9 @@ class Dataset {
      * @param array $dataset_ids To ensure that created id is unique
      */
     public function initialize(string $file_name, array $dataset_ids): void {
-        // clean up file name and create id, make sure id is unique
-        $file_name = preg_replace('/(.js|.json)$/', '', $file_name);
-        $id = $base_id = str_replace(' ', '-', $file_name);
-        $count = 1;
-        while (in_array($id, $dataset_ids)) {
-            $id = "$base_id-$count";
-            $count++;
-        }
+        $id = $this->initId($file_name, $dataset_ids);
         $this->setId($id, true);
-        // determine title and route, make sure route is unique
-        $name = $base_name = $this->getTitle() ?: $id;
-        $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
-        $pages = Grav::instance()['locator']->findResource('page://');
-        $type = 'point_dataset';
-        if ($this->getType() !== 'Point') $type = 'shape_dataset';
-        $route =  "$pages/datasets/$slug/$type.md";
-        $count = 1;
-        while (MarkdownFile::instance($route)->exists()) {
-            $name = "$base_name-$count";
-            $route = "$pages/datasets/$slug-$count/$type.md";
-            $count++;
-        }
-        $this->setTitle($name);
-        $this->setFile(MarkdownFile::instance($route));
+        $this->initNameAndRoute();
         // set ids, dataset for features
         $features = [];
         foreach ($this->features as $feature) {
@@ -394,6 +377,34 @@ class Dataset {
             $this->border = self::DEFAULT_BORDER;
         }
         if (!$this->getNameProperty() || $this->getNameProperty() === 'none') $this->setNameProperty(self::determineNameProperty($this->getProperties()));
+    }
+    private function initId(string $file_name, array $ids) {
+        // clean up file name and create id, make sure id is unique
+        $file_name = preg_replace('/(.js|.json)$/', '', $file_name);
+        $id = $base_id = str_replace(' ', '-', $file_name);
+        $count = 1;
+        while (in_array($id, $ids)) {
+            $id = "$base_id-$count";
+            $count++;
+        }
+        return $id;
+    }
+    private function initNameAndRoute() {
+        // determine title and route, make sure route is unique
+        $name = $base_name = $this->getTitle() ?: $this->getId();
+        $slug = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $name), '-'));
+        $pages = Grav::instance()['locator']->findResource('page://');
+        $type = 'point_dataset';
+        if ($this->getType() !== 'Point') $type = 'shape_dataset';
+        $route =  "$pages/datasets/$slug/$type.md";
+        $count = 1;
+        while (MarkdownFile::instance($route)->exists()) {
+            $name = "$base_name-$count";
+            $route = "$pages/datasets/$slug-$count/$type.md";
+            $count++;
+        }
+        $this->setTitle($name);
+        $this->setFile(MarkdownFile::instance($route));
     }
     /**
      * Only works if the dataset has a file object set. Generates yaml content and saves it to the file header.
@@ -656,8 +667,7 @@ class Dataset {
     /**
      * @return array $this->icon with defaults filled in
      */
-    public function getIcon(bool $yaml = false): array {
-        if ($yaml) return $this->icon ?? [];
+    public function getIconOptions(): array {
         $icon = $this->icon ?? [];
         // set appropriate defaults to reference
         if ($icon['file']) $icon = array_merge(self::CUSTOM_MARKER_FALLBACKS, $icon);
@@ -696,6 +706,23 @@ class Dataset {
         $path = array_merge(self::DEFAULT_PATH, $this->path, $this->active_path);
         return $this->removeFill($path);
     }
+    public function getFillOptions(): array {
+        if ($this->isLine()) return [];
+        else return [
+            'fill' => $this->path['fill'] ?? self::DEFAULT_PATH['fill'],
+            'fillColor' => $this->path['fillColor'] ?? $this->path['color'] ?? self::DEFAULT_PATH['color'],
+            'fillOpacity' => $this->path['fillOpacity'] ?? self::DEFAULT_PATH['fillOpacity']
+        ];
+    }
+    public function getActiveFillOptions(): array {
+        if ($this->isLine()) return [];
+        $fill = $this->getFillOptions();
+        return [
+            'fill' => $this->active_path['fill'] ?? $fill['fill'],
+            'fillColor' => $this->active_path['fillColor'] ??$this->path['fillColor'] ?? $this->active_path['color'] ?? $fill['fillColor'],
+            'fillOpacity' => $this->active_path['fillOpacity'] ?? $fill['fillOpacity']
+        ];
+    }
     public function getBorderOptions(): array {
         if ($this->hasBorder()) {
             $stroke = $this->getStrokeOptions();
@@ -710,32 +737,20 @@ class Dataset {
     }
     public function getActiveBorderOptions(): array {
         if ($this->hasBorder()) {
-            $stroke = $this->getActiveStrokeOptions();
-            $path = array_merge($stroke, $this->border, $this->active_border);
-            // set weight
-            $width = $this->active_border['weight'] ?? $this->border['weight'] ?? self::DEFAULT_BORDER['weight'];
-            if ($stroke['stroke']) $path['weight'] = $stroke['weight'] + ($width * 2);
-            else $path['weight'] = $width;
-            return $this->removeFill($path);
+            $border_options = $this->getBorderOptions();
+            $active_options = $this->getActiveBorder();
+            $border = [
+                'stroke' => $active_options['stroke'] ?? true,
+                'color' => $active_options['color'] ?? $border_options['color'],
+                'opacity' => $active_options['opacity'] ?? $this->getActivePath()['opacity'] ?? $border_options['opacity'],
+            ];
+            $width = $active_options['weight'] ?? $this->getBorder()['weight'] ?? self::DEFAULT_BORDER['weight']; // can't use getBorderOptions, because weight will have been modified
+            $stroke = $this->getStrokeOptions();
+            if ($stroke['stroke']) $border['weight'] = $stroke['weight'] + ($width * 2);
+            else $border['weight'] = $width;
+            return $this->removeFill($border);
         }
         else return [];
-    }
-    public function getFillOptions(): array {
-        if ($this->isLine()) return [];
-        else return [
-            'fill' => $this->path['fill'] ?? self::DEFAULT_PATH['fill'],
-            'fillColor' => $this->path['fillColor'] ?? $this->path['color'] ?? self::DEFAULT_PATH['color'],
-            'fillOpacity' => $this->path['fillOpacity'] ?? self::DEFAULT_PATH['fillOpacity']
-        ];
-    }
-    public function getActiveFillOptions(): array {
-        if ($this->isLine()) return [];
-        $fill = $this->getFillOptions();
-        return [
-            'fill' => $this->active_path['fill'] ?? $fill['fill'],
-            'fillColor' => $this->active_path['fillColor'] ?? $this->active_path['color'] ?? $fill['fillColor'],
-            'fillOpacity' => $this->active_path['fillOpacity'] ?? $fill['fillOpacity']
-        ];
     }
     public function hasBorder(): bool {
         return ($this->border['stroke'] && $this->border['color']);
@@ -835,6 +850,9 @@ class Dataset {
      */
     public function getExtras(): array {
         return $this->extras;
+    }
+    public function getIcon(): array {
+        return $this->icon;
     }
     public function getPath(): array {
         return $this->path;

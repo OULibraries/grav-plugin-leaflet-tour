@@ -5,6 +5,8 @@ use RocketTheme\Toolbox\File\MarkdownFile;
 
 class View {
 
+    public const DEFAULT_SHORTCODES = 'There is nothing here. Add some features to the view first.';
+
     /**
      * Values not stored in the yaml file or directly updated by user
      */
@@ -60,7 +62,8 @@ class View {
      * 
      * @param array $options
      */
-    private function __construct(array $options) {
+    private function __construct(array $options, ?Tour $tour = null) {
+        if ($tour) $this->setTour($tour);
         $this->setValues($options);
     }
     
@@ -76,9 +79,8 @@ class View {
      */
     public static function fromFile(MarkdownFile $file, ?Tour $tour = null): ?View {
         if ($file->exists()) {
-            $view = self::fromArray((array)($file->header()));
+            $view = self::fromArray((array)($file->header()), $tour);
             $view->setFile($file);
-            if ($tour) $view->setTour($tour);
             return $view;
         }
         else return null;
@@ -90,8 +92,8 @@ class View {
      * 
      * @return View
      */
-    public static function fromArray(array $options): View {
-        return new View($options);
+    public static function fromArray(array $options, ?Tour $tour = null): View {
+        return new View($options, $tour);
     }
 
     // Object Methods
@@ -130,7 +132,7 @@ class View {
      * Sets $this->shortcodes_list based on view features and tour/dataset features. The list will include an entry for every feature that is in the view, is in the view's tour (view must have a tour), and has a popup (auto and/or regular) in the tour
      */
     private function updateShortcodes(): void {
-        $this->shortcodes_list = 'There is nothing here. Add some features to the view first.'; // What to return if nothing is found or there is not a tour
+        $this->shortcodes_list = self::DEFAULT_SHORTCODES; // What to return if nothing is found or there is not a tour
         if ($tour = $this->getTour()) {
             $features = [];
             $popups = array_column($tour->getFeaturePopups(), 'name', 'id');
@@ -319,7 +321,7 @@ class View {
         if (is_array($basemaps)) {
             $this->basemaps = $basemaps;
             if ($tour = $this->getTour()) {
-                $this->basemaps = array_intersect($this->basemaps, array_column($tour->getConfig()['basemap_info'] ?? [], 'file'));
+                $this->basemaps = array_values(array_intersect($this->basemaps, array_column($tour->getConfig()['basemap_info'] ?? [], 'file')));
             }
         }
         else $this->basemaps = [];
@@ -356,14 +358,14 @@ class View {
      * Turns features list into a simple list of ids. If tour is set, makes sure that all features are included in the tour.
      * 
      * @param array|null $features [['id' => $id], ...]
-     * @param bool $from_yaml If yes, need to use array_column on features list, otherwise no
+     * @param bool $from_yaml If yes, need to use array_column on features list, otherwise no (i.e. if yes array needs to match the param above; if no, input can be array of strings [$id, $id,...])
      */
     public function setFeatures($features, bool $from_yaml): void {
         if (is_array($features)) {
             if ($from_yaml) $this->features = array_column($features, 'id');
             else $this->features = $features;
             if ($tour = $this->getTour()) {
-                $this->features = array_intersect($this->features, $tour->getIncludedFeatures());
+                $this->features = array_values(array_intersect($this->features, $tour->getIncludedFeatures()));
             }
         }
         else $this->features = [];

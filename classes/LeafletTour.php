@@ -104,7 +104,7 @@ class LeafletTour {
      * Build self::$datasets: Find all dataset pages, turn into dataset objects
      */
     public static function setDatasets(): void {
-        $files = self::getFiles('dataset');
+        $files = self::getFiles('_dataset', null, 'dataset');
         // turn into Dataset objects
         self::$datasets = [];
         foreach ($files as $id => $file) {
@@ -160,7 +160,7 @@ class LeafletTour {
         }
     }
     // accepts tour or dataset
-    private static function getFiles(string $type, ?string $dir = null): array {
+    private static function getFiles(string $type, ?string $dir = null, ?string $id_type = null): array {
         // find all relevant files inside the pages folder (at any level)
         $files = Utils::getTemplateFiles("$type.md", [], $dir);
         // deal with ids
@@ -171,6 +171,7 @@ class LeafletTour {
             if (($id = $file->header()['id']) && ($id !== 'tmp  id') && (!$tmp_files[$id])) $tmp_files[$id] = $file;
             else $new_files[] = $file;
         }
+        if ($id_type) $type = $id_type;
         foreach ($new_files as $file) {
             $id = self::generateId($file->header()['title'] ?: $type, array_keys($tmp_files));
             $file->header(array_merge($file->header(), ['id' => $id]));
@@ -406,9 +407,8 @@ class LeafletTour {
             'msg' => self::UPDATE_MSGS['start'],
             'status' => 'none',
             'confirm' => false, 'cancel' => false,
-            'dataset' => null, 'file' => null,
+            'dataset' => null, 'file' => [],
             'dataset_prop' => 'none', 'file_prop' => null,
-            'file' => [],
         ];
     }
     private static function getUpdateFolder(): string {

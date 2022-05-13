@@ -393,7 +393,7 @@ class Tour {
                 'legend_summary' => $dataset->getLegend()['summary'],
             ];
             if ($dataset->getType() === 'Point') {
-                $info['icon'] = $dataset->getIcon();
+                $info['icon'] = $dataset->getIconOptions();
             } else {
                 if ($dataset->hasBorder()) {
                     $info['path'] = array_merge($dataset->getBorderOptions(), $dataset->getFillOptions());
@@ -542,7 +542,7 @@ class Tour {
                         'class' => 'dataset',
                     ];
                     if ($dataset->getType() === 'Point') {
-                        $info['icon'] = $dataset->getIcon()['iconUrl'];
+                        $info['icon'] = $dataset->getIconOptions()['iconUrl'];
                     } else {
                         $info['polygon'] = str_contains($dataset->getType(), 'Polygon');
                         $info['stroke'] = $dataset->getStrokeOptions();
@@ -566,6 +566,7 @@ class Tour {
             foreach ($this->getBasemapInfo() as $file => $basemap) {
                 if ($text = $basemap['legend'] ?: $basemap['name']) {
                     $info = [
+                        'file' => $file,
                         'text' => $text,
                         'icon' => Utils::BASEMAP_ROUTE,
                         'class' => 'basemap',
@@ -860,7 +861,7 @@ class Tour {
         if (is_string($title) && !empty($title)) $this->title = $title;
     }
     /**
-     * Sets and validates $this->datasets, indexes the array for convenience
+     * Sets and validates $this->datasets, indexes the array for convenience. Warning! Does not update features. Make sure to call setFeatures after calling this.
      * 
      * @param array|null $datasets Tour datasets list [id, include_all, add_all] from the tour file header
      */
@@ -907,12 +908,8 @@ class Tour {
         $this->clearFeatures();
         if (is_array($features)) {
             $all_features = $this->getAllFeatures();
-            foreach ($features as $feature) {
-                $id = $feature['id'];
-                if ($all_features[$id]) {
-                    $this->features[$id] = $feature;
-                }
-            }
+            $features = array_column($features, null, 'id');
+            $this->features = array_intersect_key($features, $all_features);
         }
     }
     /**
@@ -944,7 +941,7 @@ class Tour {
         if (is_array($basemaps)) {
             // validate basemaps (make sure they exist in plugin config)
             $files = array_column(self::$plugin_config['basemap_info'] ?? [], 'file');
-            $this->basemaps = array_intersect($basemaps, $files);
+            $this->basemaps = array_values(array_intersect($basemaps, $files));
         }
         else $this->basemaps = [];
         $this->clearBasemaps();
@@ -956,7 +953,7 @@ class Tour {
         if (is_array($start)) {
             // validate location, if set
             if ($location = $start['location']) {
-                if (!$this->getAllFeatures()[$location]) $start['location'] = 'none';
+                if (!(($feature = $this->getAllFeatures()[$location]) && ($feature->getType() == 'Point')))  $start['location'] = 'none';
             }
             $this->start = $start;
         }
