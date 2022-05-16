@@ -38,6 +38,12 @@ form:
                       title: General
                       underline: true
 
+                    # TODO: Better info
+                    info:
+                      type: display
+                      content: This page was automatically created. Use the various tabs provided to customize your dataset. Please do not enter expert mode to change options that are read only, as changing these may break aspects of this plugin.
+                      style: vertical
+
                     header.id:
                       type: hidden
                       default: 'tmp  id'
@@ -64,15 +70,27 @@ form:
                   type: column
                   fields:
 
-                    info_section:
+                  # From Grav default.yaml
+                    order_title:
                       type: section
-                      title: Info
+                      title: PLUGIN_ADMIN.ORDERING
                       underline: true
 
-                    # TODO: Better info
-                    info:
-                      type: display
-                      content: This page was automatically created. Use the various tabs provided to customize your dataset. Please do not enter expert mode to change options that are read only, as changing these may break aspects of this plugin.
+                    ordering:
+                      type: toggle
+                      label: PLUGIN_ADMIN.FOLDER_NUMERIC_PREFIX
+                      help: PLUGIN_ADMIN.FOLDER_NUMERIC_PREFIX_HELP
+                      highlight: 1
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
+
+                    order:
+                      type: order
+                      label: PLUGIN_ADMIN.SORTABLE_PAGES
+                      sitemap:
 
             legend_section:
               type: display
