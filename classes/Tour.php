@@ -187,7 +187,6 @@ class Tour {
     public function removeDataset(string $id): bool {
         if ($this->getDatasets()[$id]) {
             unset($this->datasets[$id]);
-            $this->datasets = array_values($this->datasets);
             return $this->updateDataset($id, true);
         }
         else return false;
@@ -687,7 +686,6 @@ class Tour {
             $this->merged_features = [];
             foreach ($this->getIncludedFeatures() as $feature_id) {
                 $feature = $this->getAllFeatures()[$feature_id];
-                if (!$feature) continue;
                 $dataset_id = $feature->getDataset()->getId();
                 // popup content/settings, dataset reference
                 if ($file = $this->getFile()) $filename = $file->filename();
@@ -915,7 +913,7 @@ class Tour {
         if (is_array($features)) {
             $all_features = $this->getAllFeatures();
             $features = array_column($features, null, 'id');
-            $this->features = array_values(array_intersect_key($features, $all_features));
+            $this->features = array_intersect_key($features, $all_features);
         }
     }
     /**
