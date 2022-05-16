@@ -100,13 +100,13 @@ form:
 
             tour_options.map_on_right:
               type: toggle
-              label: Map Located on the Right
-              description: If toggled, map will be on the right side of the page, with narrative column on the left. Disable this setting to switch their positions.
+              label: Map Location
+              description: Determines if the map will be displayed on the right side of the page (with narrative column on the left) or on the left of the page (with narrative column on the right).
               highlight: 1
               default: 1
               options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
+                1: Right
+                0: Left
               validate:
                 type: bool
 
