@@ -271,7 +271,7 @@ class LeafletTourPlugin extends Plugin {
         if (!$tour) return [];
         // get datasets
         foreach (array_keys($tour->getDatasets()) as $id) {
-            $dataset = LeafletTour::getDatasets()[$id];
+            $dataset = LeafletTour::getDatasets()[$id]->clone();
             $name = "header.dataset_overrides.$id";
             $options = [
                 "$name.auto_popup_properties" => [
@@ -334,7 +334,16 @@ class LeafletTourPlugin extends Plugin {
                     'folder' => 'user://data/leaflet-tour/images/icons',
                     'toggleable' => true,
                 ];
-                if ($file = $dataset->getIcon(true)['file']) $options["$name.icon.file"]['default'] = $file;
+                $file = $dataset->getIcon(true)['file'];
+                // determine appropriate defaults for icon height/width if not directly set by dataset
+                try {
+                    $file ??= $tour->getDatasetOverrides()[$dataset->getId()]['icon']['file'];
+                } catch (\Throwable $t) {} // do nothing
+                if ($file) $default = Dataset::CUSTOM_MARKER_FALLBACKS;
+                else $default = Dataset::DEFAULT_MARKER_FALLBACKS;
+                $height = $dataset->getIcon()['height'] ?? $default['height'];
+                $width = $dataset->getIcon()['width'] ?? $default['width'];
+                if ($file) $options["$name.icon.file"]['default'] = $file;
                 $icon = $dataset->getIcon();
                 $options["$name.icon.width"] = [
                     'type' => 'number',
@@ -343,7 +352,7 @@ class LeafletTourPlugin extends Plugin {
                     'validate' => [
                         'min' => 1
                     ],
-                    'default' => $icon['width'],
+                    'default' => $width,
                 ];
                 $options["$name.icon.height"] = [
                     'type' => 'number',
@@ -352,7 +361,7 @@ class LeafletTourPlugin extends Plugin {
                     'validate' => [
                         'min' => 1
                     ],
-                    'default' => $icon['height'],
+                    'default' => $height,
                 ];
             } else {
                 $options['path_section'] = [
