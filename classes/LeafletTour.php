@@ -303,6 +303,7 @@ class LeafletTour {
         // update tours
         foreach (self::getTours() as $id => $tour) {
             $tour->removeDataset($dataset_id);
+            $tour->save();
         }
         // update self
         unset(self::$datasets[$page->header()->get('id')]);
