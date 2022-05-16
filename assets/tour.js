@@ -622,6 +622,18 @@ $(document).ready(function() {
     $(".reset-view-btn").on("click", function() {
         enterView('tour');
     });
+    $(".view-popup-btn").on("click", function() {
+        let feature_id = this.getAttribute("data-feature");
+        openDialog(feature_id + "-popup", this);
+        $(this).one("focus", function() {
+            // when focus returns, make sure the feature is activated
+            tour.features.get(this.getAttribute("data-feature")).activate();
+            $(this).one("blur", function() {
+                // when focus leaves deactivate the feature
+                tour.features.get(this.getAttribute("data-feature")).deactivate();
+            });
+        });
+    });
 
     // scrolling (desktop)
     $("#tour-wrapper").on("scroll", function() {

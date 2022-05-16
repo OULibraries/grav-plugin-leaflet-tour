@@ -372,7 +372,8 @@ class LeafletTour {
      */
     public static function buildPopupButton(string $feature_id, string $button_id, string $name, ?string $text = null): string {
         $text = trim($text) ?: $name; // TODO: Determine default text?
-        return "<button id='$button_id' aria-haspopup='true' onClick=\"openDialog('$feature_id-popup', this)\" class='btn view-popup-btn'>$text</button>";
+        // return "<button id='$button_id' aria-haspopup='true' onClick=\"openDialog('$feature_id-popup', this)\" class='btn view-popup-btn'>$text</button>";
+        return "<button id='$button_id' aria-haspopup='true' data-feature='$feature_id' class='btn view-popup-btn'>$text</button>";
     }
     public static function stripParagraph(string $text): string {
         if (str_starts_with($text, '<p>')) return substr($text, 3, -4);
