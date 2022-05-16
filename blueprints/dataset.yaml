@@ -66,6 +66,19 @@ form:
                       label: Dataset Attribution
                       description: Add some HTML to include in the tour footer when the dataset is used.
 
+                    export_geojson:
+                      type: toggle
+                      label: Export Dataset
+                      description: Will create a json file in the page folder that can then be downloaded. The file will include geojson representations of features with custom name and popup content added to feature properties if set.
+                      style: vertical
+                      highlight: 1
+                      default: 0
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
+
                 col2:
                   type: column
                   fields:

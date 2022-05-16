@@ -250,6 +250,10 @@ class LeafletTour {
             foreach (self::getTours() as $tour_id => $tour) {
                 $tour->updateDataset($id);
             }
+            // check for export toggle
+            if ($page->value('export_geojson')) {
+                $dataset->export();
+            }
         }
     }
     public static function handleTourPageSave($page): void {

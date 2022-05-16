@@ -4,6 +4,7 @@ namespace Grav\Plugin\LeafletTour;
 
 use Grav\Common\Grav;
 use RocketTheme\Toolbox\File\MarkdownFile;
+use Grav\Common\File\CompiledJsonFile;
 
 class Dataset {
 
@@ -644,6 +645,25 @@ class Dataset {
             unset($yaml['icon']);
         }
         return $yaml;
+    }
+
+    /**
+     * Creates a json file in the dataset page folder and adds features as geojson content.
+     */
+    public function export(): void {
+        if (!$this->file || !$this->id) return;
+        $features = [];
+        foreach (array_values($this->getFeatures()) as $feature) {
+            $features[] = $feature->toGeoJson();
+        }
+        $json = [
+            'type' => 'FeatureCollection',
+            'name' => $this->getName(),
+            'features' => $features
+        ];
+        $file = CompiledJsonFile::instance(dirname($this->file->filename()) . "/$this->id.json");
+        $file->content($json);
+        $file->save();
     }
 
     // Calculated Getters
