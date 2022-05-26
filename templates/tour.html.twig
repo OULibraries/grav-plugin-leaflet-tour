@@ -3,6 +3,10 @@
 {% set plugin_config = config.plugins['leaflet-tour'] %}
 {% set tour = leaflet_tour.getTour(header.id) %}
 
+{% set datasets = tour.getLegendDatasets() %}
+{% set basemaps = tour.getLegendBasemaps() %}
+{% set has_legend = (datasets|length > 0) or (basemaps|length > 0) %}
+
 {% block starting_scripts %}
     {{ parent() }}
     {# Set some important map data #}
@@ -14,6 +18,18 @@
         const tour_features = new Map(Object.entries({{ tour.getFeatureData()|json_encode|raw }}));
         let tour_views = new Map(Object.entries({{ tour.getViewData()|json_encode|raw }}));
     </script>
+    {% set col_width = tour.getColumnwidth() %}
+    {# Putting this here so it can be dynamic #}
+    <style>
+        @media (min-width: 768px) {
+            .tour-wrapper {
+                width: {{ col_width }}%;
+            }
+            #map-wrapper {
+                width: {{ 100 - col_width }}%;
+            }
+        }
+    </style>
 {% endblock starting_scripts %}
 
 {# Allow theme CSS to overwrite Leaflet CSS, and allow tour-specific CSS to overwrite all other CSS. #}
@@ -58,7 +74,7 @@
                         </button>
                     </div>
                     <div class="dialog-content">
-                        <div class="option">
+                        {# <div class="option">
                             <label class="toggle-switch">
                                 <span class="switch">
                                     <input id="map-animation-toggle" type="checkbox" class="sr-only" aria-checked="true" checked>
@@ -66,6 +82,17 @@
                                 </span>
                                 <span class="label">Map automatically changes when scrolling</span>
                             </label>
+                        </div> #}
+                        <div class="option">
+                            <button role="switch" aria-checked="true">
+                                <span class="label">Scrolling Changes Map</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" height="30" width="52">
+                                    <rect class="container" x="1" y="1" height="28" width="50" rx="15"></rect>
+                                    <circle class="toggle" cx="15" cy="15" r="11">
+                                </svg>
+                                <span class="on" aria-hidden="true">On</span>
+                                <span class="off" aria-hidden="true">Off</span>
+                            </button>
                         </div>
                         <div class="option">
                             <button id="reset-view-btn" class="btn reset-view-btn">Reset Map</button>
@@ -87,7 +114,7 @@
             </button>
             <div id="map-nav-options">
                 <button id="map-toggle-btn" class="btn" data-map-active="false">View Map</button>
-                <button id="mobile-legend-btn" aria-haspopup="true" class="map-only btn">Open Legend</button>
+                {% if has_legend %}<button id="mobile-legend-btn" aria-haspopup="true" class="map-only btn">Open Legend</button>{% endif %}
                 <button id="map-reset-btn" class="map-only btn reset-view-btn">Reset Map</button>
             </div>
         </nav>
@@ -110,7 +137,7 @@
                         {{ view.content|raw }}
                     {% endfor %}
                 </div>
-                {% include 'partials/tour-attribution.html.twig' with {'tour':tour} %}
+                {% if has_legend %}{% include 'partials/tour-attribution.html.twig' with {'tour':tour, 'datasets':datasets, 'basemaps':basemaps} %}{% endif %}
                 {% block back_to_top %}{{ parent() }}{% endblock %}
             </div>
             <div id="map-wrapper" role="region" aria-label="Map">

@@ -308,6 +308,7 @@ class LeafletTour {
         foreach (self::getTours() as $id => $tour) {
             $tour->removeDataset($dataset_id);
             $tour->save();
+            $tour->updateViews();
         }
         // update self
         unset(self::$datasets[$page->header()->get('id')]);
@@ -388,6 +389,8 @@ class LeafletTour {
     public static function handleDatasetUpdate(array $old, array $new): array {
         // cancel update?
         if ($new['cancel']) return self::clearUpdate();
+        // is dataset uploaded?
+        if (empty($new['file'])) return array_merge($new, ['msg' => self::UPDATE_MSGS['start']]);
         // get/parse uploaded dataset
         $update_dataset = self::getUpdateDataset($old, $new);
         if (!$update_dataset) {
@@ -483,7 +486,7 @@ class LeafletTour {
             // make sure to remove any issue messages
             $msg = $new['msg'];
             foreach (['dataset_modified_no_issues', 'file_not_created'] as $key) {
-                $msg = str_replace(self::UPDATE_MSGS[$key] . "\r\n\r\n", '', $msg);
+                $msg = str_replace(self::UPDATE_MSGS[$key] . "\n\n", '', $msg);
             }
             $new['msg'] = $msg;
             return $new;
@@ -605,6 +608,7 @@ class LeafletTour {
         $tmp_dataset->save();
         $msg = self::UPDATE_MSGS['update_warning'] . "\r\n\r\n" . $msg;
         $dataset->setReadyForUpdate(true);
+        $dataset->save();
         return [
             'msg' => $msg,
             'confirm' => false,

@@ -255,8 +255,8 @@ class LeafletTourPlugin extends Plugin {
                 // default: path color ?? default color
                 return ($header['path'] ?? [])['color'] ?? Dataset::DEFAULT_PATH['color'];
             case 'active_path_fillColor':
-                // default: active path color
-                return ($header['active_path'] ?? [])['color'] ?? self::getDatasetDefaults('active_path_color');
+                // default: regular fill color
+                return ($header['path'] ?? [])['fillColor'] ?? self::getDatasetDefaults('path_fillColor');
         }
     }
 

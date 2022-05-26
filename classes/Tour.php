@@ -371,7 +371,6 @@ class Tour {
     public function getTourData(): array {
         $data = array_merge($this->getOverrides(), [
             'tile_server' => $this->getTileServerOptions(),
-            'column_width' => $this->column_width ?? ($this->getConfig()['tour_options'] ?? [])['column_width'] ?? 33,
             'max_zoom' => $this->max_zoom,
             'min_zoom' => $this->min_zoom,
         ]);
@@ -597,6 +596,9 @@ class Tour {
         $overrides = $this->getOverrides();
         if (!$overrides['map_on_right']) $classes .= ' map-on-left';
         return $classes;
+    }
+    public function getColumnWidth(): int {
+        return $this->column_width ?? ($this->getConfig()['tour_options'] ?? [])['column_width'] ?? 33;
     }
     /**
      * Sets $this->all_features if not set, then returns it.

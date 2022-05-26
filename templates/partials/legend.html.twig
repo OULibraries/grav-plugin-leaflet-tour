@@ -1,6 +1,3 @@
-{% set datasets = tour.getLegendDatasets() %}
-{% set basemaps = tour.getLegendBasemaps() %}
-{% if (datasets|length > 0) or (basemaps|length > 0) %}
 <div class="legend-wrapper desktop-only" id="legend-wrapper">
     <div class="legend">
         <div class="legend-top">
@@ -57,4 +54,3 @@
     {% endif %}
     </div>
 </div>
-{% endif %}

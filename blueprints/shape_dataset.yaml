@@ -159,7 +159,7 @@ form:
               style: vertical
 
             header.active_path.stroke:
-              type: toggle
+              data-type@: ['Grav\Plugin\LeafletTourPlugin::getShapeFillType', 'toggle']
               label: Draw Stroke (Outline)
               description: Whether to draw the outline or border for a polygon feature when it is active. (This setting only matters for polygon datasets, as it will be enabled regardless for lines.)
               toggleable: true

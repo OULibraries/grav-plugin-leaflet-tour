@@ -563,7 +563,7 @@ $(document).ready(function() {
     if (sessionStorage.getItem('animation') === 'false') $("#map-animation-toggle").click();
     // legend
     $("#legend-toggle-btn").on("click", function() {
-        $("#" + this.getAttribute("data-toggles")).toggleClass("minimized");
+        $("#" + this.getAttribute("aria-controls")).toggleClass("minimized");
         toggleExpanded(this);
     });
     $("#mobile-legend-btn").on("click", toggleMobileLegend);
@@ -646,6 +646,9 @@ $(document).ready(function() {
         }
         window_scroll_tick = true;
     });
+
+    // call theme method (there may be new links to modify)
+    modifyLinks();
 });
 
 // TODO: This should really move to the theme depending on how I deal with aria-haspopup
