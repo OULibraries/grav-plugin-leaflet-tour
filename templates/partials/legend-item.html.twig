@@ -14,11 +14,13 @@
             {# {% set offset = item.border|length ? offset + 2 : offset %}
             {% set offset = item.stroke.stroke ? offset + 1 : offset %} #}
             {% set size = size - (2 * offset) %}
-            {# {% if item.border|length %} #}
-                <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" stroke="{{ item.border.color ?? item.stroke.color }}" stroke-width="{{ offset * 2 }}" fill="transparent" />
-            {# {% endif %} #}
-            {% if item.stroke.stroke %}
-                <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" stroke="{{ item.stroke.color }}" stroke-width="2" fill="transparent" />
+            {% if item.border|length %}
+                <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" stroke="{{ item.border.color }}" stroke-width="{{ offset * 2 }}" fill="transparent" />
+                {% if item.stroke.stroke %}
+                    <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" stroke="{{ item.stroke.color }}" stroke-width="2" fill="transparent" />
+                {% endif %}
+            {% elseif item.stroke.stroke %}
+                <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" stroke="{{ item.stroke.color }}" stroke-width="{{ offset * 2 }}" fill="transparent" />
             {% endif %}
         {% else %}
             {% set offset = item.border|length ? 2 : 0 %}
