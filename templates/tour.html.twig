@@ -137,13 +137,13 @@
                         {{ view.content|raw }}
                     {% endfor %}
                 </div>
-                {% if has_legend %}{% include 'partials/tour-attribution.html.twig' with {'tour':tour, 'datasets':datasets, 'basemaps':basemaps} %}{% endif %}
+                {% include 'partials/tour-attribution.html.twig' with {'tour':tour} %}
                 {% block back_to_top %}{{ parent() }}{% endblock %}
             </div>
             <div id="map-wrapper" role="region" aria-label="Map">
                 <a href="#map-end" id="skip-map-link" class="skip-link desktop-only">Skip Map</a>
                 {# Legend #}
-                {% include 'partials/legend.html.twig' with {'tour':tour} %}
+                {% if has_legend %}{% include 'partials/legend.html.twig' with {'tour':tour, 'datasets':datasets, 'basemaps':basemaps} %}{% endif %}
                 <div id="map"></div>
                 <div id="map-end"></div>
                 <a href="#" id="back-to-view-btn" class="skip-link desktop-only">Back to View</a>
