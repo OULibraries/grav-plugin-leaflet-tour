@@ -142,6 +142,17 @@
             </div>
             <div id="map-wrapper" role="region" aria-label="Map">
                 <a href="#map-end" id="skip-map-link" class="skip-link desktop-only">Skip Map</a>
+                {# Zoom Buttons #}
+                <div class="zoom-btns">
+                    <button class="icon-btn" id="zoom-out-btn">
+                        <i class="fas fa-plus" aria-hidden="true"></i>
+                        <span class="sr-only">Zoom Map Out</span>
+                    </button>
+                    <button class="icon-btn" id="zoom-in-btn">
+                        <i class="fas fa-minus" aria-hidden="true"></i>
+                        <span class="sr-only">Zoom Map In</span>
+                    </button>
+                </div>
                 {# Legend #}
                 {% if has_legend %}{% include 'partials/legend.html.twig' with {'tour':tour, 'datasets':datasets, 'basemaps':basemaps} %}{% endif %}
                 <div id="map"></div>

@@ -317,6 +317,21 @@ main {
     }
 }
 
+.zoom-btns {
+    position: absolute;
+    z-index: 700;
+    padding: 5px;
+    .icon-btn {
+        border-radius: 0;
+    }
+    #zoom-out.btn {
+        border-bottom-width: 1px;
+    }
+    #zoom-in-btn {
+        border-top-width: 1px;
+    }
+}
+
 /* legend */
 .legend-wrapper {
     padding: 15px;

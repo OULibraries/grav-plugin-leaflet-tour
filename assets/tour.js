@@ -248,7 +248,7 @@ class TourPath extends TourFeature {
 // ---------- Tour and Tour Setup Functions ---------- //
 function createMap() {
     let m = L.map('map', {
-        zoomControl: true,
+        zoomControl: false,
         attributionControl: false,
     });
     if (max = tour_options.max_zoom) m.setMaxZoom(max);
@@ -555,7 +555,13 @@ $(document).ready(function() {
     });
     // load animation settings
     if (sessionStorage.getItem('animation') === 'false') $("#map-animation-toggle").click();
-    // legend
+    // legend (and zoom buttons)
+    $("#zoom-out-btn").on("click", function() {
+        map.zoomOut();
+    });
+    $("#zoom-in-btn").on("click", function() {
+        map.zoomIn();
+    });
     $("#legend-toggle-btn").on("click", function() {
         $("#" + this.getAttribute("aria-controls")).toggleClass("minimized");
         toggleExpanded(this);
