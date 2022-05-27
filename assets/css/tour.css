@@ -1,0 +1,490 @@
+/* ----- grid layout (and display) ----- */
+.map-only {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  #map-wrapper {
+    display: none;
+  }
+
+  .tour-wrapper {
+    display: grid;
+    grid-template-rows: repeat(5, minmax(70px, min-content));
+    grid-template-columns: 1fr;
+  }
+  .tour-wrapper header {
+    grid-row: 1;
+    grid-column: 1;
+  }
+  .tour-wrapper #main-nav {
+    grid-row: 2;
+    grid-column: 1;
+  }
+  .tour-wrapper #map-nav {
+    grid-row: 3;
+    grid-column: 1;
+  }
+  .tour-wrapper main {
+    grid-row: 4;
+    grid-column: 1;
+  }
+  .tour-wrapper footer {
+    grid-row: 5;
+    grid-column: 1;
+  }
+
+  .map-active .map-only {
+    display: initial;
+  }
+  .map-active header, .map-active #main-nav, .map-active #scrolly, .map-active footer {
+    display: none;
+  }
+  .map-active .tour-wrapper {
+    grid-template-rows: repeat(3, min-content);
+    grid-template-columns: 1fr min-content;
+  }
+  .map-active .tour-wrapper #map-nav {
+    grid-row: 2;
+    grid-column: 2;
+  }
+  .map-active .tour-wrapper #map-nav.expanded {
+    grid-row: 1;
+    grid-column: 1/3;
+  }
+  .map-active .tour-wrapper main {
+    grid-row: 2/4;
+    grid-column: 1/3;
+  }
+  .map-active #map-wrapper {
+    display: block;
+    height: 100vh;
+    width: 100%;
+  }
+}
+@media (min-width: 768px) {
+  .tour-wrapper {
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  #map-wrapper {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+  }
+
+  .map-on-left .tour-wrapper {
+    position: absolute;
+    right: 0;
+  }
+  .map-on-left #map-wrapper {
+    right: unset;
+    left: 0;
+  }
+}
+/* ----- padding ----- */
+#main-nav {
+  margin: 10px;
+}
+
+#scrolly {
+  padding: 10px;
+}
+
+@media (min-width: 480px) {
+  #main-nav {
+    margin: 20px 20px 0;
+  }
+
+  #scrolly {
+    padding: 20px;
+  }
+}
+@media (min-width: 768px) {
+  .tour-wrapper header {
+    font-size: 20px;
+    padding: 10px;
+  }
+  .tour-wrapper #main-nav {
+    margin: 10px 10px 0;
+  }
+  .tour-wrapper #scrolly {
+    padding: 10px;
+  }
+  .tour-wrapper footer {
+    padding: 10px 20px;
+  }
+}
+@media (min-width: 1024px) {
+  #scrolly {
+    padding: 20px;
+  }
+
+  #main-nav {
+    padding-right: 5px;
+  }
+  #main-nav #nav-toggle-btn {
+    display: block;
+  }
+  #main-nav #main-nav-list.collapsed {
+    display: none;
+  }
+}
+#top .dialog-backdrop {
+  z-index: 700;
+  margin: 0;
+}
+
+#settings-modal .dialog-content {
+  padding-top: 0;
+  margin: 10px 30px;
+}
+#settings-modal .dialog-content .option {
+  margin: 30px 10px;
+}
+#settings-modal .dialog-content .option label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  cursor: pointer;
+}
+#settings-modal .dialog-content .option label .label {
+  padding: 0;
+  margin-left: 10px;
+}
+
+/* code for toggle-switch comes primarily from W3Schools */
+.toggle-switch .switch {
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  width: 50px;
+  height: 28px;
+  /* Note: input element should be hidden using sr-only for simplicity */
+}
+.toggle-switch .switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+  border-radius: 28px;
+}
+.toggle-switch .switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  -webkit-transition: 0.4s;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+.toggle-switch .switch input:checked + .slider {
+  background-color: #2196F3;
+}
+.toggle-switch .switch input:checked + .slider:before {
+  -webkit-transform: translateX(22px);
+  -ms-transform: translateX(22px);
+  transform: translateX(22px);
+}
+.toggle-switch .switch input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+/* map-nav (content unscrolled vs. content scrolled vs. map) */
+@media (max-width: 767px) {
+  #map-nav {
+    z-index: 20;
+  }
+
+  body:not(.map-active) #map-toggle-btn {
+    float: right;
+  }
+}
+@media (max-width: 767px) and (min-width: 480px) {
+  body:not(.map-active) #map-toggle-btn {
+    margin-top: 20px;
+    margin-right: 20px;
+  }
+}
+@media (max-width: 767px) {
+  body:not(.map-active) #map-nav.scrolled {
+    position: fixed;
+    top: 0;
+    right: 0;
+  }
+}
+@media (max-width: 767px) {
+  .map-active #mobile-map-toggle-btn {
+    margin: 10px;
+    float: right;
+  }
+  .map-active #map-nav-options {
+    display: none;
+  }
+  .map-active #map-nav.expanded #map-nav-options {
+    display: flex;
+    flex-direction: column;
+  }
+  .map-active #map-nav.expanded #map-nav-options button {
+    margin: 0;
+  }
+}
+/* content */
+main {
+  z-index: 0;
+}
+main #back-to-top {
+  bottom: 8%;
+  bottom: clamp(25px, 8%, 100px);
+}
+@media (min-width: 768px) {
+  main .desktop-btns {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+  main .desktop-btns .go-to-view-btn {
+    opacity: 0;
+    pointer-events: none;
+    transition: none;
+  }
+  main .desktop-btns .go-to-view-btn:focus {
+    opacity: 1;
+    transition: opacity 0.5s;
+  }
+  main #back-to-view-btn {
+    display: none;
+    position: absolute;
+    opacity: 0;
+    z-index: 700;
+    pointer-events: none;
+    bottom: 10px;
+    right: 20px;
+    transition: none;
+  }
+  main #back-to-view-btn.active {
+    display: inline-block;
+  }
+  main #back-to-view-btn:focus {
+    opacity: 1;
+    transition: opacity 0.5s;
+    pointer-events: all;
+  }
+  main #back-to-top {
+    position: sticky;
+    float: right;
+    right: 20px;
+    transform: none;
+  }
+}
+
+.zoom-btns {
+  position: absolute;
+  z-index: 700;
+  padding: 5px;
+}
+.zoom-btns .icon-btn {
+  border-radius: 0;
+}
+.zoom-btns #zoom-out.btn {
+  border-bottom-width: 1px;
+}
+.zoom-btns #zoom-in-btn {
+  border-top-width: 1px;
+}
+
+/* legend */
+.legend-wrapper {
+  padding: 15px;
+}
+.legend-wrapper .legend-top {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 2px solid black;
+}
+.legend-wrapper .legend-top h2 {
+  margin: 0;
+  flex-grow: 1;
+  border: none;
+  padding-top: 10px;
+}
+.legend-wrapper .legend-top #legend-close-btn {
+  margin-right: 5px;
+}
+.legend-wrapper .legend fieldset {
+  border: none;
+}
+.legend-wrapper .legend li, .legend-wrapper .legend label {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  padding: 5px 0;
+}
+.legend-wrapper .legend li img, .legend-wrapper .legend li svg, .legend-wrapper .legend label img, .legend-wrapper .legend label svg {
+  margin: 10px;
+}
+.legend-wrapper .legend li img.basemap, .legend-wrapper .legend label img.basemap {
+  max-width: 20%;
+}
+.legend-wrapper .legend li span, .legend-wrapper .legend label span {
+  padding: 0 10px;
+}
+.legend-wrapper .legend-basemaps h3 {
+  margin-top: 20px;
+  padding-left: 0;
+  font-size: 22px;
+}
+.legend-wrapper .legend-basemaps #legend-basemaps-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  background-color: transparent;
+}
+.legend-wrapper .legend-basemaps #legend-basemaps-toggle h3 {
+  margin: 0;
+  border: none;
+  padding-right: 10px;
+}
+.legend-wrapper .legend-basemaps #legend-basemaps-toggle .fas {
+  font-size: 22px;
+  padding-top: 5px;
+}
+.legend-wrapper .legend-basemaps #legend-basemaps-toggle .fa-angle-up {
+  display: none;
+}
+.legend-wrapper .legend-basemaps .maps-heading {
+  width: 100%;
+  border: none;
+  padding-bottom: 10px;
+}
+.legend-wrapper .legend-basemaps #legend-basemaps-list {
+  display: none;
+}
+.legend-wrapper .legend-basemaps.expanded .maps-heading {
+  border-bottom: 1px solid black;
+}
+.legend-wrapper .legend-basemaps.expanded #legend-basemaps-toggle .fa-angle-up {
+  display: inline-block;
+}
+.legend-wrapper .legend-basemaps.expanded #legend-basemaps-toggle .fa-angle-down {
+  display: none;
+}
+.legend-wrapper .legend-basemaps.expanded #legend-basemaps-list {
+  display: block;
+}
+@media (min-width: 768px) {
+  .legend-wrapper {
+    z-index: 700;
+    position: absolute;
+    box-sizing: border-box;
+    margin: 10px;
+    margin-right: clamp(10px, 2.5%, 30px);
+    margin-top: clamp(10px, 2.5%, 30px);
+    top: 0;
+    right: 0;
+    width: calc(50% - 30px);
+    max-width: 400px;
+    padding: 10px 0;
+    background-color: white;
+    border: 2px solid black;
+    border-radius: 10px;
+  }
+  .legend-wrapper .legend {
+    overflow-y: auto;
+    max-height: calc(100vh - 70px);
+    padding: 5px 15px;
+  }
+  .legend-wrapper .legend-top {
+    align-items: center;
+    border-bottom-width: 1px;
+    padding-bottom: 15px;
+  }
+  .legend-wrapper .legend-top h2 {
+    padding: 0;
+    font-size: 24px;
+  }
+  .legend-wrapper .legend-top #legend-toggle-btn {
+    margin-right: 10px;
+    border-radius: 5px;
+  }
+  .legend-wrapper .legend-top #legend-toggle-btn .fa-plus {
+    display: none;
+  }
+  .legend-wrapper.minimized {
+    width: 200px;
+    width: clamp(180px, 30%, 400px);
+  }
+  .legend-wrapper.minimized .legend {
+    padding: 0 15px;
+  }
+  .legend-wrapper.minimized .legend-top {
+    padding: 0;
+    border: none;
+  }
+  .legend-wrapper.minimized .legend-top #legend-toggle-btn {
+    margin-right: 0;
+  }
+  .legend-wrapper.minimized .legend-top #legend-toggle-btn .fa-minus {
+    display: none;
+  }
+  .legend-wrapper.minimized .legend-top #legend-toggle-btn .fa-plus {
+    display: inline-block;
+  }
+  .legend-wrapper.minimized .legend-basemaps, .legend-wrapper.minimized #legend-data-list {
+    display: none;
+  }
+}
+
+#skip-map-link {
+  position: absolute;
+  top: -70px;
+  transition: top 0.5s ease;
+  left: 20px;
+  z-index: 700;
+}
+#skip-map-link:focus {
+  top: 20px;
+}
+
+#map {
+  height: 100%;
+}
+#map .leaflet-marker-icon {
+  padding: 4px;
+  top: -4px;
+  left: -4px;
+  border-radius: 5px;
+}
+#map .leaflet-marker-icon:hover {
+  box-shadow: inset 0 0 0 1px #333, inset 0 0 0 2px white, inset 0 0 0 3px #333;
+}
+#map .leaflet-marker-icon:focus {
+  outline: revert !important;
+  outline-offset: -2px;
+}
+#map .no-popup {
+  cursor: default;
+  cursor: not-allowed;
+}
+#map .leaflet-tooltip {
+  color: #333;
+  font-family: Verdana, Helvetica, Arial, sans-serif;
+  font-size: 12px;
+}
+#map .leaflet-tooltip.active {
+  box-shadow: 0 0 2px 2px #333, 0 0 2px 3px #fff;
+  opacity: 1 !important;
+  z-index: 700;
+}
+
+/*# sourceMappingURL=tour.css.map */

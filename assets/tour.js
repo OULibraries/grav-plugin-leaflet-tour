@@ -149,12 +149,17 @@ class TourPath extends TourFeature {
         super(feature, datasets);
         if (this.dataset.stroke) this.stroke = true;
         // if weight is below buffer cutoff, set buffer true
-        if ((this.dataset.path.weight < BUFFER_WEIGHT) || this.stroke) {
+        if ((this.dataset.path.weight < BUFFER_WEIGHT)) {
             // if polygon, only set buffer true if there is also no fill
             // let type = this.type.toLowerCase();
             // if (this.is_line) this.buffer = true;
             // else if (!(this.dataset.path.fill ?? true)) this.buffer = true;
             this.buffer = true;
+        }
+        else if (this.stroke) {
+            // if there is stroke and border, even if weight is very large, still want buffer for other reasons
+            this.buffer = true;
+            this.buffer_weight = this.dataset.path.weight;
         }
     }
     get is_line() {
@@ -211,9 +216,13 @@ class TourPath extends TourFeature {
             else {
                 // if bounding box is in view, try moving tooltip to the closest layer point
                 if (map.getBounds().intersects(this.layer.getBounds())) {
-                    let point = this.layer.closestLayerPoint(map.latLngToLayerPoint(map.getCenter()));
-                    let latlng = map.layerPointToLatLng([point['x'], point['y']]);
-                    if (map.getBounds().contains(latlng)) this.tmp_tooltip = latlng;
+                    try {
+                        let point = this.layer.closestLayerPoint(map.latLngToLayerPoint(map.getCenter()));
+                        let latlng = map.layerPointToLatLng([point['x'], point['y']]);
+                        if (map.getBounds().contains(latlng)) this.tmp_tooltip = latlng;
+                    } catch (e) {
+                        // do nothing
+                    }
                 }
                 if (!this.tmp_tooltip) {
                     // either bounding box is not in view or it is, but the closest layer point is not - pan and possibly zoom to feature
@@ -327,10 +336,12 @@ function createStrokeLayer() {
 function createBufferLayer() {
     let layer = L.geoJson(null, {
         style: function(json) {
+            let feature = tour.features.get(json.properties.id);
+            let weight = feature.buffer_weight ?? BUFFER_WEIGHT;
             if (tour.features.get(json.properties.id).is_line) {
-                return { stroke: true, weight: BUFFER_WEIGHT, opacity: 0, fill: false };
+                return { stroke: true, weight: weight, opacity: 0, fill: false };
             }
-            else return { stroke: true, weight: BUFFER_WEIGHT, opacity: 0, fill: true, fillColor: 'transparent' };
+            else return { stroke: true, weight: weight, opacity: 0, fill: true, fillColor: 'transparent' };
         },
         onEachFeature: function(json, layer) {
             tour.features.get(json.properties.id).addToBufferLayer(layer);
@@ -548,10 +559,11 @@ $(document).ready(function() {
         if (this.getAttribute("data-map-active") === "false") switchToMap(this.id);
         else switchToContent();
     });
-    $("#map-animation-toggle").on("input", function() {
-        this.setAttribute("aria-checked", this.checked);
-        tour_state.animation = this.checked;
-        sessionStorage.setItem('animation', this.checked);
+    $("#map-animation-toggle").on("click", function() {
+        let checked = this.getAttribute("aria-checked") === 'true' ? false : true;
+        this.setAttribute("aria-checked", checked);
+        tour_state.animation = checked;
+        sessionStorage.setItem('animation', checked);
     });
     // load animation settings
     if (sessionStorage.getItem('animation') === 'false') $("#map-animation-toggle").click();
