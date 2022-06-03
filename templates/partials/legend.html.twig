@@ -20,7 +20,7 @@
                 <legend class="sr-only">Included Datasets</legend>
                 {% for item in datasets %}
                     <label class="legend-item-wrapper">
-                        <input type="checkbox" class="legend-checkbox" value="{{ item.id }}" aria-checked="true" checked>
+                        <input type="checkbox" class="legend-checkbox" value="{{ item.id }}" aria-checked="true" checked />
                         {% include 'partials/legend-item.html.twig' with {'item': item} %}
                     </label>
                 {% endfor %}

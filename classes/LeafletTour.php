@@ -487,6 +487,7 @@ class LeafletTour {
             $msg = $new['msg'];
             foreach (['dataset_modified_no_issues', 'file_not_created'] as $key) {
                 $msg = str_replace(self::UPDATE_MSGS[$key] . "\n\n", '', $msg);
+                $msg = str_replace(self::UPDATE_MSGS[$key] . "\r\n\r\n", '', $msg);
             }
             $new['msg'] = $msg;
             return $new;
