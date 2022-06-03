@@ -187,7 +187,7 @@ class TourPath extends TourFeature {
         // create the focus element
         let focus;
         if (this.has_popup) {
-            focus = $('<button class="sr-only">' + this.alt_text + '</button>');
+            focus = $('<button type="button" class="sr-only">' + this.alt_text + '</button>');
         } else {
             focus = $('<div class="sr-only" tabindex="0">' + this.alt_text + '</div>');
         }
@@ -581,7 +581,7 @@ $(document).ready(function() {
     $("#mobile-legend-btn").on("click", toggleMobileLegend);
     $("#legend-close-btn").on("click", toggleMobileLegend);
     $(".legend-checkbox").on("input", function() {
-        this.setAttribute("aria-checked", this.checked);
+        // this.setAttribute("aria-checked", this.checked);
         toggleDataset(this.value, !this.checked);
     })
     $("#legend-basemaps-toggle").on("click", function() {

@@ -3,12 +3,12 @@
         <div class="legend-top">
             <h2>Legend </h2>
             {# TODO: Should this really be using aria-controls in this way? It might be better to adjust the html to be more sensible in this regard #}
-            <button id="legend-toggle-btn" class="desktop-only icon-btn" aria-expanded="true" aria-controls="legend-wrapper">
+            <button type="button" id="legend-toggle-btn" class="desktop-only icon-btn" aria-expanded="true" aria-controls="legend-wrapper">
                 <i class="fas fa-minus" aria-hidden="true"></i>
                 <i class="fas fa-plus" aria-hidden="true"></i>
                 <span class="toggle sr-only">Legend</span>
             </button>
-            <button id="legend-close-btn" class="mobile-only icon-btn">
+            <button type="button" id="legend-close-btn" class="mobile-only icon-btn">
                 <i class="fas fa-times" aria-hidden="true"></i>
                 <span class="sr-only">Close Legend</span>
             </button>
@@ -20,7 +20,7 @@
                 <legend class="sr-only">Included Datasets</legend>
                 {% for item in datasets %}
                     <label class="legend-item-wrapper">
-                        <input type="checkbox" class="legend-checkbox" value="{{ item.id }}" aria-checked="true" checked />
+                        <input type="checkbox" class="legend-checkbox" value="{{ item.id }}" checked />
                         {% include 'partials/legend-item.html.twig' with {'item': item} %}
                     </label>
                 {% endfor %}
@@ -37,7 +37,7 @@
     {% endif %}
     {% if basemaps|length > 0 %}
     <div class="legend-basemaps expanded">
-        <button id="legend-basemaps-toggle" class="desktop-only maps-heading" aria-expanded = "true" aria-controls="legend-basemaps-list">
+        <button type="button" id="legend-basemaps-toggle" class="desktop-only maps-heading" aria-expanded = "true" aria-controls="legend-basemaps-list">
             <h3>Maps</h3>
             <i class="fas fa-angle-up" aria-hidden="true"></i>
             <i class="fas fa-angle-down" aria-hidden="true"></i>

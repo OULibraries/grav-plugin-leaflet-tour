@@ -60,7 +60,7 @@
         <header id="top">
             {% block header %}{{ parent() }}{% endblock %}
             {# Options button and modal #}
-            <button id="open-settings-btn" class="desktop-only icon-btn" aria-haspopup="true" onClick="openDialog('settings-modal', this)">
+            <button type="button" id="open-settings-btn" class="desktop-only icon-btn" aria-haspopup="true" onClick="openDialog('settings-modal', this)">
                 <i class="fas fa-cog" aria-hidden="true"></i>
                 <span class="sr-only">Settings</span>
             </button>
@@ -68,7 +68,7 @@
                 <div role="dialog" id="settings-modal" aria-labelledby="settings-label" aria-modal="true" class="hidden">
                     <div class="dialog-top">
                         <h2 id="setting-label" class="dialog-label">Settings</h2>
-                        <button id="settings-close-btn" class="icon-btn" onClick="closeDialog(this)">
+                        <button type="button" id="settings-close-btn" class="icon-btn" onClick="closeDialog(this)">
                             <i class="fas fa-times" aria-hidden="true"></i>
                             <span class="sr-only">Close</span>
                         </button>
@@ -84,7 +84,7 @@
                             </label>
                         </div> #}
                         <div class="option">
-                            <button id="map-animation-toggle" role="switch" aria-checked="true">
+                            <button type="button" id="map-animation-toggle" role="switch" aria-checked="true">
                                 <span class="label">Scrolling Changes Map</span>
                                 <svg xmlns="http://www.w3.org/2000/svg" height="30" width="52">
                                     <rect class="container" x="1" y="1" height="28" width="50" rx="15" />
@@ -95,7 +95,7 @@
                             </button>
                         </div>
                         <div class="option">
-                            <button id="reset-view-btn" class="btn reset-view-btn">Reset Map</button>
+                            <button type="button" id="reset-view-btn" class="btn reset-view-btn">Reset Map</button>
                         </div>
                     </div>
                 </div>
@@ -106,16 +106,16 @@
         {# Sticky options - only for mobile, changes between content and map views #}
         <nav aria-label="Map" id="map-nav" class="mobile-only">
             {# Toggle button - could change position and formatting, but for now will go with a hamburger style #}
-            <button id="mobile-map-toggle-btn" aria-expanded="false" aria-controls="map-nav-options" class="map-only icon-btn hamburger-btn" data-toggles="map-nav-options">
+            <button type="button" id="mobile-map-toggle-btn" aria-expanded="false" aria-controls="map-nav-options" class="map-only icon-btn hamburger-btn" data-toggles="map-nav-options">
                 <i class="fas fa-minus" aria-hidden="true"></i>
                 <i class="fas fa-bars" aria-hidden="true"></i>
                 {# TODO: Options or Menu? #}
                 <span class="sr-only">Options</span>
             </button>
             <div id="map-nav-options">
-                <button id="map-toggle-btn" class="btn" data-map-active="false">View Map</button>
-                {% if has_legend %}<button id="mobile-legend-btn" aria-haspopup="true" class="map-only btn">Open Legend</button>{% endif %}
-                <button id="map-reset-btn" class="map-only btn reset-view-btn">Reset Map</button>
+                <button type="button" id="map-toggle-btn" class="btn" data-map-active="false">View Map</button>
+                {% if has_legend %}<button type="button" id="mobile-legend-btn" aria-haspopup="true" class="map-only btn">Open Legend</button>{% endif %}
+                <button type="button" id="map-reset-btn" class="map-only btn reset-view-btn">Reset Map</button>
             </div>
         </nav>
 
@@ -128,7 +128,7 @@
                     {% if tour.getFeaturePopups()|length > 0 %}
                     <div>
                         {# TODO: Clearer indication of what this is/does or something #}
-                        <a class="btn link-btn" href="{{ page.url }}/popups">All popup content</a>
+                        <a href="{{ page.url }}/popups">All popup content</a>
                     </div>
                     {% endif %}
                 </div>
@@ -144,11 +144,11 @@
                 <a href="#map-end" id="skip-map-link" class="skip-link desktop-only">Skip Map</a>
                 {# Zoom Buttons #}
                 <div class="zoom-btns">
-                    <button class="icon-btn" id="zoom-out-btn">
+                    <button type="button" class="icon-btn" id="zoom-out-btn">
                         <i class="fas fa-plus" aria-hidden="true"></i>
                         <span class="sr-only">Zoom Map Out</span>
                     </button>
-                    <button class="icon-btn" id="zoom-in-btn">
+                    <button type="button" class="icon-btn" id="zoom-in-btn">
                         <i class="fas fa-minus" aria-hidden="true"></i>
                         <span class="sr-only">Zoom Map In</span>
                     </button>
