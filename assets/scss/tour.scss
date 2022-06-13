@@ -98,6 +98,10 @@ $mobile: 768px;
             left: 0;
         }
     }
+    #back-to-top {
+        position: sticky;
+        float: right;
+    }
 }
 
 /* ----- padding ----- */
@@ -125,10 +129,10 @@ $mobile: 768px;
             margin: 10px 10px 0;
         }
         #scrolly {
-            padding: 10px;
+            padding: 10px 20px;
         }
         footer {
-            padding: 10px 20px;
+            padding: 10px 30px;
         }
     }
 }
@@ -270,10 +274,6 @@ main .dialog-backdrop {
 /* content */
 main {
     z-index: 0;
-    #back-to-top {
-        bottom: 8%;
-        bottom: clamp(25px, 8%, 100px);
-    }
     // for mobile
     @media(max-width: ($mobile - 1)) {
     }
@@ -314,12 +314,6 @@ main {
                 transition: opacity .5s;
                 pointer-events: all;
             }
-        }
-        #back-to-top {
-            position: sticky;
-            float: right;
-            right: 20px;
-            transform: none;
         }
     }
 }

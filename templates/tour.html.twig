@@ -138,7 +138,6 @@
                     {% endfor %}
                 </div>
                 {% include 'partials/tour-attribution.html.twig' with {'tour':tour} %}
-                {% block back_to_top %}{{ parent() }}{% endblock %}
             </div>
             <div id="map-wrapper" role="region" aria-label="Map">
                 <a href="#map-end" id="skip-map-link" class="skip-link desktop-only">Skip Map</a>
@@ -166,6 +165,7 @@
         </main>
 
         {% block footer_wrapper %}{{ parent() }}{% endblock %}
+        {% block back_to_top %}{{ parent() }}{% endblock %}
     </div>
     {% block bottom %}{{ parent() }}{% endblock %}
 

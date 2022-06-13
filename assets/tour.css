@@ -87,6 +87,11 @@
     right: unset;
     left: 0;
   }
+
+  #back-to-top {
+    position: sticky;
+    float: right;
+  }
 }
 /* ----- padding ----- */
 #main-nav {
@@ -115,10 +120,10 @@
     margin: 10px 10px 0;
   }
   .tour-wrapper #scrolly {
-    padding: 10px;
+    padding: 10px 20px;
   }
   .tour-wrapper footer {
-    padding: 10px 20px;
+    padding: 10px 30px;
   }
 }
 @media (min-width: 1024px) {
@@ -252,10 +257,6 @@ main .dialog-backdrop {
 main {
   z-index: 0;
 }
-main #back-to-top {
-  bottom: 8%;
-  bottom: clamp(25px, 8%, 100px);
-}
 @media (min-width: 768px) {
   main .desktop-btns {
     display: flex;
@@ -288,12 +289,6 @@ main #back-to-top {
     opacity: 1;
     transition: opacity 0.5s;
     pointer-events: all;
-  }
-  main #back-to-top {
-    position: sticky;
-    float: right;
-    right: 20px;
-    transform: none;
   }
 }
 
