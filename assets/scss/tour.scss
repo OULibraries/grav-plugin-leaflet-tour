@@ -509,6 +509,7 @@ main {
         // padding moves the icon, to move it back:
         top: -4px;
         left: -4px;
+        box-sizing: content-box;
 
         border-radius: 5px;
         &:hover {

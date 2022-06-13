@@ -470,6 +470,7 @@ main #back-to-top {
   padding: 4px;
   top: -4px;
   left: -4px;
+  box-sizing: content-box;
   border-radius: 5px;
 }
 #map .leaflet-marker-icon:hover {
