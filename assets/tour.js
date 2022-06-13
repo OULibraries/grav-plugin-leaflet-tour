@@ -628,12 +628,13 @@ $(document).ready(function() {
             switchToMap(this.id);
         }
         else {
-            $("#back-to-view-btn").attr("href", "#" + this.id).addClass("active");
+            $("#back-to-view-btn").attr("data-view", this.id).addClass("active");
             $("#map").focus();
         }
     });
     $("#back-to-view-btn").on("click", function() {
         this.classList.remove("active");
+        $("#" + this.getAttribute("data-view")).focus();
     });
     $(".reset-view-btn").on("click", function() {
         enterView('tour');
