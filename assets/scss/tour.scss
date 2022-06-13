@@ -151,6 +151,10 @@ $mobile: 768px;
 }
 
 // settings
+#open-settings-btn {
+    align-self: start;
+    margin: 5px 0;
+}
 #top .dialog-backdrop {
     z-index: 700;
     margin: 0;

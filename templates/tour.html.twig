@@ -58,7 +58,7 @@
     <a href="#main" id="main-skip-link" class="skip-link">Skip to Content</a>
     <div id="tour-wrapper" class="tour-wrapper">
         <header id="top">
-            {% block header %}{{ parent() }}{% endblock %}
+            <div class="header">{% block header %}{{ parent() }}{% endblock %}</div>
             {# Options button and modal #}
             <button type="button" id="open-settings-btn" class="desktop-only icon-btn" aria-haspopup="true" onClick="openDialog('settings-modal', this)">
                 <i class="fas fa-cog" aria-hidden="true"></i>
