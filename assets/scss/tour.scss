@@ -388,19 +388,27 @@ main {
                 margin: 0;
                 border: none;
                 padding-right: 10px;
+                padding-left: 5px;
             }
-            .fas {
-                font-size: 22px;
-                padding-top: 5px;
+            path {
+                // transition: transform .3s ease;
+                transform-origin: 9px 9px;
+                transform: rotate(-90deg);
             }
-            .fa-angle-up {
-                display: none;
+            &:hover, &:focus-visible {
+                background-color: #e6e6e6;
+                outline: 2px solid;
+                border-color: transparent;
+                border-radius: 3px;
             }
         }
         .maps-heading {
             width: 100%;
             border: none;
-            padding-bottom: 10px;
+            // padding-bottom: 10px;
+        }
+        li {
+            padding: 0;
         }
         #legend-basemaps-list {
             display: none;
@@ -410,11 +418,8 @@ main {
                 border-bottom: 1px solid black; // TODO: color
             }
             #legend-basemaps-toggle {
-                .fa-angle-up {
-                    display: inline-block;
-                }
-                .fa-angle-down {
-                    display: none;
+                path {
+                    transform: none;
                 }
             }
             #legend-basemaps-list {
