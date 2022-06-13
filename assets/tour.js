@@ -473,8 +473,12 @@ if ($("#scrolly .step").length > 0) {
 map.on("zoomend", function() {
     adjustBasemaps(tour_state.view);
     // adjust zoom buttons
-    $(".leaflet-control-zoom a").removeAttr("aria-disabled");
-    $(".leaflet-disabled").attr("aria-disabled", true);
+    let zoom_out = document.getElementById("zoom-out-btn");
+    let zoom_in = document.getElementById("zoom-in-btn");
+    zoom_out.disabled = false;
+    zoom_in.disabled = false;
+    if (map.getZoom() <= map.getMinZoom()) zoom_out.disabled = true;
+    else if (map.getZoom() >= map.getMaxZoom()) zoom_in.disabled = true;
     // save zoom level
     sessionStorage.setItem(window.location.pathname + '_zoom', map.getZoom());
 });
