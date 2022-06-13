@@ -498,7 +498,7 @@ $(document).ready(function() {
     let section = $("#server-attribution");
     if (!section.html()) {
         let a = tour.tile_layer.options.attribution;
-        if (a) section.html(a);
+        if (a) section.html("<span>Tile Server: </span>" + a);
     }
     if (!isMobile()) {
         // make sure "tour" size and last view size are sufficient for all views to be enterable via scrollama
