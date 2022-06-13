@@ -122,6 +122,18 @@ form:
                   validate:
                     type: bool
 
+                header.legend.dark:
+                  type: toggle
+                  label: Dark Legend
+                  description: Modifies the legend to have white text on a dark background. Recommended if using a dark theme.
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
+
                 plugin_overrides_section:
                   type: section
                   title: Plugin Options Overrides

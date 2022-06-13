@@ -723,6 +723,7 @@ function toggleMobileLegend() {
     $("#map-nav").toggleClass("hide");
     $("#legend-wrapper").toggleClass("desktop-only");
     $("#map").toggleClass("hide");
+    $(".zoom-btns").toggleClass("hide");
 }
 
 // Modify window.onscroll function from theme

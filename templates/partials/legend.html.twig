@@ -1,4 +1,4 @@
-<div class="legend-wrapper desktop-only" id="legend-wrapper">
+<div class="legend-wrapper desktop-only {% if page.header.legend.dark %} dark {% endif %}" id="legend-wrapper">
     <div class="legend">
         <div class="legend-top">
             <h2>Legend </h2>
@@ -37,7 +37,7 @@
     {% endif %}
     {% if basemaps|length > 0 %}
     <div class="legend-basemaps expanded">
-        <button type="button" id="legend-basemaps-toggle" class="desktop-only maps-heading" aria-expanded = "true" aria-controls="legend-basemaps-list">
+        <button type="button" id="legend-basemaps-toggle" class="desktop-only maps-heading disclosure" aria-expanded="true" aria-controls="legend-basemaps-list">
             <svg aria-hidden="true" height="18" width="18">
                 <path d="m 2,7 l 7,7 l 7,-7" fill="none" stroke="currentColor" stroke-width="3" />
             </svg>

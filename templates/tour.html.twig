@@ -70,7 +70,7 @@
         {# Sticky options - only for mobile, changes between content and map views #}
         <nav aria-label="Map" id="map-nav" class="mobile-only">
             {# Toggle button - could change position and formatting, but for now will go with a hamburger style #}
-            <button type="button" id="mobile-map-toggle-btn" aria-expanded="false" aria-controls="map-nav-options" class="map-only icon-btn hamburger-btn" data-toggles="map-nav-options">
+            <button type="button" id="mobile-map-toggle-btn" aria-expanded="false" aria-controls="map-nav-options" class="map-only icon-btn hamburger-btn dual-bg" data-toggles="map-nav-options">
                 <i class="fas fa-minus" aria-hidden="true"></i>
                 <i class="fas fa-bars" aria-hidden="true"></i>
                 {# TODO: Options or Menu? #}
@@ -143,11 +143,11 @@
                 <a href="#map-end" id="skip-map-link" class="skip-link desktop-only">Skip Map</a>
                 {# Zoom Buttons #}
                 <div class="zoom-btns">
-                    <button type="button" class="icon-btn" id="zoom-out-btn">
+                    <button type="button" class="icon-btn dual-bg" id="zoom-out-btn">
                         <i class="fas fa-plus" aria-hidden="true"></i>
                         <span class="sr-only">Zoom Map Out</span>
                     </button>
-                    <button type="button" class="icon-btn" id="zoom-in-btn">
+                    <button type="button" class="icon-btn dual-bg" id="zoom-in-btn">
                         <i class="fas fa-minus" aria-hidden="true"></i>
                         <span class="sr-only">Zoom Map In</span>
                     </button>

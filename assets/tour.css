@@ -1,4 +1,3 @@
-/* ----- grid layout (and display) ----- */
 .map-only {
   display: none;
 }
@@ -28,6 +27,8 @@
   .tour-wrapper main {
     grid-row: 4;
     grid-column: 1;
+    padding: 0;
+    margin: 0;
   }
   .tour-wrapper footer {
     grid-row: 5;
@@ -93,7 +94,6 @@
     float: right;
   }
 }
-/* ----- padding ----- */
 #main-nav {
   margin: 10px;
 }
@@ -167,51 +167,6 @@ main .dialog-backdrop {
 #settings-modal .dialog-content .option label .label {
   padding: 0;
   margin-left: 10px;
-}
-
-/* code for toggle-switch comes primarily from W3Schools */
-.toggle-switch .switch {
-  position: relative;
-  display: inline-block;
-  box-sizing: border-box;
-  width: 50px;
-  height: 28px;
-  /* Note: input element should be hidden using sr-only for simplicity */
-}
-.toggle-switch .switch .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  -webkit-transition: 0.4s;
-  transition: 0.4s;
-  border-radius: 28px;
-}
-.toggle-switch .switch .slider:before {
-  position: absolute;
-  content: "";
-  height: 22px;
-  width: 22px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  -webkit-transition: 0.4s;
-  transition: 0.4s;
-  border-radius: 50%;
-}
-.toggle-switch .switch input:checked + .slider {
-  background-color: #2196F3;
-}
-.toggle-switch .switch input:checked + .slider:before {
-  -webkit-transform: translateX(22px);
-  -ms-transform: translateX(22px);
-  transform: translateX(22px);
-}
-.toggle-switch .switch input:focus + .slider {
-  box-shadow: 0 0 1px #2196F3;
 }
 
 /* map-nav (content unscrolled vs. content scrolled vs. map) */
@@ -299,15 +254,16 @@ main {
 }
 .zoom-btns .icon-btn {
   border-radius: 0;
+  position: relative;
 }
-.zoom-btns #zoom-out.btn {
+.zoom-btns #zoom-out-btn {
   border-bottom-width: 1px;
 }
 .zoom-btns #zoom-in-btn {
   border-top-width: 1px;
 }
 .zoom-btns button:focus-visible {
-  box-shadow: 0 0 2px 2px #fff;
+  z-index: 2;
 }
 
 /* legend */
@@ -317,7 +273,7 @@ main {
 .legend-wrapper .legend-top {
   display: flex;
   flex-wrap: wrap;
-  border-bottom: 2px solid black;
+  border-bottom: 2px solid;
 }
 .legend-wrapper .legend-top h2 {
   margin: 0;
@@ -355,7 +311,6 @@ main {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  background-color: transparent;
 }
 .legend-wrapper .legend-basemaps #legend-basemaps-toggle h3 {
   margin: 0;
@@ -363,18 +318,10 @@ main {
   padding-right: 10px;
   padding-left: 5px;
 }
-.legend-wrapper .legend-basemaps #legend-basemaps-toggle path {
-  transform-origin: 9px 9px;
-  transform: rotate(-90deg);
-}
-.legend-wrapper .legend-basemaps #legend-basemaps-toggle:hover, .legend-wrapper .legend-basemaps #legend-basemaps-toggle:focus-visible {
-  background-color: #e6e6e6;
-  outline: 2px solid;
-  border-color: transparent;
-  border-radius: 3px;
-}
 .legend-wrapper .legend-basemaps .maps-heading {
   width: 100%;
+}
+.legend-wrapper .legend-basemaps .maps-heading.mobile-only {
   border: none;
 }
 .legend-wrapper .legend-basemaps li {
@@ -384,10 +331,8 @@ main {
   display: none;
 }
 .legend-wrapper .legend-basemaps.expanded .maps-heading {
-  border-bottom: 1px solid black;
-}
-.legend-wrapper .legend-basemaps.expanded #legend-basemaps-toggle path {
-  transform: none;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
 }
 .legend-wrapper .legend-basemaps.expanded #legend-basemaps-list {
   display: block;
@@ -407,6 +352,7 @@ main {
     padding: 10px 0;
     background-color: white;
     border: 2px solid black;
+    color: #333;
     border-radius: 10px;
   }
   .legend-wrapper .legend {
@@ -453,6 +399,10 @@ main {
   .legend-wrapper.minimized .legend-basemaps, .legend-wrapper.minimized #legend-data-list {
     display: none;
   }
+  .legend-wrapper.dark {
+    background-color: #333;
+    color: #fff;
+  }
 }
 
 #skip-map-link {
@@ -470,32 +420,26 @@ main {
   height: 100%;
 }
 #map .leaflet-marker-icon {
-  padding: 4px;
-  top: -4px;
-  left: -4px;
+  padding: 3px;
+  top: -5px;
+  left: -5px;
   box-sizing: content-box;
-  border-radius: 5px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  box-shadow: none;
 }
-#map .leaflet-marker-icon:hover {
-  box-shadow: inset 0 0 0 1px #333, inset 0 0 0 2px white, inset 0 0 0 3px #333;
-}
-#map .leaflet-marker-icon:focus-visible {
-  outline: revert !important;
-  outline-offset: -2px;
+#map .leaflet-marker-icon:hover, #map .leaflet-marker-icon:focus-visible {
+  border: 2px solid #000;
+  box-shadow: 0 0 2px 2px #fff inset;
+  z-index: 800 !important;
 }
 #map .no-popup {
   cursor: default;
   cursor: not-allowed;
 }
 #map .leaflet-tooltip {
-  color: #333;
   font-family: Verdana, Helvetica, Arial, sans-serif;
   font-size: 12px;
-}
-#map .leaflet-tooltip.active {
-  box-shadow: 0 0 2px 2px #333, 0 0 2px 3px #fff;
-  opacity: 1 !important;
-  z-index: 700;
 }
 #map:focus-visible::after {
   content: "";
