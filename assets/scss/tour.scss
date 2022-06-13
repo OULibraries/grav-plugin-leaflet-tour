@@ -522,7 +522,7 @@ main {
                 inset 0 0 0 2px white,
                 inset 0 0 0 3px #333;
         }
-        &:focus {
+        &:focus-visible {
             outline: revert !important;
             outline-offset: -2px;
         }
@@ -542,5 +542,16 @@ main {
             opacity: 1 !important;
             z-index: 700;
         }
+    }
+    &:focus-visible::after {
+        content: "";
+        display: block;
+        position: relative;
+        height: 100%;
+        width: 100%;
+        z-index: 800;
+        box-shadow: 0 0 2px 2px #000 inset;
+        outline: 2px solid #fff;
+        outline-offset: -4px; // room for both border and outline
     }
 }
