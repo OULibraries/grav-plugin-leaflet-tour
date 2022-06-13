@@ -155,8 +155,8 @@ $mobile: 768px;
     align-self: start;
     margin: 5px 0;
 }
-#top .dialog-backdrop {
-    z-index: 700;
+main .dialog-backdrop {
+    z-index: 800;
     margin: 0;
 }
 #settings-modal {
