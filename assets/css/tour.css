@@ -63,6 +63,10 @@
   }
 }
 @media (min-width: 768px) {
+  body {
+    overflow-y: hidden;
+  }
+
   .tour-wrapper {
     height: 100vh;
     overflow-y: auto;

@@ -75,6 +75,9 @@ $mobile: 768px;
 }
 // for desktop
 @media(min-width: $mobile) {
+    body {
+        overflow-y: hidden; // scroll set for narrative column specifically
+    }
     .tour-wrapper {
         height: 100vh;
         overflow-y: auto;
