@@ -333,6 +333,9 @@ main {
     #zoom-in-btn {
         border-top-width: 1px;
     }
+    button:focus-visible {
+        box-shadow: 0 0 2px 2px #fff;
+    }
 }
 
 /* legend */
