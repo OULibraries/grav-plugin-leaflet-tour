@@ -140,7 +140,7 @@ $mobile: 768px;
     // override theme adjustments (since column is small and nav never becomes sidebar)
     #main-nav {
         padding-right: 5px;
-        #nav-toggle-btn {
+        .toggle-wrapper {
             display: block;
         }
         #main-nav-list.collapsed {

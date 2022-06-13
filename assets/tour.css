@@ -129,7 +129,7 @@
   #main-nav {
     padding-right: 5px;
   }
-  #main-nav #nav-toggle-btn {
+  #main-nav .toggle-wrapper {
     display: block;
   }
   #main-nav #main-nav-list.collapsed {
