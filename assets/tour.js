@@ -524,10 +524,10 @@ $(document).ready(function() {
         if (diff > 0) {
             $("#view-content").css("padding-bottom", diff + "px");
         }
-        // return to previous scroll position if applicable
-        let scroll_top = sessionStorage.getItem('scroll_top');
-        document.getElementById("tour-wrapper").scrollTop = scroll_top ?? 0;
     }
+    // return to previous scroll position if applicable
+    let scroll_top = sessionStorage.getItem('scroll_top');
+    document.getElementById("tour-wrapper").scrollTop = scroll_top ?? 0;
     // check for saved view, use 'tour' if no valid view is saved
     let view_id = sessionStorage.getItem('tour_view') ?? 'tour';
     if (!tour.views.get(view_id)) view_id = 'tour';
@@ -720,32 +720,34 @@ function toggleDataset(id, hide) {
 }
 
 function toggleMobileLegend() {
-    $("#map-nav").toggleClass("hide");
+    $("body").toggleClass("legend-active");
     $("#legend-wrapper").toggleClass("desktop-only");
-    $("#map").toggleClass("hide");
-    $(".zoom-btns").toggleClass("hide");
+    // $("#map-nav").toggleClass("hide");
+    // $("#map").toggleClass("hide");
+    // $(".zoom-btns").toggleClass("hide");
 }
 
 // Modify window.onscroll function from theme
 function doWindowScrollAction() {
+    let scroll_top = document.getElementById("tour-wrapper").scrollTop;
     if (isMobile()) {
-        toggleBackToTop();
-        if (page_state.save_scroll_pos) page_state.scroll_pos = window.scrollY;
-        // save scroll position for mobile
-        checkMapToggleScroll();
-    } else {
-        // have to check a different element for scroll position for back to top
-        let scroll_top = document.getElementById("tour-wrapper").scrollTop;
-        if (scroll_top > BACK_TO_TOP_Y) $("#back-to-top").addClass("active");
-        else $("#back-to-top").removeClass("active");
-        // save scroll position for session
-        sessionStorage.setItem('scroll_top', scroll_top);
+        // toggleBackToTop();
+        if (page_state.save_scroll_pos) {
+            // save scroll position for mobile
+            page_state.scroll_pos = scroll_top;
+            checkMapToggleScroll();
+        } else return;
     }
+    // toggle back to top and save scroll position for session
+    if (scroll_top > BACK_TO_TOP_Y) $("#back-to-top").addClass("active");
+    else $("#back-to-top").removeClass("active");
+    sessionStorage.setItem('scroll_top', scroll_top);
 }
 
 function checkMapToggleScroll() {
+    // make sure that map-nav does not become sticky/absolute until the main navigation has been passed (whether or not main nav is expanded)
     let height = $("header").get(0).offsetHeight + parseFloat($(".tour-wrapper").first().css("padding-top")) + document.getElementById("main-nav").offsetHeight;
-    if (window.scrollY >= height) {
+    if (page_state.scroll_pos >= height) {
         $("#map-nav").addClass('scrolled');
     } else $('#map-nav').removeClass('scrolled');
 }
@@ -778,7 +780,8 @@ function switchToContent() {
     $("body").removeClass("map-active");
     // make sure scroll position is saved and remembered
     page_state.save_scroll_pos = true;
-    window.scrollTo(0, page_state.scroll_pos);
+    document.getElementById("tour-wrapper").scrollTop = page_state.scroll_pos;
+    // window.scrollTo(0, page_state.scroll_pos);
     // remember and return to previous focus (the id of the element used to switch to the map should have been saved in the content toggle button)
     let btn = $("#map-toggle-btn");
     $("#" + btn.attr("data-focus")).focus();
