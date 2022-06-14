@@ -14,7 +14,7 @@
 
 {% block content %}
     {# add link to return to tour #}
-    <a href="{{ page.parent().url(true)|e }}" class="btn">Return to Tour</a>
+    <p><a href="{{ page.parent().url(true)|e }}">Return to Tour</a></p>
     {% for feature in tour.getFeaturePopups() %}
         <h2 id="{{ feature.id }}">{{ feature.name }}</h2>
         <div class="popup-content">

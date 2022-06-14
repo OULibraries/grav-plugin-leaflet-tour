@@ -30,7 +30,7 @@ form:
                   type: list
                   size: long
                   style: vertical
-                  collapsed: false
+                  collapsed: true
                   collapsible: true
                   btnLabel: Add Dataset
                   controls: both
@@ -71,14 +71,14 @@ form:
               type: fieldset
               title: Dataset Overrides
               collapsible: true
-              collapsed: false
+              collapsed: true
               data-fields@: 'Grav\Plugin\LeafletTourPlugin::getTourDatasetFields'
 
             options_fieldset:
               type: fieldset
               title: General Options
               collapsible: true
-              collapsed: false
+              collapsed: true
               fields:
 
                 legend_section:
@@ -325,7 +325,7 @@ form:
                       title: Choose Start Bounds
                       info: 'Option 2: Manually provide starting bounds.'
                       collapsible: true
-                      collapsed: false
+                      collapsed: true
                       fields:
                   
                         start_bounds_columns:

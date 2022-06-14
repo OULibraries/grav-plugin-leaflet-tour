@@ -370,8 +370,8 @@ main {
     font-size: 24px;
   }
   .legend-wrapper .legend-top #legend-toggle-btn {
-    margin-right: 10px;
     border-radius: 5px;
+    transform: translateY(-3px);
   }
   .legend-wrapper .legend-top #legend-toggle-btn .fa-plus {
     display: none;
@@ -381,14 +381,14 @@ main {
     width: clamp(180px, 30%, 400px);
   }
   .legend-wrapper.minimized .legend {
-    padding: 0 15px;
+    padding: 2px 15px;
   }
   .legend-wrapper.minimized .legend-top {
     padding: 0;
     border: none;
   }
   .legend-wrapper.minimized .legend-top #legend-toggle-btn {
-    margin-right: 0;
+    transform: none;
   }
   .legend-wrapper.minimized .legend-top #legend-toggle-btn .fa-minus {
     display: none;
@@ -447,7 +447,7 @@ main {
   position: relative;
   height: 100%;
   width: 100%;
-  z-index: 800;
+  z-index: 650;
   box-shadow: 0 0 2px 2px #000 inset;
   outline: 2px solid #fff;
   outline-offset: -4px;

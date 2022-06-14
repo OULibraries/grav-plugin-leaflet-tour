@@ -16,7 +16,7 @@
         {% if server_attr %}
             {% if server_attr != 'placeholder' %}
                 <div id="server-attribution" class="attribution-section">
-                    <span>Tile Server: {{ server_attr|markdown }}</span>
+                    <span>Tile Server: {{ leaflet_tour.stripParagraph(server_attr|markdown) }}</span>
                 </div>
             {% else %}
                 <div id="server-attribution" class="attribution-section"></div>

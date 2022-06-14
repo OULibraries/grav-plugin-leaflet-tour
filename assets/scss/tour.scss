@@ -401,8 +401,9 @@ main {
                 font-size: 24px;
             }
             #legend-toggle-btn {
-                margin-right: 10px;
+                // margin-right: 10px;
                 border-radius: 5px;
+                transform: translateY(-3px);
                 .fa-plus {
                     display: none;
                 }
@@ -412,13 +413,14 @@ main {
             width: 200px;
             width: clamp(180px, 30%, 400px);
             .legend {
-                padding: 0 15px;
+                padding: 2px 15px;
             }
             .legend-top {
                 padding: 0;
                 border: none;
                 #legend-toggle-btn {
-                    margin-right: 0;
+                    // margin-right: 0;
+                    transform: none;
                     .fa-minus {
                         display: none;
                     }
@@ -489,7 +491,7 @@ main {
         position: relative;
         height: 100%;
         width: 100%;
-        z-index: 800;
+        z-index: 650;
         box-shadow: 0 0 2px 2px #000 inset;
         outline: 2px solid #fff;
         outline-offset: -4px; // room for both border and outline
