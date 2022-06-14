@@ -75,11 +75,6 @@ class TourFeature {
             // opacity: 0,
             sticky: false,
         });
-        // this just comes from the code qgis2web generated
-        // labels.push(this.layer);
-        // addLabel(this.layer, totalMarkers);
-        // this.layer.added = true;
-        // totalMarkers++;
     }
     // to be called after adding layer when document is ready
     modify() {
@@ -106,11 +101,9 @@ class TourFeature {
         else this.focus_element.focus();
     }
     activate(e) {
-        // this.tooltip.classList.add("active");
         this.layer.openTooltip();
     }
     deactivate() {
-        // this.tooltip.classList.remove("active");
         this.layer.closeTooltip();
     }
 }
@@ -125,8 +118,6 @@ class TourPoint extends TourFeature {
     get focus_element() { return this.layer._icon; }
     // each point may have slightly different options that the generic dataset icon options
     get icon_options() {
-        // don't modify dataset's options!
-        // let options = { ...this.dataset.icon };
         // return options;
         return this.dataset.icon;
     }
@@ -150,10 +141,6 @@ class TourPath extends TourFeature {
         if (this.dataset.stroke) this.stroke = true;
         // if weight is below buffer cutoff, set buffer true
         if ((this.dataset.path.weight < BUFFER_WEIGHT)) {
-            // if polygon, only set buffer true if there is also no fill
-            // let type = this.type.toLowerCase();
-            // if (this.is_line) this.buffer = true;
-            // else if (!(this.dataset.path.fill ?? true)) this.buffer = true;
             this.buffer = true;
         }
         else if (this.stroke) {
@@ -193,12 +180,8 @@ class TourPath extends TourFeature {
         }
         focus.attr("id", this.id + "-focus");
         this.focus_element = focus.get(0);
-        $(".leaflet-marker-pane").append(this.focus_element); // TODO: This should go in a better location
+        $(".leaflet-marker-pane").append(this.focus_element); // TODO: This should go in a better location?
         super.modify();
-        // deal with non-point tooltips - without this, tooltips associated with polygons that are much smaller than the starting view may be bound way too far off
-        // map.flyToBounds(this.layer.getBounds(), { animate: false });
-        // this.layer.closeTooltip();
-        // this.layer.openTooltip();
     }
     activate(e) {
         // open initial tooltip
@@ -245,11 +228,6 @@ class TourPath extends TourFeature {
         super.deactivate();
         this.layer.setStyle(this.dataset.path);
         if (this.stroke) this.stroke.setStyle(this.dataset.stroke);
-        // if tooltip offset was previously modified, reset it
-        // if (this.old_offset) {
-        //     this.layer.getTooltip().options.offset = this.old_offset;
-        //     this.old_offset = null;
-        // }
         this.tmp_tooltip = null;
     }
 }
@@ -406,8 +384,6 @@ function adjustMap() {
     map.invalidateSize();
     view = tour_state.view ?? tour.views.get('tour');
     if ((bounds = view.bounds)) map.flyToBounds(bounds, { padding: FLY_TO_PADDING, animate: false });
-    // else map.flyToBounds(tour.feature_layer.getBounds(), { padding: FLY_TO_PADDING, animate: false });
-    // resetTourLabels();
 }
 function adjustBasemaps(view) {
     if (!view) return;
@@ -532,7 +508,6 @@ $(document).ready(function() {
     let view_id = sessionStorage.getItem('tour_view') ?? 'tour';
     if (!tour.views.get(view_id)) view_id = 'tour';
 
-    // map.invalidateSize();
     // go to view bounds or saved bounds - need to set map center and zoom before modifying features
     if (lng && lat) map.flyTo([lat, lng], zoom ?? map.getZoom(), { animate: false });
     else {
@@ -585,7 +560,6 @@ $(document).ready(function() {
     $("#mobile-legend-btn").on("click", toggleMobileLegend);
     $("#legend-close-btn").on("click", toggleMobileLegend);
     $(".legend-checkbox").on("input", function() {
-        // this.setAttribute("aria-checked", this.checked);
         toggleDataset(this.value, !this.checked);
     })
     $("#legend-basemaps-toggle").on("click", function() {
@@ -622,7 +596,6 @@ $(document).ready(function() {
         enterView(this.getAttribute("data-view"));
     });
     $(".go-to-view-btn").on("click", function() {
-        // enterView(this.getAttribute("data-view"));
         if (isMobile()) {
             enterView(this.getAttribute("data-view"));
             switchToMap(this.id);
@@ -685,10 +658,8 @@ function enterView(id, fly_to = true) {
         if (view.bounds && !isMobile()) {
             map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING });
         }
-        // TODO: invalidate map size on mobile?
         else if (isMobile()) {
             map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING, animate: false });
-            // map.invalidateSize();
             tour_state.map_needs_adjusting = true; // TODO: maybe?
         }
     }
@@ -721,16 +692,12 @@ function toggleDataset(id, hide) {
 function toggleMobileLegend() {
     $("body").toggleClass("legend-active");
     $("#legend-wrapper").toggleClass("tour-desktop-only");
-    // $("#map-nav").toggleClass("hide");
-    // $("#map").toggleClass("hide");
-    // $(".zoom-btns").toggleClass("hide");
 }
 
 // Modify window.onscroll function from theme
 function doWindowScrollAction() {
     let scroll_top = document.getElementById("tour-wrapper").scrollTop;
     if (isMobile()) {
-        // toggleBackToTop();
         if (page_state.save_scroll_pos) {
             // save scroll position for mobile
             page_state.scroll_pos = scroll_top;
@@ -780,7 +747,6 @@ function switchToContent() {
     // make sure scroll position is saved and remembered
     page_state.save_scroll_pos = true;
     document.getElementById("tour-wrapper").scrollTop = page_state.scroll_pos;
-    // window.scrollTo(0, page_state.scroll_pos);
     // remember and return to previous focus (the id of the element used to switch to the map should have been saved in the content toggle button)
     let btn = $("#map-toggle-btn");
     $("#" + btn.attr("data-focus")).focus();
