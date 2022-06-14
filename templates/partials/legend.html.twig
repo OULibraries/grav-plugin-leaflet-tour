@@ -37,15 +37,15 @@
     {% endif %}
     {% if basemaps|length > 0 %}
     <div class="legend-basemaps expanded">
-        <button type="button" id="legend-basemaps-toggle" class="tour-desktop-only maps-heading disclosure" aria-expanded="true" aria-controls="legend-basemaps-list">
-            <svg aria-hidden="true" height="18" width="18">
-                <path d="m 2,7 l 7,7 l 7,-7" fill="none" stroke="currentColor" stroke-width="3" />
-            </svg>
-            {# <i class="fas fa-angle-right" aria-hidden="true"></i>
-            <i class="fas fa-angle-down" aria-hidden="true"></i> #}
-            <h3>Maps</h3>
-        </button>
-        <h3 class="tour-mobile-only maps-heading">Maps</h3>
+        <h3>
+            <span class="tour-mobile-only maps-heading">Maps</span>
+            <button type="button" id="legend-basemaps-toggle" class="tour-desktop-only maps-heading disclosure" aria-expanded="true" aria-controls="legend-basemaps-list">
+                <svg aria-hidden="true" height="18" width="18">
+                    <path d="m 2,7 l 7,7 l 7,-7" fill="none" stroke="currentColor" stroke-width="3" />
+                </svg>
+                <span>Maps</span>
+            </button>
+        </h3>
         <ul id="legend-basemaps-list" class="list-unstyled" role="list">
             {% for item in basemaps %}
                 <li class="legend-item-wrapper">
