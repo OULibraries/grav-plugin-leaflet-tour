@@ -7,7 +7,7 @@ $laptop: 1024px; // laptop
 $desktop: 1200px; // desktop
 // $large: 1440px; // large monitor
 
-$mobile: 768px;
+$mobile: 800px;
 
 // anything that is completely unaffected by mobile vs. desktop view
 body {
@@ -95,22 +95,32 @@ body {
         font-family: Verdana, Helvetica, Arial, sans-serif;
         font-size: 12px;
     }
-    &:focus-visible::after {
+    &::after {
         content: "";
+        z-index: 650;
+        pointer-events: none; // seems to prevent attempting to give map focus when a feature is activated
+    }
+    &:focus-visible::after {
         display: block;
         position: relative;
         height: 100%;
         width: 100%;
-        z-index: 650;
         box-shadow: 0 0 2px 2px #000 inset;
         outline: 2px solid #fff;
         outline-offset: -4px; // room for both border and outline
     }
 }
+.dialog-content {
+    padding: 30px;
+    padding-top: 20px;
+    margin: 0;
+}
 
 // mobile
 @media(max-width: ($mobile - 1)) {
-    //
+    .tour-desktop-only {
+        display: none;
+    }
     #main-nav {
         margin: 20px 20px 0;
     }
@@ -246,6 +256,9 @@ body {
 }
 // desktop
 @media(min-width: $mobile) {
+    .tour-mobile-only {
+        display: none;
+    }
     header {
         font-size: 20px;
         padding: 10px;
@@ -338,6 +351,7 @@ body {
         right: 0;
         width: calc(50% - 30px);
         max-width: 400px;
+        min-width: 300px;
         padding: 10px 0;
         background-color: white;
         border: 2px solid black;
@@ -395,14 +409,17 @@ body {
             color: #fff;
         }
         .legend-basemaps {
+            h3 {
+                margin: 0;
+                border: none;
+            }
             #legend-basemaps-toggle {
                 display: flex;
                 flex-wrap: wrap;
                 align-items: center;
                 width: 100%;
-                h3 {
-                    margin: 0;
-                    border: none;
+                font: inherit;
+                span {
                     padding-right: 10px;
                     padding-left: 5px;
                 }

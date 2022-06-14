@@ -21,7 +21,7 @@
     {% set col_width = tour.getColumnwidth() %}
     {# Putting this here so it can be dynamic #}
     <style>
-        @media (min-width: 768px) {
+        @media (min-width: 800px) {
             .tour-wrapper {
                 width: {{ col_width }}%;
             }
@@ -60,7 +60,7 @@
         <header id="top">
             <div class="header">{% block header %}{{ parent() }}{% endblock %}</div>
             {# Options button and modal #}
-            <button type="button" id="open-settings-btn" class="desktop-only icon-btn" aria-haspopup="true" onClick="openDialog('settings-modal', this)">
+            <button type="button" id="open-settings-btn" class="tour-desktop-only icon-btn" aria-haspopup="true" onClick="openDialog('settings-modal', this)">
                 <i class="fas fa-cog" aria-hidden="true"></i>
                 <span class="sr-only">Settings</span>
             </button>
@@ -68,7 +68,7 @@
         {# Navigation will not be shown in mobile map view #}
         {% block navigation %}{{ parent() }}{% endblock %}
         {# Sticky options - only for mobile, changes between content and map views #}
-        <nav aria-label="Map" id="map-nav" class="mobile-only">
+        <nav aria-label="Map" id="map-nav" class="tour-mobile-only">
             {# Toggle button - could change position and formatting, but for now will go with a hamburger style #}
             <button type="button" id="mobile-map-toggle-btn" aria-expanded="false" aria-controls="map-nav-options" class="map-only icon-btn hamburger-btn dual-bg" data-toggles="map-nav-options">
                 <i class="fas fa-minus" aria-hidden="true"></i>
@@ -87,7 +87,7 @@
             <div class="dialog-backdrop">
                 <div role="dialog" id="settings-modal" aria-labelledby="settings-label" aria-modal="true" class="hidden">
                     <div class="dialog-top">
-                        <h2 id="setting-label" class="dialog-label">Settings</h2>
+                        <h2 id="settings-label" class="dialog-label">Settings</h2>
                         <button type="button" id="settings-close-btn" class="icon-btn" onClick="closeDialog(this)">
                             <i class="fas fa-times" aria-hidden="true"></i>
                             <span class="sr-only">Close</span>
@@ -140,7 +140,7 @@
                 {% include 'partials/tour-attribution.html.twig' with {'tour':tour} %}
             </div>
             <div id="map-wrapper" role="region" aria-label="Map">
-                <a href="#map-end" id="skip-map-link" class="skip-link desktop-only">Skip Map</a>
+                <a href="#map-end" id="skip-map-link" class="skip-link tour-desktop-only">Skip Map</a>
                 {# Zoom Buttons #}
                 <div class="zoom-btns">
                     <button type="button" class="icon-btn dual-bg" id="zoom-out-btn">
@@ -156,7 +156,7 @@
                 {% if has_legend %}{% include 'partials/legend.html.twig' with {'tour':tour, 'datasets':datasets, 'basemaps':basemaps} %}{% endif %}
                 <div id="map"></div>
                 <div id="map-end"></div>
-                <button data-view="" id="back-to-view-btn" class="skip-link desktop-only">Back to View</button>
+                <button data-view="" id="back-to-view-btn" class="skip-link tour-desktop-only">Back to View</button>
             </div>
             {# feature modal popups #}
             {% for feature in tour.getFeaturePopups() %}

@@ -589,7 +589,7 @@ $(document).ready(function() {
         toggleDataset(this.value, !this.checked);
     })
     $("#legend-basemaps-toggle").on("click", function() {
-        this.parentElement.classList.toggle("expanded");
+        this.parentElement.parentElement.classList.toggle("expanded");
         toggleExpanded(this);
     })
     // features
@@ -651,7 +651,6 @@ $(document).ready(function() {
             });
         });
     });
-
     // scrolling (desktop)
     $("#tour-wrapper").on("scroll", function() {
         if (!window_scroll_tick) {
@@ -721,7 +720,7 @@ function toggleDataset(id, hide) {
 
 function toggleMobileLegend() {
     $("body").toggleClass("legend-active");
-    $("#legend-wrapper").toggleClass("desktop-only");
+    $("#legend-wrapper").toggleClass("tour-desktop-only");
     // $("#map-nav").toggleClass("hide");
     // $("#map").toggleClass("hide");
     // $(".zoom-btns").toggleClass("hide");
@@ -794,4 +793,7 @@ function switchToContent() {
 
 function getFeature(el) {
     return tour.features.get(el.getAttribute("data-feature"));
+}
+function isMobile() {
+    return (window.innerWidth < 799);
 }
