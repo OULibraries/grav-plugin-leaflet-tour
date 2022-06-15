@@ -75,7 +75,7 @@ body {
 #map .leaflet-marker-icon:hover, #map .leaflet-marker-icon:focus-visible {
   border: 2px solid #000;
   box-shadow: 0 0 2px 2px #fff inset;
-  z-index: 800 !important;
+  z-index: 1000 !important;
 }
 #map .no-popup {
   cursor: default;
