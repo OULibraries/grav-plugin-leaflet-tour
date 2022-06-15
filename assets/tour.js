@@ -430,13 +430,16 @@ if ($("#scrolly .step").length > 0) {
         offset: SCROLLAMA_OFFSET,
         debug: SCROLLAMA_DEBUG,
     }).onStepEnter(function(e) {
+        console.log('step enter: ' + e.element.id);
         if (scrolly_wait) {
             scrolly_wait--;
         }
         else if (!isMobile() && tour_state.animation) {
             scrolly_temp_view = e.element.id;
+            console.log('scrolled to view');
             // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
             setTimeout(function() {
+                console.log('entering view');
                 enterView(scrolly_temp_view);
             }, SCROLLAMA_ENTER_VIEW_WAIT);
         }
