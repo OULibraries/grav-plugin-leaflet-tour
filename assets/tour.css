@@ -269,6 +269,10 @@ body {
   #main-nav .toggle-wrapper {
     display: block;
   }
+  #main-nav #main-nav-list {
+    border-top: 1px solid;
+    padding-top: 0;
+  }
   #main-nav #main-nav-list.collapsed {
     display: none;
   }
