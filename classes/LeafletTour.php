@@ -71,10 +71,6 @@ class LeafletTour {
 
     public function __construct() {
     }
-
-    public function testing() {
-        return Test::getResults();
-    }
     
     public function getTour($id): ?Tour {
         return self::getTours()[$id];
