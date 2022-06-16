@@ -709,6 +709,7 @@ class Dataset {
         }
         // other
         if ($class = $icon['class']) $icon['className'] .= " $class";
+        if ($icon['rounding']) $icon['className'] .= " round";
 
         return $icon;
     }
