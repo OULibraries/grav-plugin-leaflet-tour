@@ -544,7 +544,11 @@ class Tour {
                         'class' => 'dataset',
                     ];
                     if ($dataset->getType() === 'Point') {
-                        $info['icon'] = $dataset->getIconOptions()['iconUrl'];
+                        $options = $dataset->getIconOptions();
+                        $info['icon'] = $options['iconUrl'];
+                        $info['width'] = $options['iconSize'][0];
+                        $info['height'] = $options['iconSize'][1];
+                        $info['class'] .= ' ' . $options['className'];
                     } else {
                         $info['polygon'] = str_contains($dataset->getType(), 'Polygon');
                         $info['stroke'] = $dataset->getStrokeOptions();

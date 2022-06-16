@@ -50,6 +50,9 @@ body {
 .legend-wrapper li img.basemap, .legend-wrapper label img.basemap {
   max-width: 20%;
 }
+.legend-wrapper li img.round, .legend-wrapper label img.round {
+  border-radius: 50%;
+}
 .legend-wrapper li span, .legend-wrapper label span {
   padding: 0 10px;
 }

@@ -1,7 +1,7 @@
 
 {# TODO: Best way to provide alt for img and svg? #}
 {% if item.icon %}
-    <img class="legend-icon {{ item.class }}" src="{{ item.icon }}" alt="">
+    <img class="legend-icon {{ item.class }}" src="{{ item.icon }}" alt="" height="{{ item.height }}" width="{{ item.width }}">
 {% else %} {# Line or Plygon - use svg #}
     {% set size = 28 %}
     <svg width="{{ size }}px" height="{{ size }}px" style="margin: 5px;">
