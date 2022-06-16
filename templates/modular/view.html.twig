@@ -1,11 +1,13 @@
 {# <a class="anchor view-anchor" id="{{ view_id }}-anchor"></a> #}
 {% set id = page.header.id %}
-<div class="step" id="{{ id }}">
-    <h2>{{ page.header.title }}</h2>
-    {# TODO: Proper wording and focus management #}
-    <div class="desktop-btns">
-        <button type="button" data-view="{{ id }}" id="show-view-{{ id }}" class="btn show-view-btn tour-desktop-only">Show View on Map</button>
-        <button type="button" data-view="{{ id }}" id="go-to-view-{{ id }}" class="go-to-view-btn btn">Jump to Map</button>
+<div id="{{ id }}">
+    <div class="step" data-view="{{ id }}">
+        <h2 class="step" data-view="{{ id }}">{{ page.header.title }}</h2>
+        {# TODO: Proper wording and focus management #}
+        <div class="desktop-btns">
+            <button type="button" data-view="{{ id }}" id="show-view-{{ id }}" class="btn show-view-btn tour-desktop-only">Show View on Map</button>
+            <button type="button" data-view="{{ id }}" id="go-to-view-{{ id }}" class="go-to-view-btn btn">Jump to Map</button>
+        </div>
     </div>
     {{ content|raw }}
     {# Popup button list #}
@@ -19,4 +21,5 @@
             {% endfor %}
         </ul>
     {% endif %}
+    <div class="step bottom-step" data-view="{{ id }}"></div>
 </div>

@@ -271,6 +271,13 @@ body {
   main {
     z-index: 0;
   }
+  main .bottom-step {
+    width: 100%;
+    height: 30px;
+  }
+  main #view-content h2 {
+    margin-top: 10px;
+  }
   main .dialog-backdrop {
     z-index: 800;
     margin: 0;
