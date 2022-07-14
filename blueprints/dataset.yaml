@@ -139,7 +139,7 @@ form:
 
             header.properties:
               type: selectize
-              label: Feature Properties
+              label: Properties
               description: A list of all properties available for features in the dataset. Anything added will be automatically added as an empty property to each feature when the page is saved.
               validate:
                 type: commalist

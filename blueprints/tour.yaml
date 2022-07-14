@@ -176,6 +176,12 @@ form:
                   validate:
                     type: bool
 
+                header.attribution:
+                  type: textarea
+                  label: Tour Attribution
+                  toggleable: true
+                  description: Provide some text to include in the tour footer. Can be plain text, markdown or HTML.
+
                 tile_server_section:
                   type: section
                   title: Tile Server and Basemaps
@@ -286,7 +292,7 @@ form:
                                     meters: Meters (m)
                                     kilometers: Kilometers (km)
                                     feet: Feet (ft)
-                                    Miles: Miles (mi)
+                                    miles: Miles (mi)
 
                         header.start.location:
                           type: select
@@ -374,29 +380,6 @@ form:
                                     min: -180
                                     max: 180
                                     step: .0000001
-
-                attribution_section:
-                  type: section
-                  title: Attribution
-                  underline: true
-
-                header.attribution:
-                  type: textarea
-                  label: Tour Attribution
-                  toggleable: true
-                  description: Provide some text to include in the tour footer. Can be plain text, markdown or HTML.
-                
-                header.no_attribution:
-                  type: toggle
-                  label: Ignore Attribution
-                  description: When toggled will prevent the automatic creation of an attribution section. Attribution set for the tour, datasets, basemaps, and tile server will not be included on the page by default and will need to be added manually to the page content.
-                  highlight: 0
-                  default: 0
-                  options:
-                    1: PLUGIN_ADMIN.ENABLED
-                    0: PLUGIN_ADMIN.DISABLED
-                  validate:
-                    type: bool
               
                 view_defaults_section:
                   type: section
@@ -527,6 +510,23 @@ form:
                             min: 0
                             max: 28
                             step: 1
+
+                attribution_section:
+                  type: section
+                  title: Attribution
+                  underline: true
+                
+                header.no_attribution:
+                  type: toggle
+                  label: Ignore Attribution
+                  description: When toggled will prevent the automatic creation of an attribution section. Attribution set for the tour, datasets, basemaps, and tile server will not be included on the page by default and will need to be added manually to the page content.
+                  highlight: 0
+                  default: 0
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
 
             features_fieldset:
               type: fieldset

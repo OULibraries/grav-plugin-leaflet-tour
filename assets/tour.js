@@ -446,6 +446,7 @@ if ($("#scrolly .step").length > 0) {
 // function printMapState() {
 //     console.log('zoom: ' + map.getZoom() + ', center: ' + parseFloat(map.getCenter().lat.toFixed(4)) + ', ' + parseFloat(map.getCenter().lng.toFixed(4)));
 // }
+// map.on("click", printMapState);
 
 map.on("zoomend", function() {
     adjustBasemaps(tour_state.view);

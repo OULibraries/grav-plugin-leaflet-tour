@@ -161,7 +161,7 @@ form:
 
             header.active_path.stroke:
               data-type@: ['Grav\Plugin\LeafletTourPlugin::getShapeFillType', 'toggle']
-              label: Draw Stroke (Outline)
+              label: Draw Stroke (active)
               description: Whether to draw the outline or border for a polygon feature when it is active. (This setting only matters for polygon datasets, as it will be enabled regardless for lines.)
               toggleable: true
               highlight: 1
@@ -174,13 +174,13 @@ form:
                 
             header.active_path.color:
               type: colorpicker
-              label: Stroke Color
+              label: Stroke Color (active)
               toggleable: true
               data-default@: ['Grav\Plugin\LeafletTourPlugin::getDatasetDefaults', 'active_path_color']
 
             header.active_path.weight:
               type: number
-              label: Stroke Width (pixels)
+              label: Stroke Width (active)
               toggleable: true
               default: 3
               validate:
@@ -204,7 +204,7 @@ form:
 
                 header.active_path.fill:
                   type: toggle
-                  label: Use Fill
+                  label: Use Fill (active)
                   description: Whether to fill the inside of a polygon with color. It is recommended to use a transparent fill so that users can still hover over the polygon easily instead of disabling fill completely.
                   toggleable: true
                   highlight: 1
@@ -217,14 +217,14 @@ form:
 
                 header.active_path.fillColor:
                   type: colorpicker
-                  label: Fill Color
+                  label: Fill Color (active)
                   description: Defaults to stroke color.
                   toggleable: true
                   data-default@: ['Grav\Plugin\LeafletTourPlugin::getDatasetDefaults', 'active_path_fillColor']
 
                 header.active_path.fillOpacity:
                   type: number
-                  label: Fill Opacity
+                  label: Fill Opacity (active)
                   description:  A number from 0 (completely transparent) to 1 (completely opaque). Can take up to two decimal places.
                   toggleable: true
                   default: 0.2
