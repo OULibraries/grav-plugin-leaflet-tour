@@ -46,6 +46,7 @@ body {
 }
 .legend-wrapper li img, .legend-wrapper li svg, .legend-wrapper label img, .legend-wrapper label svg {
   margin: 10px;
+  background-color: #fff;
 }
 .legend-wrapper li img.basemap, .legend-wrapper label img.basemap {
   max-width: 20%;
