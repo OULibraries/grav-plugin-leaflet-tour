@@ -1,6 +1,9 @@
 enabled: true
 leaflet_tour: true
-# wide_column: false
-# map_on_right: true
-# show_map_location_in_url: false
-tile_server_select: 'stamenWatercolor'
+tour_options:
+  column_width: 33
+  map_on_right: true
+  show_map_location_in_url: false
+  attribution: 'Map created using [Leaflet](https://leafletjs.com/)'
+tile_server:
+  select: 'OpenTopoMap'
