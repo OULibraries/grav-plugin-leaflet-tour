@@ -55,7 +55,7 @@ form:
               style: vertical
               destination: 'user://data/leaflet-tour/datasets/uploads'
               multiple: true
-              limit: 40
+              limit: 50
               accept:
                 - '.js'
                 - '.json'
@@ -67,6 +67,7 @@ form:
               style: vertical
               destination: 'user://data/leaflet-tour/images/icons'
               multiple: true
+              limit: 50
               accept:
                 - image/*
 
