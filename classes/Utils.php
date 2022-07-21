@@ -87,7 +87,7 @@ class Utils {
      * @return null|array [[float, float], [float, float]] (southwest, northeast) if valid
      */
     public static function getBounds($bounds): ?array {
-        if (is_array($bounds) && count($bounds) === 4) { // must be an array with four values
+        if (is_array($bounds) && count($bounds) >= 4) { // must be an array with four values, can handle extra values, though
             $bounds = [[$bounds['south'], $bounds['west']], [$bounds['north'], $bounds['east']]]; // values must have keys south, west, north, and east
             // have to reverse direction for checking for valid points
             if (self::isValidPoint([$bounds[0][1], $bounds[0][0]]) && self::isValidPoint([$bounds[1][1], $bounds[1][0]])) return $bounds; // southwest and northeast must form valid points
