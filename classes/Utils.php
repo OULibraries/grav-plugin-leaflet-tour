@@ -49,8 +49,13 @@ class Utils {
             $new_route = '';
             foreach ($glob as $item) {
                 // to make $item potentially match $key, need to do case-insensitive check, also need to strip a potential numeric prefix from $item (and note that item starts with the rest of route, so need to remove that, too)
-                // regex: find any number of digits at the beginning of the string followed by a period
                 $stripped_item = str_replace($route, '', $item);
+                if (strcasecmp($stripped_item, $key) === 0) {
+                    $new_route = "$item/";
+                    break;
+                }
+                // in case of folder numeric prefix
+                // regex: find any number of digits at the beginning of the string followed by a period
                 $stripped_item = preg_replace('/^[0-9]+\./', '', $stripped_item);
                 if (strcasecmp($stripped_item, $key) === 0) {
                     $new_route = "$item/";
