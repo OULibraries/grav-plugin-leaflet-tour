@@ -895,6 +895,7 @@ class Tour {
      */
     public function setDatasetOverrides($overrides): void {
         $this->dataset_overrides = [];
+        $this->clearFeatures();
         if (is_array($overrides)) {
             foreach ($overrides as $id => $values) {
                 if ($this->getDatasets()[$id] && ($dataset = LeafletTour::getDatasets()[$id])) {
