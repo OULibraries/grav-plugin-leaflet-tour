@@ -176,7 +176,7 @@ class Feature {
             if (count($pieces) > 1) { // it had better be, but you never know
                 $url_start = $pieces[1];
                 // decide if new path needs to be applied
-                if (!str_starts_with($url_start, '.') && !str_starts_with($url_start, '/')) {
+                if (!str_starts_with($url_start, '.') && !str_starts_with($url_start, '/') && !str_starts_with($url_start, 'http')) {
                     // also check for stream
                     $stream_split = explode('://', $url_start);
                     if (!in_array($stream_split[0], Utils::STREAMS)) {
