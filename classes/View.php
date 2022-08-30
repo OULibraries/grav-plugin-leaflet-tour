@@ -5,379 +5,150 @@ use RocketTheme\Toolbox\File\MarkdownFile;
 
 class View {
 
-    public const DEFAULT_SHORTCODES = 'There is nothing here. Add some features to the view first.';
+    const DEFAULT_SHORTCODES = 'There is nothing here. Add some features to the view first.';
 
-    /**
-     * Values not stored in the yaml file or directly updated by user
-     */
-    private static array $reserved_keys = ['file', 'tour'];
-    /**
-     * Values expected for yaml file
-     */
-    private static array $blueprint_keys = ['id', 'title', 'basemaps', 'no_tour_basemaps', 'overrides', 'start', 'features', 'shortcodes_list'];
+    private ?MarkdownFile $file;
 
-    /**
-     * File storing the view, should be stored below a tour page
-     */
-    private ?MarkdownFile $file = null;
-    /**
-     * The tour this view exists in
-     */
-    private ?Tour $tour = null;
+    private string $id;
+    private ?string $title;
+    private array $basemaps, $overrides, $start, $features, $extras;
+    private bool $no_tour_basemaps;
 
-    /**
-     * Unique identifier, created on first view save (should be unique for all views, not just views in a given tour)
-     */
-    private ?string $id = null;
-    private ?string $title = null;
-    /**
-     * [filename, ...]
-     */
-    private array $basemaps = [];
-    private ?bool $no_tour_basemaps = null;
-    /**
-     * [remove_tile_server, only_show_view_features, list_popup_buttons]
-     */
-    private array $overrides = [];
-    /**
-     * [location, distance, lng, lat, bounds]
-     */
-    private array $start = [];
-    /**
-     * In yaml [['id' => string], ...] but [$id, ...] here for convenience (using array_column)
-     */
-    private array $features = [];
-    /**
-     * Stores information for user so they know what features can actually use shortcodes and can copy and paste the shortcodes, never modified by the user
-     */
-    private string $shortcodes_list = ''; // it looks like it's not used but it is
+    private ?array $starting_bounds;
+    private array $popups; // id => name
 
-    /**
-     * Any values not reserved or part of blueprint
-     */
-    private array $extras = [];
-
-    /**
-     * Sets and validates all provided values. Note that validation will only really occur if a tour has been provided
-     * 
-     * @param array $options
-     */
-    private function __construct(array $options, ?Tour $tour = null) {
-        if ($tour) $this->setTour($tour);
-        $this->setValues($options);
-    }
-    
-    // Constructor Methods
-
-    /**
-     * Builds a view from an existing markdown file. Calls fromArray
-     * 
-     * @param MarkdownFile $file The file with the tour
-     * @param Tour|null $tour
-     * 
-     * @return View|null New view if the file exists
-     */
-    public static function fromFile(MarkdownFile $file, ?Tour $tour = null): ?View {
-        if ($file->exists()) {
-            $view = self::fromArray((array)($file->header()), $tour);
-            $view->setFile($file);
-            return $view;
+    private function __construct(array $options, array $valid_basemaps, array $point_ids, array $included_features, array $feature_popups, ?array $all_features) {
+        // file: must be valid or null
+        try { $this->file = $options['file']; }
+        catch (\Throwable $t) { $this->file = null; }
+        // id: must be string
+        $this->id = is_string($options['id']) ? $options['id'] : '';
+        // title: must be string or null
+        $this->title = is_string($options['title']) ? $options['title'] : null;
+        // arrays
+        foreach (['basemaps', 'overrides', 'start'] as $key) {
+            $this->$key = is_array($options[$key]) ? $options[$key] : [];
         }
-        else return null;
-    }
-    /**
-     * Builds a view from an array. Literally just a wrapper for the constructor at present.
-     * 
-     * @param array $options
-     * 
-     * @return View
-     */
-    public static function fromArray(array $options, ?Tour $tour = null): View {
-        return new View($options, $tour);
-    }
+        // no_tour_basemaps: must be bool
+        $this->no_tour_basemaps = ($options['no_tour_basemaps'] === true);
+        // extras
+        $keys = ['file', 'id', 'title', 'basemaps', 'overrides', 'start', 'features', 'no_tour_basemaps'];
+        $this->extras = array_diff_key($options, array_flip($keys));
+        // basemaps: must be valid
+        $this->basemaps = array_values(array_intersect($this->basemaps, $valid_basemaps));
+        // features: must be valid
+        if (is_array($options['features'])) $this->features = array_values(array_intersect(array_column($options['features'], 'id'), $included_features));
+        else $this->features = [];
+        // start: must be valid
+        if (!is_string($this->start['location']) || !in_array($this->start['location'], $point_ids)) $this->start['location'] = 'none';
+        // get starting bounds
+        if ($all_features) $this->starting_bounds = self::calculateStartingBounds($this->start, $all_features[$this->start['location']]);
+        else $this->starting_bounds = null;
 
-    // Object Methods
-
-    /**
-     * Takes yaml update array from view header and validates it.
-     * 
-     * @param array $yaml View header info
-     * 
-     * @return array Updated yaml to save
-     */
-    public function update(array $yaml): array {
-        $this->setValues($yaml);
-        $this->updateShortcodes();
-        return $this->toYaml();
-    }
-    /**
-     * Called when tour or dataset is saved. Lets the view know to recheck various values.
-     */
-    public function updateAll(): void {
-        $this->setFeatures($this->getFeatures(), false);
-        $this->setBasemaps($this->getBasemaps());
-        $this->updateShortcodes();
-        $this->save();
-    }
-    /**
-     * Only works if the view has a file object set. Generates yaml content and saves it to the file header
-     */
-    public function save(): void {
-        if ($this->file) {
-            $this->file->header($this->toYaml());
-            $this->file->save();
-        }
-    }
-    /**
-     * Sets $this->shortcodes_list based on view features and tour/dataset features. The list will include an entry for every feature that is in the view, is in the view's tour (view must have a tour), and has a popup (auto and/or regular) in the tour
-     */
-    private function updateShortcodes(): void {
-        $this->shortcodes_list = self::DEFAULT_SHORTCODES; // What to return if nothing is found or there is not a tour
-        if ($tour = $this->getTour()) {
-            $features = [];
-            $popups = array_column($tour->getFeaturePopups(), 'name', 'id');
-            foreach ($this->getFeatures() as $id) {
-                if ($name = $popups[$id]) {
-                    $features[] = "[popup-button id=$id] $name [/popup-button]"; // TODO: Change text??
-                }
-            }
-            // turn array into string
-            if (!empty($features)) $this->shortcodes_list = implode("\r\n", $features);
-        }
-    }
-
-    /**
-     * @return View An identical copy of the view
-     * 
-     * Tour will be a shallow copy, as the view should still reference the same object
-     */
-    public function clone(): View {
-        $view = new View([]);
-        foreach (get_object_vars($this) as $key => $value) {
-            $view->$key = $value;
-        }
-        return $view;
-    }
-    public function __toString() {
-        $yaml = $this->toYaml();
-        if ($tour = $this->getTour()) $yaml['tour'] = $tour->getId();
-        return json_encode($yaml);
-    }
-    /**
-     * Checks tour ids instead of objects
-     */
-    public function equals(View $other): bool {
-        $vars1 = get_object_vars($this);
-        if ($tour = $this->getTour()) $vars1['tour'] = $tour->getId();
-        $vars2 = get_object_vars($other);
-        if ($tour = $other->getTour()) $vars2['tour'] = $tour->getId();
-        return ($vars1 == $vars2);
-    }
-    /**
-     * @return array View yaml array that can be saved in view.md
-     */
-    public function toYaml(): array {
-        $yaml = array_diff_key(get_object_vars($this), array_flip(self::$reserved_keys));
-        // un-index features
-        if ($features = $this->getFeatures()) {
-            $yaml['features'] = [];
-            foreach ($features as $id) {
-                $yaml['features'][] = ['id' => $id];
+        // get popups
+        $this->popups = [];
+        foreach ($this->features as $id) {
+            if ($popup = $feature_popups[$id]) {
+                $this->popups[$id] = $popup['name'];
             }
         }
-        unset($yaml['extras']);
-        $yaml = array_merge($this->getExtras() ?? [], $yaml);
-        return $yaml;
     }
 
-    // Calculated Getters
+    public static function fromTour(MarkdownFile $file, array $valid_basemaps, array $point_ids, array $all_features, array $included_features, array $feature_popups): View {
+        return new View(array_merge($file->header(), ['file' => $file]), $valid_basemaps, $point_ids, $included_features, $feature_popups, $all_features);
+    }
+    public static function fromArray(array $options, array $valid_basemaps, array $point_ids, array $included_features, array $feature_popups): View {
+        return new View($options, $valid_basemaps, $point_ids, $included_features, $feature_popups, null);
+    }
 
-    /**
-     * @return array [remove_tile_server, only_show_view_features, features (array of ids), basemaps (array of filenames), bounds]
-     */
-    public function getViewData(): array {
-        $options = $this->getOptions();
-        $data = [
+    public function getViewData(array $tour_options, array $tour_basemaps): array {
+        $options = array_merge($tour_options, $this->getOverrides());
+        $basemaps = $this->getBasemaps();
+        if (!$this->hasNoTourBasemaps()) $basemaps = array_values(array_unique(array_merge($basemaps, $tour_basemaps)));
+        return [
             'remove_tile_server' => $options['remove_tile_server'],
             'only_show_view_features' => $options['only_show_view_features'],
             'features' => $this->getFeatures(),
-            'basemaps' => $this->getBasemaps(),
+            'basemaps' => $basemaps,
+            'bounds' => $this->getStartingBounds(),
         ];
-        if ($tour = $this->getTour()) {
-            if (!$options['no_tour_basemaps']) {
-                $maps = array_diff($tour->getBasemaps(), $data['basemaps']); // get any not already added
-                $data['basemaps'] = array_merge($maps, $data['basemaps']);
-            }
-            if ($bounds = $tour->calculateStartingBounds($this->start ?? [])) $data['bounds'] = $bounds;
-        }
-        return $data;
     }
-    /**
-     * Create list of view popup buttons for at the end of the view content - only features in view and tour with popups and not already included in view content
-     * 
-     * @return null|array - array if list popup buttons is true, array contains one HTML button entry for each feature needing one
-     */
     public function getPopupButtonsList(): array {
+        $content = ($file = $this->getFile()) ? $file->markdown() : '';
         $buttons = [];
-        if ($this->getOptions()['list_popup_buttons'] && ($file = $this->getFile()) && ($tour = $this->getTour())) {
-            $content = $file->markdown();
-            $tour_popups = array_column($tour->getFeaturePopups(), 'name', 'id');
-            foreach ($this->getFeatures() as $id) {
-                if (($name = $tour_popups[$id]) && !str_contains($content, "[popup-button id=$id") && !str_contains($content, "[popup-button id=\"$id\"")) {
-                    $buttons[] = LeafletTour::buildPopupButton($id, "$id-$this->id-popup", $name);
-                }
-            }
+        foreach ($this->getPopups() as $id => $name) {
+            if (!preg_match("/\[popup-button\\s+id\\s*=\\s*\"?$id/", $content)) $buttons[$id] = $name;
         }
         return $buttons;
     }
-    /**
-     * @return array $this->overrides merged with tour's view options
-     */
-    public function getOptions(): array {
-        if ($tour = $this->getTour()) {
-            $options = array_merge($tour->getViewOptions(), $this->overrides ?? []);
-            $options['no_tour_basemaps'] = $this->no_tour_basemaps ?? false;
-            return $options;
+    public function getShortcodesList(): string {
+        $features = $this->getPopups();
+        // if empty, return default message
+        if (empty($features)) return self::DEFAULT_SHORTCODES;
+        else {
+            // turn into array of shortcodes
+            $shortcodes = array_map(function($id, $name) {
+                return "[popup-button id=\"$id\"] $name [/popup-button]";
+            }, array_keys($features), array_values($features));
+            // return as string
+            return implode("\r\n", $shortcodes);
         }
-        return [];
+    }
+    public function toYaml(): array {
+        return array_merge($this->getExtras(), [
+            'id' => $this->getId(),
+            'title' => $this->title,
+            'basemaps' => $this->getBasemaps(),
+            'overrides' => $this->getOverrides(),
+            'start' => $this->start,
+            'features' => array_map(function($id) { return ['id' => $id]; }, $this->getFeatures()),
+            'no_tour_basemaps' => $this->hasNoTourBasemaps(),
+            'shortcodes_list' => $this->getShortcodesList(),
+        ]);
     }
 
-    // Getters
-    
-    public function getFile(): ?MarkdownFile {
-        return $this->file;
-    }
-    public function getTour(): ?Tour {
-        return $this->tour;
-    }
-    public function getId(): ?string {
-        return $this->id;
-    }
-    public function getTitle(): ?string {
-        return $this->title;
-    }
-    public function getBasemaps(): array { return $this->basemaps ?? []; }
-    public function getFeatures(): array { return $this->features ?? []; }
-    /**
-     * @return array An array with all non-reserved and non-blueprint properties attached to the object, if any.
-     */
-    public function getExtras(): array {
-        return $this->extras;
-    }
+    public function getFile(): ?MarkdownFile { return $this->file; }
+    public function getId(): string { return $this->id; }
+    public function getBasemaps(): array { return $this->basemaps; }
+    public function getOverrides(): array { return $this->overrides; }
+    public function getFeatures(): array { return $this->features; }
+    public function getExtras(): array { return $this->extras; }
+    public function hasNoTourBasemaps(): bool { return $this->no_tour_basemaps; }
 
-    // Setters
+    protected function getStartingBounds(): ?array { return $this->starting_bounds; }
+    protected function getPopups(): array { return $this->popups; }
 
-    /**
-     * Sets all non-reserved values
-     * 
-     * @param array $options
-     */
-    public function setValues(array $options): void {
-        $this->setId($options['id']);
-        $this->setTitle($options['title']);
-        $this->setBasemaps($options['basemaps']);
-        $this->setNoTourBasemaps($options['no_tour_basemaps']);
-        $this->setOverrides($options['overrides']);
-        $this->setStart($options['start']);
-        $this->setFeatures($options['features'], true);
-        $this->updateShortcodes();
-        $this->setExtras($options);
-    }
-    /**
-     * @param MarkdownFile $file
-     */
-    public function setFile(MarkdownFile $file): void {
-        $this->file = $file;
-    }
-    /**
-     * @param Tour
-     */
-    public function setTour(Tour $tour): void {
-        $this->tour = $tour;
-    }
-    /**
-     * Will not set id to null
-     * 
-     * @param string $id Sets $this->id (by default only if not already set)
-     * @param bool $overwrite - if true, $this->id will be set even if already set
-     */
-    public function setId($id, $overwrite = false): void {
-        if(is_string($id) && !empty($id)) {
-            if (!$this->id || $overwrite) $this->id = $id;
-        }
-    }
-    /**
-     * @param string $title Sets $this->title (empty string ignored)
-     */
-    public function setTitle($title): void {
-        if (is_string($title) && !empty($title)) $this->title = $title;
-    }
-    /**
-     * Checks to make sure that all basemaps are included in the plugin config (as accessed through tour)
-     * 
-     * @param array|null $basemaps
-     */
-    public function setBasemaps($basemaps): void {
-        if (is_array($basemaps)) {
-            $this->basemaps = $basemaps;
-            if ($tour = $this->getTour()) {
-                $this->basemaps = array_values(array_intersect($this->basemaps, array_column($tour->getConfig()['basemap_info'] ?? [], 'file')));
+    public static function calculateStartingBounds(array $start, ?Feature $feature): ?array {
+        // first priority: manually set bounds
+        $bounds = Utils::getBounds($start['bounds'] ?? []);
+        if (!$bounds && ($dist = $start['distance']) && $dist > 0) {
+            // next priority: point location
+            if (($feature) && ($feature->getType() === 'Point')) {
+                $bounds = [
+                    'lng' => $feature->getCoordinates()[0],
+                    'lat' => $feature->getCoordinates()[1]
+                ];
+            }
+            // otherwise try coordinates
+            if (!$bounds && ($lng = $start['lng']) && ($lat = $start['lat'])) $bounds = ['lng' => $lng, 'lat' => $lat];
+            // if something was valid, make sure distance is in meters
+            if ($bounds) {
+                switch ($start['units']) {
+                    case 'kilometers':
+                        $bounds['distance'] = $dist * 1000;
+                        break;
+                    case 'feet':
+                        $bounds['distance'] = $dist / 0.3048;
+                        break;
+                    case 'miles':
+                        $bounds['distance'] = $dist * 1609.34;
+                        break;
+                    default:
+                        $bounds['distance'] = $dist;
+                }
             }
         }
-        else $this->basemaps = [];
-    }
-    /**
-     * @param bool|null $value
-     */
-    public function setNoTourBasemaps($value): void {
-        if (is_bool($value)) $this->no_tour_basemaps = $value;
-        else $this->no_tour_basemaps = null;
-    }
-    /**
-     * @param array|null $overrides
-     */
-    public function setOverrides($overrides): void {
-        if (is_array($overrides)) $this->overrides = $overrides;
-        else $this->overrides = [];
-    }
-    /**
-     * Sets start and validates location.
-     * 
-     * @param array|null $start
-     */
-    public function setStart($start): void {
-        if (is_array($start)) {
-            $this->start = $start;
-            if (($tour = $this->getTour()) && ($location = $this->start['location'])) {
-                if (!(($feature = $tour->getAllFeatures()[$location]) && $feature->getType() === 'Point')) $this->start['location'] = 'none';
-            }
-        }
-        else $this->start = [];
-    }
-    /**
-     * Turns features list into a simple list of ids. If tour is set, makes sure that all features are included in the tour.
-     * 
-     * @param array|null $features [['id' => $id], ...]
-     * @param bool $from_yaml If yes, need to use array_column on features list, otherwise no (i.e. if yes array needs to match the param above; if no, input can be array of strings [$id, $id,...])
-     */
-    public function setFeatures($features, bool $from_yaml): void {
-        if (is_array($features)) {
-            if ($from_yaml) $this->features = array_column($features, 'id');
-            else $this->features = $features;
-            if ($tour = $this->getTour()) {
-                $this->features = array_values(array_intersect($this->features, $tour->getIncludedFeatures()));
-            }
-        }
-        else $this->features = [];
-    }
-    /**
-     * @param array|null $extras
-     */
-    public function setExtras($extras) {
-        if (is_array($extras)) {
-            $this->extras = array_diff_key($extras, array_flip(array_merge(self::$reserved_keys, self::$blueprint_keys)));
-        }
-        else $this->extras = [];
+        return $bounds;
     }
 }
 
