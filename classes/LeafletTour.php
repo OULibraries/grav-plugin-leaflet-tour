@@ -35,12 +35,12 @@ class LeafletTour {
         // replacement
         'replacement' => 'You have chosen a total dataset replacement. Features from the existing dataset will be completely replaced by features from the uploaded file.',
         'replace_prop' => 'Settings like custom name and popup content will be preserved for matching features. Existing tours or views using matching features will retain those features.',
-        'replace_no_prop' => 'Warning! No properties (or coordinates) have been selected to identify and match features. No additional content (custom name, popup content, etc.) will be preserved. All features from the dataset will be removed from tours or views using them.',
+        'replace_no_prop' => 'Warning! No settings have been provided to identify and match features. Feature content from the original dataset will not be preserved. All features from the dataset will be removed from tours or views using them.',
         'replace_no_matches' => 'No matches were found between features from the existing dataset and features from the file upload. Additional content and feature identification will not be preserved.',
-        'replace_matches' => "Matches have been found for %d features in the existing dataset. Additional content and identification will be preserved for these (and only these) features:",
+        'replace_matches' => 'The following feature(s) have matches and will be preserved:',
         // removal
         'removal' => 'You have chosen to remove all features from the existing dataset that match the features provided in the update file.',
-        'remove_matches' => "Matches have been found for %d features in the existing dataset. These features will be removed:",
+        'remove_matches' => 'The following feature(s) have matches and will be removed:',
         'remove_no_matches' => 'No matches were found between features in the existing dataset and features in the file upload. No features will be removed.',
         // standard
         'standard' => 'You have chosen a standard update with the following options:',
@@ -48,133 +48,112 @@ class LeafletTour {
         'standard_modify' => 'Features from the existing dataset will be modified if they have a match in the update file.',
         'standard_remove' => 'Features from the existing dataset that have no match in the update file will be removed.',
         'standard_added' => "%d new features will be added.",
-        'standard_matches' => "Matches have been found for %d features in the existing dataset. These features will be modified:",
+        'standard_matches' => 'The following feature(s) have matches and will be modified:',
         'standard_no_matches' => 'No matches were found between features in the existing dataset and features in the file upload. No features will be modified.',
         'standard_removed' => "%d features from the existing dataset have no match in the upload file and will be removed:",
         'standard_removed_none' => 'All features from the existing dataset have matches in the upload file. No features will be removed.',
         // other
-        'update_warning' => 'The update is ready. To complete the update, review the provided information, toggle the Confirm option, and save. To cancel the update, toggle Cancel instead. Warning! Once confirmed the update cannot be undone. Make sure to carefully review the expected changes and create a backup (the Git Sync plugin is strongly recommended).',
+        'update_warning' => 'The update is ready. To complete the update, review the provided information, toggle the Confirm option, and save. To cancel the update, simply delete the uploaded file. Warning! Once confirmed the update cannot be undone. Make sure to carefully review the expected changes and create a backup (the Git Sync plugin is strongly recommended).',
     ];
 
-    /**
-     * [$id => Dataset]
-     */
-    private static ?array $datasets = null;
-    /**
-     * [$id => Tour]
-     */
-    private static ?array $tours = null;
-    /**
-     * [$id => View]
-     */
-    private static ?array $views = null;
+    const TILE_SERVER_LIST = [
+        'custom' => 'Custom URL',
+        'other' => 'Other Leaflet Providers Tile Server',
+        'Esri.WorldImagery' => 'Esri World Imagery',
+        'OpenTopoMap' => 'OpenTopoMap',
+        'OPNVKarte' => 'OPNVKarte',
+        'Stamen.Toner' => 'Stamen Toner',
+        'Stamen.TonerBackground' => 'Stamen Toner Background',
+        'Stamen.TonerLight' => 'Stamen Toner - Light',
+        'Stamen.Watercolor' => 'Stamen Watercolor',
+        'Stamen.Terrain' => 'Stamen Terrain',
+        'Stamen.TerrainBackground' => 'Stamen Terrain Background',
+        'USGS.USTopo' => 'USGS: US Topo',
+        'USGS.USImageryTopo' => 'USGS: US Imagery',
+        'USGS.USImagery' => 'USGS: US Imagery Background',
+    ];
 
-    public function __construct() {
-    }
-    
-    public function getTour($id): ?Tour {
-        return self::getTours()[$id];
-    }
+    public function __construct() {}
 
-    // getters
-
-    /**
-     * @return [$id => Dataset]
-     */
     public static function getDatasets(): array {
-        if (!self::$datasets) self::setDatasets();
-        return self::$datasets;
+        return self::getFiles('_dataset', 'dataset');
     }
     public static function getTours(): array {
-        if (!self::$tours) self::setTours();
-        return self::$tours;
+        return self::getFiles('tour', 'tour');
     }
-    public static function getViews(): array {
-        if (!self::$views) self::setTours();
-        return self::$views;
-    }
-
-    // set/reset methods
-
-    /**
-     * Build self::$datasets: Find all dataset pages, turn into dataset objects
-     */
-    public static function setDatasets(): void {
-        $files = self::getFiles('_dataset', null, 'dataset');
-        // turn into Dataset objects
-        self::$datasets = [];
-        foreach ($files as $id => $file) {
-            if ($dataset = Dataset::fromFile($file)) self::$datasets[$id] = $dataset;
-        }
-    }
-    public static function setTours(): void {
-        $files = self::getFiles('tour');
-        self::$tours = [];
-        // prepare to store view files
-        self::$views = [];
-        $new_views = []; // Views
-        foreach ($files as $id => $file) {
-            if ($tour = Tour::fromFile($file)) {
-                $tmp_views = [];
-                self::$tours[$id] = $tour;
-                // find views
-                $dir = substr($file->filename(), 0, -8);
-                // self::$test[] = $dir;
-                $folders = glob("$dir/*");
-                $modules = [];
-                foreach ($folders as $folder) {
-                    $test = str_replace("$dir/", '', $folder);
-                    if (str_starts_with($test, '_') || str_starts_with(preg_replace('/^[0-9]+\./', '', $test), '_')) $modules[] = $folder;
-                }
-                foreach ($modules as $folder) {
-                    if ($view = View::fromFile(MarkdownFile::instance("$folder/view.md"), $tour)) {
-                        // $view->setTour($tour);
-                        // view must have an id that is not the default 'tmp  id', does not already exist (either in this tour's views or in all views as a whole) and does not equal the reserved id 'tour'
-                        if (($id = $view->getId()) && 
-                            $id !== 'tmp  id' && 
-                            $id !== 'tour' && 
-                            !self::$views[$id] && 
-                            !$tmp_views[$id]
-                        ) $tmp_views[$id] = $view;
-                        else $new_views[] = $view;
-                    }
-                }
-                // add the views found so far
-                $tour->setViews($tmp_views);
-                self::$views = array_merge(self::$views, $tmp_views);
-            }
-        }
-        // deal with new views
-        foreach ($new_views as $view) {
-            $tour = $view->getTour();
-            $id = self::generateId($tour->getId() . '-' . ($view->getTitle() ?: 'view'), array_keys(self::$views));
-            $view->setId($id);
-            $view->save();
-            self::$views[$id] = $view;
-            // make sure the view is added to the tour
-            $tour->setViews(array_merge($tour->getViews(), [$id => $view]));
-        }
-    }
-    // accepts tour or dataset
-    private static function getFiles(string $type, ?string $dir = null, ?string $id_type = null): array {
-        // find all relevant files inside the pages folder (at any level)
-        $files = Utils::getTemplateFiles("$type.md", [], $dir);
-        // deal with ids
-        $tmp_files = $new_files = [];
-        foreach ($files as $file) {
+    public static function getFiles(string $key, string $default_id) {
+        $all_files = Utils::findTemplateFiles("$key.md");
+        $files = $new_files = [];
+        foreach ($all_files as $file) {
             $file = MarkdownFile::instance($file);
-            // file must have id that is not the same as an existing file's id and is not equal to the default 'tmp  id' - otherwise a new id will be generated
-            if (($id = $file->header()['id']) && ($id !== 'tmp  id') && (!$tmp_files[$id])) $tmp_files[$id] = $file;
-            else $new_files[] = $file;
+            // make sure the dataset has a valid id
+            $id = $file->header()['id'];
+            if (self::isValidId($id, array_keys($files))) $files[$id] = $file;
+            else $new_files[] = $file; // wait to create new ids until all existing datasets are found to make sure a duplicate is not generated
         }
-        if ($id_type) $type = $id_type;
         foreach ($new_files as $file) {
-            $id = self::generateId($file->header()['title'] ?: $type, array_keys($tmp_files));
+            $name = $file->header()['title'] ?: $default_id;
+            $id = self::generateId($file, $name, array_keys($files));
+            $files[$id] = $file;
+        }
+        return $files;
+    }
+    public static function generateId(?MarkdownFile $file, string $name, array $ids): string {
+        $id = Utils::cleanUpString($name);
+        $count = 1;
+        while (in_array($id, $ids)) {
+            $id = "$name-$count";
+            $count++;
+        }
+        if ($file) {
             $file->header(array_merge($file->header(), ['id' => $id]));
             $file->save();
-            $tmp_files[$id] = $file;
         }
-        return $tmp_files;
+        return $id;
+    }
+    public static function isValidId($id, array $ids): bool {
+        return ($id && $id !== 'tmp  id' && $id !== '_tour' && !in_array($id, $ids, true));
+    }
+    public static function getTour($id): ?Tour {
+        $file = self::getTours()[$id];
+        if ($file) return self::buildTour($file);
+        else return null;
+    }
+    public static function getTourViews(MarkdownFile $file): array {
+        // get views
+        $views = [];
+        // $dir = substr($file->filename(), 0, -8);
+        $dir = dirname($file->filename());
+        $id = $file->header()['id'];
+        foreach (glob("$dir/*") as $item) {
+            // look for view module folders - folder must start with underscore or numeric prefix plus underscore
+            $no_dir = str_replace("$dir/", '', $item);
+            if (str_starts_with($no_dir, '_') || str_starts_with(preg_replace('/^[0-9]+\./', '', $no_dir), '_')) {
+                // now check to see if there is actually a view file here
+                $view = MarkdownFile::instance("$item/view.md");
+                if ($view->exists()) {
+                    // we have a view, make sure the view has a valid id to use
+                    $view_id = $view->header()['id'];
+                    if (!self::isValidId($view_id, array_keys($views))) {
+                        $name = $id . '_' . ($view->header()['title'] ?: 'view');
+                        $view_id = self::generateId($view, $name, array_keys($views));
+                    }
+                    $views[$view_id] = $view;
+                }
+            }
+        }
+        return $views;
+    }
+    public static function buildTour(MarkdownFile $file): Tour {
+        return Tour::fromFile($file, self::getTourViews($file), self::getConfig(), self::getDatasets());
+    }
+
+    public static function getConfig(): array {
+        return Grav::instance()['config']->get('plugins.leaflet-tour');
+    }
+    public static function getBasemapInfo() {
+        $basemaps = self::getConfig()['basemap_info'] ?? [];
+        return array_column($basemaps, null, 'file');
     }
 
     // update methods
@@ -192,16 +171,17 @@ class LeafletTour {
             if (File::instance($filepath)->exists()) $data_files[$key] = $file_data;
         }
         $obj->set('data_files', $data_files);
-        $old_config = Grav::instance()['config']->get('plugins.leaflet-tour');
         // handle dataset uploads - loop through new files, look for files that don't exist in old files list and turn any found into new datasets (prev: checkDatasetUploads)
+        $old_config = self::getConfig();
         $old_files = $old_config['data_files'] ?? [];
+        $dataset_ids = array_keys(self::getDatasets());
         foreach($data_files as $key => $file_data) {
             if (!$old_files[$key] && ($json = self::parseDatasetUpload($file_data))) {
                 $dataset = Dataset::fromJson($json);
                 if ($dataset) {
-                    $dataset->initialize($file_data['name'], array_keys(self::getDatasets()));
-                    $dataset->save();
-                    self::$datasets[$dataset->getId()] = $dataset;
+                    $file = $dataset->initialize($file_data['name'], $dataset_ids);
+                    $dataset_ids[] = $file->header()['id']; // in case there are multiple new dataset files
+                    $file->save();
                 }
             }
         }
@@ -222,6 +202,20 @@ class LeafletTour {
         }
         $obj->set('basemap_files', $basemap_files);
         $obj->set('basemap_info', $basemap_info);
+        // validate tours
+        $valid_basemaps = array_column($obj->get('basemap_info') ?? [], 'file');
+        foreach (array_values(self::getTours()) as $file) {
+            // all we care about are the tour/view basemaps list - don't need to worry about other info
+            $basemaps = array_intersect($file->header('basemaps') ?? [], $valid_basemaps);
+            $file->header(array_merge($file->header(), ['basemaps' => $basemaps]));
+            $file->save();
+            // validate views
+            foreach (array_values(self::getTourViews($file)) as $view_file) {
+                $basemaps = array_intersect($view_file->header('basemaps') ?? [], $valid_basemaps);
+                $view_file->header(array_merge($view_file->header(), ['basemaps' => $basemaps]));
+                $view_file->save();
+            }
+        }
         // handle dataset updates
         $update = $obj->get('update') ?? [];
         $update = array_merge($update, self::handleDatasetUpdate($old_config['update'] ?? [], $update));
@@ -232,109 +226,128 @@ class LeafletTour {
      * @param PageObject $page The update object, used to access (and modify) the new values
      */
     public static function handleDatasetPageSave($page): void {
-        $id = $page->header()->get('id');
-        if ($id === 'tmp  id' || !self::getDatasets()[$id]) {
-            $id = self::generateId($page->header()->get('title') ?: 'view', array_keys(self::getViews()));
-            $page->header()->set('id', $id);
-            self::$datasets = null; // reset so that new dataset will be added next time getDatasets is called
-        } else {
-            // perform validation, modify page header
-            $dataset = self::getDatasets()[$id];
-            $update = $dataset->update($page->header()->jsonSerialize());
-            $page->header($update);
-            // update tours
-            foreach (self::getTours() as $tour_id => $tour) {
-                $tour->updateDataset($id);
-            }
-            // check for export toggle
+        // make sure dataset has a valid id
+        $id = $page->getOriginalData()['id']; // use old id - id should never be modified
+        $datasets = self::getDatasets();
+        if ($file = $datasets[$id]) {
+            // dataset exists and needs to be updated and validated
+            $dataset = Dataset::fromFile($file);
+            // validate
+            $update = $dataset->validateUpdate($page->header()->jsonSerialize());
+            // check for export - will export the new content
             if ($page->value('export_geojson')) {
-                $dataset->export();
+                $export_file = CompiledJsonFile::instance(dirname($file->filename()) . "/$id.json");
+                $export_file->content(Dataset::createExport($update));
+                $export_file->save();
             }
+            // modify update object with valid update
+            $page->header($update);
+            // validate tours
+            self::validateTours($id, $update, $datasets);
+        } else {
+            // generate valid id
+            $name = $page->header()->get('title') ?: 'dataset';
+            $id = self::generateId(null, $name, array_keys($datasets));
+            // validate using constructor (since there are no changes to reconcile)
+            $update = Dataset::fromArray(array_merge($page->header()->jsonSerialize(), ['id' => $id]))->toYaml();
+            // modify update object with valid update
+            $page->header($update);
         }
     }
     public static function handleTourPageSave($page): void {
-        // check if new - make sure has id
-        $id = $page->header()->get('id');
-        if ($id === 'tmp  id' || !self::getTours()[$id]) {
-            $id = self::generateId($page->header()->get('title') ?: 'tour', array_keys(self::getTours()));
-            $page->header()->set('id', $id);
-            self::$tours = null;
-        }
-        else {
-            // perform validation
-            $tour = self::getTours()[$id];
-            $update = $tour->update($page->header()->jsonSerialize());
+        // make sure tour has a valid id
+        $id = $page->getOriginalData()['id']; // use old id - id should never be modified
+        $tours = self::getTours();
+        if ($file = $tours[$id]) {
+            // tour exists and needs to be updated and validated
+            $datasets = self::getDatasets();
+            $views = self::getTourViews($file);
+            // validate using constructor
+            $tour = Tour::fromArray($page->header()->jsonSerialize(), $views, self::getConfig(), $datasets);
+            $page->header($tour->toYaml());
+            // and then validate all views, too
+            foreach ($tour->getViews() as $id => $view) {
+                // views were validated on tour creation, so update file contents to match the validated view contents
+                $file = $view->getFile();
+                $file->header($view->toYaml());
+                $file->save();
+            }
+        } else {
+            // generate valid id
+            $name = $page->header()->get('title') ?: 'tour';
+            $id = self::generateId(null, $name, array_keys($tours));
+            // validate using constructor
+            $tour = Tour::fromArray(array_merge($page->header()->jsonSerialize(), ['id' => $id]), [], self::getConfig(), self::getDatasets());
+            $update = $tour->toYaml();
             $page->header($update);
-            // popups page
+            // no need to validate views because the tour is new and should not yet have any views
+        }
+        // popups page (if possible)
+        if ($tour) {
             $file = MarkdownFile::instance($page->path() . '/popups/popups_page.md');
-            // if tour has popups and page does not exist, create page
+            // if tour has popups and page does not exist: create page
             if (!empty($tour->getFeaturePopups()) && !$file->exists()) {
                 $file->header(['visible' => 0]);
                 $file->save();
             }
-            // if tour does not have popups and page exists, remove page
+            // if tour does not have popups and page does exist: remove page
             else if (empty($tour->getFeaturePopups()) && $file->exists()) {
                 $file->delete();
             }
         }
     }
+    // todo: need to make sure that view blueprint includes a spot to stick the tour id (hidden, generated, not saved)
     public static function handleViewPageSave($page): void {
-        // check if new - make sure has id
-        $id = $page->header()->get('id');
-        if ($id === 'tmp  id' || !self::getViews()[$id] || $id === 'tour') {
-            $id = self::generateId($page->header()->get('title') ?: 'view', array_keys(self::getViews()));
-            $page->header()->set('id', $id);
-            self::$views = self::$tours = null;
-        } else {
-            // validate
-            $view = self::getViews()[$id];
-            $page->header($view->update($page->header()->jsonSerialize()));
-            // if ($tour = $view->getTour()) $tour->updateConfig(); // to clear basemaps list
+        // try to get view's tour
+        if (($tour_id = $page->value('tour_id')) && ($tour_file = self::getTours()[$tour_id])) {
+            $tour = self::buildTour($tour_file);
+            // make sure view has a valid id
+            $id = $page->getOriginalData()['id']; // use old id - id should never be modified
+            if (!$tour->getViews()[$id]) {
+                // need to generate a valid id
+                $name = $tour_id . '_' . ($page->header()->get('title') ?: 'view');
+                $id = self::generateId(null, $name, array_keys($tour->getViews()));
+            }
+            // validate view - tour function will treat the content correctly depending on whether or not it recognizes the id
+            $update = $tour->validateViewUpdate($page->header()->jsonSerialize(), $id);
+            $page->header($update);
+        }
+    }
+    public static function validateTours(string $dataset_id, array $update, array $datasets = []): void {
+        if (empty($datasets)) $datasets = self::getDatasets();
+        // make sure the file has the correct content
+        if ($file = $datasets[$dataset_id]) $file->header($update); // file might not exist, esp. if this is called b/c of dataset deletion
+        foreach (array_values(self::getTours()) as $file) {
+            $ids = array_column($file->header()['datasets'] ?? [], 'id'); // dataset ids from tour
+            if (!in_array($dataset_id, $ids)) continue; // ignore if tour doesn't have the dataset
+            // use constructor to validate tour (and view) content
+            $tour = Tour::fromFile($file, self::getTourViews($file), self::getConfig(), $datasets);
+            $file->header($tour->toYaml()); // only valid options will actually be set and then returned from the object
+            $file->save();
+            // validate views
+            foreach (array_values($tour->getViews()) as $view) {
+                $view->getFile()->header($view->toYaml()); // only valid options set and returned
+                $view->getFile()->save();
+            }
         }
     }
 
     // removal methods
     public static function handleDatasetDeletion($page): void {
-        $dataset_id = $page->header()->get('id');
+        // essentially can treat this the same as a dataset update
+        $id = $page->header()->get('id');
         // remove original uploaded file
         if ($path = $page->header()->get('upload_file_path')) {
             File::instance(Grav::instance()['locator']->getBase() . "/$path")->delete();
         }
-        // update tours
-        foreach (self::getTours() as $id => $tour) {
-            $tour->removeDataset($dataset_id);
-            $tour->save();
-            $tour->updateViews();
-        }
-        // update self
-        unset(self::$datasets[$page->header()->get('id')]);
-    }
-    public static function handleTourDeletion($page): void {
-        unset(self::$tours[$page->header()->get('id')]);
-        // popups page
-        MarkdownFile::instance($page->path() . '/popups/popups_page.md')->delete();
-    }
-    public static function handleViewDeletion($page): void {
-        $id = $page->header()->get('id');
-        if ($tour = self::$tours[$page->parent()->header()->get('id')]) $tour->removeView($id);
-        unset(self::$views[$id]);
-    }
-
-    // id generation
-
-    private static function generateId(string $title, array $ids): string {
-        $id = $base_id = str_replace(' ', '-', strtolower($title));
-        $count = 1;
-        while (in_array($id, $ids)) {
-            $id = "$base_id-$count";
-            $count++;
-        }
-        return $id;
+        // validate tours
+        $datasets = array_diff_key(self::getDatasets(), array_flip($id)); // all datasets except the one that is being removed (might not be necessary, but might as well make sure)
+        self::validateTours($id, [], $datasets);
     }
 
     // dataset upload
 
-    private static function parseDatasetUpload(array $file_data): ?array {
+    public static function parseDatasetUpload(array $file_data): ?array {
         // fix php's bad json handling
         if (version_compare(phpversion(), '7.1', '>=')) {
             ini_set( 'serialize_precision', -1 );
@@ -353,7 +366,7 @@ class LeafletTour {
                     }
                     break;
                 case 'application/json':
-                    $json = CompiledJsonFile::instance($filepath)->content();
+                    if (($file = CompiledJsonFile::instance($filepath)) && $file->exists()) $json = $file->content();
                     break;
             }
             if (!empty($json)) {
@@ -372,166 +385,126 @@ class LeafletTour {
     /**
      * Builds an HTML string for a feature popup button
      */
-    public static function buildPopupButton(string $feature_id, string $button_id, string $name, ?string $text = null): string {
-        $text = trim($text) ?: $name; // TODO: Determine default text?
-        // return "<button id='$button_id' aria-haspopup='true' onClick=\"openDialog('$feature_id-popup', this)\" class='btn view-popup-btn'>$text</button>";
-        return "<button type='button' id='$button_id' aria-haspopup='true' data-feature='$feature_id' class='btn view-popup-btn'>$text</button>";
-    }
+    // public static function buildPopupButton(string $feature_id, string $button_id, string $name, ?string $text = null): string {
+    //     $text = trim($text) ?: $name; // TODO: Determine default text?
+    //     // return "<button id='$button_id' aria-haspopup='true' onClick=\"openDialog('$feature_id-popup', this)\" class='btn view-popup-btn'>$text</button>";
+    //     return "<button type='button' id='$button_id' aria-haspopup='true' data-feature='$feature_id' class='btn view-popup-btn'>$text</button>";
+    // }
     public static function stripParagraph(string $text): string {
-        if (str_starts_with($text, '<p>')) return substr($text, 3, -4);
+        if (str_starts_with($text, '<p>') && str_ends_with($text, '</p>')) return substr($text, 3, -4);
+        else return $text;
     }
 
-    // dataset update
-    public static function handleDatasetUpdate(array $old, array $new): array {
+    // todo: remove cancel update toggle
+    public static function handleDatasetUpdate(array $old_update, array $new_update): array {
         // cancel update?
-        if ($new['cancel']) return self::clearUpdate();
-        // is dataset uploaded?
-        if (empty($new['file'])) return array_merge($new, ['msg' => self::UPDATE_MSGS['start']]);
-        // get/parse uploaded dataset
-        $update_dataset = self::getUpdateDataset($old, $new);
-        if (!$update_dataset) {
-            return [
-                'msg' => self::UPDATE_MSGS['invalid_file_upload'],
-                'confirm' => false,
-                'status' => 'corrections'
-            ];
+        $file_yaml = $new_update['file'] ?? [];
+        if (empty($file_yaml)) return array_merge($new_update, ['msg' => self::UPDATE_MSGS['start']]);
+
+        // parse file upload (or get the previously parsed upload)
+        $upload_dataset = self::getParsedUpdateDataset($file_yaml, $old_update['file'] ?? []);
+        if (!$upload_dataset) {
+            return ['msg' => self::UPDATE_MSGS['invalid_file_upload'], 'confirm' => false, 'status' => 'corrections'];
         }
-        // confirm
-        if ($old['status'] === 'confirm') {
-            if ($update = self::confirmUpdate($old, $new, $update_dataset)) return $update;
+
+        // if status is confirm and no significant changes have been made:
+        if ($old_update['status'] === 'confirm' && !self::hasUpdateChanged($old_update, $new_update)) {
+            $datasets = self::getDatasets();
+            if ($update = self::checkForConfirmIssues($new_update, $upload_dataset, $new_update['dataset'], $datasets)) return $update;
+            // check for confirmation
+            if (!$new_update['confirm']) {
+                // no change, but make sure to remove any issue messages
+                $msg = $new_update['msg'];
+                foreach (['dataset_modified_no_issues', 'file_not_created'] as $key) {
+                    $msg = str_replace(self::UPDATE_MSGS[$key] . "\n\n", '', $msg);
+                    $msg = str_replace(self::UPDATE_MSGS[$key] . "\r\n\r\n", '', $msg);
+                }
+                return array_merge($new_update, ['msg' => $msg]);
+            }
+            // do the update
+            else {
+                $id = $new_update['dataset'];
+                $file = $datasets[$id];
+                $tmp_file = MarkdownFile::instance(self::getUpdateFolder() . '/tmp.md');
+                $file->header($tmp_file->header());
+                $file->save();
+                self::validateTours($id, $tmp_file->header(), $datasets);
+                // remove all files (by removing the folder that holds them)
+                Folder::delete(self::getUpdateFolder());
+                // return default settings
+                return [
+                    'msg' => self::UPDATE_MSGS['start'],
+                    'status' => 'none',
+                    'confirm' => false, 'cancel' => false,
+                    'dataset' => null, 'file' => [],
+                    'dataset_prop' => 'none', 'file_prop' => null,
+                ];
+            }
         }
+
         // check for issues
-        if ($issues = self::checkForIssues($new, $update_dataset)) return $issues;
-        else return self::buildUpdate($new, $update_dataset);
-    }
-    /**
-     * Removes extra files and resets update settings to defaults
-     */
-    private static function clearUpdate(): array {
-        // remove all files (by removing the folder that holds them)
-        Folder::delete(self::getUpdateFolder());
-        // return default settings
-        return [
-            'msg' => self::UPDATE_MSGS['start'],
-            'status' => 'none',
-            'confirm' => false, 'cancel' => false,
-            'dataset' => null, 'file' => [],
-            'dataset_prop' => 'none', 'file_prop' => null,
-        ];
+        $dataset_id = $new_update['dataset'];
+        $datasets = self::getDatasets();
+        if ($dataset_id) $dataset = $datasets[$dataset_id];
+        if ($dataset) $dataset = Dataset::fromFile($dataset);
+        else $dataset = null;
+        if ($update = self::checkForIssues($new_update, $upload_dataset, $dataset)) return $update;
+        else return self::buildUpdate($new_update, $dataset, $upload_dataset);
+        
     }
     private static function getUpdateFolder(): string {
         return Grav::instance()['locator']->findResource('user-data://') . '/leaflet-tour/datasets/update';
     }
     /**
-     * Checks for uploaded file and parses it if it has not yet been parsed
+     * removes id and '--prop--'
      */
-    private static function getUpdateDataset(array $old, array $new): ?Dataset {
+    private static function getDatasetProp($prop): ?string {
+        if (!$prop || !is_string($prop)) return null;
+        $prop = explode('--prop--', $prop, 2);
+        if (count($prop) > 1) return $prop[1]; // property selected
+        else return $prop[0]; // presumably 'none' or 'coords'
+    }
+    
+    public static function getParsedUpdateDataset(array $file_yaml, array $old_file_yaml): ?Dataset {
         $file = MarkdownFile::instance(self::getUpdateFolder() . '/parsed_upload.md');
-        if (!$file->exists() || ($new['file'] !== $old['file'])) {
+        if (!$file->exists() || ($file_yaml !== $old_file_yaml)) {
+            // (re)generate the dataset from the file
             try {
-                if (($json = self::parseDatasetUpload(array_values($new['file'])[0])) && ($dataset = Dataset::fromJson($json))) {
-                    $dataset->setFile($file);
-                    $dataset->save();
+                $json = self::parseDatasetUpload(array_values($file_yaml)[0]);
+                if ($json) $json_dataset = Dataset::fromJson($json);
+                if ($json_dataset) {
+                    $init_file = $json_dataset->initialize('tmp', []);
+                    $file->header($init_file->header());
+                    $file->save();
+                    return Dataset::fromFile($file);
                 }
-                else return null;
-            } catch (\Throwable $t) {
-                return null;
-            }
-        } else {
-            $dataset = Dataset::fromFile($file);
+            } catch (\Throwable $t) {}
+            return null;
         }
-        return $dataset;
+        else return Dataset::fromFile($file);
     }
-    /**
-     * If confirm is set and there are no changes or issues, completes update and returns cleared array.
-     * If there are no changes but there are issues, returns previous array with additional indication of issues.
-     * If confirm is not set but there are no changes, returns previous array
-     * If there are changes, returns null
-     */
-    private static function confirmUpdate(array $old, array $new, Dataset $update_dataset): ?array {
-        // Check for changes
-        if (self::hasUpdateChanged($old, $new)) return null;
-
-        // Check for issue: dataset has been removed
-        $dataset = self::getDatasets()[$new['dataset']];
-        if (!$dataset) return [
-            'msg' => self::UPDATE_MSGS['dataset_removed'],
-            'confirm' => false,
-            'status' => 'corrections'
-        ];
-        // Check for issue: dataset has previously been updated
-        if (!$dataset->isReadyForUpdate()) {
-            if ($issues = self::checkForIssues($new, $update_dataset)) {
-                $issues['msg'] = self::UPDATE_MSGS['dataset_modified_issues'] . "\r\n\r\n" . $issues['msg'];
-                return $issues;
-            } else {
-                $update = self::buildUpdate($new, $update_dataset);
-                $update['msg'] = self::UPDATE_MSGS['dataset_modified_no_issues'] . "\r\n\r\n" . $update['msg'];
-                return $update;
-            }
-        }
-        // Check for issue: tmp update file does not exist
-        $tmp_dataset = Dataset::fromFile(MarkdownFile::instance(self::getUpdateFolder() . '/tmp.md'));
-        if (!$tmp_dataset) {
-            $update = self::buildUpdate($new, $update_dataset);
-            $update['msg'] = self::UPDATE_MSGS['file_not_created'] . "\r\n\r\n" . $update['msg'];
-            return $update;
-        }
-        // Check for confirmation
-        if (!$new['confirm']) {
-            // make sure to remove any issue messages
-            $msg = $new['msg'];
-            foreach (['dataset_modified_no_issues', 'file_not_created'] as $key) {
-                $msg = str_replace(self::UPDATE_MSGS[$key] . "\n\n", '', $msg);
-                $msg = str_replace(self::UPDATE_MSGS[$key] . "\r\n\r\n", '', $msg);
-            }
-            $new['msg'] = $msg;
-            return $new;
-        }
-        // apply update
-        $dataset->applyUpdate($tmp_dataset);
-        $dataset->save();
-        foreach (self::getTours() as $id => $tour) {
-            $tour->updateDataset($new['dataset']);
-        }
-        return self::clearUpdate();
-    }
-    private static function hasUpdateChanged(array $old, array $new): bool {
-        // values that need to be checked for changes
-        $keys = ['file', 'dataset', 'type', 'dataset_prop'];
-        // if dataset_prop is not 'none' or 'coords' then also need to check file_prop
-        if (!in_array($new['dataset_prop'], ['none', 'coords'])) $keys[] = 'file_prop';
-        // if update is standard then also need to check standard options
-        if ($new['type'] === 'standard') $keys = array_merge($keys, ['modify', 'add', 'remove']);
-        // check for changes
-        foreach ($keys as $key) {
-            if ($new[$key] !== $old[$key]) return true;
-        }
-        return false;
-    }
-    /**
-     * Returns update array with appropriate msg if issues were found. Returns null if no issues were found.
-     */
-    private static function checkForIssues(array $new, Dataset $update_dataset): ?array {
+    public static function checkForIssues(array $update, Dataset $upload_dataset, ?Dataset $dataset): ?array {
         $issues = [];
-        $dataset = self::getDatasets()[$new['dataset']];
-        // Check for issue: No dataset selected
-        if (empty($dataset)) $issues[] = self::UPDATE_MSGS['no_dataset_selected'];
+        // check for issue: no dataset selected
+        if (!$dataset) $issues[] = self::UPDATE_MSGS['no_dataset_selected'];
         else {
-            // Check for issue: Invalid feature type
-            if ($dataset->getType() !== $update_dataset->getType()) $issues[] = sprintf(self::UPDATE_MSGS['invalid_feature_type'], $update_dataset->getType(), $dataset->getType());
-            // Check for issue: No dataset property (only applies if this is not a replacement update)
-            $prop = self::getDatasetProp($new['dataset_prop']);
-            if ((empty($prop) || $prop === 'none') && $new['type'] !== 'replacement') $issues[] = self::UPDATE_MSGS['no_dataset_prop'];
-            else if (!empty($prop) && !in_array($prop, ['none', 'coords'])) {
-                // Check for issue: Invalid dataset property
+            // check for issue: invalid feature type
+            if ($dataset->getType() !== $upload_dataset->getType()) $issues[] = sprintf(self::UPDATE_MSGS['invalid_feature_type'], $upload_dataset->getType(), $dataset->getType());
+            // check for issue: no dataset property (only applies if this is not a replacement update)
+            $prop = self::getDatasetProp($update['dataset_prop']);
+            if ((!$prop || $prop === 'none') && $update['type'] !== 'replacement') $issues[] = self::UPDATE_MSGS['no_dataset_prop'];
+            // check for other property issues
+            else if ($prop && !in_array($prop, ['none', 'coords'])) {
+                // check for issue: invalid dataset property
                 if (!in_array($prop, $dataset->getProperties())) $issues[] = sprintf(self::UPDATE_MSGS['invalid_dataset_prop'], $prop, $dataset->getName());
-                // Check for issue: Invalid file property
-                if ($new['file_prop'] && !in_array($new['file_prop'], $update_dataset->getProperties())) $issues[] = sprintf(self::UPDATE_MSGS['invalid_file_prop'], $new['file_prop']);
+                // check for issue: invalid dataset property used as default file property
+                if (!$update['file_prop'] && !in_array($prop, $upload_dataset->getProperties())) $issues[] = sprintf(self::UPDATE_MSGS['invalid_file_prop'], $prop);
+                // check for issue: invalid file property
+                else if ($update['file_prop'] && !in_array($update['file_prop'], $upload_dataset->getProperties())) $issues[] = sprintf(self::UPDATE_MSGS['invalid_file_prop'], $update['file_prop']);
             }
-            // Check for issue: Standard update with no settings
-            if ($new['type'] === 'standard' && !$new['modify'] && !$new['add'] && !$new['remove']) $issues[] = self::UPDATE_MSGS['no_standard_settings'];
         }
+        // check for issue: standard update with no settings
+        if ($update['type'] === 'standard' && !$update['modify'] && !$update['add'] && !$update['remove']) $issues[] = self::UPDATE_MSGS['no_standard_settings'];
         if ($issues) {
             $msg = self::UPDATE_MSGS['issues_list'] . "\r\n";
             foreach ($issues as $issue) {
@@ -545,94 +518,130 @@ class LeafletTour {
         }
         else return null;
     }
-    /**
-     * removes id and '--prop--'
-     */
-    private static function getDatasetProp(string $prop): string {
-        $prop = explode('--prop--', $prop, 2);
-        if (count($prop) > 1) return $prop[1]; // property selected
-        else return $prop[0]; // presumably 'none' or 'coords'
+    public static function checkForConfirmIssues(array $new_update, Dataset $upload_dataset, ?string $dataset_id, array $datasets): ?array {
+        // check for issue: dataset has been removed
+        if (!$dataset_id || !$datasets[$dataset_id]) return ['msg' => self::UPDATE_MSGS['dataset_removed'], 'confirm' => false, 'status' => 'corrections'];
+        // implied else
+        $dataset = Dataset::fromFile($datasets[$dataset_id]);
+        // check for issue: dataset is not ready for update (has been updated in some way since last save)
+        if (!$dataset->isReadyForUpdate()) {
+            // has the update caused new issues? if so, inform the user
+            if ($update = self::checkForIssues($new_update, $upload_dataset, $dataset)) {
+                return array_merge($update, ['msg' => self::UPDATE_MSGS['dataset_modified_issues'] . "\r\n\r\n" . $update['msg']]);
+            }
+            // if update has not created issues, still not ready to finish update, inform user
+            else {
+                $update = self::buildUpdate($new_update, $dataset, $upload_dataset);
+                return array_merge($update, ['msg' => self::UPDATE_MSGS['dataset_modified_no_issues'] . "\r\n\r\n" . $update['msg']]);
+            }
+        }
+        // check for issue: tmp file does not exist
+        $tmp_file = MarkdownFile::instance(self::getUpdateFolder() . '/tmp.md');
+        if (!$tmp_file->exists()) {
+            $update = self::buildUpdate($new_update, $dataset, $upload_dataset);
+            return array_merge($update, ['msg' => self::UPDATE_MSGS['file_not_created'] . "\r\n\r\n" . $update['msg']]);
+        }
+        // if we got to this point, no issues
+        return null;
     }
-    /**
-     * Returns update settings with confirmation request
-     */
-    private static function buildUpdate(array $update, Dataset $update_dataset): array {
-        $dataset = self::getDatasets()[$update['dataset']];
-        $tmp_dataset = $dataset->clone();
-        $prop = self::getDatasetProp($update['dataset_prop']);
-        // update tmp dataset and set msg
+    // will save a file to the update folder
+    public static function buildUpdate(array $update, Dataset $dataset, Dataset $upload_dataset): array {
+        $dataset_prop = self::getDatasetProp($update['dataset_prop']);
+        // match features and get matching message
+        $match_method_msg = self::getMatchingMsg($dataset_prop, $update['file_prop']);
+        $matches = Dataset::matchFeatures($dataset_prop ?? 'none', $update['file_prop'], $dataset->getFeatures(), $upload_dataset->getFeatures());
+        $matches_msg = self::printMatches($matches, $dataset->getFeatures());
         switch ($update['type']) {
             case 'replacement':
                 $msg = self::UPDATE_MSGS['replacement'] . "\r\n\r\n";
-                if ($prop && ($prop !== 'none')) {
-                    $msg .= self::getMatchingMsg($prop, $update['file_prop']) . ' ' . self::UPDATE_MSGS['replace_prop'] . "\r\n\r\n";
-                    $matches = $tmp_dataset->updateReplace($prop, $update['file_prop'], $update_dataset);
-                    $msg .= self::printMatches($matches, 'replace_matches', 'replace_no_matches');
+                if ($dataset_prop && ($dataset_prop !== 'none')) {
+                    // features will be matched, include the appropriate messaging
+                    $msg .= "$match_method_msg " . self::UPDATE_MSGS['replace_prop'] . ' ';
+                    if ($matches_msg) $msg .= self::UPDATE_MSGS['replace_matches'] . "\r\n$matches_msg";
+                    else $msg .= self::UPDATE_MSGS['replace_no_matches'];
                 }
-                else {
-                    $msg .= self::UPDATE_MSGS['replace_no_prop'];
-                    $tmp_dataset->updateReplace('none', null, $update_dataset);
-                }
+                else $msg .= self::UPDATE_MSGS['replace_no_prop'];
+                $tmp_dataset = Dataset::fromUpdateReplace($matches, $dataset, $upload_dataset);
                 break;
             case 'removal':
-                $msg = self::UPDATE_MSGS['removal'] . "\r\n\r\n" . self::getMatchingMsg($prop, $update['file_prop']) . "\r\n\r\n";
-                $matches = $tmp_dataset->updateRemove($prop,  $update['file_prop'], $update_dataset);
-                $msg .= self::printMatches($matches, 'remove_matches', 'remove_no_matches');
+                $msg = self::UPDATE_MSGS['removal'] . "\r\n\r\n$match_method_msg ";
+                if ($matches_msg) $msg .= self::UPDATE_MSGS['remove_matches'] . "\r\n$matches_msg";
+                else $msg .= self::UPDATE_MSGS['remove_no_matches'];
+                $tmp_dataset = Dataset::fromUpdateRemove($matches, $dataset);
                 break;
             default: // standard
                 $msg = self::UPDATE_MSGS['standard'];
-                if ($update['add']) $msg .= ' ' . self::UPDATE_MSGS['standard_add'];
-                if ($update['modify']) $msg .= ' ' . self::UPDATE_MSGS['standard_modify'];
-                if ($update['remove']) $msg .= ' ' . self::UPDATE_MSGS['standard_remove'];
-                $msg .= "\r\n\r\n" . self::getMatchingMsg($prop, $update['file_prop']);
-                $matches = $tmp_dataset->updateStandard($prop, $update['file_prop'], $update['add'], $update['modify'], $update['remove'], $update_dataset);
+                if ($update['add']) $msg .= ' Add.';
+                if ($update['modify']) $msg .= ' Modify.';
+                if ($update['remove']) $msg .= ' Remove.';
+                // note which settings are being applied
+                $msg .= "\r\n\r\n$match_method_msg ";
                 if ($update['add']) {
-                    $added = count($update_dataset->getFeatures()) - count($matches);
-                    $msg .= "\r\n\r\n" . sprintf(self::UPDATE_MSGS['standard_added'], $added);
+                    $msg .= "\r\n\r\n " . self::UPDATE_MSGS['standard_add'] . ': ' . sprintf(self::UPDATE_MSGS['standard_added'], (count($upload_dataset->getFeatures()) - count($matches)));
                 }
                 if ($update['modify']) {
-                    $msg .= "\r\n\r\n" . self::printMatches($matches, 'standard_matches', 'standard_no_matches');
+                    $msg .= "\r\n\r\n " . self::UPDATE_MSGS['standard_modify'] . ' ';
+                    if ($matches_msg) $msg .= self::UPDATE_MSGS['standard_matches'] . "\r\n$matches_msg";
+                    else $msg .= self::UPDATE_MSGS['standard_no_matches'];
                 }
                 if ($update['remove']) {
-                    $removed = [];
-                    foreach ($dataset->getFeatures() as $id => $feature) {
-                        if (!$matches[$id]) $removed[$id] = $feature->getName();
-                    }
-                    $msg .= "\r\n\r\n" . self::printMatches($removed, 'standard_removed', 'standard_removed_none');
+                    $msg .= "\r\n\r\n " . self::UPDATE_MSGS['standard_remove'] . ' ';
+                    $removed = array_diff(array_keys($dataset->getFeatures()), array_values($matches));
+                    $removed_msg = self::printMatches($removed, $dataset->getFeatures());
+                    if ($removed_msg) $msg .= self::UPDATE_MSGS['standard_removed'] . "\r\n$removed_msg";
+                    else $msg .= self::UPDATE_MSGS['standard_removed_none'];
                 }
+                $tmp_dataset = Dataset::fromUpdateStandard($matches, $dataset, $upload_dataset, $update['add'], $update['modify'], $update['remove']);
         }
-        $tmp_dataset->setFile(MarkdownFile::instance(self::getUpdateFolder() . '/tmp.md'));
-        $tmp_dataset->save();
+        $file = MarkdownFile::instance(self::getUpdateFolder() . '/tmp.md');
+        $file->header($tmp_dataset->toYaml());
+        $file->save();
         $msg = self::UPDATE_MSGS['update_warning'] . "\r\n\r\n" . $msg;
-        $dataset->setReadyForUpdate(true);
-        $dataset->save();
-        return [
-            'msg' => $msg,
-            'confirm' => false,
-            'status' => 'confirm',
-        ];
+        $dataset->getFile()->header(array_merge($dataset->getFile()->header(), ['ready_for_update' => true]));
+        $dataset->getFile()->save();
+
+        return ['msg' => $msg, 'confirm' => false, 'status' => 'confirm'];
     }
-    private static function getMatchingMsg(string $dataset_prop, ?string $file_prop): string {
-        if ($dataset_prop === 'coords') return self::UPDATE_MSGS['match_coords'];
+    /**
+     * @param array $old The previous "update" array (plugin config yaml)
+     * @param array $new The new (to be saved) "update" array (plugin config yaml)
+     * 
+     * Determines if any significant changes have been made that would cause the tmp dataset (used to store potential changes) to require updating.
+     */
+    public static function hasUpdateChanged(array $old, array $new): bool {
+        // values that need to be checked for changes
+        $keys = ['file', 'dataset', 'type', 'dataset_prop'];
+        // if dataset_prop is not 'none' or 'coords' then also need to check file_prop
+        if (!in_array($new['dataset_prop'], ['none', 'coords'])) $keys[] = 'file_prop';
+        // if update is standard then also need to check standard options
+        if ($new['type'] === 'standard') $keys = array_merge($keys, ['modify', 'add', 'remove']);
+        // check for changes
+        foreach ($keys as $key) {
+            if ($new[$key] !== $old[$key]) return true;
+        }
+        return false;
+    }
+    public static function printMatches(array $matches, array $features): ?string {
+        // $msg = sprintf(self::UPDATE_MSGS[$matches_msg], count($matches)) . "\r\n";
+        if (empty($matches)) return null;
+        $count = 0;
+        $msg = '';
+        foreach (array_values($matches) as $id) {
+            $msg .= "\r\n\t- " . $features[$id]->getName() . " ($id)";
+            $count++;
+            if (($count >= 15) && count($matches) > 15) {
+                $number = count($matches) - 15;
+                $msg .= "\r\n\t- ...and $number more";
+                break;
+            }
+        }
+        return $msg;
+    }
+    public static function getMatchingMsg(?string $dataset_prop, ?string $file_prop): string {
+        if (!$dataset_prop || ($dataset_prop === 'none')) return '';
+        else if ($dataset_prop === 'coords') return self::UPDATE_MSGS['match_coords'];
         else if (!$file_prop) return sprintf(self::UPDATE_MSGS['match_props_same'], $dataset_prop);
         else return sprintf(self::UPDATE_MSGS['match_props_diff'], $dataset_prop, $file_prop);
-    }
-    private static function printMatches(array $matches, string $matches_msg, string $no_matches_msg): string {
-        if (!empty($matches)) {
-            $msg = sprintf(self::UPDATE_MSGS[$matches_msg], count($matches)) . "\r\n";
-            $count = 0;
-            foreach ($matches as $id => $name) {
-                $msg .= "\r\n\t- $name ($id)";
-                $count++;
-                if (($count >= 15) && count($matches) > 15) {
-                    $number = count($matches) - 15;
-                    $msg .= "\r\n\t- ...and $number more";
-                    break;
-                }
-            }
-            return $msg;
-        }
-        else return self::UPDATE_MSGS[$no_matches_msg];
     }
 }
 ?>
