@@ -151,15 +151,31 @@ class LeafletTour {
      */
     public static function handlePluginConfigSave($obj): void {
         // make sure all dataset files exist
-        $data_files = [];
-        foreach ($obj->get('data_files') ?? [] as $key => $file_data) {
+        $obj->set('data_files', self::validateDataFiles($obj->get('data_files') ?? []));
+        // handle dataset uploads
+        self::createDatasetPages($obj->get('data_files'), self::getConfig()['data_files'] ?? []);
+        // make sure all basemap files exist
+        $obj->set('basemap_files', self::validateBasemapFiles($obj->get('basemap_files') ?? []));
+        $obj->set('basemap_info', self::validateBasemapInfo($obj->get('basemap_files'), $obj->get('basemap_info' ?? [])));
+        // validate tours
+        self::validateTourBasemaps($obj->get('basemap_info'), self::getTours());
+        // handle dataset updates
+        $update = $obj->get('update') ?? [];
+        $update = array_merge($update, self::handleDatasetUpdate($old_config['update'] ?? [], $update));
+        $obj->set('update', $update);
+    }
+    public static function validateDataFiles(array $data_files): array {
+        $files = [];
+        foreach ($data_files ?? [] as $key => $file_data) {
             $filepath = Grav::instance()['locator']->getBase() . '/' . $file_data['path'];
-            if (File::instance($filepath)->exists()) $data_files[$key] = $file_data;
+            if (File::instance($filepath)->exists()) $files[$key] = $file_data;
         }
-        $obj->set('data_files', $data_files);
-        // handle dataset uploads - loop through new files, look for files that don't exist in old files list and turn any found into new datasets (prev: checkDatasetUploads)
-        $old_config = self::getConfig();
-        $old_files = $old_config['data_files'] ?? [];
+        return $files;
+    }
+    /**
+     * loop through new files, look for files that don't exist in old files list and turn any found into new datasets (prev: checkDatasetUploads)
+     */
+    public static function createDatasetPages(array $data_files, array $old_files): void {
         $dataset_ids = array_keys(self::getDatasets());
         foreach($data_files as $key => $file_data) {
             if (!$old_files[$key] && ($json = self::parseDatasetUpload($file_data))) {
@@ -171,26 +187,26 @@ class LeafletTour {
                 }
             }
         }
-        // make sure all basemap files exist
-        $basemap_files = [];
-        $filenames = [];
-        // $basemap_info = [];
-        foreach ($obj->get('basemap_files') ?? [] as $key => $file_data) {
-            $filepath = Grav::instance()['locator']->getBase() . '/' . $file_data['path'];
-            if (File::instance($filepath)->exists()) {
-                $basemap_files[$key] = $file_data;
-                $filenames[] = $file_data['name'];
-            }
+    }
+    public static function validateBasemapFiles(array $basemap_files): array {
+        $files = [];
+        foreach ($basemap_files as $key => $file_data) {
+            $path = Grav::instance()['locator']->getBase() . '/' . $file_data['path'];
+            if (File::instance($path)->exists()) $files[$key] = $file_data;
         }
-        $basemap_info = [];
-        foreach ($obj->get('basemap_info') ?? [] as $info) {
-            if (in_array($info['file'], $filenames)) $basemap_info[] = $info;
+        return $files;
+    }
+    public static function validateBasemapInfo(array $files, array $basemap_info): array {
+        $filenames = array_column($files, 'name');
+        $new_list = [];
+        foreach ($basemap_info as $info) {
+            if (in_array($info['file'], $filenames)) $new_list[] = $info;
         }
-        $obj->set('basemap_files', $basemap_files);
-        $obj->set('basemap_info', $basemap_info);
-        // validate tours
-        $valid_basemaps = array_column($obj->get('basemap_info') ?? [], 'file');
-        foreach (array_values(self::getTours()) as $file) {
+        return $new_list;
+    }
+    public static function validateTourBasemaps(array $info, array $tours): void {
+        $valid_basemaps = array_column($info, 'file');
+        foreach (array_values($tours) as $file) {
             // all we care about are the tour/view basemaps list - don't need to worry about other info
             $basemaps = array_intersect($file->header('basemaps') ?? [], $valid_basemaps);
             $file->header(array_merge($file->header(), ['basemaps' => $basemaps]));
@@ -202,10 +218,6 @@ class LeafletTour {
                 $view_file->save();
             }
         }
-        // handle dataset updates
-        $update = $obj->get('update') ?? [];
-        $update = array_merge($update, self::handleDatasetUpdate($old_config['update'] ?? [], $update));
-        $obj->set('update', $update);
     }
     /**
      * Called when dataset page is saved. Performs validation and passes updates to tours and views.
@@ -214,49 +226,56 @@ class LeafletTour {
     public static function handleDatasetPageSave($page): void {
         // make sure dataset has a valid id
         $id = $page->getOriginalData()['id']; // use old id - id should never be modified
+        $rename_properties = $page->value('rename_properties');
+        $yaml = $page->header()->jsonSerialize();
+        $export = $page->value('export_geojson');
+        $update = self::updateDatasetPage($id, $rename_properties, $yaml, $export);
+        $page->header($update);
+    }
+    public static function updateDatasetPage($id, $rename_properties, array $yaml, $export): array {
         $datasets = self::getDatasets();
         if ($file = $datasets[$id]) {
             // dataset exists and needs to be updated and validated
             $dataset = Dataset::fromFile($file);
-            // validate
-            $yaml = $page->header()->jsonSerialize();
-            $properties = Dataset::validateUpdateProperties($page->value('rename_properties'), $yaml['properties']);
+            $properties = Dataset::validateUpdateProperties($rename_properties, $yaml['properties']);
             $update = $dataset->validateUpdate($yaml, $properties);
-            // TODO: Need to also pass rename props to tour
             // check for export - will export the new content
-            if ($page->value('export_geojson')) {
+            if ($export) {
                 $export_file = CompiledJsonFile::instance(dirname($file->filename()) . "/$id.json");
                 $export_file->content(Dataset::createExport($update));
                 $export_file->save();
             }
-            // modify update object with valid update
-            $page->header($update);
             // validate tours
             self::validateTours($id, $update, $datasets, $properties);
         } else {
             // generate valid id
-            $name = $page->header()->get('title') ?: 'dataset';
+            $name = $yaml['title'] ?: 'dataset';
             $id = self::generateId(null, $name, array_keys($datasets));
             // validate using constructor (since there are no changes to reconcile)
-            $update = Dataset::fromArray(array_merge($page->header()->jsonSerialize(), ['id' => $id]))->toYaml();
-            // modify update object with valid update
-            $page->header($update);
+            $update = Dataset::fromArray(array_merge($yaml, ['id' => $id]))->toYaml();
         }
+        return $update;
     }
     public static function handleTourPageSave($page): void {
         // make sure tour has a valid id
         $id = $page->getOriginalData()['id']; // use old id - id should never be modified
+        $header = $page->header()->jsonSerialize();
+        $update = self::updateTourPage($id, $header, $page->path());
+        $page->header($update);
+    }
+    public static function updateTourPage($id, array $header, $path): array {
+        $update = [];
         $tours = self::getTours();
         if ($file = $tours[$id]) {
             // tour exists and needs to be updated and validated
             $datasets = self::getDatasets();
             $views = self::getTourViews($file);
             // validate using constructor
-            $tour = Tour::fromArray($page->header()->jsonSerialize(), $views, self::getConfig(), $datasets);
+            $tour = Tour::fromArray($header, $views, self::getConfig(), $datasets);
             // handle popup content images
             $yaml = $tour->toYaml();
             $features = Tour::validateFeaturePopups($yaml['features'], str_replace(Grav::instance()['locator']->findResource('page://'), '', $file->filename()));
-            $page->header(array_merge($yaml, ['features' => $features]));
+            $update = array_merge($yaml, ['features' => $features]);
             // and then validate all views, too
             foreach ($tour->getViews() as $id => $view) {
                 // views were validated on tour creation, so update file contents to match the validated view contents
@@ -266,17 +285,16 @@ class LeafletTour {
             }
         } else {
             // generate valid id
-            $name = $page->header()->get('title') ?: 'tour';
+            $name = $header['title'] ?: 'tour';
             $id = self::generateId(null, $name, array_keys($tours));
             // validate using constructor
-            $tour = Tour::fromArray(array_merge($page->header()->jsonSerialize(), ['id' => $id]), [], self::getConfig(), self::getDatasets());
+            $tour = Tour::fromArray(array_merge($header, ['id' => $id]), [], self::getConfig(), self::getDatasets());
             $update = $tour->toYaml();
-            $page->header($update);
             // no need to validate views because the tour is new and should not yet have any views
         }
         // popups page (if possible)
         if ($tour) {
-            $file = MarkdownFile::instance($page->path() . '/popups/popups_page.md');
+            $file = MarkdownFile::instance("$path/popups/popups_page.md");
             // if tour has popups and page does not exist: create page
             if (!empty($tour->getFeaturePopups()) && !$file->exists()) {
                 $file->header(['visible' => 0]);
@@ -287,23 +305,23 @@ class LeafletTour {
                 $file->delete();
             }
         }
+        return $update;
     }
     // todo: need to make sure that view blueprint includes a spot to stick the tour id (hidden, generated, not saved)
     public static function handleViewPageSave($page): void {
-        // try to get view's tour
-        if (($tour_id = $page->value('tour_id')) && ($tour_file = self::getTours()[$tour_id])) {
+        $update = self::updateViewPage($page->getOriginalData()['id'], $page->value('tour_id'), $page->header()->jsonSerialize());
+        $page->header($update);
+    }
+    public static function updateViewPage($id, $tour_id, $header): array {
+        if ($tour_file = self::getTours()[$tour_id]) {
             $tour = self::buildTour($tour_file);
-            // make sure view has a valid id
-            $id = $page->getOriginalData()['id']; // use old id - id should never be modified
             if (!$tour->getViews()[$id]) {
                 // need to generate a valid id
-                $name = $tour_id . '_' . ($page->header()->get('title') ?: 'view');
+                $name = $tour_id . '_' . ($header['title'] ?: 'view');
                 $id = self::generateId(null, $name, array_keys($tour->getViews()));
             }
-            // validate view - tour function will treat the content correctly depending on whether or not it recognizes the id
-            $update = $tour->validateViewUpdate($page->header()->jsonSerialize(), $id);
-            $page->header($update);
-        }
+            return $tour->validateViewUpdate($header, $id);
+        } else return $header;
     }
     public static function validateTours(string $dataset_id, array $update, array $datasets = [], ?array $properties = null): void {
         if (empty($datasets)) $datasets = self::getDatasets();
@@ -329,12 +347,12 @@ class LeafletTour {
         }
     }
 
-    // removal methods
+    // removal method(s)
     public static function handleDatasetDeletion($page): void {
-        // essentially can treat this the same as a dataset update
-        $id = $page->header()->get('id');
-        // remove original uploaded file
-        if ($path = $page->header()->get('upload_file_path')) {
+        self::deleteDatasetPage($page->header()->get('id'), $page->header()->get('upload_file_path'));
+    }
+    public static function deleteDatasetPage($id, $path): void {
+        if ($path) {
             File::instance(Grav::instance()['locator']->getBase() . "/$path")->delete();
         }
         // validate tours
