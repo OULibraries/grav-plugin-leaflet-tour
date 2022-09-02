@@ -249,7 +249,7 @@ class LeafletTour {
             // modify update object with valid update
             $page->header($update);
             // validate tours
-            self::validateTours($id, $update, $datasets);
+            self::validateTours($id, $update, $datasets, $properties);
         } else {
             // generate valid id
             $name = $page->header()->get('title') ?: 'dataset';
@@ -270,7 +270,10 @@ class LeafletTour {
             $views = self::getTourViews($file);
             // validate using constructor
             $tour = Tour::fromArray($page->header()->jsonSerialize(), $views, self::getConfig(), $datasets);
-            $page->header($tour->toYaml());
+            // handle popup content images
+            $yaml = $tour->toYaml();
+            $features = Tour::validateFeaturePopups($yaml['features'], str_replace(Grav::instance()['locator']->findResource('page://'), '', $file->filename()));
+            $page->header(array_merge($yaml, ['features' => $features]));
             // and then validate all views, too
             foreach ($tour->getViews() as $id => $view) {
                 // views were validated on tour creation, so update file contents to match the validated view contents
@@ -319,13 +322,18 @@ class LeafletTour {
             $page->header($update);
         }
     }
-    public static function validateTours(string $dataset_id, array $update, array $datasets = []): void {
+    public static function validateTours(string $dataset_id, array $update, array $datasets = [], ?array $properties = null): void {
         if (empty($datasets)) $datasets = self::getDatasets();
         // make sure the file has the correct content
         if ($file = $datasets[$dataset_id]) $file->header($update); // file might not exist, esp. if this is called b/c of dataset deletion
         foreach (array_values(self::getTours()) as $file) {
             $ids = array_column($file->header()['datasets'] ?? [], 'id'); // dataset ids from tour
             if (!in_array($dataset_id, $ids)) continue; // ignore if tour doesn't have the dataset
+            // handle property renaming, if applicable
+            if ($properties) {
+                $overrides = Tour::renameAutoPopupProps($dataset_id, $properties, $file->header()['dataset_overrides']);
+                $file->header(array_merge($file->header(), ['dataset_overrides' => $overrides]));
+            }
             // use constructor to validate tour (and view) content
             $tour = Tour::fromFile($file, self::getTourViews($file), self::getConfig(), $datasets);
             $file->header($tour->toYaml()); // only valid options will actually be set and then returned from the object

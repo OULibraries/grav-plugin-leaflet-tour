@@ -150,7 +150,7 @@ class Dataset {
         foreach (['icon', 'path', 'active_path', 'border', 'active_border'] as $key) {
             $options[$key] = array_merge($options[$key] ?? [], $tour_options[$key] ?? []);
         }
-        // legend - TODO
+        // legend
         $legend = $tour_options['legend'] ?? [];
         if (!$legend['text']) {
             $legend['text'] = $dataset->getLegend()['text'];
@@ -250,7 +250,12 @@ class Dataset {
         ]));
     }
 
-    // TODO: modify image paths
+    /**
+     * Validates potential dataset update - feature_type, properties, features, etc.
+     * @param array $update Dataset yaml from update
+     * @param array $properties [old name => new name] (from renaming properties, potentially)
+     * @return array updated Dataset yaml
+     */
     public function validateUpdate(array $update, array $properties): array {
         // validate feature type - to change type: both old and new types must be shape (i.e. not 'Point'), old and new types should be different, either current features or new features should be empty
         $new_type = Feature::validateFeatureType($update['feature_type']);
@@ -306,6 +311,12 @@ class Dataset {
         // validate dataset fully by using constructor (also validates all features fully using constructor)
         return self::fromArray($options)->toYaml();
     }
+    /**
+     * Creates an id, title, route, and file for a (presumably) new dataset. Sets ids for all dataset features.
+     * @param string $file_name The name of the uploaded file with the original dataset content
+     * @param array $dataset_ids All existing dataset ids (to prevent duplicates)
+     * @return MarkdownFile A file with all dataset content set in the header
+     */
     public function initialize(string $file_name, array $dataset_ids): MarkdownFile {
         // first, determine a unique id for the dataset
         $id = preg_replace('/\.[^.]+$/', '', $file_name); // remove file extension
@@ -383,6 +394,9 @@ class Dataset {
             'active_border' => $this->getActiveBorder(),
         ]);
     }
+    /**
+     * Merges defaults with icon settings and modifies so they are the appropriate format for Leaflet IconOptions
+     */
     public function getIconOptions(): array {
         $icon = $this->getIcon();
         if ($icon['file']) $icon = array_merge(self::CUSTOM_MARKER_FALLBACKS, $icon);
@@ -406,6 +420,9 @@ class Dataset {
         $extras = array_diff_key($icon, array_flip(['file', 'retina', 'shadow', 'width', 'height', 'shadow_width', 'shadow_height', 'tooltip_anchor_x', 'tooltip_anchor_y', 'anchor_x', 'anchor_y', 'shadow_anchor_x', 'shadow_anchor_y', 'class', 'rounding']));
         return array_merge($extras, $options);
     }
+    /**
+     * Combines all the necessary shape options that will actually be applied to features on the map
+     */
     public function getShapeOptions(): array {
         if ($this->getType() === 'Point') return [];
         $border = $this->getBorderOptions();
@@ -425,14 +442,23 @@ class Dataset {
         }
         return $options;
     }
+    /**
+     * Merges defaults with path settings (stroke, not fill)
+     */
     public function getStrokeOptions(): array {
         // path plus defaults, fill false
         return array_merge(self::DEFAULT_PATH, $this->getPath(), ['fill' => false]);
     }
+    /**
+     * Merges defaults with active path settings (stroke, not fill)
+     */
     public function getActiveStrokeOptions(): array {
         // path plus defaults, fill false
         return array_merge($this->getStrokeOptions(), $this->getActivePath(), ['fill' => false]);
     }
+    /**
+     * For polygons, returns path fill options (merged with defaults)
+     */
     public function getFillOptions(): array {
         // empty array if line
         if (str_contains($this->getType(), 'LineString')) return [];
@@ -446,6 +472,9 @@ class Dataset {
             ];
         }
     }
+    /**
+     * For polygons, returns active path fill options (merged with defaults)
+     */
     public function getActiveFillOptions(): array {
         // empty array if line
         if (str_contains($this->getType(), 'LineString')) return [];

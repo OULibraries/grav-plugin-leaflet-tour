@@ -39,6 +39,8 @@ class Tour {
     private array $included_features, $merged_datasets, $feature_popups, $basemap_info, $tile_server_options;
     private ?array $starting_bounds;
 
+    // TODO: Note: Add all will not be reset to false, actually
+
     // all normal values
     // for future validation: valid basemap file names, valid point feature ids, included/merged features
     public function __construct(array $options, array $views, array $plugin_config, array $datasets) {
@@ -69,76 +71,22 @@ class Tour {
         // datasets - must be array, can only contain ids that have valid files
         if (is_array($options['datasets'])) $this->datasets = array_intersect_key(array_column($options['datasets'], null, 'id'), $datasets);
         else $this->datasets = [];
-        // dataset overrides - must be array, can only contain ids that match tour datasets
-        if (!empty($this->datasets) && is_array($options['dataset_overrides'])) $this->dataset_overrides = array_intersect_key($options['dataset_overrides'], $this->datasets);
-        else $this->dataset_overrides = [];
         // dataset objects (temporary) - turn file into object, only for datasets that are included in tour datasets list
         $datasets = array_map(function($file) { return Dataset::fromFile($file); }, array_intersect_key($datasets, $this->datasets));
-        // further validation for dataset overrides - auto popup props must be valid
-        foreach ($this->dataset_overrides as $id => $overrides) {
-            $dataset = $datasets[$id];
-            if ($props = $overrides['auto_popup_properties']) $this->dataset_overrides[$id]['auto_popup_properties'] = array_values(array_intersect($props, array_merge($dataset->getProperties(), ['none'])));
-        }
+        // dataset overrides
+        $this->dataset_overrides = self::validateDatasetOverrides($options['dataset_overrides'], $datasets);
 
         // start with features
-        // all feature objects (temporary)
-        $features = [];
+        $features = []; // all feature objects (temporary)
         foreach (array_values($datasets) as $dataset) {
             $features = array_merge($features, $dataset->getFeatures());
         }
-        // validate features list
-        if (is_array($options['features'])) $this->features = array_intersect_key(array_column($options['features'], null, 'id'), $features);
-        else $this->features = [];
-        // handle datasets add all
-        foreach (array_keys($this->datasets) as $id) {
-            if ($this->datasets[$id]['add_all']) {
-                $this->datasets[$id]['add_all'] = false;
-                // add features to tour features list - must not already be in list and must not be hidden
-                foreach ($datasets[$id]->getFeatures() as $id => $feature) {
-                    if (!$this->features[$id] && !$feature->isHidden()) $this->features[$id] = ['id' => $id];
-                }
-            } // otherwise ignore
-        }
+        $this->features = self::buildFeaturesList($options['features'], $datasets, $this->dataset_overrides);
+        $this->point_ids = self::buildPointIDList($datasets);
+        $this->included_features = self::buildIncludedFeaturesList($this->features, $datasets, $this->datasets);
+        $this->merged_datasets = self::buildTourDatasets($datasets, $this->datasets, $this->dataset_overrides, $this->included_features);
+        $this->feature_popups = self::buildPopupsList($this->included_features, $this->features, $this->merged_datasets);
 
-        // merged features and datasets (and point features while we're at it)
-        $this->included_features = $this->features; // values will be replaced, ids ensure that the features have been added in the correct order
-        $this->merged_datasets = [];
-        $this->point_ids = [];
-        // loop through datasets
-        foreach ($this->datasets as $id => $dataset_options) {
-            // create the "merged dataset"
-            $dataset = Dataset::fromTour($datasets[$id], $this->dataset_overrides[$id] ?? []);
-            $features = $datasets[$id]->getFeatures();
-            // loop through features to create merged feature (if needed)
-            foreach ($features as $f_id => $feature) {
-                // if feature is in array or should be, create add the feature object
-                if ($this->included_features[$f_id] || ($dataset_options['include_all'] && !$feature->isHidden())) {
-                    $this->included_features[$f_id] = $feature;
-                }
-            }
-            // check if the dataset is actually used
-            if (!empty(array_intersect(array_keys($features), array_keys($this->included_features)))) {
-                // in other words: at least one feature from the dataset is included
-                $this->merged_datasets[$id] = $dataset;
-            }
-            // if point, make sure ids are noted
-            if ($dataset->getType() === 'Point') $this->point_ids = array_merge($this->point_ids, array_keys($features));
-        }
-
-        // feature popups
-        $this->feature_popups = [];
-        foreach ($this->included_features as $id => $feature) {
-            $popup = $this->features[$id]['popup_content'];
-            if (!$popup and !$this->features[$id]['remove_popup']) $popup = $feature->getPopup();
-            $auto = $feature->getAutoPopupProperties($this->merged_datasets[$feature->getDatasetId()]->getAutoPopupProperties());
-            if ($popup || !empty($auto)) {
-                $this->feature_popups[$id] = [
-                    'name' => $feature->getName(),
-                    'auto' => $auto,
-                    'popup' => $popup,
-                ];
-            }
-        }
         // validate start - must be array, location must be valid point feature or 'none'
         $this->start = is_array($options['start']) ? $options['start'] : [];
         // location must be a string, must reference a valid feature, and that feature must be a point
@@ -413,6 +361,98 @@ class Tour {
             }
         }
         return null;
+    }
+    public static function validateDatasetOverrides($overrides, array $datasets): array {
+        $dataset_overrides = [];
+        // must be array, can only contain ids that match tour datasets
+        if (!empty($datasets) && is_array($overrides)) $dataset_overrides = array_intersect_key($overrides, $datasets);
+        // auto popup props must be valid
+        foreach ($dataset_overrides as $id => $override) {
+            $dataset = $datasets[$id];
+            $props = $override['auto_popup_properties'];
+            if (!is_array($props)) $props = null;
+            // props should only contain values from dataset properties, could also contain none
+            else $props = array_values(array_intersect($props, array_merge($dataset->getProperties(), ['none'])));
+            $dataset_overrides[$id]['auto_popup_properties'] = $props;
+        }
+        return $dataset_overrides;
+    }
+    public static function buildFeaturesList($features, array $datasets, array $overrides): array {
+        // if features is an array, index it by id and make sure only valid features are included
+        $tour_features = is_array($features) ? array_intersect_key(array_column($features, null, 'id')) : [];
+        // handle datasets add all
+        foreach ($overrides as $id => $dataset) {
+            if ($dataset['add_all']) {
+                // add features to tour features list - must not already be in list and must not be hidden
+                foreach ($datasets[$id]->getFeatures() as $feature_id => $feature) {
+                    if (!$tour_features[$feature_id] && !$feature->isHidden()) $tour_features[$id] = ['id' => $feature_id];
+                }
+            } // otherwise ignore
+        }
+        return $tour_features;
+    }
+    public static function buildPointIDList(array $datasets): array {
+        $ids = [];
+        foreach (array_values($datasets) as $dataset) {
+            if ($dataset->getType() === 'Point') $ids = array_merge($ids, array_keys($dataset->getFeatures()));
+        }
+        return $ids;
+    }
+    public static function buildIncludedFeaturesList(array $tour_features, array $datasets, array $tour_datasets): array {
+        $included = $tour_features; // values will be replaced, ids ensure that the features have been added in the correct order
+        // loop through all features from all datasets
+        foreach ($tour_datasets as $dataset_id => $dataset_options) {
+            foreach ($datasets[$dataset_id]->getFeatures() as $id => $feature) {
+                // add feature if: feature is already in the list (needs to be updated from tour feature options to actual Feature object) or the dataset has include_all and the feature is not hidden
+                if ($included[$id] || ($dataset_options['include_all'] && !$feature->isHidden())) $included[$id] = $feature;
+            }
+        }
+        return $included;
+    }
+    public static function buildTourDatasets(array $datasets, array $tour_datasets, array $dataset_overrides, array $included_features): array {
+        $merged_datasets = [];
+        foreach (array_values($tour_datasets) as $id) {
+            // is the dataset actually used? (at least one feature included)
+            if (!empty(array_intersect(array_keys($datasets[$id]->getFeatures(), array_keys($included_features))))) {
+                // create and add merged dataset
+                $merged_datasets[$id] = Dataset::fromTour($datasets[$id], $dataset_overrides[$id] ?? []);
+            }
+        }
+        return $merged_datasets;
+    }
+    public static function buildPopupsList(array $features, array $tour_features, array $datasets): array {
+        $popups = [];
+        foreach ($features as $id => $feature) {
+            $popup = $tour_features[$id]['popup_content'];
+            if (!$popup && !$tour_features[$id]['remove_popup']) $popup = $feature->getPopup();
+            $auto = $feature->getAutoPopupProperties($datasets[$feature->getDatasetId()]->getAutoPopupProperties());
+            if ($popup || !empty($auto)) {
+                $popups[$id] = [
+                    'name' => $feature->getName(),
+                    'auto' => $auto,
+                    'popup' => $popup,
+                ];
+            }
+        }
+        return $popups;
+    }
+    public static function validateFeaturePopups(array $features, string $path): array {
+        $new_list = [];
+        foreach ($features as $feature) {
+            $content = Feature::modifyPopupImagePaths($feature['popup_content'], $path);
+            $new_list[] = array_merge($feature, ['content' => $content]);
+        }
+        return $new_list;
+    }
+    public static function renameAutoPopupProps(string $id, array $properties, $overrides) {
+        try {
+            $old_props = $overrides[$id]['auto_popup_properties'];
+            $new_props = [];
+            foreach ($old_props as $prop) { $new_props[] = $properties[$prop] ?? ''; }
+            return $new_props;
+        } catch (\Throwable $t) {
+            return $overrides;
+        }
     }
 }
 ?>
