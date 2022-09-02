@@ -56,23 +56,6 @@ class LeafletTour {
         'update_warning' => 'The update is ready. To complete the update, review the provided information, toggle the Confirm option, and save. To cancel the update, simply delete the uploaded file. Warning! Once confirmed the update cannot be undone. Make sure to carefully review the expected changes and create a backup (the Git Sync plugin is strongly recommended).',
     ];
 
-    const TILE_SERVER_LIST = [
-        'custom' => 'Custom URL',
-        'other' => 'Other Leaflet Providers Tile Server',
-        'Esri.WorldImagery' => 'Esri World Imagery',
-        'OpenTopoMap' => 'OpenTopoMap',
-        'OPNVKarte' => 'OPNVKarte',
-        'Stamen.Toner' => 'Stamen Toner',
-        'Stamen.TonerBackground' => 'Stamen Toner Background',
-        'Stamen.TonerLight' => 'Stamen Toner - Light',
-        'Stamen.Watercolor' => 'Stamen Watercolor',
-        'Stamen.Terrain' => 'Stamen Terrain',
-        'Stamen.TerrainBackground' => 'Stamen Terrain Background',
-        'USGS.USTopo' => 'USGS: US Topo',
-        'USGS.USImageryTopo' => 'USGS: US Imagery',
-        'USGS.USImagery' => 'USGS: US Imagery Background',
-    ];
-
     public function __construct() {}
 
     public static function getDatasets(): array {

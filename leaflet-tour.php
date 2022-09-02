@@ -7,11 +7,8 @@ use Grav\Common\Plugin;
 // use Grav\Common\Data\Data;
 // use Grav\Common\Page\Header;
 use RocketTheme\Toolbox\Event\Event;
-use RocketTheme\Toolbox\File\MarkdownFile;
-use Grav\Plugin\LeafletTour\Dataset;
 use Grav\Plugin\LeafletTour\LeafletTour;
 use Grav\Plugin\LeafletTour\Utils;
-use Grav\Plugin\LeafletTour\Feature;
 // use Grav\Plugin\LeafletTour\Tour;
 
 /**
@@ -157,43 +154,22 @@ class LeafletTourPlugin extends Plugin {
     // getters for any blueprints
 
     public static function getDatasetsList(bool $include_none = false): array {
-        $list = [];
-        foreach (LeafletTour::getDatasets() as $id => $file) {
-            $dataset = Dataset::fromLimitedArray($file->header(), ['title', 'id']);
-            $name = $dataset->getName();
-            $list[$id] = $name;
-        }
-        if ($include_none) $list = array_merge(['none' => 'None'], $list);
-        return $list;
+        return Utils::getDatasetsList($include_none);
     }
 
     public static function getTileServerList(): array {
-        return LeafletTour::TILE_SERVER_LIST;
+        return Utils::TILE_SERVER_LIST;
     }
 
     public static function getBasemapList(): array {
-        $list = [];
-        foreach (LeafletTour::getBasemapInfo() as $file => $info) {
-            $list[$file] = $info['name'] ?: $file;
-        }
-        return $list;
+        return Utils::getBasemapList();
     }
 
     /**
      * Returns select_optgroup options
      */
     public static function getUpdatePropertiesList(): array {
-        $list = [];
-        foreach (LeafletTour::getDatasets() as $id => $file) {
-            $dataset = Dataset::fromLimitedArray($file->header(), ['id', 'title', 'properties']);
-            $name = $dataset->getName();
-            $sublist = [];
-            foreach ($dataset->getProperties() as $prop) {
-                $sublist["$id--prop--$prop"] = $prop;
-            }
-            $list[] = [$name => $sublist];
-        }
-        return array_merge(['none' => 'None', 'coords' => 'Coordinates'], $list);
+        return Utils::getUpdatePropertiesList();
     }
 
     // getters for dataset blueprints
@@ -204,252 +180,46 @@ class LeafletTourPlugin extends Plugin {
      * @return array [$prop => $prop]
      */
     public static function getDatasetPropertyList(bool $include_none = false): array {
-        $file = Utils::getDatasetFile();
-        if ($file) {
-            $props = Dataset::fromLimitedArray($file->header(), ['properties'])->getProperties();
-            $list = array_combine($props, $props);
-            if ($include_none) $list = array_merge(['none' => 'None'], $list);
-        }
-        return $list ?? [];
+        if ($file = Utils::getDatasetFile()) return Utils::getDatasetPropertyList($file, $include_none);
+        else return [];
     }
 
     public static function getFeaturePropertiesFields(): array {
-        $file = Utils::getDatasetFile();
-        $fields = [];
-        if ($file) {
-            // get dataset and list of properties
-            $props = Dataset::fromLimitedArray($file->header(), ['properties'])->getProperties();
-            foreach ($props as $prop) {
-                $fields[".$prop"] = [
-                    'type' => 'text',
-                    'label' => $prop,
-                ];
-            }
-        }
-        return $fields;
+        if ($file = Utils::getDatasetFile()) return Utils::getFeaturePropertiesFields($file);
+        else return [];
     }
 
     public static function getShapeFillType(string $default): string {
-        $file = Utils::getDatasetFile();
-        if ($file) {
-            $type = Feature::validateFeatureType($file->header()['feature_type']);
-            if (str_contains($type, 'LineString')) {
-                // LineString or MultiLineString
-                return 'hidden';
-            }
-        }
-        return $default;
+        if ($file = Utils::getDatasetFile()) return Utils::getShapeFillType($file, $default);
+        else return $default;
     }
 
     public static function getDatasetDefaults(string $key): string {
-        $file = Utils::getDatasetFile();
-        if ($file) {
-            $header = $file->header();
-            switch ($key) {
-                case 'path_fillColor':
-                case 'active_path_color':
-                    // default: path color ?? default color
-                    return ($header['path'] ?? [])['color'] ?? Dataset::DEFAULT_PATH['color'];
-                case 'active_path_fillColor':
-                    // default: regular fill color
-                    return ($header['path'] ?? [])['fillColor'] ?? self::getDatasetDefaults('path_fillColor');
-            }
-        }
-        return '';
+        if ($file = Utils::getDatasetFile()) return Utils::getDatasetDefaults($file, $key);
+        else return '';
     }
 
     // getters for tour blueprints
 
     public static function getTourDatasetFields(): array {
-        $file = Utils::getTourFile();
-        $fields = [];
-        if ($file) {
-            $datasets = $file->header()['datasets'] ?? [];
-            $overrides = $file->header()['dataset_overrides'] ?? [];
-            foreach (array_column($datasets, 'id') as $id) {
-                if ($dataset_file = LeafletTour::getDatasets()[$id]) {
-                    $dataset = Dataset::fromArray(array_diff_key($dataset_file->header(), array_flip(['features']))); // just because we don't need features
-                    $name = "header.dataset_overrides.$id";
-                    $options = [
-                        "$name.auto_popup_properties" => [
-                            'type' => 'select',
-                            'label' => 'Add Properties to Popup Content',
-                            'description' => 'Properties selected here will be used instead of properties selected in the dataset header. If only \'None\' is selected, then no properties will be added to popup content.',
-                            'options' => array_merge(['none' => 'None'], array_combine($dataset->getProperties(), $dataset->getProperties())),
-                            'multiple' => true,
-                            'toggleable' => true,
-                            'validate' => [
-                                'type' => 'array'
-                            ],
-                            'default' => $dataset->getAutoPopupProperties(),
-                        ],
-                        "$name.attribution" => [
-                            'type' => 'text',
-                            'label' => 'Dataset Attribution',
-                            'toggleable' => true,
-                            'default' => $dataset->getAttribution(),
-                        ],
-                        'legend_section' => [
-                            'type' => 'section',
-                            'title' => 'Legend Options',
-                        ],
-                        "$name.legend.text" => [
-                            'type' => 'text',
-                            'label' => 'Description for Legend',
-                            'description' => 'If this field is set then any legend summary from the dataset will be ignored, whether or not the legend summary override is set.',
-                            'toggleable' => true,
-                            'default' => $dataset->getLegend()['text'],
-                        ],
-                        "$name.legend.summary" => [
-                            'type' => 'text',
-                            'label' => 'Legend Summary',
-                            'description' => 'Optional shorter version of the legend description.',
-                            'toggleable' => true,
-                            'default' => $dataset->getLegend()['summary'],
-                        ],
-                        "$name.legend.symbol_alt" => [
-                            'type' => 'text',
-                            'label' => 'Legend Symbol Alt Text',
-                            'description' => 'A brief description of the icon/symbol/shape used for each feature.',
-                            'toggleable' => true,
-                            'default' => $dataset->getLegend()['symbol_alt'],
-                        ],
-                    ];
-                    // add icon or path options
-                    if ($dataset->getType() === 'Point') {
-                        $options["icon_section"] = [
-                            'type' => 'section',
-                            'title' => 'Icon Options',
-                            'text' => 'Only some of the icon options in the dataset configuration are shown here, but any can be customized by directly modifying the page header in expert mode.',
-                        ];
-                        $options["$name.icon.file"] = [
-                            'type' => 'filepicker',
-                            'label' => 'Icon Image File',
-                            'description' => 'If not set, the default Leaflet marker will be used',
-                            'preview_images' => true,
-                            // 'folder' => Grav::instance()['locator']->findResource('user://') . '/data/leaflet-tour/icons',
-                            'folder' => 'user://data/leaflet-tour/images/icons',
-                            'toggleable' => true,
-                        ];
-                        $file = $dataset->getIcon(true)['file'];
-                        // determine appropriate defaults for icon height/width if not directly set by dataset
-                        try {
-                            $file ??= $overrides[$dataset->getId()]['icon']['file'];
-                        } catch (\Throwable $t) {} // do nothing
-                        if ($file) $default = Dataset::CUSTOM_MARKER_FALLBACKS;
-                        else $default = Dataset::DEFAULT_MARKER_FALLBACKS;
-                        $height = $dataset->getIcon()['height'] ?? $default['height'];
-                        $width = $dataset->getIcon()['width'] ?? $default['width'];
-                        if ($file) $options["$name.icon.file"]['default'] = $file;
-                        $options["$name.icon.width"] = [
-                            'type' => 'number',
-                            'label' => 'Icon Width (pixels)',
-                            'toggleable' => true,
-                            'validate' => [
-                                'min' => 1
-                            ],
-                            'default' => $width,
-                        ];
-                        $options["$name.icon.height"] = [
-                            'type' => 'number',
-                            'label' => 'Icon Height (pixels)',
-                            'toggleable' => true,
-                            'validate' => [
-                                'min' => 1
-                            ],
-                            'default' => $height,
-                        ];
-                    } else {
-                        $options['path_section'] = [
-                            'type' => 'section',
-                            'title' => 'Shape Options',
-                            'text' => 'Other shape/path options can be customized by directly modifying the page header in expert mode.'
-                        ];
-                        $options["$name.path.color"] = [
-                            'type' => 'colorpicker',
-                            'label' => 'Shape Color',
-                            'default' => $dataset->getStrokeOptions()['color'],
-                            'toggleable' => true,
-                        ];
-                        $options["$name.border.color"] = [
-                            'type' => 'colorpicker',
-                            'label' => 'Border Color',
-                            'toggleable' => true,
-                            'default' => $dataset->getBorderOptions()['color'],
-                        ];
-                    }
-                    $fields[$name] = [
-                        'type' => 'fieldset',
-                        'title' => $dataset->getName(),
-                        'collapsible' => true,
-                        'collapsed' => true,
-                        'fields' => $options,
-                    ];
-                }
-            }
-        }
-        return $fields;
+        if ($file = Utils::getTourFile()) return Utils::getTourDatasetFields($file);
+        else return [];
     }
 
     public static function getTourFeatures(bool $only_points = false): array {
-        $file = Utils::getTourFile();
-        $list = [];
-        if ($file) {
-            $ids = array_column($file->header()['datasets'] ?? [], 'id');
-            $datasets = LeafletTour::getDatasets();
-            $datasets = array_merge($ids, $datasets); // to keep order from tour
-            $datasets = array_intersect_key($datasets, $ids); // to limit to only tour datasets
-            $datasets = array_map(function($dataset_file) { return Dataset::fromArray($dataset_file->header()); }, $datasets);
-            if ($only_points) return self::getPoints($datasets);
-            // implied else
-            foreach (array_values($datasets) as $dataset) {
-                foreach ($dataset->getFeatures() as $id => $feature) {
-                    $list[$id] = $feature->getName() . ' ... (' . $dataset->getName() . ')';
-                }
-            }
-        }
-        return $list;
-    }
-
-    public static function getPoints(array $datasets): array {
-        $list = [];
-        foreach (array_values($datasets) as $dataset) {
-            if ($dataset->getType() === 'Point') {
-                $features = array_map(function($feature) {
-                    return $feature->getName() . ' (' . implode(',', $feature->getCoordinates()) . ')';
-                }, $dataset->getFeatures());
-                $list = array_merge($list, $features);
-            }
-        }
-        return array_merge(['none' => 'None'], $list);
+        if ($file = Utils::getTourFile()) return Utils::getTourFeatures($file, $only_points);
+        else return [];
     }
 
     // getters for view blueprints
 
     public static function getViewFeatures(bool $only_points = false): array {
-        $file = Utils::getTourFileFromView();
-        $list = [];
-        if ($file) {
-            $ids = array_column($file->header()['datasets'] ?? [], 'id');
-            $datasets = array_merge($ids, LeafletTour::getDatasets());
-            $datasets = array_map(function($dataset_file) {
-                return Dataset::fromArray($dataset_file->header());
-            }, array_intersect_key($datasets, $ids));
-            if ($only_points) {
-                return self::getPoints($datasets);
-            }
-            // implied else
-            $tour = Tour::fromFile($file, [], [], $datasets);
-            foreach ($tour->getIncludedFeatures() as $id => $feature) {
-                $list[$id] = $feature->getName() . ' ... (' . $datasets[$feature->getDatasetId()]->getName() . ')';
-            }
-        }
-        return $list;
+        if ($file = Utils::getTourFileFromView()) return Utils::getViewFeatures($file, $only_points);
+        else return [];
     }
 
     public static function getTourIdForView(): string {
-        $file = Utils::getTourFileFromView();
-        $id = $file->header()['id'] ?? '';
-        return $id;
+        if ($file = Utils::getTourFileFromView()) return Utils::getTourIdForView($file);
+        else return '';
     }
 }
