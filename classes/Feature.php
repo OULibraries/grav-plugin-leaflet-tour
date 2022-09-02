@@ -21,8 +21,10 @@ class Feature {
         'multipolygon'=>'MultiPolygon' // [[[[x,y], [x,y], [x,y], [x,y]]]]
     ];
 
+    // some information from/based on the feature's dataset
     private ?string $dataset_id, $default_name;
     private string $type;
+    // yaml content
     private ?string $id, $custom_name, $popup;
     private bool $hide;
     private array $coordinates, $properties, $extras;
@@ -99,6 +101,7 @@ class Feature {
         else return null;
     }
 
+    // TODO: pass info for further validating popup content
     /**
      * Validates potential feature update yaml, called when validating a dataset update as a whole
      * 
@@ -111,6 +114,9 @@ class Feature {
         else return $update;
     }
 
+    /**
+     * @return array [id, name, custom_name, hide, popup => [popup_content], properties, coordinates]
+     */
     public function toYaml(): array {
         return array_merge($this->getExtras(), [
             'id' => $this->getId(),
@@ -123,6 +129,10 @@ class Feature {
         ]);
     }
 
+    /**
+     * Creates a valid geojson representation of the feature
+     * @return array [type => 'Feature', geometry => [coordinates, type], properties]
+     */
     public function toGeoJson(): array {
         $props = $this->getProperties();
         if (($popup = $this->getPopup()) && !$props['popup_content']) $props['popup_content'] = $popup;
@@ -137,13 +147,19 @@ class Feature {
         ];
     }
 
+    /**
+     * Returns the subset of the feature's properties specified by the input (and only for properties that have values)
+     * @return array [key => value]
+     */
     public function getAutoPopupProperties(array $auto_popup_properties): array {
-        $properties = [];
-        // make sure that only properties with values are returned
-        foreach ($auto_popup_properties as $key) {
-            if ($value = $this->getProperties()[$key]) $properties[$key] = $value;
-        }
-        return $properties;
+        return array_filter(array_intersect_key($this->getProperties(), array_flip($auto_popup_properties)));
+        // TODO: remove
+        // $properties = [];
+        // // make sure that only properties with values are returned
+        // foreach ($auto_popup_properties as $key) {
+        //     if ($value = $this->getProperties()[$key]) $properties[$key] = $value;
+        // }
+        // return $properties;
     }
 
     public function getName(): ?string {
@@ -170,6 +186,7 @@ class Feature {
     // feature utils
 
     /**
+     * Ensures that type is one of the valid geojson feature types, uses Point if no match (ignoring caps) is found
      * @param string $type Hopefully a valid feature type
      * @return string $type, possibly with modified capitalization, otherwise (invalid type) return 'Point'
      */
