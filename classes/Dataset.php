@@ -56,6 +56,10 @@ class Dataset {
     private bool $ready_for_update;
     private array $legend, $features, $properties, $auto_popup_properties, $icon, $path, $active_path, $border, $active_border, $extras;
 
+    /**
+     * Sets and validates all provided options
+     * @param array $options Dataset yaml, possibly with file
+     */
     private function __construct(array $options) {
         // validate file
         try { $this->file = $options['file']; }
@@ -95,6 +99,11 @@ class Dataset {
         $this->extras = array_diff_key($options, array_flip($keys));
     }
 
+    /**
+     * Builds a dataset from parsed json content
+     * @param array $json Parsed json content
+     * @return Dataset|null Dataset if at least one valid feature, otherwise null
+     */
     public static function fromJson(array $json): ?Dataset {
         // loop through json features and try creating new Feature objects
         $type = null; // to be set by first valid feature
@@ -129,6 +138,9 @@ class Dataset {
     public static function fromLimitedArray(array $options, array $keys): Dataset {
         return new Dataset(array_intersect_key($options, array_flip($keys)));
     }
+    /**
+     * Creates a new dataset by merging options from an existing dataset with overrides set by a tour
+     */
     public static function fromTour(Dataset $dataset, array $tour_options): Dataset {
         $options = $dataset->toYaml();
         // overwrite attribution adn auto popup properties
@@ -144,7 +156,8 @@ class Dataset {
             $legend['text'] = $dataset->getLegend()['text'];
             $legend['summary'] ??= $dataset->getLegend()['summary'];
         }
-        if (!(($tour_options['icon'] ?? [])['file']) && !(($tour_options['path'] ?? [])['color'])) $legend['symbol_alt'] ??= $dataset->getLegend()['symbol_alt'];
+        // only use symbol alt from dataset if icon file or stroke/fill/border color also comes from dataset (or default)
+        if (!$legend['symbol_alt'] && !($tour_options['icon'] ?? [])['file'] && !($tour_options['path'] ?? [])['color'] && !($tour_options['path'] ?? [])['fillColor'] && !($tour_options['border'] ?? [])['color']) $legend['symbol_alt'] = $dataset->getLegend()['symbol_alt'];
         // default for legend summary
         $legend['summary'] ??= $legend['text'] ?: $legend['symbol_alt'];
         $options['legend'] = $legend;
@@ -152,6 +165,9 @@ class Dataset {
         $options['features'] = []; // may as well remove features to reduce unneeded validation
         return new Dataset($options);
     }
+    /**
+     * Creates a new dataset with most settings from the old dataset but features from the new dataset. Matched features retain some values.
+     */
     public static function fromUpdateReplace(array $matches, Dataset $old_dataset, Dataset $update_dataset): Dataset {
         $features = [];
         $feature_count = $old_dataset->getFeatureCount();
@@ -178,6 +194,9 @@ class Dataset {
             'properties' => array_unique(array_merge($old_dataset->getProperties(), $update_dataset->getProperties())),
         ]));
     }
+    /**
+     * Creates a new dataset with only those features that do not have matches
+     */
     public static function fromUpdateRemove(array $matches, Dataset $old_dataset): Dataset {
         // only include old features without matches (note that old feature ids are the values, not the keys, for matches array)
         $features = array_diff_key($old_dataset->getFeatures(), array_flip(array_values($matches)));
@@ -187,6 +206,9 @@ class Dataset {
             }, $features)), // turn array of id => Feature, into non-indexed array of feature yaml content
         ]));
     }
+    /**
+     * Creates a new dataset with most settings from old dataset but features modified by new. Potentially: Adds new (from update, no match) features. Remove old (from original, no match) features. Modify coordinates and properties for matching features.
+     */
     public static function fromUpdateStandard(array $matches, Dataset $old_dataset, Dataset $update_dataset, ?bool $add, ?bool $modify, ?bool $remove): Dataset {
         $features = [];
         $feature_count = $old_dataset->getFeatureCount();
@@ -228,43 +250,17 @@ class Dataset {
         ]));
     }
 
-    public function validateUpdate(array $update): array {
-        // validate: feature_type, features, properties, maybe name prop and auto popup props
-        // only change type for shape datasets, and only when dataset has no features or the update has no features
-        $type = $this->getType();
-        if (($type !== 'Point') && ($update['feature_type'] !== $type) && (empty($this->getFeatures()) || empty($update['features']))) {
-            $type = Feature::validateFeatureType($update['feature_type']);
-            // cannot change from shape to point, checking here because potential invalid types default to 'Point'
-            if ($type === 'Point') $type = $this->getType();
-        }
+    // TODO: modify image paths
+    public function validateUpdate(array $update, array $properties): array {
+        // validate feature type - to change type: both old and new types must be shape (i.e. not 'Point'), old and new types should be different, either current features or new features should be empty
+        $new_type = Feature::validateFeatureType($update['feature_type']);
+        if (($this->getType() !== 'Point') && ($new_type !== $this->getType()) && ($new_type !== 'Point') && (empty($this->getFeatures()) || empty($update['features']))) $type = $new_type;
+        else $type = $this->getType();
         // validate properties
-        $properties = is_array($update['properties']) ? $update['properties'] : [];
-        $name_property = $update['name_property'];
-        $auto_popup_properties = is_array($update['auto_popup_properties']) ? $update['auto_popup_properties'] : [];
-        // handle potential property renaming
-        $renamed_props = [];
-        if (is_array($update['rename_properties'])) {
-            $all_names = $properties;
-            // loop through everything to check if anything has a value
-            foreach ($update['rename_properties'] as $old_name => $new_name) {
-                // if no new value (so no change) or the new value matches an existing (and is therefroe invalid), ignore and go on to the next property
-                if (!$new_name || in_array($new_name, $all_names)) continue;
-                // add the new name to the list of all names (for checking other potential renamed properties)
-                $all_names[] = $new_name;
-                // add the property to the renamed list, for other validation
-                $renamed_props[$old_name] = $new_name;
-                // rename property in properties list, preserve order
-                $keys = array_keys($properties, $old_name, true);
-                // get index for where property to be renamed exists (to preserve order), if no index, add the property to the end
-                $index = !empty($keys) ? $keys[0] : count($properties);
-                $properties[$index] = $new_name;
-                // possibly update name property
-                if ($name_property === $old_name) $name_property = $new_name;
-                // possibly update auto popup properties, preserve order
-                $keys = array_keys($auto_popup_properties, $old_name, true);
-                if (!empty($keys)) $auto_popup_properties[$keys[0]] = $new_name;
-            }
-        }
+        $name_property = $properties[$update['name_property']]; // will return a new value if renamed or null if invalid
+        // replace auto popup properties with new values if needed
+        $auto_popup_properties = [];
+        foreach ($update['auto_popup_properties'] ?? [] as $prop) { $auto_popup_properties[] = $properties[$prop] ?? ''; }
         // validate features, reconcile changes
         $features = [];
         $feature_count = $this->getFeatureCount();
@@ -274,7 +270,7 @@ class Dataset {
                 // modified feature has id for feature in dataset that has not yet been added to features list (i.e. not a duplicate)
                 if (($id = $feature_yaml['id']) && ($old_feature = $this->getFeatures()[$id]) && (!$features[$id])) {
                     // validate feature update (coordinates)
-                    $feature_array = $old_feature->validateUpdate($feature_yaml);
+                    $feature_array = $old_feature->validateUpdate($feature_yaml, str_replace(Grav::instance()['locator']->findResource('page://'), '', $this->getFile()->filename()));
                 } else {
                     // new feature: make sure feature has valid coordinates (otherwise ignore it) and give it a proper unique id
                     if ($coords = Feature::validateYamlCoordinates($feature_yaml['coordinates'], $type)) {
@@ -283,18 +279,14 @@ class Dataset {
                         $feature_array = array_merge($feature_yaml, ['coordinates' => Feature::coordinatesToYaml($coords, $type), 'id' => $id]);
                     }
                 }
-                // if feature (either new or modified) perform additional validation using constructor and check for renamed properties
+                // if feature (either new or modified) perform additional validation for renamed properties
                 if ($feature_array) {
                     // check for renamed properties
-                    $props = $feature_array['properties'];
-                    try {
-                        foreach ($renamed_props as $old_name => $new_name) {
-                            if ($value = $props[$old_name]) {
-                                unset($props[$old_name]);
-                                $props[$new_name] = $value;
-                            }
-                        }
-                    } catch (\Throwable $t) {}
+                    $props = [];
+                    foreach ($feature_array['properties'] ?? [] as $old_key => $value) {
+                        $new_key = $properties[$old_key] ?? $old_key;
+                        $props[$new_key] = $value;
+                    }
                     $features[$feature_array['id']] = array_merge($feature_array, ['properties' => $props]);
                 }
             }
@@ -304,13 +296,13 @@ class Dataset {
             'feature_type' => $type,
             'upload_file_path' => $this->getUploadFilePath(), // cannot change
             'feature_count' => $feature_count,
-            'properties' => $properties,
+            'properties' => array_values($properties), // only need the new values
             'name_property' => $name_property,
             'auto_popup_properties' => $auto_popup_properties,
             'features' => array_values($features),
             'ready_for_update' => false,
         ]);
-        unset($options['rename_properties']);
+        // TODO: should not be necessary: unset($options['rename_properties']);
         // validate dataset fully by using constructor (also validates all features fully using constructor)
         return self::fromArray($options)->toYaml();
     }
@@ -595,6 +587,24 @@ class Dataset {
         if (empty($name_prop)) $name_prop = $properties[0];
         if ($name_prop) return $name_prop;
         else return null;
+    }
+    /**
+     * Note that the return array may include an old property (as included in the rename_properties fieldset) that has been removed from the properties list. Any such values will be added to the end of the properties list.
+     * @param $rename rename_properties from dataset yaml
+     * @param $properties properties from dataset yaml
+     * @return array [key => value] where keys are all property values before renaming and values are all property values after renaming (may be exactly the same)
+     */
+    public static function validateUpdateProperties($rename, $properties): array {
+        $renamed = [];
+        $props = is_array($properties) ? $properties : [];
+        // loop through to compile a list of properties to actually rename
+        foreach ((is_array($rename) ? $rename : []) as $old => $new) {
+            // to change: must have new value, value cannot match existing value, value cannot match a newly renamed value (i.e. cannot rename two properties to the same name)
+            if ($new && !in_array($new, $props) && !in_array($new, array_values($renamed))) $renamed[$old] = $new;
+        }
+        $props = array_combine($props, $props); // "old" names pointing to old names
+        // replace any old names (values) with new names, preserves order of properties
+        return array_merge($props, $renamed);
     }
 
 }

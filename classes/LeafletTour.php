@@ -163,6 +163,9 @@ class LeafletTour {
      * Could do some validation, but shouldn't be necessary.
      * @param $obj The update object, used to access old and new config values.
      */
+    /**
+     * could rewrite this to accept an array (from the object data), then return an array that would be used to set things for the object, theoretically this would allow me to do auto tests for much of the functionality
+     */
     public static function handlePluginConfigSave($obj): void {
         // make sure all dataset files exist
         $data_files = [];
@@ -233,7 +236,10 @@ class LeafletTour {
             // dataset exists and needs to be updated and validated
             $dataset = Dataset::fromFile($file);
             // validate
-            $update = $dataset->validateUpdate($page->header()->jsonSerialize());
+            $yaml = $page->header()->jsonSerialize();
+            $properties = Dataset::validateUpdateProperties($page->value('rename_properties'), $yaml['properties']);
+            $update = $dataset->validateUpdate($yaml, $properties);
+            // TODO: Need to also pass rename props to tour
             // check for export - will export the new content
             if ($page->value('export_geojson')) {
                 $export_file = CompiledJsonFile::instance(dirname($file->filename()) . "/$id.json");

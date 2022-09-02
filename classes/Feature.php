@@ -43,8 +43,7 @@ class Feature {
             $this->$key = is_string($options[$key]) ? $options[$key] : null;
         }
         // popup: string or array
-        $content = is_array($options['popup']) ? $options['popup']['popup_content'] : $options['popup'];
-        $this->popup = is_string($content) ? $content : null;
+        $this->popup = $this->validatePopupContent($options['popup']);
         // hide must always be bool
         $this->hide = ($options['hide'] === true);
         // validate properties
@@ -52,6 +51,11 @@ class Feature {
         // extras
         $keys = ['id', 'custom_name', 'popup', 'hide', 'coordinates', 'properties', 'dataset_id', 'default_name', 'type'];
         $this->extras = array_diff_key($options, array_flip($keys));
+    }
+    private function validatePopupContent($popup): ?string {
+        $content = is_array($popup) ? $popup['popup_content'] : $popup;
+        if (is_string($content)) return $content;
+        else return null;
     }
 
     /**
@@ -101,17 +105,21 @@ class Feature {
         else return null;
     }
 
-    // TODO: pass info for further validating popup content
     /**
      * Validates potential feature update yaml, called when validating a dataset update as a whole
      * 
      * @param array $update
      * @return array Modified/validated input array
      */
-    public function validateUpdate(array $update): array {
+    public function validateUpdate(array $update, string $path): array {
         // validate coordinates, replace if invalid
-        if (!self::validateYamlCoordinates($update['coordinates'], $this->getType())) return array_merge($update, ['coordinates' => $this->getYamlCoordinates()]);
-        else return $update;
+        $coords = self::validateYamlCoordinates($update['coordinates'], $this->getType()) ?? $this->getYamlCoordinates();
+        // potentially modify popup content
+        $popup = $this->validatePopupContent($update['popup']);
+        if ($popup && $popup !== $this->getPopup()) {
+            $popup = ['popup_content' => self::modifyPopupImagePaths($popup, $path)];
+        }
+        return array_merge($update, ['coordinates' => $coords, 'popup' => $popup]);
     }
 
     /**
@@ -316,6 +324,37 @@ class Feature {
             return $multi;
         }
         return null;
+    }
+
+    /**
+     * Prepends provided path to image paths for markdown images where the image path does not start with dot, slash, http, or a stream (has ://)
+     */
+    public static function modifyPopupImagePaths(?string $content, string $path): ?string {
+        if (!$content) return $content;
+        // search for markdown images - format: ![alt text](image_file.ext?action&action2=x&action3=y "title")
+        $split = explode('![', $content ?? '');
+        $content = array_shift($split); // ignore first, but keep it as the beginning of content
+        foreach ($split as $image_start) {
+            $added = false;
+            // look for beginning of the image url
+            $pieces = explode('](', $image_start, 2);
+            if (count($pieces) > 1) { // it had better be, but you never know
+                $url_start = $pieces[1];
+                // decide if new path needs to be applied
+                if (!str_starts_with($url_start, '.') && !str_starts_with($url_start, '/') && !str_starts_with($url_start, 'http')) {
+                    // also check for stream
+                    if (!str_contains($image_start, '://')) {
+                        // build back the string, but with the new path added
+                        $added = true;
+                        $content .= '![' . $pieces[0] . "](page:/$path/$url_start";
+                    }
+                }
+            }
+            if (!$added) {
+                $content .= "![$image_start";
+            }
+        }
+        return $content;
     }
 }
 ?>
