@@ -12,6 +12,7 @@ class LeafletTour {
     
     const JSON_VAR_REGEX = '/^.*var(\s)+json_(\w)*(\s)+=(\s)+/';
 
+    // There may be a better way to store these, but it definitely doesn't make sense to hardcode them into the functions
     const UPDATE_MSGS = [
         'start' => 'Upload a file, select options, save, and reload the page to begin.',
         // initial/confirm issues
@@ -64,7 +65,14 @@ class LeafletTour {
     public static function getTours(): array {
         return self::getFiles('tour', 'tour');
     }
-    public static function getFiles(string $key, string $default_id) {
+    /**
+     * Finds all markdown files ending with the key provided. If a file does not have a valid id (no id, special reserved value, repeat), then a new id is generated for the file (and added to file header).
+     * @param string $key Determines which files are returned - everything in the user/pages folder ending in $key.md
+     * @param string $default_id If id is invalid and the file header does not have a 'title' set, this is used to generate the id instead
+     * 
+     * @return array A list of all files found, indexed by id
+     */
+    public static function getFiles(string $key, string $default_id): array {
         $all_files = Utils::findTemplateFiles("$key.md");
         $files = $new_files = [];
         foreach ($all_files as $file) {
@@ -81,6 +89,14 @@ class LeafletTour {
         }
         return $files;
     }
+    /**
+     * Creates a new id for a given file
+     * @param MarkdownFile|null $file The file that needs the new id. If provided, the id will be added to the file header, and the file will be saved.
+     * @param string $name The name to use to generate the id. If the name is a duplicate for an existing id, a count will be added at the end and incremented until a unique id is found
+     * @param array $ids All currently existing valid ids - i.e. ids that cannot be used (determines if the generated id is a duplicate and needs to be incremented)
+     * 
+     * @return string The new valid id
+     */
     public static function generateId(?MarkdownFile $file, string $name, array $ids): string {
         $id = Utils::cleanUpString($name);
         $count = 1;
@@ -94,7 +110,14 @@ class LeafletTour {
         }
         return $id;
     }
+    /**
+     * @param mixed $id Hopefully a string, but might be something... less valid
+     * @param array $ids List of existing ids - $id must not be a duplicated of any of these
+     * 
+     * @return bool false if id is falsey, uses restricted value (tmp  id, _tour) or is a duplicated; true otherwise
+     */
     public static function isValidId($id, array $ids): bool {
+        // TODO: Might want to test if id is a string, too
         return ($id && $id !== 'tmp  id' && $id !== '_tour' && !in_array($id, $ids, true));
     }
     public static function getTour($id): ?Tour {
@@ -102,6 +125,12 @@ class LeafletTour {
         if ($file) return self::buildTour($file);
         else return null;
     }
+    /**
+     * Create an array with all view modules belonging to the tour file provided, generates valid id for any views that do not have one
+     * @param MarkdownFile $file The tour markdown file
+     * 
+     * @return array MarkdownFile objects for any view modules in the tour file's parent folder, indexed by id
+     */
     public static function getTourViews(MarkdownFile $file): array {
         // get views
         $views = [];
@@ -146,16 +175,13 @@ class LeafletTour {
      * Could do some validation, but shouldn't be necessary.
      * @param $obj The update object, used to access old and new config values.
      */
-    /**
-     * could rewrite this to accept an array (from the object data), then return an array that would be used to set things for the object, theoretically this would allow me to do auto tests for much of the functionality
-     */
     public static function handlePluginConfigSave($obj): void {
         // make sure all dataset files exist
-        $obj->set('data_files', self::validateDataFiles($obj->get('data_files') ?? []));
+        $obj->set('data_files', self::validateFiles($obj->get('data_files') ?? []));
         // handle dataset uploads
         self::createDatasetPages($obj->get('data_files'), self::getConfig()['data_files'] ?? []);
         // make sure all basemap files exist
-        $obj->set('basemap_files', self::validateBasemapFiles($obj->get('basemap_files') ?? []));
+        $obj->set('basemap_files', self::validateFiles($obj->get('basemap_files') ?? []));
         $obj->set('basemap_info', self::validateBasemapInfo($obj->get('basemap_files'), $obj->get('basemap_info' ?? [])));
         // validate tours
         self::validateTourBasemaps($obj->get('basemap_info'), self::getTours());
@@ -164,16 +190,23 @@ class LeafletTour {
         $update = array_merge($update, self::handleDatasetUpdate($old_config['update'] ?? [], $update));
         $obj->set('update', $update);
     }
-    public static function validateDataFiles(array $data_files): array {
+    /**
+     * Removes any files from input that do not actually exist
+     * @param array $input An array of uploaded files in the form: key => ['path', 'name', 'size', 'type'] (from yaml file upload)
+     * @return array Modified input array - only includes files that exist
+     */
+    public static function validateFiles(array $input): array {
         $files = [];
-        foreach ($data_files ?? [] as $key => $file_data) {
+        foreach ($input ?? [] as $key => $file_data) {
             $filepath = Grav::instance()['locator']->getBase() . '/' . $file_data['path'];
             if (File::instance($filepath)->exists()) $files[$key] = $file_data;
         }
         return $files;
     }
     /**
-     * loop through new files, look for files that don't exist in old files list and turn any found into new datasets (prev: checkDatasetUploads)
+     * loop through new files, look for files that don't exist in old files list and turn any found into new datasets
+     * @param array $data_files All uploaded dataset files from plugin yaml (should be json and js files only)
+     * @param array $old_files The previous value for uploaded dataset files, before the plugin config was modified and saved
      */
     public static function createDatasetPages(array $data_files, array $old_files): void {
         $dataset_ids = array_keys(self::getDatasets());
@@ -188,14 +221,13 @@ class LeafletTour {
             }
         }
     }
-    public static function validateBasemapFiles(array $basemap_files): array {
-        $files = [];
-        foreach ($basemap_files as $key => $file_data) {
-            $path = Grav::instance()['locator']->getBase() . '/' . $file_data['path'];
-            if (File::instance($path)->exists()) $files[$key] = $file_data;
-        }
-        return $files;
-    }
+    /**
+     * Removes any entries where the selected file does not actually exist
+     * @param array $files All basemap uploads from plugin yaml - file uploads should have name, path, type, and size, but only name matters here
+     * @param array $basemap_info The current array that needs checking, each entry includes value for 'file'
+     * 
+     * @return array Modified $basemap_info array, any entries where value for 'file' did not exist in the provided file names is removed
+     */
     public static function validateBasemapInfo(array $files, array $basemap_info): array {
         $filenames = array_column($files, 'name');
         $new_list = [];
@@ -204,6 +236,11 @@ class LeafletTour {
         }
         return $new_list;
     }
+    /**
+     * Loops through all tours and their views, makes sure that all added basemaps are actually valid - removes any that are not (must exist in basemap_info list to be valid)
+     * @param array $info The basemap info list from plugin yaml, each entry contains value for 'file'
+     * @param array $tours All tour.md files in user/pages folder
+     */
     public static function validateTourBasemaps(array $info, array $tours): void {
         $valid_basemaps = array_column($info, 'file');
         foreach (array_values($tours) as $file) {
@@ -232,6 +269,15 @@ class LeafletTour {
         $update = self::updateDatasetPage($id, $rename_properties, $yaml, $export);
         $page->header($update);
     }
+    /**
+     * Generates new id for new datasets and validates using constructor. Validates existing datasets (but does not generate new id), possibly creates GeoJSON export file, validates all tours containing the updated dataset
+     * @param $id Hopefully a string, hopefully valid - will determine whether this is a new or existing dataset
+     * @param $rename_properties Hopefully an array - will be used to update properties if any values have been renamed
+     * @param array $yaml The actual updated dataset yaml (which requires validation)
+     * @param $export Hopefully a bool - if true, a GeoJSON export file will be created and saved in the dataset's parent folder
+     * 
+     * @return array The updated dataset yaml with any modifications needed
+     */
     public static function updateDatasetPage($id, $rename_properties, array $yaml, $export): array {
         $datasets = self::getDatasets();
         if ($file = $datasets[$id]) {
@@ -263,6 +309,14 @@ class LeafletTour {
         $update = self::updateTourPage($id, $header, $page->path());
         $page->header($update);
     }
+    /**
+     * Generates new id for new tours and validates them. Validates existing tours and all their views. Also determines whether or not a tour popups page should exist.
+     * @param $id Hopefully a string, hopefully valid  - will determine whether this is a new or existing tour
+     * @param array $header The actual updated tour yaml (which requires validation)
+     * @param $path Hopefully a string, the path for the tour's parent folder - necessary for modifying markdown images in feature overrides for popup content and for creating/removing tour popups page
+     * 
+     * @return array The updated tour yaml with any modifications needed (updated views will just be saved directly)
+     */
     public static function updateTourPage($id, array $header, $path): array {
         $update = [];
         $tours = self::getTours();
@@ -312,7 +366,15 @@ class LeafletTour {
         $update = self::updateViewPage($page->getOriginalData()['id'], $page->value('tour_id'), $page->header()->jsonSerialize());
         $page->header($update);
     }
-    public static function updateViewPage($id, $tour_id, $header): array {
+    /**
+     * Generates new id for new views. Validates views using the view's tour (if it exists).
+     * @param $id Hopefully a string - determines whether this is a new or existing view
+     * @param $tour_id Hopefully a string, hopefully vlid - used to find the the correct tour file for validating the view (view cannot be validated otherwise)
+     * @param array $header The actual updated view yaml (which requires validation)
+     * 
+     * @return array The updated view yaml with any modifications needed
+     */
+    public static function updateViewPage($id, $tour_id, array $header): array {
         if ($tour_file = self::getTours()[$tour_id]) {
             $tour = self::buildTour($tour_file);
             if (!$tour->getViews()[$id]) {
@@ -323,6 +385,13 @@ class LeafletTour {
             return $tour->validateViewUpdate($header, $id);
         } else return $header;
     }
+    /**
+     * Loops through all tours. Validates any that use the dataset with the provided id (as well as all of their views). Handles any renamed properties (dataset overrides for auto popup properties).
+     * @param string $dataset_id The id for the dataset that has been modified or deleted. Only tours that contain this dataset id will be validated.
+     * @param array $update The new updated content for the dataset (to make sure that the correct values are checked). Provide an empty array if the dataset has been deleted.
+     * @param array $datasets Array of all dataset files in user/pages, indexed by id
+     * @param array|null $properties Provided if any properties may have been renamed. Contains entries in the form of 'old_prop_name' => 'new_prop_name'
+     */
     public static function validateTours(string $dataset_id, array $update, array $datasets = [], ?array $properties = null): void {
         if (empty($datasets)) $datasets = self::getDatasets();
         // make sure the file has the correct content
@@ -351,6 +420,12 @@ class LeafletTour {
     public static function handleDatasetDeletion($page): void {
         self::deleteDatasetPage($page->header()->get('id'), $page->header()->get('upload_file_path'));
     }
+    /**
+     * Potentially deletes the original upload file the dataset was created from. Validates all tours that previously used the deleted dataset.
+     * @param $id Hopefully a string - indicates the removed dataset
+     * @param $path Hopefully either a string or null - if provided, should be an accurate path (starting with 'user/' to the original upload file that should now be deleted)
+     */
+    // TODO: Handle case where id is not a string
     public static function deleteDatasetPage($id, $path): void {
         if ($path) {
             File::instance(Grav::instance()['locator']->getBase() . "/$path")->delete();
@@ -362,6 +437,11 @@ class LeafletTour {
 
     // dataset upload
 
+    /**
+     * Take an uploaded file and parse any valid JSON content
+     * @param array $file_data The data for the uploaded file from plugin yaml (name, path, size, type)
+     * @return array|null Valid JSON content if it exists, otherwise null
+     */
     public static function parseDatasetUpload(array $file_data): ?array {
         // fix php's bad json handling
         if (version_compare(phpversion(), '7.1', '>=')) {
@@ -405,12 +485,23 @@ class LeafletTour {
     //     // return "<button id='$button_id' aria-haspopup='true' onClick=\"openDialog('$feature_id-popup', this)\" class='btn view-popup-btn'>$text</button>";
     //     return "<button type='button' id='$button_id' aria-haspopup='true' data-feature='$feature_id' class='btn view-popup-btn'>$text</button>";
     // }
+    /**
+     * Removes starting and ending paragraph tags from the provided text
+     * @param string $text The text to modify
+     * @return string $text, but with starting and ending paragraph tags removed (if they existed)
+     */
     public static function stripParagraph(string $text): string {
         if (str_starts_with($text, '<p>') && str_ends_with($text, '</p>')) return substr($text, 3, -4);
         else return $text;
     }
 
     // todo: remove cancel update toggle
+    /**
+     * Updates an existing dataset based on plugin options.
+     * @param array $old_update The previous plugin options - used to check what values (if any) have changed and whether or not the user has been given a chance to review potential changes to the dataset
+     * @param array $new_update The new plugin options - used to determine what should happen next
+     * @return array $new_update with any needed modifications to indicate the current status of the update
+     */
     public static function handleDatasetUpdate(array $old_update, array $new_update): array {
         // cancel update?
         $file_yaml = $new_update['file'] ?? [];
