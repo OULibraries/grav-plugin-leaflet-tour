@@ -81,7 +81,7 @@ class Tour {
         foreach (array_values($datasets) as $dataset) {
             $features = array_merge($features, $dataset->getFeatures());
         }
-        $this->features = self::buildFeaturesList($options['features'], $datasets, $this->dataset_overrides);
+        $this->features = self::buildFeaturesList($options['features'], $features, $this->datasets, $datasets);
         $this->point_ids = self::buildPointIDList($datasets);
         $this->included_features = self::buildIncludedFeaturesList($this->features, $datasets, $this->datasets);
         $this->merged_datasets = self::buildTourDatasets($datasets, $this->datasets, $this->dataset_overrides, $this->included_features);
@@ -377,11 +377,11 @@ class Tour {
         }
         return $dataset_overrides;
     }
-    public static function buildFeaturesList($features, array $datasets, array $overrides): array {
+    public static function buildFeaturesList($features, array $all_features, array $dataset_options, array $datasets): array {
         // if features is an array, index it by id and make sure only valid features are included
-        $tour_features = is_array($features) ? array_intersect_key(array_column($features, null, 'id')) : [];
+        $tour_features = is_array($features) ? array_intersect_key(array_column($features, null, 'id'), $all_features) : [];
         // handle datasets add all
-        foreach ($overrides as $id => $dataset) {
+        foreach ($dataset_options as $id => $dataset) {
             if ($dataset['add_all']) {
                 // add features to tour features list - must not already be in list and must not be hidden
                 foreach ($datasets[$id]->getFeatures() as $feature_id => $feature) {
