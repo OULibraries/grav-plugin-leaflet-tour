@@ -328,7 +328,8 @@ class LeafletTour {
             $tour = Tour::fromArray($header, $views, self::getConfig(), $datasets);
             // handle popup content images
             $yaml = $tour->toYaml();
-            $features = Tour::validateFeaturePopups($yaml['features'], str_replace(Grav::instance()['locator']->findResource('page://'), '', $file->filename()));
+            // $features = Tour::validateFeaturePopups($yaml['features'], str_replace(Grav::instance()['locator']->findResource('page://'), '', $file->filename()));
+            $features = Tour::validateFeaturePopups($yaml['features'], $path);
             $update = array_merge($yaml, ['features' => $features]);
             // and then validate all views, too
             foreach ($tour->getViews() as $id => $view) {
