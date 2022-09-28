@@ -449,7 +449,7 @@ class Tour {
             $old_props = $overrides[$id]['auto_popup_properties'];
             $new_props = [];
             foreach ($old_props as $prop) { $new_props[] = $properties[$prop] ?? ''; }
-            return $new_props;
+            return array_merge($overrides, [$id => array_merge($overrides[$id], ['auto_popup_properties' => $new_props])]);
         } catch (\Throwable $t) {
             return $overrides;
         }
