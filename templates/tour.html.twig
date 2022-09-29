@@ -11,14 +11,14 @@
     {{ parent() }}
     {# Set some important map data #}
     <script>
-        let tour_padding = '{{ plugin_config.fly_to_padding ?? header.fly_to_padding }}';
+        {# let tour_padding = '{{ plugin_config.fly_to_padding ?? header.fly_to_padding }}'; #}
         const tour_options = {{ tour.getTourData()|json_encode|raw }};
         let tour_basemaps = new Map(Object.entries({{ tour.getBasemapData()|json_encode|raw }}));
         let tour_datasets = new Map(Object.entries({{ tour.getDatasetData()|json_encode|raw }}));
         const tour_features = new Map(Object.entries({{ tour.getFeatureData()|json_encode|raw }}));
         let tour_views = new Map(Object.entries({{ tour.getViewData()|json_encode|raw }}));
     </script>
-    {% set col_width = tour.getColumnwidth() %}
+    {% set col_width = tour.getColumnWidth() %}
     {# Putting this here so it can be dynamic #}
     <style>
         @media (min-width: 800px) {
