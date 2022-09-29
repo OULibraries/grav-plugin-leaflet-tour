@@ -14,9 +14,9 @@
     {% set popups_list = leaflet_tour.getViews()[id].getPopupButtonsList() %}
     {% if popups_list|length > 0 %}
         <ul class="list-unstyled" role="list">
-            {% for button in popups_list %}
+            {% for id, name in popups_list %}
                 <li>
-                    {{ button|raw }}
+                    {{ leaflet_tour.buildPopupButton(id, id ~ '-popup-btn', name)|raw }}
                 </li>
             {% endfor %}
         </ul>

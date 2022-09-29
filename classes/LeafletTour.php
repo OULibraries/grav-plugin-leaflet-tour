@@ -481,11 +481,11 @@ class LeafletTour {
     /**
      * Builds an HTML string for a feature popup button
      */
-    // public static function buildPopupButton(string $feature_id, string $button_id, string $name, ?string $text = null): string {
-    //     $text = trim($text) ?: $name; // TODO: Determine default text?
-    //     // return "<button id='$button_id' aria-haspopup='true' onClick=\"openDialog('$feature_id-popup', this)\" class='btn view-popup-btn'>$text</button>";
-    //     return "<button type='button' id='$button_id' aria-haspopup='true' data-feature='$feature_id' class='btn view-popup-btn'>$text</button>";
-    // }
+    public static function buildPopupButton(string $feature_id, string $button_id, string $name, ?string $text = null): string {
+        $text = trim($text) ?: $name; // TODO: Determine default text?
+        // return "<button id='$button_id' aria-haspopup='true' onClick=\"openDialog('$feature_id-popup', this)\" class='btn view-popup-btn'>$text</button>";
+        return "<button type='button' id='$button_id' aria-haspopup='true' data-feature='$feature_id' class='btn view-popup-btn'>$text</button>";
+    }
     /**
      * Removes starting and ending paragraph tags from the provided text
      * @param string $text The text to modify
