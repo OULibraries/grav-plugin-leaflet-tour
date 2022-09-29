@@ -160,8 +160,8 @@
                 <button data-view="" id="back-to-view-btn" class="skip-link tour-desktop-only">Back to View</button>
             </div>
             {# feature modal popups #}
-            {% for feature in tour.getFeaturePopups() %}
-                {% include 'partials/modal-popup.html.twig' with {'feature': feature} %}
+            {% for id, feature in tour.getFeaturePopups() %}
+                {% include 'partials/modal-popup.html.twig' with {'id': id, 'feature': feature} %}
             {% endfor %}
         </main>
 
