@@ -2,10 +2,11 @@
 
 {% set tour = leaflet_tour.getTour(page.parent().header.id) %}
 
-{% set title = tour.getTitle()  ~ ' Popup Content' %}
+{% set tour_title = tour.getTitle() ?? 'Tour' %}
+{% set title = page.title ?? tour_title  ~ ' Popup Content' %}
 
 {% block page_title %}
-    <title>{{ title }}</title>
+    <title>{{ title ~ " | " ~ site.title}}</title>
 {% endblock %}
 
 {% block title %}
@@ -14,7 +15,7 @@
 
 {% block content %}
     {# add link to return to tour #}
-    <p><a href="{{ page.parent().url(true)|e }}">Return to Tour</a></p>
+    <p><a href="{{ page.parent().url(true)|e }}">Return to {{ tour_title }}</a></p>
     {% for id,feature in tour.getFeaturePopups() %}
         <h2 id="{{ id }}">{{ feature.name }}</h2>
         <div class="popup-content">
