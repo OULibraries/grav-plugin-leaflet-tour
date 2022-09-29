@@ -322,38 +322,38 @@ form:
               type: hidden
               default: 'none'
 
-            update_cols:
-              type: columns
-              fields:
-                col1:
-                  type: column
-                  fields:
+            # update_cols:
+            #   type: columns
+            #   fields:
+            #     col1:
+            #       type: column
+            #       fields:
 
-                    update.confirm:
-                      type: toggle
-                      label: Confirm Update
-                      highlight: 1
-                      default: 0
-                      options:
-                        0: PLUGIN_ADMIN.DISABLED
-                        1: PLUGIN_ADMIN.ENABLED
-                      validate:
-                        type: bool
+            update.confirm:
+              type: toggle
+              label: Confirm Update
+              highlight: 1
+              default: 0
+              options:
+                0: PLUGIN_ADMIN.DISABLED
+                1: PLUGIN_ADMIN.ENABLED
+              validate:
+                type: bool
 
-                col2:
-                  type: column
-                  fields:
+                # col2:
+                #   type: column
+                #   fields:
 
-                    update.cancel:
-                      type: toggle
-                      label: Cancel Update
-                      highlight: 1
-                      default: 0
-                      options:
-                        0: PLUGIN_ADMIN.DISABLED
-                        1: PLUGIN_ADMIN.ENABLED
-                      validate:
-                        type: bool
+                #     update.cancel:
+                #       type: toggle
+                #       label: Cancel Update
+                #       highlight: 1
+                #       default: 0
+                #       options:
+                #         0: PLUGIN_ADMIN.DISABLED
+                #         1: PLUGIN_ADMIN.ENABLED
+                #       validate:
+                #         type: bool
 
             update.file:
               type: file
