@@ -389,7 +389,7 @@ class Tour {
             if ($dataset['add_all']) {
                 // add features to tour features list - must not already be in list and must not be hidden
                 foreach ($datasets[$id]->getFeatures() as $feature_id => $feature) {
-                    if (!$tour_features[$feature_id] && !$feature->isHidden()) $tour_features[$id] = ['id' => $feature_id];
+                    if (!$tour_features[$feature_id] && !$feature->isHidden()) $tour_features[$feature_id] = ['id' => $feature_id];
                 }
             } // otherwise ignore
         }
@@ -444,7 +444,7 @@ class Tour {
         $new_list = [];
         foreach ($features as $feature) {
             $content = Feature::modifyPopupImagePaths($feature['popup_content'], $path);
-            $new_list[] = array_merge($feature, ['content' => $content]);
+            $new_list[] = array_merge($feature, ['popup_content' => $content]);
         }
         return $new_list;
     }

@@ -245,12 +245,12 @@ class LeafletTour {
         $valid_basemaps = array_column($info, 'file');
         foreach (array_values($tours) as $file) {
             // all we care about are the tour/view basemaps list - don't need to worry about other info
-            $basemaps = array_intersect($file->header('basemaps') ?? [], $valid_basemaps);
+            $basemaps = array_intersect($file->header()['basemaps'] ?? [], $valid_basemaps);
             $file->header(array_merge($file->header(), ['basemaps' => $basemaps]));
             $file->save();
             // validate views
             foreach (array_values(self::getTourViews($file)) as $view_file) {
-                $basemaps = array_intersect($view_file->header('basemaps') ?? [], $valid_basemaps);
+                $basemaps = array_intersect($view_file->header()['basemaps'] ?? [], $valid_basemaps);
                 $view_file->header(array_merge($view_file->header(), ['basemaps' => $basemaps]));
                 $view_file->save();
             }
@@ -432,7 +432,7 @@ class LeafletTour {
             File::instance(Grav::instance()['locator']->getBase() . "/$path")->delete();
         }
         // validate tours
-        $datasets = array_diff_key(self::getDatasets(), array_flip($id)); // all datasets except the one that is being removed (might not be necessary, but might as well make sure)
+        $datasets = array_diff_key(self::getDatasets(), array_flip([$id])); // all datasets except the one that is being removed (might not be necessary, but might as well make sure)
         self::validateTours($id, [], $datasets);
     }
 
@@ -973,10 +973,11 @@ class LeafletTour {
     public static function getTourFeatures(MarkdownFile $file, bool $only_points): array {
         $list = [];
         $ids = array_column($file->header()['datasets'] ?? [], 'id');
-        $datasets = LeafletTour::getDatasets();
-        $datasets = array_merge($ids, $datasets); // to keep order from tour
-        $datasets = array_intersect_key($datasets, $ids); // to limit to only tour datasets
-        $datasets = array_map(function($dataset_file) { return Dataset::fromArray($dataset_file->header()); }, $datasets);
+        $all_datasets = LeafletTour::getDatasets();
+        $datasets = [];
+        foreach ($ids as $id) {
+            if ($file = $all_datasets[$id]) $datasets[$id] = Dataset::fromArray($file->header());
+        }
         if ($only_points) return self::getPoints($datasets);
         // implied else
         foreach (array_values($datasets) as $dataset) {
@@ -1005,10 +1006,11 @@ class LeafletTour {
     public static function getViewFeatures(MarkdownFile $file, bool $only_points): array {
         $list = [];
         $ids = array_column($file->header()['datasets'] ?? [], 'id');
-        $datasets = array_merge($ids, LeafletTour::getDatasets());
-        $datasets = array_map(function($dataset_file) {
-            return Dataset::fromArray($dataset_file->header());
-        }, array_intersect_key($datasets, $ids));
+        $all_datasets = LeafletTour::getDatasets();
+        $datasets = [];
+        foreach ($ids as $id) {
+            if ($file = $all_datasets[$id]) $datasets[$id] = Dataset::fromArray($file->header());
+        }
         if ($only_points) {
             return self::getPoints($datasets);
         }
