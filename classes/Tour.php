@@ -411,9 +411,9 @@ class Tour {
     }
     public static function buildTourDatasets(array $datasets, array $tour_datasets, array $dataset_overrides, array $included_features): array {
         $merged_datasets = [];
-        foreach (array_values($tour_datasets) as $id) {
+        foreach (array_keys($tour_datasets) as $id) {
             // is the dataset actually used? (at least one feature included)
-            if (!empty(array_intersect(array_keys($datasets[$id]->getFeatures(), array_keys($included_features))))) {
+            if (!empty(array_intersect(array_keys($datasets[$id]->getFeatures()), array_keys($included_features)))) {
                 // create and add merged dataset
                 $merged_datasets[$id] = Dataset::fromTour($datasets[$id], $dataset_overrides[$id] ?? []);
             }
