@@ -275,8 +275,9 @@ class Dataset {
                 $feature_array = null;
                 // modified feature has id for feature in dataset that has not yet been added to features list (i.e. not a duplicate)
                 if (($id = $feature_yaml['id']) && ($old_feature = $this->getFeatures()[$id]) && (!$features[$id])) {
-                    // validate feature update (coordinates)
-                    $feature_array = $old_feature->validateUpdate($feature_yaml, str_replace(Grav::instance()['locator']->findResource('page://'), '', $this->getFile()->filename()));
+                    // validate feature update (coordinates and popup content)
+                    $path = $this->getFile() ? $this->getFile()->filename() : '';
+                    $feature_array = $old_feature->validateUpdate($feature_yaml, str_replace(Grav::instance()['locator']->findResource('page://'), '', $path));
                 } else {
                     // new feature: make sure feature has valid coordinates (otherwise ignore it) and give it a proper unique id
                     if ($coords = Feature::validateYamlCoordinates($feature_yaml['coordinates'], $type)) {
