@@ -119,7 +119,7 @@ class Feature {
         if ($popup && $popup !== $this->getPopup()) {
             $popup = ['popup_content' => self::modifyPopupImagePaths($popup, $path)];
         }
-        return array_merge($update, ['coordinates' => $coords, 'popup' => $popup]);
+        return array_merge($update, ['coordinates' => self::coordinatesToYaml($coords, $this->getType()), 'popup' => $popup]);
     }
 
     /**
