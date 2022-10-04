@@ -256,7 +256,8 @@ class Dataset {
      * @param array $properties [old name => new name] (from renaming properties, potentially)
      * @return array updated Dataset yaml
      */
-    public function validateUpdate(array $update, array $properties): array {
+    public function validateUpdate(array $update, $properties): array {
+        if (!is_array($properties)) $properties = [];
         // validate feature type - to change type: both old and new types must be shape (i.e. not 'Point'), old and new types should be different, either current features or new features should be empty
         $new_type = Feature::validateFeatureType($update['feature_type']);
         if (($this->getType() !== 'Point') && ($new_type !== $this->getType()) && ($new_type !== 'Point') && (empty($this->getFeatures()) || empty($update['features']))) $type = $new_type;
