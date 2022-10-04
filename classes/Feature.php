@@ -113,7 +113,7 @@ class Feature {
      */
     public function validateUpdate(array $update, string $path): array {
         // validate coordinates, replace if invalid
-        $coords = self::validateYamlCoordinates($update['coordinates'], $this->getType()) ?? $this->getYamlCoordinates();
+        $coords = self::validateYamlCoordinates($update['coordinates'], $this->getType()) ?? $this->getCoordinates();
         // potentially modify popup content
         $popup = $this->validatePopupContent($update['popup']);
         if ($popup && $popup !== $this->getPopup()) {
