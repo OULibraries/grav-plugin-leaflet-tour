@@ -154,7 +154,7 @@ class LeafletTourPlugin extends Plugin {
     // getters for any blueprints
 
     public static function getDatasetsList(bool $include_none = false): array {
-        return Utils::getDatasetsList($include_none);
+        return LeafletTour::getDatasetsList($include_none);
     }
 
     public static function getTileServerList(): array {
@@ -162,14 +162,14 @@ class LeafletTourPlugin extends Plugin {
     }
 
     public static function getBasemapList(): array {
-        return Utils::getBasemapList();
+        return LeafletTour::getBasemapList();
     }
 
     /**
      * Returns select_optgroup options
      */
     public static function getUpdatePropertiesList(): array {
-        return Utils::getUpdatePropertiesList();
+        return LeafletTour::getUpdatePropertiesList();
     }
 
     // getters for dataset blueprints
@@ -180,46 +180,46 @@ class LeafletTourPlugin extends Plugin {
      * @return array [$prop => $prop]
      */
     public static function getDatasetPropertyList(bool $include_none = false): array {
-        if ($file = Utils::getDatasetFile()) return Utils::getDatasetPropertyList($file, $include_none);
+        if ($file = Utils::getDatasetFile()) return LeafletTour::getDatasetPropertyList($file, $include_none);
         else return [];
     }
 
     public static function getFeaturePropertiesFields(): array {
-        if ($file = Utils::getDatasetFile()) return Utils::getFeaturePropertiesFields($file);
+        if ($file = Utils::getDatasetFile()) return LeafletTour::getFeaturePropertiesFields($file);
         else return [];
     }
 
     public static function getShapeFillType(string $default): string {
-        if ($file = Utils::getDatasetFile()) return Utils::getShapeFillType($file, $default);
+        if ($file = Utils::getDatasetFile()) return LeafletTour::getShapeFillType($file, $default);
         else return $default;
     }
 
     public static function getDatasetDefaults(string $key): string {
-        if ($file = Utils::getDatasetFile()) return Utils::getDatasetDefaults($file, $key);
+        if ($file = Utils::getDatasetFile()) return LeafletTour::getDatasetDefaults($file, $key);
         else return '';
     }
 
     // getters for tour blueprints
 
     public static function getTourDatasetFields(): array {
-        if ($file = Utils::getTourFile()) return Utils::getTourDatasetFields($file);
+        if ($file = Utils::getTourFile()) return LeafletTour::getTourDatasetFields($file);
         else return [];
     }
 
     public static function getTourFeatures(bool $only_points = false): array {
-        if ($file = Utils::getTourFile()) return Utils::getTourFeatures($file, $only_points);
+        if ($file = Utils::getTourFile()) return LeafletTour::getTourFeatures($file, $only_points);
         else return [];
     }
 
     // getters for view blueprints
 
     public static function getViewFeatures(bool $only_points = false): array {
-        if ($file = Utils::getTourFileFromView()) return Utils::getViewFeatures($file, $only_points);
+        if ($file = Utils::getTourFileFromView()) return LeafletTour::getViewFeatures($file, $only_points);
         else return [];
     }
 
     public static function getTourIdForView(): string {
-        if ($file = Utils::getTourFileFromView()) return Utils::getTourIdForView($file);
+        if ($file = Utils::getTourFileFromView()) return LeafletTour::getTourIdForView($file);
         else return '';
     }
 }
