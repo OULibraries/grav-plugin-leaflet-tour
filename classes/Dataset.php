@@ -486,7 +486,7 @@ class Dataset {
             return [
                 'fill' => $active['fill'] ?? $fill['fill'],
                 'fillOpacity' => $active['fillOpacity'] ?? $fill['fillOpacity'],
-                'fillColor' => $active['fillColor'] ?? $this->getPath()['fillColor'] ?? $active['color'] ?? $fill['fillColor'],
+                'fillColor' => $active['fillColor'] ?? /*$this->getPath()['fillColor'] ?? $active['color'] ??*/ $fill['fillColor'],
             ];
         }
     }
