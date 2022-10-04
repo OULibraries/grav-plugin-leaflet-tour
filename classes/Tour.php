@@ -368,6 +368,10 @@ class Tour {
         if (!empty($datasets) && is_array($overrides)) $dataset_overrides = array_intersect_key($overrides, $datasets);
         // auto popup props must be valid
         foreach ($dataset_overrides as $id => $override) {
+            if (!is_array($override)) {
+                $dataset_overrides[$id] = [];
+                continue;
+            }
             $dataset = $datasets[$id];
             $props = $override['auto_popup_properties'];
             if (!is_array($props)) $props = null;
