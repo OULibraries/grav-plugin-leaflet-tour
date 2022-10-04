@@ -346,7 +346,7 @@ class Feature {
                     if (!str_contains($image_start, '://')) {
                         // build back the string, but with the new path added
                         $added = true;
-                        $content .= '![' . $pieces[0] . "](page:/$path/$url_start";
+                        $content .= '![' . $pieces[0] . "](page://$path/$url_start";
                     }
                 }
             }
