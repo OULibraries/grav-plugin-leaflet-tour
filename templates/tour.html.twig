@@ -13,7 +13,7 @@
     <script>
         {# let tour_padding = '{{ plugin_config.fly_to_padding ?? header.fly_to_padding }}'; #}
         const tour_options = {{ tour.getTourData()|json_encode|raw }};
-        let tour_basemaps = new Map(Object.entries({{ tour.getBasemapData()|json_encode|raw }}));
+        let tour_basemaps = {{ tour.getBasemapData()|json_encode|raw }};
         let tour_datasets = new Map(Object.entries({{ tour.getDatasetData()|json_encode|raw }}));
         const tour_features = new Map(Object.entries({{ tour.getFeatureData()|json_encode|raw }}));
         let tour_views = new Map(Object.entries({{ tour.getViewData()|json_encode|raw }}));
@@ -50,6 +50,7 @@
     {% do assets.addJs('https://unpkg.com/scrollama', {group:'bottom'}) %}
     {% do assets.addJs('https://stamen-maps.a.ssl.fastly.net/js/tile.stamen.js?v1.3.0', {group:'bottom'}) %}
     {% do assets.addJs('https://cdnjs.cloudflare.com/ajax/libs/leaflet-providers/1.13.0/leaflet-providers.min.js', {group:'bottom'}) %}
+    {% do assets.addJs('plugin://leaflet-tour/assets/tour-functions.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/tour.js', {group:'bottom'}) %}
 {% endblock javascripts %}
 
