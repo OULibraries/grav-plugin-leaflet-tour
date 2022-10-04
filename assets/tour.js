@@ -2,12 +2,13 @@
 const SCROLLAMA_OFFSET = 0.33; // note: There are a couple things that rely on this number, so be careful if modifying
 const SCROLLAMA_DEBUG = false; // Never modify this - setting to true makes it impossible to scroll
 const SCROLLAMA_ENTER_VIEW_WAIT =  500; // half a second
-const BUFFER_WEIGHT = 21;
-const DEFAULT_TILE_SERVER = 'OpenTopoMap';
+// const BUFFER_WEIGHT = 21;
+// const DEFAULT_TILE_SERVER = 'OpenTopoMap';
 
-tour_padding = parseInt(tour_padding);
-if (isNaN(tour_padding)) tour_padding = 10;
-const FLY_TO_PADDING = [tour_padding, tour_padding];
+// tour_padding = parseInt(tour_padding);
+// if (isNaN(tour_padding)) tour_padding = 10;
+// const FLY_TO_PADDING = [tour_padding, tour_padding];
+const FLY_TO_PADDING = [10, 10];
 
 // tour state
 const tour = {
@@ -26,397 +27,399 @@ const tour_state = {
 }
 
 // ---------- Classes ---------- //
-class TourFeature {
-    // properties
-    id; name; has_popup; geometry;
-    // leaflet objects
-    layer; dataset;
-    // status
-    hide_view; hide_dataset;
-    constructor(feature, datasets) {
-        this.geometry = feature.geometry;
-        let props = feature.properties;
-        this.dataset = datasets.get(props.dataset);
-        this.id = props.id;
-        this.name = props.name;
-        this.hide_view = false;
-        this.hide_dataset = false;
-        this.has_popup = props.has_popup;
-    }
-    // returns all html elements associated with the feature (jquery)
-    get elements() {
-        return $(this.tooltip).add(this.focus_element).add(this.hover_element);
-    }
-    get tooltip() {
-        return this.layer.getTooltip().getElement();
-    }
-    get type() {
-        return this.geometry.type;
-    }
-    get geoJson() {
-        return({
-            type: 'Feature',
-            geometry: this.geometry,
-            properties: { id: this.id }
-        });
-    }
-    get alt_text() {
-        return this.name + (this.dataset.legend_summary ? ", " + this.dataset.legend_summary : "") + (this.has_popup ? ", open popup" : "");
-    }
-    // called by leaflet layer when a feature is added
-    addToLayer(layer) {
-        this.layer = layer;
-        // let sticky = (this.type != 'Point');
-        // tooltip
-        // TODO: aria-hidden here, or on the whole pane?
-        this.layer.bindTooltip(String('<div aria-hidden="true">' + this.name) + '</div>', {
-            permanent: false,
-            className: this.dataset.id,
-            // opacity: 0,
-            sticky: false,
-        });
-    }
-    // to be called after adding layer when document is ready
-    modify() {
-        let hover = this.hover_element;
-        let focus = this.focus_element;
-        hover.id = this.id;
-        hover.classList.add(this.dataset.id);
-        hover.classList.add("hover-el");
-        hover.classList.add(this.has_popup ? "has-popup" : "no-popup");
-        hover.setAttribute("data-feature", this.id);
-        focus.classList.add("focus-el");
-        focus.setAttribute("data-feature", this.id);
-        if (this.has_popup) {
-            focus.setAttribute("role", "button");
-            focus.setAttribute("aria-haspopup", "true");
-        }
-    }
-    toggleHidden() {
-        let hide = (this.hide_dataset || this.hide_view);
-        this.elements.attr("aria-hidden", hide).css("display", (hide ? "none" : "block"));
-    }
-    openPopup() {
-        if (this.has_popup) openDialog(this.id+"-popup", this.focus_element);
-        else this.focus_element.focus();
-    }
-    activate(e) {
-        this.layer.openTooltip();
-    }
-    deactivate() {
-        this.layer.closeTooltip();
-    }
-}
-class TourPoint extends TourFeature {
-    constructor(feature, datasets) {
-        super(feature, datasets);
-    }
-    get elements() {
-        return super.elements.add(this.layer._shadow);
-    }
-    get hover_element() { return this.layer._icon; }
-    get focus_element() { return this.layer._icon; }
-    // each point may have slightly different options that the generic dataset icon options
-    get icon_options() {
-        // return options;
-        return this.dataset.icon;
-    }
-    addToLayer(layer) {
-        super.addToLayer(layer);
-    }
-    activate(e) {
-        super.activate(e);
-        if (!map.getBounds().contains(this.layer.getLatLng())) {
-            map.panTo(this.layer.getLatLng(), { animate: true });
-        }
-    }
-}
-class TourPath extends TourFeature {
-    buffer; svg;
-    stroke; // only separate from regular path if the feature has a border
-    focus_element;
-    tmp_tooltip;
-    constructor(feature, datasets) {
-        super(feature, datasets);
-        if (this.dataset.stroke) this.stroke = true;
-        // if weight is below buffer cutoff, set buffer true
-        if ((this.dataset.path.weight < BUFFER_WEIGHT)) {
-            this.buffer = true;
-        }
-        else if (this.stroke) {
-            // if there is stroke and border, even if weight is very large, still want buffer for other reasons
-            this.buffer = true;
-            this.buffer_weight = this.dataset.path.weight;
-        }
-    }
-    get is_line() {
-        let type = this.type.toLowerCase();
-        return (type === 'linestring' || type === 'multilinestring');
-    }
-    get elements() {
-        // if buffer, the hover_element will be the buffer, but svg will still store the original svg, so must also be returned
-        let elements = super.elements;
-        if (this.stroke) elements = elements.add(this.stroke._path);
-        if (this.buffer) elements = elements.add(this.layer._path);
-        return elements;
-    }
-    get hover_element() { 
-        if (this.buffer) return this.buffer._path;
-        else return this.layer._path;
-    }
-    addToStrokeLayer(layer) {
-        this.stroke = layer;
-    }
-    addToBufferLayer(layer) {
-        this.buffer = layer;
-    }
-    modify() {
-        // create the focus element
-        let focus;
-        if (this.has_popup) {
-            focus = $('<button type="button" class="sr-only">' + this.alt_text + '</button>');
-        } else {
-            focus = $('<div class="sr-only" tabindex="0">' + this.alt_text + '</div>');
-        }
-        focus.attr("id", this.id + "-focus");
-        this.focus_element = focus.get(0);
-        $(".leaflet-marker-pane").append(this.focus_element); // TODO: This should go in a better location?
-        super.modify();
-    }
-    activate(e) {
-        // open initial tooltip
-        if (this.tmp_tooltip) this.layer.openTooltip(this.tmp_tooltip);
-        else this.layer.openTooltip();
-        this.layer.setStyle(this.dataset.active_path);
-        if (this.stroke) this.stroke.setStyle(this.dataset.active_stroke);
+// class TourFeature {
+//     // properties
+//     id; name; has_popup; geometry;
+//     // leaflet objects
+//     layer; dataset;
+//     // status
+//     hide_view; hide_dataset;
+//     constructor(feature, datasets) {
+//         this.geometry = feature.geometry;
+//         let props = feature.properties;
+//         this.dataset = datasets.get(props.dataset);
+//         this.id = props.id;
+//         this.name = props.name;
+//         this.hide_view = false;
+//         this.hide_dataset = false;
+//         this.has_popup = props.has_popup;
+//     }
+//     // returns all html elements associated with the feature (jquery)
+//     get elements() {
+//         return $(this.tooltip).add(this.focus_element).add(this.hover_element);
+//     }
+//     get tooltip() {
+//         return this.layer.getTooltip().getElement();
+//     }
+//     get type() {
+//         return this.geometry.type;
+//     }
+//     get geoJson() {
+//         return({
+//             type: 'Feature',
+//             geometry: this.geometry,
+//             properties: { id: this.id }
+//         });
+//     }
+//     get alt_text() {
+//         return this.name + (this.dataset.legend_summary ? ", " + this.dataset.legend_summary : "") + (this.has_popup ? ", open popup" : "");
+//     }
+//     // called by leaflet layer when a feature is added
+//     addToLayer(layer) {
+//         this.layer = layer;
+//         // let sticky = (this.type != 'Point');
+//         // tooltip
+//         // TODO: aria-hidden here, or on the whole pane?
+//         this.layer.bindTooltip(String('<div aria-hidden="true">' + this.name) + '</div>', {
+//             permanent: false,
+//             className: this.dataset.id,
+//             // opacity: 0,
+//             sticky: false,
+//         });
+//     }
+//     // to be called after adding layer when document is ready
+//     modify() {
+//         let hover = this.hover_element;
+//         let focus = this.focus_element;
+//         hover.id = this.id;
+//         hover.classList.add(this.dataset.id);
+//         hover.classList.add("hover-el");
+//         hover.classList.add(this.has_popup ? "has-popup" : "no-popup");
+//         hover.setAttribute("data-feature", this.id);
+//         focus.classList.add("focus-el");
+//         focus.setAttribute("data-feature", this.id);
+//         if (this.has_popup) {
+//             focus.setAttribute("role", "button");
+//             focus.setAttribute("aria-haspopup", "true");
+//         }
+//     }
+//     toggleHidden() {
+//         let hide = (this.hide_dataset || this.hide_view);
+//         this.elements.attr("aria-hidden", hide).css("display", (hide ? "none" : "block"));
+//     }
+//     openPopup() {
+//         if (this.has_popup) openDialog(this.id+"-popup", this.focus_element);
+//         else this.focus_element.focus();
+//     }
+//     activate(e) {
+//         this.layer.openTooltip();
+//     }
+//     deactivate() {
+//         this.layer.closeTooltip();
+//     }
+// }
+// class TourPoint extends TourFeature {
+//     constructor(feature, datasets) {
+//         super(feature, datasets);
+//     }
+//     get elements() {
+//         return super.elements.add(this.layer._shadow);
+//     }
+//     get hover_element() { return this.layer._icon; }
+//     get focus_element() { return this.layer._icon; }
+//     // each point may have slightly different options that the generic dataset icon options
+//     get icon_options() {
+//         // return options;
+//         return this.dataset.icon;
+//     }
+//     addToLayer(layer) {
+//         super.addToLayer(layer);
+//     }
+//     activate(e) {
+//         super.activate(e);
+//         if (!map.getBounds().contains(this.layer.getLatLng())) {
+//             map.panTo(this.layer.getLatLng(), { animate: true });
+//         }
+//     }
+// }
+// class TourPath extends TourFeature {
+//     buffer; svg;
+//     stroke; // only separate from regular path if the feature has a border
+//     focus_element;
+//     tmp_tooltip;
+//     constructor(feature, datasets) {
+//         super(feature, datasets);
+//         if (this.dataset.stroke) this.stroke = true;
+//         // if weight is below buffer cutoff, set buffer true
+//         if ((this.dataset.path.weight < BUFFER_WEIGHT)) {
+//             this.buffer = true;
+//         }
+//         else if (this.stroke) {
+//             // if there is stroke and border, even if weight is very large, still want buffer for other reasons
+//             this.buffer = true;
+//             this.buffer_weight = this.dataset.path.weight;
+//         }
+//     }
+//     get is_line() {
+//         let type = this.type.toLowerCase();
+//         return (type === 'linestring' || type === 'multilinestring');
+//     }
+//     get elements() {
+//         // if buffer, the hover_element will be the buffer, but svg will still store the original svg, so must also be returned
+//         let elements = super.elements;
+//         if (this.stroke) elements = elements.add(this.stroke._path);
+//         if (this.buffer) elements = elements.add(this.layer._path);
+//         return elements;
+//     }
+//     get hover_element() { 
+//         if (this.buffer) return this.buffer._path;
+//         else return this.layer._path;
+//     }
+//     addToStrokeLayer(layer) {
+//         this.stroke = layer;
+//     }
+//     addToBufferLayer(layer) {
+//         this.buffer = layer;
+//     }
+//     modify() {
+//         // create the focus element
+//         let focus;
+//         if (this.has_popup) {
+//             focus = $('<button type="button" class="sr-only">' + this.alt_text + '</button>');
+//         } else {
+//             focus = $('<div class="sr-only" tabindex="0">' + this.alt_text + '</div>');
+//         }
+//         focus.attr("id", this.id + "-focus");
+//         this.focus_element = focus.get(0);
+//         $(".leaflet-marker-pane").append(this.focus_element); // TODO: This should go in a better location?
+//         super.modify();
+//     }
+//     activate(e) {
+//         // open initial tooltip
+//         if (this.tmp_tooltip) this.layer.openTooltip(this.tmp_tooltip);
+//         else this.layer.openTooltip();
+//         this.layer.setStyle(this.dataset.active_path);
+//         if (this.stroke) this.stroke.setStyle(this.dataset.active_stroke);
 
-        if (!map.getBounds().contains(this.layer.getTooltip().getLatLng())) {
-            this.layer.openTooltip(); // reset tooltip
-            // if hover: move tooltip to mouse location (by modifying offset)
-            if (this.focus_element !== document.activeElement) {
-                this.tmp_tooltip = map.mouseEventToLatLng(e);
-            } 
-            else {
-                // if bounding box is in view, try moving tooltip to the closest layer point
-                if (map.getBounds().intersects(this.layer.getBounds())) {
-                    try {
-                        let point = this.layer.closestLayerPoint(map.latLngToLayerPoint(map.getCenter()));
-                        let latlng = map.layerPointToLatLng([point['x'], point['y']]);
-                        if (map.getBounds().contains(latlng)) this.tmp_tooltip = latlng;
-                    } catch (e) {
-                        // do nothing
-                    }
-                }
-                if (!this.tmp_tooltip) {
-                    // either bounding box is not in view or it is, but the closest layer point is not - pan and possibly zoom to feature
-                    map.panTo(this.layer.getCenter(), { animate: true });
-                    tour_state.tmp_feature = this;
-                    setTimeout(function() {
-                        let feature = tour_state.tmp_feature;
-                        tour_state.tmp_feature = null;
-                        if (!map.getBounds().contains(feature.layer.getBounds())) map.flyToBounds(feature.layer.getBounds(), { animate: true, noMoveStart: true });
-                    }, 250); // wait for .25s (animation duration) before checking
-                }
-            }
+//         if (!map.getBounds().contains(this.layer.getTooltip().getLatLng())) {
+//             this.layer.openTooltip(); // reset tooltip
+//             // if hover: move tooltip to mouse location (by modifying offset)
+//             if (this.focus_element !== document.activeElement) {
+//                 this.tmp_tooltip = map.mouseEventToLatLng(e);
+//             } 
+//             else {
+//                 // if bounding box is in view, try moving tooltip to the closest layer point
+//                 if (map.getBounds().intersects(this.layer.getBounds())) {
+//                     try {
+//                         let point = this.layer.closestLayerPoint(map.latLngToLayerPoint(map.getCenter()));
+//                         let latlng = map.layerPointToLatLng([point['x'], point['y']]);
+//                         if (map.getBounds().contains(latlng)) this.tmp_tooltip = latlng;
+//                     } catch (e) {
+//                         // do nothing
+//                     }
+//                 }
+//                 if (!this.tmp_tooltip) {
+//                     // either bounding box is not in view or it is, but the closest layer point is not - pan and possibly zoom to feature
+//                     map.panTo(this.layer.getCenter(), { animate: true });
+//                     tour_state.tmp_feature = this;
+//                     setTimeout(function() {
+//                         let feature = tour_state.tmp_feature;
+//                         tour_state.tmp_feature = null;
+//                         if (!map.getBounds().contains(feature.layer.getBounds())) map.flyToBounds(feature.layer.getBounds(), { animate: true, noMoveStart: true });
+//                     }, 250); // wait for .25s (animation duration) before checking
+//                 }
+//             }
 
-            if (this.tmp_tooltip) {
-                this.layer.openTooltip(this.tmp_tooltip);
-            }
-        } 
-    }
-    deactivate() {
-        super.deactivate();
-        this.layer.setStyle(this.dataset.path);
-        if (this.stroke) this.stroke.setStyle(this.dataset.stroke);
-        this.tmp_tooltip = null;
-    }
-}
+//             if (this.tmp_tooltip) {
+//                 this.layer.openTooltip(this.tmp_tooltip);
+//             }
+//         } 
+//     }
+//     deactivate() {
+//         super.deactivate();
+//         this.layer.setStyle(this.dataset.path);
+//         if (this.stroke) this.stroke.setStyle(this.dataset.stroke);
+//         this.tmp_tooltip = null;
+//     }
+// }
 
 // ---------- Tour and Tour Setup Functions ---------- //
-function createMap() {
-    let m = L.map('map', {
-        zoomControl: false,
-        attributionControl: false,
-    });
-    if (max = tour_options.max_zoom) m.setMaxZoom(max);
-    if (min = tour_options.min_zoom) m.setMinZoom(min);
-    if (tour_options.show_map_location_in_url) hash = new L.Hash(m);
-    if (bounds = tour_options.max_bounds) m.setMaxBounds(bounds);
-    return m;
-}
-function createTileLayer() {
-    let options = tour_options.tile_server;
-    let layer;
-    if (options.provider) {
-        // settings/options
-        let settings = {};
-        // set options - don't know for sure what value is needed, but seems like providing extra wouldn't hurt
-        let id = options.id;
-        if (id) {
-            settings.id = id;
-            settings.variant = id;
-        }
-        let key = options.key;
-        if (key) {
-            settings.key = key;
-            settings.apiKey = key;
-            settings.accessToken = key;
-        }
-        try {
-            layer = new L.tileLayer.provider(options.provider, settings);
-        } catch (error) {
-            // something went wrong, so use the default tile server instead
-            layer = new L.tileLayer.provider(DEFAULT_TILE_SERVER, {});
-        }
-    } else {
-        layer = new L.tileLayer(options.url);
-    }
-    map.addLayer(layer);
-    return layer;
-}
-function createBasemap(value, key, map) {
-    let layer = L.imageOverlay(value.url, value.bounds, value.options);
-    map.set(key, layer);
-}
-function createFeatureLayer() {
-    let layer = L.geoJson(null, {
-        pointToLayer: function(json, latlng) {
-            let feature = tour.features.get(json.properties.id);
-            return L.marker(latlng, {
-                icon: new L.Icon(feature.icon_options),
-                alt: feature.alt_text,
-                riseOnHover: true,
-            });
-        },
-        style: function(json) {
-            return tour.features.get(json.properties.id).dataset.path;
-        },
-        onEachFeature: function(json, layer) {
-            tour.features.get(json.properties.id).addToLayer(layer);
-        },
-        interactive: true,
-    });
-    map.addLayer(layer);
-    return layer;
-}
-function createStrokeLayer() {
-    let layer = L.geoJson(null, {
-        style: function(json) {
-            return tour.features.get(json.properties.id).dataset.stroke;
-        },
-        onEachFeature: function(json, layer) {
-            tour.features.get(json.properties.id).addToStrokeLayer(layer);
-        }
-    });
-    map.addLayer(layer);
-    return layer;
-}
-function createBufferLayer() {
-    let layer = L.geoJson(null, {
-        style: function(json) {
-            let feature = tour.features.get(json.properties.id);
-            let weight = feature.buffer_weight ?? BUFFER_WEIGHT;
-            if (tour.features.get(json.properties.id).is_line) {
-                return { stroke: true, weight: weight, opacity: 0, fill: false };
-            }
-            else return { stroke: true, weight: weight, opacity: 0, fill: true, fillColor: 'transparent' };
-        },
-        onEachFeature: function(json, layer) {
-            tour.features.get(json.properties.id).addToBufferLayer(layer);
-        }
-    });
-    map.addLayer(layer);
-    return layer;
-}
-function createFeature(value, key, map) {
-    let feature;
-    if (value.geometry.type === 'Point') {
-        feature = new TourPoint(value, tour.datasets);
-    } else {
-        feature = new TourPath(value, tour.datasets);
-    }
-    if (feature) {
-        map.set(key, feature);
-        tour.feature_layer.addData(feature.geoJson);
-        // also add feature ref to dataset
-        feature.dataset.features.push(feature);
-        // also add stroke if applicable
-        if (feature.stroke) tour.stroke_layer.addData(feature.geoJson);
-        // also add buffer if applicable
-        if (feature.buffer) tour.buffer_layer.addData(feature.geoJson);
-    }
-}
-function setupViews(views) {
-    // deal with tour "view" first (id = 'tour')
-    tour_bounds = views.get('tour').bounds;
-    if (!tour_bounds) tour_bounds = tour.feature_layer.getBounds();
-    else if (tour_bounds.distance) {
-        // I think needs to be multiplied by two to match expectations
-        tour_bounds = L.latLng(tour_bounds.lat, tour_bounds.lng).toBounds(tour_bounds.distance * 2);
-    }
-    // the rest (repeats tour as well, which is fine)
-    views.forEach(function(view) {
-        // replace view basemap files with references to the actual basemaps
-        let basemaps = [];
-        for (let file of view.basemaps) {
-            basemaps.push(tour.basemaps.get(file));
-        }
-        view.basemaps = basemaps;
-        // make sure that each view has bounds
-        if (!view.bounds) {
-            view.bounds = setupBounds(view.features, tour_bounds);
-        } else if (view.bounds.distance) {
-            view.bounds = L.latLng(view.bounds.lat, view.bounds.lng).toBounds(view.bounds.distance * 2);
-        }
-    });
-}
-function setupBounds(feature_ids, bounds) {
-    if (feature_ids.length > 0) {
-        let group = new L.FeatureGroup();
-        for (let id of feature_ids) {
-            group.addLayer(tour.features.get(id).layer);
-        }
-        return group.getBounds();
-    }
-    return bounds;
-}
+// function createMap() {
+//     let m = L.map('map', {
+//         zoomControl: false,
+//         attributionControl: false,
+//     });
+//     if (max = tour_options.max_zoom) m.setMaxZoom(max);
+//     if (min = tour_options.min_zoom) m.setMinZoom(min);
+//     if (tour_options.show_map_location_in_url) hash = new L.Hash(m);
+//     if (bounds = tour_options.max_bounds) m.setMaxBounds(bounds);
+//     return m;
+// }
+// function createTileLayer() {
+//     let options = tour_options.tile_server;
+//     let layer;
+//     if (options.provider) {
+//         // settings/options
+//         let settings = {};
+//         // set options - don't know for sure what value is needed, but seems like providing extra wouldn't hurt
+//         let id = options.id;
+//         if (id) {
+//             settings.id = id;
+//             settings.variant = id;
+//         }
+//         let key = options.key;
+//         if (key) {
+//             settings.key = key;
+//             settings.apiKey = key;
+//             settings.accessToken = key;
+//         }
+//         try {
+//             layer = new L.tileLayer.provider(options.provider, settings);
+//         } catch (error) {
+//             // something went wrong, so use the default tile server instead
+//             layer = new L.tileLayer.provider(DEFAULT_TILE_SERVER, {});
+//         }
+//     } else {
+//         layer = new L.tileLayer(options.url);
+//     }
+//     map.addLayer(layer);
+//     return layer;
+// }
+// function createBasemap(value, key, map) {
+//     let layer = L.imageOverlay(value.url, value.bounds, value.options);
+//     map.set(key, layer);
+// }
+// function createFeatureLayer() {
+//     let layer = L.geoJson(null, {
+//         pointToLayer: function(json, latlng) {
+//             let feature = tour.features.get(json.properties.id);
+//             return L.marker(latlng, {
+//                 icon: new L.Icon(feature.icon_options),
+//                 alt: feature.alt_text,
+//                 riseOnHover: true,
+//             });
+//         },
+//         style: function(json) {
+//             return tour.features.get(json.properties.id).dataset.path;
+//         },
+//         onEachFeature: function(json, layer) {
+//             tour.features.get(json.properties.id).addToLayer(layer);
+//         },
+//         interactive: true,
+//     });
+//     map.addLayer(layer);
+//     return layer;
+// }
+// function createStrokeLayer() {
+//     let layer = L.geoJson(null, {
+//         style: function(json) {
+//             return tour.features.get(json.properties.id).dataset.stroke;
+//         },
+//         onEachFeature: function(json, layer) {
+//             tour.features.get(json.properties.id).addToStrokeLayer(layer);
+//         }
+//     });
+//     map.addLayer(layer);
+//     return layer;
+// }
+// function createBufferLayer() {
+//     let layer = L.geoJson(null, {
+//         style: function(json) {
+//             let feature = tour.features.get(json.properties.id);
+//             let weight = feature.buffer_weight ?? BUFFER_WEIGHT;
+//             if (tour.features.get(json.properties.id).is_line) {
+//                 return { stroke: true, weight: weight, opacity: 0, fill: false };
+//             }
+//             else return { stroke: true, weight: weight, opacity: 0, fill: true, fillColor: 'transparent' };
+//         },
+//         onEachFeature: function(json, layer) {
+//             tour.features.get(json.properties.id).addToBufferLayer(layer);
+//         }
+//     });
+//     map.addLayer(layer);
+//     return layer;
+// }
+// function createFeature(value, key, map) {
+//     let feature;
+//     if (value.geometry.type === 'Point') {
+//         feature = new TourPoint(value, tour.datasets);
+//     } else {
+//         feature = new TourPath(value, tour.datasets);
+//     }
+//     if (feature) {
+//         map.set(key, feature);
+//         tour.feature_layer.addData(feature.geoJson);
+//         // also add feature ref to dataset
+//         feature.dataset.features.push(feature);
+//         // also add stroke if applicable
+//         if (feature.stroke) tour.stroke_layer.addData(feature.geoJson);
+//         // also add buffer if applicable
+//         if (feature.buffer) tour.buffer_layer.addData(feature.geoJson);
+//     }
+// }
+// function setupViews(views) {
+//     // deal with tour "view" first (id = 'tour')
+//     tour_bounds = views.get('tour').bounds;
+//     if (!tour_bounds) tour_bounds = tour.feature_layer.getBounds();
+//     else if (tour_bounds.distance) {
+//         // I think needs to be multiplied by two to match expectations
+//         tour_bounds = L.latLng(tour_bounds.lat, tour_bounds.lng).toBounds(tour_bounds.distance * 2);
+//     }
+//     // the rest (repeats tour as well, which is fine)
+//     views.forEach(function(view) {
+//         // replace view basemap files with references to the actual basemaps
+//         let basemaps = [];
+//         for (let file of view.basemaps) {
+//             basemaps.push(tour.basemaps.get(file));
+//         }
+//         view.basemaps = basemaps;
+//         // make sure that each view has bounds
+//         if (!view.bounds) {
+//             view.bounds = setupBounds(view.features, tour_bounds);
+//         } else if (view.bounds.distance) {
+//             view.bounds = L.latLng(view.bounds.lat, view.bounds.lng).toBounds(view.bounds.distance * 2);
+//         }
+//     });
+// }
+// function setupBounds(feature_ids, bounds) {
+//     if (feature_ids.length > 0) {
+//         let group = new L.FeatureGroup();
+//         for (let id of feature_ids) {
+//             group.addLayer(tour.features.get(id).layer);
+//         }
+//         return group.getBounds();
+//     }
+//     return bounds;
+// }
 function adjustMap() {
     map.invalidateSize();
     view = tour_state.view ?? tour.views.get('tour');
     if ((bounds = view.bounds)) map.flyToBounds(bounds, { padding: FLY_TO_PADDING, animate: false });
 }
-function adjustBasemaps(view) {
-    if (!view) return;
-    // remove currently active basemaps
-    for (let basemap of tour_state.basemaps) {
-        map.removeLayer(basemap);
-    }
-    tour_state.basemaps = [];
-    // use view and zoom level to determine which basemaps to add
-    for (let basemap of view.basemaps) {
-        if (map.getZoom() >= basemap.options.min_zoom && map.getZoom() <= basemap.options.max_zoom) {
-            tour_state.basemaps.push(basemap);
-            map.addLayer(basemap);
-        }
-    }
-    // tile server
-    if (!tour_state.basemaps.length || !view.remove_tile_server) map.addLayer(tour.tile_layer);
-    else map.removeLayer(tour.tile_layer);
-}
+// function adjustBasemaps(view) {
+//     if (!view) return;
+//     // remove currently active basemaps
+//     for (let basemap of tour_state.basemaps) {
+//         map.removeLayer(basemap);
+//     }
+//     tour_state.basemaps = [];
+//     // use view and zoom level to determine which basemaps to add
+//     for (let basemap of view.basemaps) {
+//         if (map.getZoom() >= basemap.options.min_zoom && map.getZoom() <= basemap.options.max_zoom) {
+//             tour_state.basemaps.push(basemap);
+//             map.addLayer(basemap);
+//         }
+//     }
+//     // tile server
+//     if (!tour_state.basemaps.length || !view.remove_tile_server) map.addLayer(tour.tile_layer);
+//     else map.removeLayer(tour.tile_layer);
+// }
 
 // ---------- Map/Tour Initialization ---------- //
-const map = createMap();
-tour.tile_layer = createTileLayer();
-tour.basemaps = tour_basemaps;
-tour.basemaps.forEach(createBasemap);
+const map = createMap(tour_options);
+if (tour_options.show_map_location_in_url) hash = new L.Hash(m);
+tour.tile_layer = createTileServer();
+map.addLayer(tour.tile_layer);
+tour.basemaps = createBasemaps(tour_basemaps);
 tour.datasets = tour_datasets;
-tour.feature_layer = createFeatureLayer();
-tour.stroke_layer = createStrokeLayer();
-tour.buffer_layer = createBufferLayer();
+tour.point_layer = createPointLayer();
+map.addLayer(tour.point_layer);
+tour.shape_layer = createShapeLayer();
+map.addLayer(tour.shape_layer);
 tour.features = tour_features;
 tour.features.forEach(createFeature);
 tour.views = tour_views;
-setupViews(tour.views);
+setupViews(tour.views, tour.features, tour.basemaps);
 
 // ---------- Scrollama ---------- //
 let scrolly_temp_view = null;
@@ -449,7 +452,7 @@ if ($("#scrolly .step").length > 0) {
 // map.on("click", printMapState);
 
 map.on("zoomend", function() {
-    adjustBasemaps(tour_state.view);
+    adjustBasemaps(tour_state.view, tour_state, map, tour.tile_layer);
     // adjust zoom buttons
     let zoom_out = document.getElementById("zoom-out-btn");
     let zoom_in = document.getElementById("zoom-in-btn");
@@ -477,11 +480,12 @@ $(document).ready(function() {
     let zoom = parseInt(sessionStorage.getItem(loc + '_zoom'));
 
     // set tile server attribution if needed
-    let section = $("#server-attribution");
-    if (!section.html()) {
-        let a = tour.tile_layer.options.attribution;
-        if (a) section.html("<span>Tile Server: </span>" + a);
-    }
+    setTileServerAttr($("#server-attribution"), tour.tile_layer);
+    // let section = $("#server-attribution");
+    // if (!section.html()) {
+    //     let a = tour.tile_layer.options.attribution;
+    //     if (a) section.html("<span>Tile Server: </span>" + a);
+    // }
     if (!isMobile()) {
         // make sure "tour" size and last view size are sufficient for all views to be enterable via scrollama
         // "tour" view
@@ -518,9 +522,10 @@ $(document).ready(function() {
     }
     
     // features
-    for (let feature of tour.features.values()) {
-        feature.modify();
-    }
+    // for (let feature of tour.features.values()) {
+    //     feature.modify();
+    // }
+    modifyFeatures(tour.features);
 
     // set view - no flyTo, but need to handle other aspects of setting view
     enterView(view_id, false);
@@ -562,7 +567,7 @@ $(document).ready(function() {
     $("#mobile-legend-btn").on("click", toggleMobileLegend);
     $("#legend-close-btn").on("click", toggleMobileLegend);
     $(".legend-checkbox").on("input", function() {
-        toggleDataset(this.value, !this.checked);
+        toggleDataset(this.value, tour.datasets, !this.checked);
     })
     $("#legend-basemaps-toggle").on("click", function() {
         this.parentElement.parentElement.classList.toggle("expanded");
@@ -574,7 +579,7 @@ $(document).ready(function() {
         getFeature(this).openPopup();
     }).on("mouseover", function(e) {
         e.stopPropagation();
-        getFeature(this).activate(e);
+        getFeature(this).activate(map, e);
     }).on("mouseout", function(e) {
         e.stopPropagation();
         // only deactivate if feature does not have focus
@@ -588,7 +593,7 @@ $(document).ready(function() {
         }
     }).on("focus", function(e) {
         e.stopPropagation();
-        getFeature(this).activate(e);
+        getFeature(this).activate(map, e);
     }).on("blur", function(e) {
         e.stopPropagation(e);
         getFeature(this).deactivate();
@@ -617,9 +622,9 @@ $(document).ready(function() {
     $(".view-popup-btn").on("click", function() {
         let feature_id = this.getAttribute("data-feature");
         openDialog(feature_id + "-popup", this);
-        $(this).one("focus", function() {
+        $(this).one("focus", function(e) {
             // when focus returns, make sure the feature is activated
-            tour.features.get(this.getAttribute("data-feature")).activate();
+            tour.features.get(this.getAttribute("data-feature")).activate(map, e);
             $(this).one("blur", function() {
                 // when focus leaves deactivate the feature
                 tour.features.get(this.getAttribute("data-feature")).deactivate();
@@ -654,7 +659,7 @@ function enterView(id, fly_to = true) {
     if (tour_state.view && (tour_state.view.id !== view)) exitView();
     // set new view
     tour_state.view = view;
-    toggleViewFeatures(view, true);
+    toggleViewFeatures(view, tour.features, true);
     // if applicable, fly to view bounds
     if (fly_to) {
         if (view.bounds && !isMobile()) {
@@ -665,31 +670,30 @@ function enterView(id, fly_to = true) {
             tour_state.map_needs_adjusting = true; // TODO: maybe?
         }
     }
-    adjustBasemaps(view);
+    adjustBasemaps(view, tour_state, map, tour.tile_layer);
     sessionStorage.setItem('tour_view', id);
 }
 function exitView() {
     // unhide previously hidden features
-    toggleViewFeatures(tour_state.view, false);
+    toggleViewFeatures(tour_state.view, tour.features, false);
     sessionStorage.setItem('tour_view', '');
 }
-function toggleViewFeatures(view, hide) {
-    if (view.only_show_view_features && (view.features.length > 0)) {
-        tour.features.forEach(function(feature) {
-            if (!view.features.includes(feature.id)) {
-                feature.hide_view = hide;
-                feature.toggleHidden();
-            }
-        });
-    }
-}
-
-function toggleDataset(id, hide) {
-    tour.datasets.get(id).features.forEach(function(feature) {
-        feature.hide_dataset = hide;
-        feature.toggleHidden();
-    });
-}
+// function toggleViewFeatures(view, features, hide) {
+//     if (view.only_show_view_features && (view.features.length > 0)) {
+//         features.forEach(function(feature) {
+//             if (!view.features.includes(feature.id)) {
+//                 feature.hide_view = hide;
+//                 feature.toggleHidden();
+//             }
+//         });
+//     }
+// }
+// function toggleDataset(id, datasets, hide) {
+//     datasets.get(id).features.forEach(function(feature) {
+//         feature.hide_dataset = hide;
+//         feature.toggleHidden();
+//     });
+// }
 
 function toggleMobileLegend() {
     $("body").toggleClass("legend-active");
