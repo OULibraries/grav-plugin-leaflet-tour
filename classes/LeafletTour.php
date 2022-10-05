@@ -847,10 +847,17 @@ class LeafletTour {
     public static function getTourDatasetFields(MarkdownFile $file): array {
         $fields = [];
         $datasets = $file->header()['datasets'] ?? [];
-        $overrides = $file->header()['dataset_overrides'] ?? [];
+        $dataset_overrides = $file->header()['dataset_overrides'] ?? [];
         foreach (array_column($datasets, 'id') as $id) {
             if ($dataset_file = LeafletTour::getDatasets()[$id]) {
+                $overrides = $dataset_overrides[$id] ?? [];
                 $dataset = Dataset::fromArray(array_diff_key($dataset_file->header(), array_flip(['features']))); // just because we don't need features
+                // legend summary default: only if legend text is not set in tour
+                $legend_summary_default = $dataset->getLegend()['summary'];
+                if ($legend_summary_default && ($overrides['legend'] ?? [])['text']) $legend_summary_default = null;
+                // legend symbol alt default: only set if path color/icon file is not set in tour (could also include path fillColor, border color, or anything else in that list if desired)
+                $symbol_default = $dataset->getLegend()['symbol_alt'];
+                if ($symbol_default && (($overrides['icon'] ?? [])['file'] || ($overrides['path'] ?? [])['color'])) $symbol_default = null;
                 $name = "header.dataset_overrides.$id";
                 $options = [
                     "$name.auto_popup_properties" => [
@@ -887,14 +894,14 @@ class LeafletTour {
                         'label' => 'Legend Summary',
                         'description' => 'Optional shorter version of the legend description.',
                         'toggleable' => true,
-                        'default' => $dataset->getLegend()['summary'],
+                        'default' => $legend_summary_default,
                     ],
                     "$name.legend.symbol_alt" => [
                         'type' => 'text',
                         'label' => 'Legend Symbol Alt Text',
                         'description' => 'A brief description of the icon/symbol/shape used for each feature.',
                         'toggleable' => true,
-                        'default' => $dataset->getLegend()['symbol_alt'],
+                        'default' => $symbol_default,
                     ],
                 ];
                 // add icon or path options
@@ -916,7 +923,7 @@ class LeafletTour {
                     $file = $dataset->getIcon(true)['file'];
                     // determine appropriate defaults for icon height/width if not directly set by dataset
                     try {
-                        $file ??= $overrides[$dataset->getId()]['icon']['file'];
+                        $file ??= $overrides['icon']['file'];
                     } catch (\Throwable $t) {} // do nothing
                     if ($file) $default = Dataset::CUSTOM_MARKER_FALLBACKS;
                     else $default = Dataset::DEFAULT_MARKER_FALLBACKS;
@@ -957,7 +964,7 @@ class LeafletTour {
                         'type' => 'colorpicker',
                         'label' => 'Border Color',
                         'toggleable' => true,
-                        'default' => $dataset->getBorderOptions()['color'],
+                        'default' => $dataset->getBorder()['color'], // shows default even if no stroke - can change to getBorderOptions() if only want default when border stroke is true
                     ];
                 }
                 $fields[$name] = [
