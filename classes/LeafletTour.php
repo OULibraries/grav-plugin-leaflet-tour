@@ -246,11 +246,13 @@ class LeafletTour {
         foreach (array_values($tours) as $file) {
             // all we care about are the tour/view basemaps list - don't need to worry about other info
             $basemaps = array_intersect($file->header()['basemaps'] ?? [], $valid_basemaps);
+            $basemaps = array_values($basemaps);
             $file->header(array_merge($file->header(), ['basemaps' => $basemaps]));
             $file->save();
             // validate views
             foreach (array_values(self::getTourViews($file)) as $view_file) {
                 $basemaps = array_intersect($view_file->header()['basemaps'] ?? [], $valid_basemaps);
+                $basemaps = array_values($basemaps);
                 $view_file->header(array_merge($view_file->header(), ['basemaps' => $basemaps]));
                 $view_file->save();
             }
@@ -332,7 +334,7 @@ class LeafletTour {
             $features = Tour::validateFeaturePopups($yaml['features'], $path);
             $update = array_merge($yaml, ['features' => $features]);
             // and then validate all views, too
-            foreach ($tour->getViews() as $id => $view) {
+            foreach ($tour->getViews() as $view_id => $view) {
                 // views were validated on tour creation, so update file contents to match the validated view contents
                 $file = $view->getFile();
                 $file->header($view->toYaml());
@@ -360,7 +362,7 @@ class LeafletTour {
                 $file->delete();
             }
         }
-        return $update;
+        return array_merge($update, ['id' => $id]); // make sure the old correct id or the new valid id is the one used
     }
     // todo: need to make sure that view blueprint includes a spot to stick the tour id (hidden, generated, not saved)
     public static function handleViewPageSave($page): void {
@@ -1009,13 +1011,13 @@ class LeafletTour {
         $all_datasets = LeafletTour::getDatasets();
         $datasets = [];
         foreach ($ids as $id) {
-            if ($file = $all_datasets[$id]) $datasets[$id] = Dataset::fromArray($file->header());
+            if ($dataset_file = $all_datasets[$id]) $datasets[$id] = Dataset::fromArray($dataset_file->header());
         }
         if ($only_points) {
             return self::getPoints($datasets);
         }
         // implied else
-        $tour = Tour::fromFile($file, [], [], $datasets);
+        $tour = Tour::fromFile($file, [], [], $all_datasets);
         foreach ($tour->getIncludedFeatures() as $id => $feature) {
             $list[$id] = $feature->getName() . ' ... (' . $datasets[$feature->getDatasetId()]->getName() . ')';
         }
