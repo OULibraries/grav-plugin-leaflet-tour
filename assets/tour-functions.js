@@ -109,7 +109,7 @@ class TourPoint extends TourFeature {
         this.bindTooltip(layer);
     }
     // called when creating feature, add the feature geojson to point layer
-    addtoLayers(point_layer, shape_layer) {
+    addToLayers(point_layer, shape_layer) {
         point_layer.addData({
             type: 'Feature',
             geometry: this.geometry,
@@ -195,7 +195,7 @@ class TourShape extends TourFeature {
         switch (layer_type) {
             case 'main':
                 this.main_layer = layer;
-                this.bindTooltip(main_layer);
+                this.bindTooltip(this.main_layer);
                 break;
             case 'stroke':
                 this.stroke_layer = layer;
@@ -206,7 +206,7 @@ class TourShape extends TourFeature {
         }
     }
     // called when creating feature, add to shape layer up to three times, then add to point layer
-    addtoLayers(point_layer, shape_layer) {
+    addToLayers(point_layer, shape_layer) {
         let json = {
             type: 'Feature',
             geometry: this.geometry,
@@ -221,11 +221,12 @@ class TourShape extends TourFeature {
         // then add buffer if applicable
         if (this.buffer_weight) shape_layer.addData({ ...json, properties: { id: this.id, layer_type: 'buffer' }});
         // then add point, using center from main layer
+        let center = this.main_layer.getCenter();
         point_layer.addData({
             type: 'Feature',
             geometry: {
                 type: 'Point',
-                coordinates: this.main_layer.getCenter(),
+                coordinates: [center.lng, center.lat],
             },
             properties: { id: this.id }
         });
@@ -298,13 +299,20 @@ function createMap(options) {
 function createTileServer(options) {
     if (options.provider) {
         try {
-            return new L.tileLayer.provider(options.provider, {
-                id: options.id,
-                variant: options.variant ?? options.id,
-                key: options.key,
-                apiKey: options.apiKey ?? options.key,
-                accessToken: options.accessToken ?? options.key,
-            });
+            let server_options = {};
+            if (id = options.id) {
+                server_options.id = id;
+                server_options.variant = id;
+            }
+            if (variant = options.variant) server_options.variant = variant;
+            if (key = options.key) {
+                server_options.key = key;
+                server_options.apiKey = key;
+                server_options.accessToken = key;
+            }
+            if (key = options.apiKey) server_options.apiKey = key;
+            if (key = options.accessToken) server_options.accessToken = key;
+            return new L.tileLayer.provider(options.provider, server_options);
         } catch (error) {
             // use default tile server instead
             return new L.tileLayer.provider(DEFAULT_TILE_SERVER, {});
@@ -350,7 +358,7 @@ function createShapeLayer() {
             return tour.features.get(json.properties.id).getStyle(json.properties.layer_type);
         },
         onEachFeature: function(json, layer) {
-            tour.featrues.get(json.properties.id).addToShapeLayer(layer, json.properties.layer_type);
+            tour.features.get(json.properties.id).addToShapeLayer(layer, json.properties.layer_type);
         }
     });
 }
@@ -367,8 +375,8 @@ function createFeature(value, key, map) {
         feature = new TourShape(value, tour.datasets);
     }
     if (feature) {
-        feature.addToLayers(tour.point_layer, tour.shape_layer);
         map.set(key, feature);
+        feature.addToLayers(tour.point_layer, tour.shape_layer);
         feature.dataset.features.push(feature);
     }
 }
@@ -380,9 +388,9 @@ function createBasemaps(basemap_data) {
     let basemaps = new Map();
     for (let [key, value] of Object.entries(basemap_data)) {
         // make sure image exists
-        $.get(value.url).done(function() {
+        // $.get(value.url).done(function() {
             basemaps.set(key, L.imageOverlay(value.url, value.bounds, value.options));
-        });
+        // });
     }
     return basemaps;
 }
@@ -406,20 +414,23 @@ function createBounds(start_bounds, feature_ids, features, default_bounds) {
         }
         return group.getBounds();
     }
-    else return default_bounds;
+    else {
+        return default_bounds;
+    }
 }
 function setupViews(views, features, basemaps) {
-    default_bounds = createBounds(null, features.keys(), features, null);
-    for (let view of views) {
+    default_bounds = createBounds(null, Array.from(features.keys()), features, null);
+    for (let [id, view] of views) {
         // replace view basemap files with references to the actual basemaps
         let view_basemaps = [];
-        for (let file of view.basemaps) {
+        for (let file of view.basemaps ?? []) {
             let basemap = basemaps.get(file);
             if (basemap) view_basemaps.push(basemap);
         }
         view.basemaps = view_basemaps;
         // set bounds
-        view.bounds = createBounds(view.bounds, view.features, features, default_bounds);
+        view.bounds = createBounds(view.bounds, view.features ?? [], features, default_bounds);
+        views.set(id, view);
     }
 }
 
