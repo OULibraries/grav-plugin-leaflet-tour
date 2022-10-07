@@ -162,6 +162,9 @@ class TourShape extends TourFeature {
     get tooltip() {
         return this.main_layer.getTooltip().getElement();
     }
+    get main_element() {
+        return this.main_layer._path;
+    }
     getStyle(layer_type) {
         switch (layer_type) {
             case 'main':
