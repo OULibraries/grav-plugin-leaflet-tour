@@ -445,7 +445,7 @@ function adjustBasemaps(view, state, map, server) {
     state.basemaps = [];
     // use view and zoom level to determine which basemaps to add
     for (let basemap of view.basemaps) {
-        if (map.getZoom() >= basemap.options.min_zoom && map.getZoom() <= basemap.options.max_zoom) {
+        if (map.getZoom() >= (basemap.options.min_zoom ?? 0) && map.getZoom() <= (basemap.options.max_zoom ?? 500)) {
             state.basemaps.push(basemap);
             map.addLayer(basemap);
         }
