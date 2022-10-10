@@ -348,8 +348,8 @@ const tour_state = {
 //     }
 // }
 // function setupViews(views) {
-//     // deal with tour "view" first (id = 'tour')
-//     tour_bounds = views.get('tour').bounds;
+//     // deal with tour "view" first (id = '_tour')
+//     tour_bounds = views.get('_tour').bounds;
 //     if (!tour_bounds) tour_bounds = tour.feature_layer.getBounds();
 //     else if (tour_bounds.distance) {
 //         // I think needs to be multiplied by two to match expectations
@@ -383,7 +383,7 @@ const tour_state = {
 // }
 function adjustMap() {
     map.invalidateSize();
-    view = tour_state.view ?? tour.views.get('tour');
+    view = tour_state.view ?? tour.views.get('_tour');
     if ((bounds = view.bounds)) map.flyToBounds(bounds, { padding: FLY_TO_PADDING, animate: false });
 }
 // function adjustBasemaps(view) {
@@ -407,8 +407,9 @@ function adjustMap() {
 
 // ---------- Map/Tour Initialization ---------- //
 const map = createMap(tour_options);
+map.fitBounds([[1,1],[2,2]]);
 if (tour_options.show_map_location_in_url) hash = new L.Hash(m);
-tour.tile_layer = createTileServer();
+tour.tile_layer = createTileServer(tour_options.tile_server);
 map.addLayer(tour.tile_layer);
 tour.basemaps = createBasemaps(tour_basemaps);
 tour.datasets = tour_datasets;
@@ -510,9 +511,9 @@ $(document).ready(function() {
     // return to previous scroll position if applicable
     let scroll_top = sessionStorage.getItem('scroll_top');
     document.getElementById("tour-wrapper").scrollTop = scroll_top ?? 0;
-    // check for saved view, use 'tour' if no valid view is saved
-    let view_id = sessionStorage.getItem('tour_view') ?? 'tour';
-    if (!tour.views.get(view_id)) view_id = 'tour';
+    // check for saved view, use '_tour' if no valid view is saved
+    let view_id = sessionStorage.getItem('tour_view') ?? '_tour';
+    if (!tour.views.get(view_id)) view_id = '_tour';
 
     // go to view bounds or saved bounds - need to set map center and zoom before modifying features
     if (lng && lat) map.flyTo([lat, lng], zoom ?? map.getZoom(), { animate: false });
@@ -617,7 +618,7 @@ $(document).ready(function() {
         $("#" + this.getAttribute("data-view")).focus();
     });
     $(".reset-view-btn").on("click", function() {
-        enterView('tour');
+        enterView('_tour');
     });
     $(".view-popup-btn").on("click", function() {
         let feature_id = this.getAttribute("data-feature");

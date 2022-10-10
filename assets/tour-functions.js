@@ -87,10 +87,10 @@ class TourFeature {
         else this.focus_element.focus();
     }
     activate(map, e) {
-        this.layer.openTooltip();
+        this.main_layer.openTooltip();
     }
     deactivate() {
-        this.layer.closeTooltip();
+        this.main_layer.closeTooltip();
     }
 }
 class TourPoint extends TourFeature {
@@ -123,8 +123,8 @@ class TourPoint extends TourFeature {
     }
     activate(map, e) {
         super.activate(map, e);
-        if (!map.getBounds().contains(this.layer.getLatLng())) {
-            map.panTo(this.layer.getLatLng(), { animate: true });
+        if (!map.getBounds().contains(this.point_layer.getLatLng())) {
+            map.panTo(this.point_layer.getLatLng(), { animate: true });
         }
     }
 }
@@ -265,7 +265,7 @@ class TourShape extends TourFeature {
                     setTimeout(function() {
                         let feature = tour_state.tmp_feature;
                         tour_state.tmp_feature = null;
-                        if (!map.getBounds().contains(feature.layer.getBounds())) map.flyToBounds(feature.layer.getBounds(), { animate: true, noMoveStart: true });
+                        if (!map.getBounds().contains(feature.main_layer.getBounds())) map.flyToBounds(feature.main_layer.getBounds(), { animate: true, noMoveStart: true });
                     }, 250); // wait for .25s (animation duration) before checking
                 }
             }

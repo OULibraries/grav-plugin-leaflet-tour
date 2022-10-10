@@ -11,7 +11,7 @@ class PopupButtonShortcode extends Shortcode {
         $this->shortcode->getHandlers()->add('popup-button', function(ShortcodeInterface $sc) {
             // get the tour
             $page = $this->grav['page'];
-            if (($page->template() === 'tour') && ($tour = LeafletTour::getTours()[((array)$page->header())['id']])) {
+            if (($page->template() === 'tour') && ($tour = LeafletTour::getTour(((array)$page->header())['id']))) {
                 // make sure the feature is in the tour and has popup content
                 $id = $sc->getParameter('id');
                 $popups = $tour->getFeaturePopups();

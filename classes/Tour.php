@@ -291,6 +291,7 @@ class Tour {
         }
         return $datasets;
     }
+    public function getColumnWidth(): int { return $this->column_width ?? ($this->plugin_config['tour_options'] ?? [])['column_width'] ?? 33; }
 
     // simple getters
     public function getFile(): ?MarkdownFile { return $this->file; }
@@ -307,7 +308,6 @@ class Tour {
     public function getMaxBounds(): array { return $this->max_bounds; }
     public function getExtras(): array { return $this->extras; }
     // public function hasNoAttribution(): bool { return $this->no_attribution; }
-    public function getColumnWidth(): ?int { return $this->column_width; }
     public function getMaxZoom(): ?int { return $this->max_zoom; }
     public function getMinZoom(): ?int { return $this->min_zoom; }
 
