@@ -31,6 +31,56 @@ class Utils {
     ];
 
     /**
+     * Check if a key exists within an array. Return its value if it does, or the default value otherwise.
+     * 
+     * @param array $list The array to check
+     * @param string $key The key to check for
+     * @param mixed $default The default value to use if the key does not exist
+     * @return mixed
+     */
+    public static function get($list, $key, $default = null) {
+        if (isset($list[$key])) return $list[$key];
+        else return $default;
+    }
+    /**
+     * Check if a key exists in an array and if a given function applied to its value returns true. Return the value if so, or the default value otherwise.
+     * 
+     * @param array $list The array to check
+     * @param string $key The key to check for
+     * @param function $callback The function to apply. Examples: is_numeric, is_int, is_bool, etc.
+     * @param mixed $default The default value to use if the key does not exist or the function does not evaluate to true
+     * @return mixed
+     */
+    public static function getType($list, $key, $callback, $default = null) {
+        if (isset($list[$key]) && $callback($list[$key])) return $list[$key];
+        else return $default;
+    }
+    /**
+     * Check if a key exists in an array and if its value is a string. Return the value if so, or the default value otherwise.
+     * 
+     * @param array $list The array to check
+     * @param string $key The key to check for
+     * @param string|null $default The default value to use if the key does not exist or its value is not a string
+     * @return string|null
+     */
+    public static function getStr($list, $key, $default = '') {
+        if (isset($list[$key]) && is_string($list[$key])) return $list[$key];
+        else return $default;
+    }
+    /**
+     * Check if a key exists within an array and if its value is an array. Return the value if so, or the default value otherwise.
+     * 
+     * @param array $list The array to check
+     * @param string $key The key to check for
+     * @param array $default The default value to use if the key does not exist or its value is not an array
+     * @return array
+     */
+    public static function getArr($list, $key, $default = []) {
+        if (isset($list[$key]) && is_array($list[$key])) return $list[$key];
+        else return $default;
+    }
+
+    /**
      * Search a directory recursively for any files matching the provided key.
      * 
      * @param string $key The name of the template file (or other file, really) to look for. Passing 'dataset.md' would get any file ending in 'dataset.md'
@@ -38,7 +88,7 @@ class Utils {
      * @param null|string $dir Optional: Specify the directory to start the search in. Only to be used when calling recursively.
      * @return array A list of routes for all files found
      */
-    public static function findTemplateFiles(string $key, array $results = [], string $dir = ''): array {
+    public static function findTemplateFiles($key, $results = [], $dir = '') {
         if (!$dir) $dir = Grav::instance()['locator']->findResource('page://'); // can't pass as default, so doing this
         foreach (glob("$dir/*") as $item) {
             // Does the directory contain an item ending with the input key? If so, add it to the results
@@ -49,7 +99,11 @@ class Utils {
         return $results;
     }
 
-    // purely a getter for something from Grav
+    /**
+     * Purely a getter for something from Grav. When called from the admin panel, the blueprint key contains all information needed to recreate the page path of the page currently being modified.
+     * 
+     * @return string
+     */
     private static function getCurrentBlueprintKey() {
         return Grav::instance()['page']->header()->controller['key'];
     }
@@ -58,9 +112,9 @@ class Utils {
      * 
      * @param string|array $key Can be the string or the already exploded string representing the page route
      * @param string $template_name The name of the markdown file to look for (do not include '.md')
-     * @return ?MarkdownFile The file for the page if a route is found, null otherwise
+     * @return MarkdownFile|null The file for the page if a route is found, null otherwise
      */
-    public static function getPageFromKey($key, string $template_name): ?MarkdownFile {
+    public static function getPageFromKey($key, $template_name) {
         // use parse keys to find a valid route, if one exists, look in the pages folder, and break the key up into its individual components so each one can be checked
         $keys = $key;
         if (is_string($keys)) $keys = explode('/', $key);
@@ -76,9 +130,9 @@ class Utils {
      * 
      * @param string $dir The directory to search: Either the pages directory or the directory specified by the route so-far (when calling recursively)
      * @param array $keys The array of keys that have not yet been parsed
-     * @return ?string The full route (as recognized by the file system) of the page if a route was found, null otherwise
+     * @return string|null The full route (as recognized by the file system) of the page if a route was found, null otherwise
      */
-    private static function parseKeys(string $dir, array $keys): ?string {
+    private static function parseKeys($dir, $keys) {
         // if no keys are left then return the directory
         if (empty($keys)) return $dir;
         $key = $keys[0]; // only check the first key
@@ -103,7 +157,7 @@ class Utils {
      * 
      * @return MarkdownFile The file for the dataset page
      */
-    public static function getDatasetFile(): MarkdownFile {
+    public static function getDatasetFile() {
         $file = self::getPageFromKey(self::getCurrentBlueprintKey(), 'point_dataset');
         if (!$file->exists()) return self::getPageFromKey(self::getCurrentBlueprintKey(), 'shape_dataset');
     }
@@ -112,15 +166,15 @@ class Utils {
      * 
      * @return MarkdownFile The file for the tour page
      */
-    public static function getTourFile(): MarkdownFile {
+    public static function getTourFile() {
         return self::getPageFromKey(self::getCurrentBlueprintKey(), 'tour');
     }
     /**
      * Returns the tour page for the view page currently being edited
      * 
-     * @return ?MarkdownFile The file for the tour page, or null if no such file exists
+     * @return MarkdownFile|null The file for the tour page, or null if no such file exists
      */
-    public static function getTourFileFromView(): ?MarkdownFile {
+    public static function getTourFileFromView() {
         try {
             $keys = explode('/', self::getCurrentBlueprintKey());
             array_pop($keys);
@@ -133,10 +187,10 @@ class Utils {
     /**
      * Checks if input is an array with two numeric inputs that fall in the correct range for longitude (-180 to 180) and latitude (-90 to 90)
      * 
-     * @param mixed $coords Should be array with two floats. First is longitude, second is latitude.
+     * @param array $coords Should be array with two floats (function validates type). First is longitude, second is latitude.
      * @return bool True if is valid, false if not
      */
-    public static function isValidPoint($coords): bool {
+    public static function isValidPoint($coords) {
         if (is_array($coords) && count($coords) === 2) {
             [$lng, $lat] = $coords;
             if (is_numeric($lng) && $lng >= -180 && $lng <= 180 && is_numeric($lat) && $lat >= -90 && $lat <= 90) return true;
@@ -146,12 +200,12 @@ class Utils {
     /**
      * Checks if input is an array with keys north, south, east, and west, each pointing to a valid numeric value (lng/lat)
      * 
-     * @param mixed $bounds The (hopefully) array to check
+     * @param array $bounds The (hopefully) array to check (function validates type)
      * @return null|array [[float, float], [float, float]] (southwest, northeast) if valid
      */
-    public static function getBounds($bounds): ?array {
+    public static function getBounds($bounds) {
         if (is_array($bounds) && count($bounds) >= 4) { // must be an array with four values, can handle extra values, though
-            $bounds = [[$bounds['south'], $bounds['west']], [$bounds['north'], $bounds['east']]]; // values must have keys south, west, north, and east
+            $bounds = [[Utils::get($bounds, 'south'), Utils::get($bounds, 'west')], [Utils::get($bounds, 'north'), Utils::get($bounds, 'east')]]; // values must have keys south, west, north, and east
             // have to reverse direction for checking for valid points
             if (self::isValidPoint([$bounds[0][1], $bounds[0][0]]) && self::isValidPoint([$bounds[1][1], $bounds[1][0]])) return $bounds; // southwest and northeast must form valid points
         }
@@ -164,7 +218,7 @@ class Utils {
      * @param string $string The string to clean
      * @return string The cleaned string
      */
-    public static function cleanUpString(string $string): string {
+    public static function cleanUpString($string) {
         $output = strtolower(trim($string)); // remove whitespace on ends, make everything lowercase
         $output = preg_replace('/\s+/', '-', $output);  // replace whitespace with dashes
         $output = preg_replace('/[^a-z0-9_-]+/', '', $output); // remove special characters (anything not a letter, number, underscore, or dash)

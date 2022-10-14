@@ -2,6 +2,18 @@
 
 namespace Grav\Plugin\LeafletTour;
 
+/**
+ * @property string|null $dataset_id from/based on feature's dataset
+ * @property string|null $default_name from/based on feature's dataset
+ * @property string $type from/based on feature's dataset
+ * @property string|null $id from yaml
+ * @property string|null $custom_name from yaml
+ * @property string|null $popup from yaml
+ * @property bool $hide from yaml
+ * @property array $coordinates from yaml
+ * @property array $properties from yaml
+ * @property array $extras from yaml
+ */
 class Feature {
 
     /**
@@ -21,39 +33,39 @@ class Feature {
         'multipolygon'=>'MultiPolygon' // [[[[x,y], [x,y], [x,y], [x,y]]]]
     ];
 
-    // some information from/based on the feature's dataset
-    private ?string $dataset_id, $default_name;
-    private string $type;
-    // yaml content
-    private ?string $id, $custom_name, $popup;
-    private bool $hide;
-    private array $coordinates, $properties, $extras;
+    private $dataset_id, $default_name, $type, $id, $custom_name, $popup, $hide, $coordinates, $properties, $extras;
 
     /**
      * Sets and validates all provided options
      * 
      * @param array $options All the feature data. Type and coordinates should always be set and valid (use json for coordinates).
      */
-    private function __construct(array $options) {
+    private function __construct($options) {
         // type and coordinates
-        $this->type = $options['type'];
-        $this->coordinates = $options['coordinates'];
+        $this->type = $options['type']; // must be set and valid
+        $this->coordinates = $options['coordinates']; // must be set and valid
         // validate strings
         foreach (['dataset_id', 'default_name', 'id', 'custom_name'] as $key) {
-            $this->$key = is_string($options[$key]) ? $options[$key] : null;
+            $this->$key = Utils::getStr($options, $key, null);
         }
         // popup: string or array
-        $this->popup = $this->validatePopupContent($options['popup']);
+        $this->popup = $this->validatePopupContent(Utils::get($options, 'popup'));
         // hide must always be bool
-        $this->hide = ($options['hide'] === true);
+        $this->hide = (Utils::get($options, 'hide') === true);
         // validate properties
-        $this->properties = is_array($options['properties']) ? $options['properties'] : [];
+        $this->properties = Utils::getArr($options, 'properties');
         // extras
         $keys = ['id', 'custom_name', 'popup', 'hide', 'coordinates', 'properties', 'dataset_id', 'default_name', 'type'];
         $this->extras = array_diff_key($options, array_flip($keys));
     }
-    private function validatePopupContent($popup): ?string {
-        $content = is_array($popup) ? $popup['popup_content'] : $popup;
+    /**
+     * Allows popup content to be provided in either of two forms: As ['popup' => 'some popup content'] or ['popup' => ['popup_content' => 'some popup content']]
+     * 
+     * @param array|string|null $popup
+     * @return string|null
+     */
+    private function validatePopupContent($popup) {
+        $content = is_array($popup) ? Utils::get($popup, 'popup_content') : $popup;
         if (is_string($content)) return $content;
         else return null;
     }
@@ -62,12 +74,12 @@ class Feature {
      * Creates a new feature object from an entry in a geojson array. Coordinates must be valid for the type.
      * 
      * @param array $json The geojson feature - must be valid (geometry.type, geometry.coordinates)
-     * @param ?string $dataset_type If provided, the feature type must match the dataset type
-     * @return ?Feature A new object if coordinates and type are valid, null otherwise
+     * @param string|null $dataset_type If provided, the feature type must match the dataset type
+     * @return Feature|null A new object if coordinates and type are valid, null otherwise
      */
-    public static function fromJson(array $json, ?string $dataset_type = null): ?Feature {
+    public static function fromJson($json, $dataset_type = null) {
         try {
-            $type = self::validateFeatureType($json['geometry']['type']);
+            $type = self::validateFeatureType(Utils::get($json['geometry'], 'type'));
             $coords = self::validateJsonCoordinates($json['geometry']['coordinates'], $type);
             // coordinates must be valid
             if (!$coords) return null;
@@ -77,7 +89,7 @@ class Feature {
             return new Feature([
                 'type' => $type,
                 'coordinates' => $coords,
-                'properties' => $json['properties'],
+                'properties' => Utils::getArr($json, 'properties'),
             ]);
         } catch (\Throwable $t) {}
         return null; // if this point is reached an error was encountered or the feature geometry was invalid
@@ -88,13 +100,13 @@ class Feature {
      * 
      * @param array $options Feature yaml from the dataset page
      * @param string $type The dataset's feature_type (should already have been validated)
-     * @param string $dataset_id The dataset's id
-     * @param ?string $name_property The dataset's name property, if one is set (used to determine feature's default name)
-     * @return ?Feature A new object if coordinates and type are valid, null otherwise
+     * @param string|null $dataset_id The dataset's id
+     * @param string|null $name_property The dataset's name property, if one is set (used to determine feature's default name)
+     * @return Feature|null A new object if coordinates and type are valid, null otherwise
      */
-    public static function fromDataset(array $options, string $type, ?string $dataset_id = null, ?string $name_property = null): ?Feature {
-        $coords = self::validateYamlCoordinates($options['coordinates'], $type);
-        if ($name_property && ($props = $options['properties'])) $default_name = $props[$name_property];
+    public static function fromDataset($options, $type, $dataset_id = null, $name_property = null) {
+        $coords = self::validateYamlCoordinates(Utils::get($options, 'coordinates'), $type);
+        if ($name_property && ($props = Utils::getArr($options, 'properties'))) $default_name = Utils::getStr($props, $name_property, null);
         else $default_name = null;
         if ($coords) return new Feature(array_merge($options, [
             'coordinates' => $coords,
@@ -109,13 +121,14 @@ class Feature {
      * Validates potential feature update yaml, called when validating a dataset update as a whole
      * 
      * @param array $update
+     * @param string $path
      * @return array Modified/validated input array
      */
-    public function validateUpdate(array $update, string $path): array {
+    public function validateUpdate($update, $path) {
         // validate coordinates, replace if invalid
-        $coords = self::validateYamlCoordinates($update['coordinates'], $this->getType()) ?? $this->getCoordinates();
+        $coords = self::validateYamlCoordinates(Utils::get($update, 'coordinates'), $this->getType()) ?? $this->getCoordinates();
         // potentially modify popup content
-        $popup = $this->validatePopupContent($update['popup']);
+        $popup = $this->validatePopupContent(Utils::get($update, 'popup'));
         if ($popup && $popup !== $this->getPopup()) {
             $popup = ['popup_content' => self::modifyPopupImagePaths($popup, $path)];
         }
@@ -123,9 +136,11 @@ class Feature {
     }
 
     /**
+     * Returns content that can be included in the dataset page header
+     * 
      * @return array [id, name, custom_name, hide, popup => [popup_content], properties, coordinates]
      */
-    public function toYaml(): array {
+    public function toYaml() {
         return array_merge($this->getExtras(), [
             'id' => $this->getId(),
             'name' => $this->getName(),
@@ -139,12 +154,13 @@ class Feature {
 
     /**
      * Creates a valid geojson representation of the feature
+     * 
      * @return array [type => 'Feature', geometry => [coordinates, type], properties]
      */
-    public function toGeoJson(): array {
+    public function toGeoJson() {
         $props = $this->getProperties();
-        if (($popup = $this->getPopup()) && !$props['popup_content']) $props['popup_content'] = $popup;
-        if (($name = $this->getCustomName()) && !$props['custom_name']) $props['custom_name'] = $name;
+        if (($popup = $this->getPopup()) && !$this->getProperty('popup_content')) $props['popup_content'] = $popup;
+        if (($name = $this->getCustomName()) && !$this->getProperty('custom_name')) $props['custom_name'] = $name;
         return [
             'type' => 'Feature',
             'geometry' => [
@@ -157,52 +173,100 @@ class Feature {
 
     /**
      * Returns the subset of the feature's properties specified by the input (and only for properties that have values)
+     * 
+     * @param array $auto_popup_properties
      * @return array [key => value]
      */
-    public function getAutoPopupProperties(array $auto_popup_properties): array {
+    public function getAutoPopupProperties(array $auto_popup_properties) {
         return array_filter(array_intersect_key($this->getProperties(), array_flip($auto_popup_properties)));
-        // TODO: remove
-        // $properties = [];
-        // // make sure that only properties with values are returned
-        // foreach ($auto_popup_properties as $key) {
-        //     if ($value = $this->getProperties()[$key]) $properties[$key] = $value;
-        // }
-        // return $properties;
     }
 
-    public function getName(): ?string {
+    /**
+     * Checks various possibilities to return the best feature name
+     * 
+     * @return string|null
+     */
+    public function getName() {
         return $this->getCustomName() ?: $this->getDefaultName() ?: $this->getId();
     }
 
+    /**
+     * Returns the feature's coordinates as yaml, instead of json
+     * 
+     * @return array|string
+     */
     public function getYamlCoordinates() {
         return self::coordinatesToYaml($this->getCoordinates(), $this->getType());
     }
+
+    /**
+     * Returns a given feature property, assuming that property exists in the feature's properties list
+     * 
+     * @param string $key
+     * @return mixed
+     */
+    public function getProperty($key) {
+        return Utils::get($this->getProperties(), $key);
+    }
     
     // ordinary getters - no logic, just to prevent direct interaction with object properties
-    public function getId(): ?string { return $this->id; }
-    public function getProperties(): array { return $this->properties; }
-    public function getCoordinates(): array { return $this->coordinates; }
-    public function getCustomName(): ?string { return $this->custom_name; }
-    public function getExtras(): array { return $this->extras; }
-    public function isHidden(): bool { return $this->hide; }
-    public function getPopup(): ?string { return $this->popup; }
+    /**
+     * @return string|null
+     */
+    public function getId() { return $this->id; }
+    /**
+     * @return array
+     */
+    public function getProperties() { return $this->properties; }
+    /**
+     * @return array
+     */
+    public function getCoordinates() { return $this->coordinates; }
+    /**
+     * @return string|null
+     */
+    public function getCustomName() { return $this->custom_name; }
+    /**
+     * @return array
+     */
+    public function getExtras() { return $this->extras; }
+    /**
+     * @return bool
+     */
+    public function isHidden() { return $this->hide; }
+    /**
+     * @return string|null
+     */
+    public function getPopup() { return $this->popup; }
 
-    public function getDatasetId(): ?string { return $this->dataset_id; }
-    public function getDefaultName(): ?string { return $this->default_name; }
-    public function getType(): string { return $this->type; }
+    /**
+     * @return string|null
+     */
+    public function getDatasetId() { return $this->dataset_id; }
+    /**
+     * @return string|null
+     */
+    public function getDefaultName() { return $this->default_name; }
+    /**
+     * @return string
+     */
+    public function getType() { return $this->type; }
 
     // feature utils
 
     /**
      * Ensures that type is one of the valid geojson feature types, uses Point if no match (ignoring caps) is found
+     * 
      * @param string $type Hopefully a valid feature type
      * @return string $type, possibly with modified capitalization, otherwise (invalid type) return 'Point'
      */
-    public static function validateFeatureType($type): string {
-        if (is_string($type) && ($validated_type = self::FEATURE_TYPES[strtolower($type)])) return $validated_type;
+    public static function validateFeatureType($type) {
+        if (is_string($type) && ($validated_type = Utils::get(self::FEATURE_TYPES, strtolower($type)))) return $validated_type;
         else return 'Point';
     }
     /**
+     * Turns valid json coordinates into yaml
+     * 
      * @param array $coordinates Coordinates in json form, must be valid
      * @param string $type Feature type - determines if returns string or array
      * @return string|array|null ['lng' => float, 'lat' => float] if $type is 'Point', otherwise json encoded string (or null if something goes wrong)
@@ -218,32 +282,34 @@ class Feature {
         return null; // if this point is reached, something was invalid
     }
     /**
+     * Takes coordinates in yaml form and validates them, returning json coordinates if valid
+     * 
      * @param mixed $yaml (string with json or ['lng', 'lat'])
      * @param string $type (feature type) Must be a string, if value does not match one of the valid types, will be replaced with 'Point'
-     * @return null|array coordinates array (json) if coordinates and type are valid
+     * @return array|null coordinates array (json) if coordinates and type are valid
      */
-    public static function validateYamlCoordinates($yaml, $type): ?array {
-        // turn $coordinates into a json array to pass to validateJsonCoordinates
-        if (($type === 'Point') && is_array($yaml)) $coordinates = [$yaml['lng'], $yaml['lat']];
-        else {
-            try {
+    public static function validateYamlCoordinates($yaml, $type) {
+        try {
+            // turn $coordinates into a json array to pass to validateJsonCoordinates
+            if (($type === 'Point') && is_array($yaml)) $coordinates = [$yaml['lng'], $yaml['lat']];
+            else {
                 // fix php's bad json handling
-                if (version_compare(phpversion(), '7.1', '>=')) {
-                    ini_set( 'serialize_precision', -1 );
-                }
+                ini_set( 'serialize_precision', -1 );
                 $coordinates = json_decode($yaml);
-            } catch (\Throwable $t) {
-                return null;
             }
+            return self::validateJsonCoordinates($coordinates, $type);
+        } catch (\Throwable $t) {
+            return null;
         }
-        return self::validateJsonCoordinates($coordinates, $type);
     }
     /**
+     * Validates feature coordinates
+     * 
      * @param array $coordinates (json array)
      * @param string $type, should have been validated, will return null if type is not one of the valid feature types
-     * @return null|array coordinates array if coordinates and type valid
+     * @return array|null coordinates array if coordinates and type valid
      */
-    public static function validateJsonCoordinates($coordinates, $type): ?array {
+    public static function validateJsonCoordinates($coordinates, $type) {
         if (!is_array($coordinates)) return null;
         switch ($type) {
             case 'Point': return (Utils::isValidPoint($coordinates)) ? $coordinates : null;
@@ -255,10 +321,12 @@ class Feature {
         return null;
     }
     /**
-     * @param array|mixed $coordinates Should be an array of points
-     * @return null|array $coordinates if valid
+     * Validates coordinates: Must be an array of valid points
+     * 
+     * @param array $coordinates Should be an array of points (function validates type)
+     * @return array|null $coordinates if valid
      */
-    private static function validateLineString($coordinates): ?array {
+    private static function validateLineString($coordinates) {
         if (is_array($coordinates) && count($coordinates) >= 2) {
             foreach ($coordinates as $point) {
                 if (!Utils::isValidPoint($point)) return null;
@@ -268,10 +336,12 @@ class Feature {
         return null;
     }
     /**
-     * @param mixed $coordinates Should be an array of LineStrings
-     * @return null|array $coordinates if valid
+     * Validates coordinates: Must be an array of valid LineStrings
+     * 
+     * @param array $coordinates Should be an array of LineStrings (function validates type)
+     * @return array|null $coordinates if valid
      */
-    private static function validateMultiLineString($coordinates): ?array {
+    private static function validateMultiLineString($coordinates) {
         if (is_array($coordinates) && count($coordinates) >= 1) {
             foreach ($coordinates as $line)  {
                 if (!self::validateLineString($line)) return null;
@@ -283,10 +353,10 @@ class Feature {
     /**
      * Linear ring requires at least four points, with the first and last matching.
      * 
-     * @param mixed $coordinates Should be an array with at least three points
-     * @return null|array $coordinates if valid, possibly modified if first and last points did not match (to close the ring)
+     * @param array $coordinates Should be an array with at least three points (function validates type)
+     * @return array|null $coordinates if valid, possibly modified if first and last points did not match (to close the ring)
      */
-    private static function validateLinearRing($coordinates): ?array {
+    private static function validateLinearRing($coordinates) {
         if (self::validateLineString($coordinates) && count($coordinates) >= 3) {
             // add first point to end if needed to close the ring
             if ($coordinates[0] !== $coordinates[count($coordinates) - 1]) $coordinates[] = $coordinates[0];
@@ -296,10 +366,12 @@ class Feature {
         return null;
     }
     /**
-     * @param mixed $coordinates Should be an array of linear rings
-     * @return null|array $coordinates if valid, possibly modified to close a given linear ring
+     * Validates coordinates: Must be an array of linear rings
+     * 
+     * @param array $coordinates Should be an array of linear rings (function validates type)
+     * @return array|null $coordinates if valid, possibly modified to close a given linear ring
      */
-    private static function validatePolygon($coordinates): ?array {
+    private static function validatePolygon($coordinates) {
         if (is_array($coordinates) && count($coordinates) >= 1) {
             $polygon = [];
             foreach ($coordinates as $ring) {
@@ -311,10 +383,12 @@ class Feature {
         return null;
     }
     /**
-     * @param mixed $coordinates Should be an array of polygons
-     * @return null|array $coordinates if valid, possibly modified to close linear rings as needed
+     * Validates coordinates: Must be an array of Polygons
+     * 
+     * @param array $coordinates Should be an array of polygons (function validates type)
+     * @return array|null $coordinates if valid, possibly modified to close linear rings as needed
      */
-    private static function validateMultiPolygon($coordinates): ?array {
+    private static function validateMultiPolygon($coordinates) {
         if (is_array($coordinates) && count($coordinates) >= 1) {
             $multi = [];
             foreach ($coordinates as $polygon) {
@@ -327,9 +401,13 @@ class Feature {
     }
 
     /**
-     * Prepends provided path to image paths for markdown images where the image path does not start with dot, slash, http, or a stream (has ://)
+     * Prepends provided path to image paths for markdown images where the image path does not start with dot, slash, http, or a stream (has ://). Called when dataset or tour page is saved to ensure that any popup images uploaded to the dataset/tour page can be accessed wherever the popup is viewed.
+     * 
+     * @param string|null $content
+     * @param string $path
+     * @return string|null
      */
-    public static function modifyPopupImagePaths(?string $content, string $path): ?string {
+    public static function modifyPopupImagePaths($content, $path) {
         if (!$content) return $content;
         // search for markdown images - format: ![alt text](image_file.ext?action&action2=x&action3=y "title")
         $split = explode('![', $content ?? '');
