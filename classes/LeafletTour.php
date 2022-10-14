@@ -302,7 +302,7 @@ class LeafletTour {
      */
     public static function handleDatasetPageSave($page) {
         // make sure dataset has a valid id
-        $id = Utils::getStr($page->getOriginalData(), 'id'); // use old id - id should never be modified
+        $id = Utils::getStr($page->getOriginalData()['header'], 'id'); // use old id - id should never be modified
         $rename_properties = $page->value('rename_properties');
         $yaml = $page->header()->jsonSerialize();
         $export = $page->value('export_geojson');
@@ -350,7 +350,7 @@ class LeafletTour {
      */
     public static function handleTourPageSave($page) {
         // make sure tour has a valid id
-        $id = Utils::getStr($page->getOriginalData(), 'id'); // use old id - id should never be modified
+        $id = Utils::getStr($page->getOriginalData()['header'], 'id'); // use old id - id should never be modified
         $header = $page->header()->jsonSerialize();
         $update = self::updateTourPage($id, $header, $page->path());
         $page->header($update);
@@ -415,7 +415,7 @@ class LeafletTour {
      * @return void
      */
     public static function handleViewPageSave($page): void {
-        $id = Utils::getStr($page->getOriginalData(), 'id'); // use old id - id should never be modified
+        $id = Utils::getStr($page->getOriginalData()['header'], 'id'); // use old id - id should never be modified
         $update = self::updateViewPage($id, $page->value('tour_id'), $page->header()->jsonSerialize());
         $page->header($update);
     }
