@@ -160,6 +160,7 @@ class Utils {
     public static function getDatasetFile() {
         $file = self::getPageFromKey(self::getCurrentBlueprintKey(), 'point_dataset');
         if (!$file->exists()) return self::getPageFromKey(self::getCurrentBlueprintKey(), 'shape_dataset');
+        else return $file;
     }
     /**
      * Returns the tour page currently being edited
