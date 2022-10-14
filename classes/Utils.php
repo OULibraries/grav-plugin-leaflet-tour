@@ -159,7 +159,7 @@ class Utils {
      */
     public static function getDatasetFile() {
         $file = self::getPageFromKey(self::getCurrentBlueprintKey(), 'point_dataset');
-        if (!$file->exists()) return self::getPageFromKey(self::getCurrentBlueprintKey(), 'shape_dataset');
+        if (!$file || !$file->exists()) return self::getPageFromKey(self::getCurrentBlueprintKey(), 'shape_dataset');
         else return $file;
     }
     /**
