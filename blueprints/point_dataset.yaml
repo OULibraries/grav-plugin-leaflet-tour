@@ -243,5 +243,4 @@ form:
               label: Retina Icon Image
               description: Completely optional image to use for Retina screen devices instead
               preview_images: true
-              # TODO: Change this to just "folder" don't need a data call here
-              data-folder@: 'user://data/leaflet-tour/images/icons'
+              folder: 'user://data/leaflet-tour/images/icons'
