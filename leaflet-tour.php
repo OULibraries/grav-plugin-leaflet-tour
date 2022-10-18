@@ -183,6 +183,10 @@ class LeafletTourPlugin extends Plugin {
         if ($file = Utils::getDatasetFile()) return LeafletTour::getDatasetPropertyList($file, $include_none);
         else return [];
     }
+    public static function getAutoPopupOptions(): array {
+        if ($file = Utils::getDatasetFile()) return LeafletTour::getAutoPopupOptions($file);
+        else return [];
+    }
 
     public static function getFeaturePropertiesFields(): array {
         if ($file = Utils::getDatasetFile()) return LeafletTour::getFeaturePropertiesFields($file);

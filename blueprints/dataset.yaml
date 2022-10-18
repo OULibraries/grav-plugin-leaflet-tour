@@ -155,7 +155,7 @@ form:
               type: select
               label: Add Properties to Popup Content
               description: All properties selected here will automatically be added to popup content for features. If popup content is provided in the editor (either here in the dataset config or in the tour page), the properties will be listed above that content. If a feature does not have values for a given selected property, that property will not be included.
-              data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetPropertyList'
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getAutoPopupOptions'
               multiple: true
               validate:
                 type: array

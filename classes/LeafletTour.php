@@ -947,6 +947,22 @@ class LeafletTour {
     }
 
     /**
+     * Get all properties for a given dataset, but with order possibly modified by existing auto popup properties. Essentially: Current options will be displayed in the order the list is given. So if a dataset has auto props 'f, b, a, c' and props 'a, b, c, d, e, f' the auto props will be shown as 'a, b, c, f'. Instead, the list would need to go 'f, b, a, c, d, e' so that the existing auto props are displayed correctly.
+     * 
+     * @param MarkdownFile $file
+     * @return array [$prop => $prop]
+     */
+    public static function getAutoPopupOptions($file) {
+        $dataset = Dataset::fromLimitedArray($file->header(), ['properties', 'auto_popup_properties']);
+        // first add exiting auto popup props as array keys so that they come first and in correct order
+        $list = array_flip($dataset->getAutoPopupProperties());
+        // next add the full list of prop => prop - any key not already in list will be added, and any key already in list will receive correct value
+        $props = $dataset->getProperties();
+        $list = array_merge($list, array_combine($props, $props));
+        return $list;
+    }
+
+    /**
      * Get all properties for a given dataset as text input fields
      * 
      * @param MarkdownFile $file
