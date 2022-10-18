@@ -64,7 +64,7 @@ class Feature {
      * @param array|string|null $popup
      * @return string|null
      */
-    private function validatePopupContent($popup) {
+    public static function validatePopupContent($popup) {
         $content = is_array($popup) ? Utils::get($popup, 'popup_content') : $popup;
         if (is_string($content)) return $content;
         else return null;

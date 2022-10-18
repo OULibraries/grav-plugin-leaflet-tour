@@ -306,7 +306,7 @@ class LeafletTour {
         $rename_properties = $page->value('rename_properties');
         $yaml = $page->header()->jsonSerialize();
         $export = $page->value('export_geojson');
-        $update = self::updateDatasetPage($id, $rename_properties, $yaml, $export);
+        $update = self::updateDatasetPage($id, $rename_properties, $yaml, $export, $page->path());
         $page->header($update);
     }
     /**
@@ -318,13 +318,13 @@ class LeafletTour {
      * @param bool $export Hopefully a bool - if true, a GeoJSON export file will be created and saved in the dataset's parent folder
      * @return array The updated dataset yaml with any modifications needed
      */
-    public static function updateDatasetPage($id, $rename_properties, $yaml, $export) {
+    public static function updateDatasetPage($id, $rename_properties, $yaml, $export, $path) {
         $datasets = self::getDatasets();
         if ($file = Utils::get($datasets, $id)) {
             // dataset exists and needs to be updated and validated
             $dataset = Dataset::fromFile($file);
             $properties = Dataset::validateUpdateProperties($rename_properties, Utils::getArr($yaml, 'properties'));
-            $update = $dataset->validateUpdate($yaml, $properties);
+            $update = $dataset->validateUpdate($yaml, $properties, $path);
             // check for export - will export the new content
             if ($export) {
                 $export_file = CompiledJsonFile::instance(dirname($file->filename()) . "/$id.json");

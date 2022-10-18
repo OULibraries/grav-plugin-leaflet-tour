@@ -331,7 +331,7 @@ class Dataset {
      * @param array $properties [old name => new name] (from renaming properties, potentially)
      * @return array updated Dataset yaml
      */
-    public function validateUpdate($update, $properties) {
+    public function validateUpdate($update, $properties, $path = '') {
         if (!is_array($properties)) $properties = [];
         // validate feature type - to change type: both old and new types must be shape (i.e. not 'Point'), old and new types should be different, either current features or new features should be empty
         $new_type = Feature::validateFeatureType(Utils::get($update, 'feature_type'));
@@ -349,19 +349,23 @@ class Dataset {
         // validate features, reconcile changes
         $features = [];
         $feature_count = $this->getFeatureCount();
+        // set path - will be useful
+        $path = str_replace(Grav::instance()['locator']->findResource('page://') . '/', '', $path);
         foreach (Utils::getArr($update, 'features') as $feature_yaml) {
             $feature_array = null;
             // modified feature has id for feature in dataset that has not yet been added to features list (i.e. not a duplicate)
             if (($id = Utils::getStr($feature_yaml, 'id')) && ($old_feature = Utils::get($this->getFeatures(), $id)) && (!isset($features[$id]))) {
                 // validate feature update (coordinates and popup content)
-                $path = $this->getFile() ? $this->getFile()->filename() : '';
-                $feature_array = $old_feature->validateUpdate($feature_yaml, str_replace(Grav::instance()['locator']->findResource('page://'), '', $path));
+                $feature_array = $old_feature->validateUpdate($feature_yaml, $path);
             } else {
                 // new feature: make sure feature has valid coordinates (otherwise ignore it) and give it a proper unique id
                 if ($coords = Feature::validateYamlCoordinates(Utils::get($feature_yaml, 'coordinates'), $type)) {
                     $feature_count = self::nextFeatureCount($this->getId(), array_keys($this->getFeatures()), $feature_count);
                     $id = $this->getId() . "--$feature_count";
                     $feature_array = array_merge($feature_yaml, ['coordinates' => Feature::coordinatesToYaml($coords, $type), 'id' => $id]);
+                    $popup = Feature::validatePopupContent(Utils::get($feature_yaml, 'popup'));
+                    $popup = Feature::modifyPopupImagePaths($popup, $path);
+                    if ($popup) $feature_array['popup'] = ['popup_content' => $popup];
                 }
             }
             // if feature (either new or modified) perform additional validation for renamed properties
