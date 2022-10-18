@@ -219,7 +219,7 @@ form:
                       # TODO: Description: What direction does this move the shadow?
 
                 col2:
-                  type: number
+                  type: column
                   fields:
 
                     header.icon.shadow_anchor_y:
