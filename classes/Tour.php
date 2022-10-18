@@ -614,10 +614,13 @@ class Tour {
                 continue;
             }
             $dataset = Utils::get($datasets, $id);
-            $props = Utils::getArr($override, 'auto_popup_properties', []);
             // props should only contain values from dataset properties, could also contain none
-            $props = array_values(array_intersect($props, array_merge($dataset->getProperties(), ['none'])));
-            $dataset_overrides[$id]['auto_popup_properties'] = $props;
+            // but only modify this value if it was already set, otherwise it will cause problems
+            if (isset($override['auto_popup_properties'])) {
+                $props = Utils::getArr($override, 'auto_popup_properties', []);
+                $props = array_values(array_intersect($props, array_merge($dataset->getProperties(), ['none'])));
+                $dataset_overrides[$id]['auto_popup_properties'] = $props;
+            }
         }
         return $dataset_overrides;
     }
@@ -751,6 +754,7 @@ class Tour {
      * @return array Tour yaml 'dataset_overrides' list, with entry for $id modified (if needed)
      */
     public static function renameAutoPopupProps($id, $properties, $overrides) {
+        if (!isset($overrides[$id]['auto_popup_properties'])) return $overrides; // no change if not set
         try {
             $old_props = $overrides[$id]['auto_popup_properties'];
             $new_props = [];
