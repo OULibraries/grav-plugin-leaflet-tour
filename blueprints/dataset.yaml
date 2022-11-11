@@ -135,7 +135,7 @@ form:
               type: select
               label: Name Property
               description: The property in the data file that contains feature names.
-              data-options@: ['Grav\Plugin\LeafletTourPlugin::getDatasetPropertyList', true]
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetPropertyList'
 
             header.properties:
               type: selectize

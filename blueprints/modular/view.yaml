@@ -206,7 +206,7 @@ form:
                         header.start.location:
                           type: select
                           label: Center Location
-                          data-options@: ['Grav\Plugin\LeafletTourPlugin::getViewFeatures', true]
+                          data-options@: 'Grav\Plugin\LeafletTourPlugin::getViewPoints'
                         
                         start_cols:
                           type: columns

@@ -39,7 +39,7 @@ class Utils {
      * @return mixed
      */
     public static function get($list, $key, $default = null) {
-        if (isset($list[$key])) return $list[$key];
+        if (array_key_exists($key, $list)) return $list[$key];
         else return $default;
     }
     /**
@@ -52,7 +52,7 @@ class Utils {
      * @return mixed
      */
     public static function getType($list, $key, $callback, $default = null) {
-        if (isset($list[$key]) && $callback($list[$key])) return $list[$key];
+        if (array_key_exists($key, $list) && $callback($list[$key])) return $list[$key];
         else return $default;
     }
     /**
@@ -64,7 +64,7 @@ class Utils {
      * @return string|null
      */
     public static function getStr($list, $key, $default = '') {
-        if (isset($list[$key]) && is_string($list[$key])) return $list[$key];
+        if (array_key_exists($key, $list) && is_string($list[$key])) return $list[$key];
         else return $default;
     }
     /**
@@ -76,7 +76,7 @@ class Utils {
      * @return array
      */
     public static function getArr($list, $key, $default = []) {
-        if (isset($list[$key]) && is_array($list[$key])) return $list[$key];
+        if (array_key_exists($key, $list) && is_array($list[$key])) return $list[$key];
         else return $default;
     }
 
@@ -183,6 +183,13 @@ class Utils {
             if ($file->exists()) return $file;
         } catch (\Throwable $t) {}
         return null;
+    }
+    /**
+     * Returns the view page currently being edited
+     * 
+     */
+    public static function getViewFile() {
+        return self::getPageFromKey(self::getCurrentBlueprintKey(), 'view');
     }
 
     /**

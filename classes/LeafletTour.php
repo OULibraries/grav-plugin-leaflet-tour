@@ -61,6 +61,7 @@ class LeafletTour {
 
     /**
      * Return all files in user/pages (any level of nesting) that end with '_dataset.md', indexed by id
+     * Just a wrapper for getFiles that returns datasets
      * 
      * @return array
      */
@@ -69,6 +70,7 @@ class LeafletTour {
     }
     /**
      * Return all files in user/pages (any level of nesting) that end with 'tour.md', indexed by id
+     * Just a wrapper for getFiles that returns tours
      * 
      * @return array
      */
@@ -76,7 +78,9 @@ class LeafletTour {
         return self::getFiles('tour', 'tour');
     }
     /**
-     * Finds all markdown files ending with the key provided. If a file does not have a valid id (no id, special reserved value, repeat), then a new id is generated for the file (and added to file header).
+     * Finds all markdown files ending with the key provided
+     * - Returns all markdown files ending with the key provided, indexed by id
+     * - If file does not have a valid id, a new id is generated (and added to file header)
      * 
      * @param string $key Determines which files are returned - everything in the user/pages folder ending in $key.md
      * @param string $default_id If id is invalid and the file header does not have a 'title' set, this is used to generate the id instead
@@ -101,6 +105,9 @@ class LeafletTour {
     }
     /**
      * Creates a new id for a given file
+     * - Creates id based on cleaned up name
+     * - Ensures the id is unique, increments as needed
+     * - If file is provided, saves the id to the file
      * 
      * @param MarkdownFile|null $file The file that needs the new id. If provided, the id will be added to the file header, and the file will be saved.
      * @param string $name The name to use to generate the id. If the name is a duplicate for an existing id, a count will be added at the end and incremented until a unique id is found
@@ -122,9 +129,10 @@ class LeafletTour {
     }
     /**
      * Checks if an id is actually valid: Must be a non-empty string not equal lto 'tmp  id' or '_tour' and not in the array of exiting ids
+     * - Returns false for falsey, restricted (tmp  id, _tour), or duplicate values (true otherwise)
      * 
      * @param string $id Hopefully a string, but might be something... less valid
-     * @param array $ids List of existing ids - $id must not be a duplicated of any of these
+     * @param array $ids List of existing ids - $id must not be a duplicate of any of these
      * @return bool false if id is falsey, uses restricted value (tmp  id, _tour) or is a duplicated; true otherwise
      */
     public static function isValidId($id, $ids) {
@@ -143,6 +151,8 @@ class LeafletTour {
     }
     /**
      * Create an array with all view modules belonging to the tour file provided, generates valid id for any views that do not have one
+     * - Returns all view files belonging to tour (must be valid modules, one level of nesting, etc.), indexed by id
+     * - If a view does not have a valid id, generates a new one (and saves to file)
      * 
      * @param MarkdownFile $file The tour markdown file
      * @return array MarkdownFile objects for any view modules in the tour file's parent folder, indexed by id
@@ -179,7 +189,7 @@ class LeafletTour {
      * @return Tour
      */
     public static function buildTour($file) {
-        return Tour::fromFile($file, self::getTourViews($file), self::getConfig(), self::getDatasets());
+        return Tour::fromFile($file, self::getDatasets(), self::getConfig(), self::getTourViews($file));
     }
 
     /**
@@ -204,6 +214,11 @@ class LeafletTour {
 
     /**
      * Called when plugin config is saved. Handles special situations, and passes updates to other pages.
+     * - Calls function to ensure all dataset and basemap files exist
+     * - Handles dataset uploads - calls function
+     * - Validates basemap info - calls function
+     * - Validates tour basemaps - calls function
+     * - Handles dataset updates - calls function
      * 
      * @param $obj The update object, used to access old and new config values.
      * @return void
@@ -239,6 +254,7 @@ class LeafletTour {
     }
     /**
      * Loop through new files, look for files that don't exist in old files list and turn any found into new datasets
+     * - Creates new datasets for any valid new files (not in old files)
      * 
      * @param array $data_files All uploaded dataset files from plugin yaml (should be json and js files only)
      * @param array $old_files The previous value for uploaded dataset files, before the plugin config was modified and saved
@@ -248,10 +264,10 @@ class LeafletTour {
         $dataset_ids = array_keys(self::getDatasets());
         foreach($data_files as $key => $file_data) {
             if (!Utils::get($old_files, $key) && ($json = self::parseDatasetUpload($file_data))) {
-                $dataset = Dataset::fromJson($json);
-                if ($dataset) {
-                    $file = $dataset->initialize($file_data['name'], $dataset_ids);
-                    $dataset_ids[] = $file->header()['id']; // in case there are multiple new dataset files
+                if ($yaml = Dataset::initializeJsonDataset($json, Utils::getStr($file_data, 'name'), $dataset_ids)) {
+                    $file = Dataset::createFile(Utils::getStr($yaml, 'title') ?: $yaml['id'], $yaml['feature_type']);
+                    $dataset_ids[] = $yaml['id']; // in case there are multiple new dataset files
+                    $file->header($yaml);
                     $file->save();
                 }
             }
@@ -311,6 +327,11 @@ class LeafletTour {
     }
     /**
      * Generates new id for new datasets and validates using constructor. Validates existing datasets (but does not generate new id), possibly creates GeoJSON export file, validates all tours containing the updated dataset
+     * - Validates new and existing datasets (provides original yaml if it exists)
+     * - Provides renamed properties to datasets for validation
+     * - Generates new ids for new datasets
+     * - Creates GeoJSON export file if export is true
+     * - For existing datasets, validates all tours containing the dataset
      * 
      * @param string $id Hopefully a string, hopefully valid - will determine whether this is a new or existing dataset
      * @param array $rename_properties Hopefully an array - will be used to update properties if any values have been renamed
@@ -322,9 +343,9 @@ class LeafletTour {
         $datasets = self::getDatasets();
         if ($file = Utils::get($datasets, $id)) {
             // dataset exists and needs to be updated and validated
-            $dataset = Dataset::fromFile($file);
+            $original_yaml = $file->header();
             $properties = Dataset::validateUpdateProperties($rename_properties, Utils::getArr($yaml, 'properties'));
-            $update = $dataset->validateUpdate($yaml, $properties, $path);
+            $update = Dataset::validateUpdate($yaml, $properties, $path, $original_yaml);
             // check for export - will export the new content
             if ($export) {
                 $export_file = CompiledJsonFile::instance(dirname($file->filename()) . "/$id.json");
@@ -337,8 +358,9 @@ class LeafletTour {
             // generate valid id
             $name = Utils::getStr($yaml, 'title') ?: 'dataset';
             $id = self::generateId(null, $name, array_keys($datasets));
-            // validate using constructor (since there are no changes to reconcile)
-            $update = Dataset::fromArray(array_merge($yaml, ['id' => $id]))->toYaml();
+            // validate
+            $props = Utils::getArr($yaml, 'properties');
+            $update = Dataset::validateUpdate(array_merge($yaml, ['id' => $id]), array_combine($props, $props), $path);
         }
         return $update;
     }
@@ -357,55 +379,45 @@ class LeafletTour {
     }
     /**
      * Generates new id for new tours and validates them. Validates existing tours and all their views. Also determines whether or not a tour popups page should exist.
+     * - Validates new and existing tours
+     * - Generates new ids for new tours
+     * - Creates or removes tour popups page depending on status of tour popups
      * 
      * @param string $id Hopefully a string, hopefully valid  - will determine whether this is a new or existing tour
      * @param array $header The actual updated tour yaml (which requires validation)
      * @param string $path Hopefully a string, the path for the tour's parent folder - necessary for modifying markdown images in feature overrides for popup content and for creating/removing tour popups page
      * @return array The updated tour yaml with any modifications needed (updated views will just be saved directly)
      */
-    public static function updateTourPage($id, $header, $path) {
+    public static function updateTourPage($id, $yaml, $path) {
         $update = [];
         $tours = self::getTours();
+        $popup_image_path = str_replace(Grav::instance()['locator']->findResource('page://') . '/', '', $path);
         if ($file = Utils::get($tours, $id)) {
             // tour exists and needs to be updated and validated
             $datasets = self::getDatasets();
             $views = self::getTourViews($file);
-            // validate using constructor
-            $tour = Tour::fromArray($header, $views, self::getConfig(), $datasets);
-            // handle popup content images
-            $yaml = $tour->toYaml();
-            // $features = Tour::validateFeaturePopups($yaml['features'], str_replace(Grav::instance()['locator']->findResource('page://'), '', $file->filename()));
-            $features = Tour::validateFeaturePopups(Utils::getArr($yaml, 'features'), $path);
-            $update = array_merge($yaml, ['features' => $features]);
-            // and then validate all views, too
-            foreach ($tour->getViews() as $view_id => $view) {
-                // views were validated on tour creation, so update file contents to match the validated view contents
-                $file = $view->getFile();
-                $file->header($view->toYaml());
-                $file->save();
-            }
+            // validate
+            $update = Tour::validateTourUpdate($yaml, $datasets, self::getConfig(), $views, $popup_image_path);
         } else {
             // generate valid id
-            $name = Utils::getStr($header, 'title') ?: 'tour';
+            $name = Utils::getStr($yaml, 'title') ?: 'tour';
             $id = self::generateId(null, $name, array_keys($tours));
-            // validate using constructor
-            $tour = Tour::fromArray(array_merge($header, ['id' => $id]), [], self::getConfig(), self::getDatasets());
-            $update = $tour->toYaml();
-            // no need to validate views because the tour is new and should not yet have any views
+            // validate
+            $update = Tour::validateTourUpdate(array_merge($yaml, ['id' => $id]), self::getDatasets(), self::getConfig(), [], $popup_image_path);
         }
         // popups page (if possible)
-        if ($tour) {
+        // if ($tour) {
             $file = MarkdownFile::instance("$path/popups/popups_page.md");
             // if tour has popups and page does not exist: create page
-            if (!empty($tour->getFeaturePopups()) && !$file->exists()) {
-                $file->header(['visible' => 0, 'title' => $tour->getTitle() . ' Popup Content']);
+            if (Utils::get($update, 'has_popups') && !$file->exists()) {
+                $file->header(['visible' => 0, 'title' => Utils::getStr($update, 'title') ?: Utils::getStr($update, 'id') . ' Popup Content']);
                 $file->save();
             }
             // if tour does not have popups and page does exist: remove page
-            else if (empty($tour->getFeaturePopups()) && $file->exists()) {
+            else if (!Utils::get($update, 'has_popups') && $file->exists()) {
                 $file->delete();
             }
-        }
+        // }
         return array_merge($update, ['id' => $id]); // make sure the old correct id or the new valid id is the one used
     }
     /**
@@ -421,25 +433,29 @@ class LeafletTour {
     }
     /**
      * Generates new id for new views. Validates views using the view's tour (if it exists).
+     * - Validates new and existing views
+     * - Generates new ids for new views
+     * - Changes nothing if the view does not have a valid tour
      * 
      * @param string $id Hopefully a string - determines whether this is a new or existing view
-     * @param string $tour_id Hopefully a string, hopefully vlid - used to find the the correct tour file for validating the view (view cannot be validated otherwise)
-     * @param array $header The actual updated view yaml (which requires validation)
+     * @param string $tour_id Hopefully a string, hopefully valid - used to find the the correct tour file for validating the view (view cannot be validated otherwise)
+     * @param array $yaml The actual updated view yaml (which requires validation)
      * @return array The updated view yaml with any modifications needed
      */
-    public static function updateViewPage($id, $tour_id, $header) {
+    public static function updateViewPage($id, $tour_id, $yaml) {
         if ($tour_file = Utils::get(self::getTours(), $tour_id)) {
-            $tour = self::buildTour($tour_file);
-            if (!Utils::get($tour->getViews(), $id)) {
-                // need to generate a valid id
-                $name = $tour_id . '_' . (Utils::getStr($header, 'title') ?: 'view');
-                $id = self::generateId(null, $name, array_keys($tour->getViews()));
+            $view_ids = array_keys(self::getTourViews($tour_file));
+            if (!in_array($id, $view_ids)) {
+                // generate valid id
+                $name = $tour_id . '_' . (Utils::getStr($yaml, 'title') ?: 'view');
+                $id = self::generateId(null, $name, array_keys($view_ids));
             }
-            return $tour->validateViewUpdate($header, $id);
-        } else return $header;
+            return Tour::validateViewUpdate(array_merge($yaml, ['id' => $id]), $tour_file->header(), self::getDatasets(), self::getConfig());
+        } else return array_merge($yaml, ['id' => $id]);
     }
     /**
      * Loops through all tours. Validates any that use the dataset with the provided id (as well as all of their views). Handles any renamed properties (dataset overrides for auto popup properties).
+     * - Calls validation function for all tours and saves output
      * 
      * @param string $dataset_id The id for the dataset that has been modified or deleted. Only tours that contain this dataset id will be validated.
      * @param array $update The new updated content for the dataset (to make sure that the correct values are checked). Provide an empty array if the dataset has been deleted.
@@ -450,24 +466,20 @@ class LeafletTour {
     public static function validateTours($dataset_id, $update, $datasets = [], $properties = null) {
         if (empty($datasets)) $datasets = self::getDatasets();
         // make sure the file has the correct content
-        if ($file = Utils::get($datasets, $dataset_id)) $file->header($update); // file might not exist, esp. if this is called b/c of dataset deletion
+        if ($file = Utils::get($datasets, $dataset_id)) $file->header($update); // file might not exist, esp. if this is called b/c of dataset deletion, so the if is necessary
         foreach (array_values(self::getTours()) as $file) {
+            // tour also checks, but this at least prevents us from compiling all the views for a tour that won't actually be updated
             $ids = array_column(Utils::getArr($file->header(), 'datasets'), 'id'); // dataset ids from tour
             if (!in_array($dataset_id, $ids)) continue; // ignore if tour doesn't have the dataset
-            // handle property renaming, if applicable
-            if ($properties) {
-                $overrides = Tour::renameAutoPopupProps($dataset_id, $properties, Utils::getArr($file->header(), 'dataset_overrides'));
-                $file->header(array_merge($file->header(), ['dataset_overrides' => $overrides]));
+            // call function - validate the tour
+            $yaml = Tour::validateDatasetUpdate($file->header(), $datasets, self::getTourViews($file), $dataset_id, $properties);
+            if ($yaml) {
+                // tour had the dataset - function returns null otherwise
+                $file->header($yaml);
+                $file->save();
             }
-            // use constructor to validate tour (and view) content
-            $tour = Tour::fromFile($file, self::getTourViews($file), self::getConfig(), $datasets);
-            $file->header($tour->toYaml()); // only valid options will actually be set and then returned from the object
-            $file->save();
-            // validate views
-            foreach (array_values($tour->getViews()) as $view) {
-                $view->getFile()->header($view->toYaml()); // only valid options set and returned
-                $view->getFile()->save();
-            }
+            else return null;
+            // no need to handle views - the tour has already dealt with them
         }
     }
 
@@ -483,6 +495,8 @@ class LeafletTour {
     }
     /**
      * Potentially deletes the original upload file the dataset was created from. Validates all tours that previously used the deleted dataset.
+     * - Deletes original upload file if path is set
+     * - Validates tours
      * 
      * @param string $id Hopefully a string - indicates the removed dataset
      * @param string|null $path Hopefully either a string or null - if provided, should be an accurate path (starting with 'user/' to the original upload file that should now be deleted)
@@ -503,6 +517,7 @@ class LeafletTour {
 
     /**
      * Take an uploaded file and parse any valid JSON content
+     * - Parses json content from javascript and json file uploads (returns null if nothing valid)
      * 
      * @param array $file_data The data for the uploaded file from plugin yaml (name, path, size, type)
      * @return array|null Valid JSON content if it exists, otherwise null
@@ -567,6 +582,15 @@ class LeafletTour {
 
     /**
      * Updates an existing dataset based on plugin options.
+     * - Cancels update if uploaded file was removed
+     * - Returns error message if uploaded dataset fails to parse
+     * - Returns error message if status is confirm, nothing has changed, but an issue is present
+     * - Removes previous confirm error messages (if present) if status is confirm but confirm is not true
+     * - Updates the dataset if status is confirm, confirm is true, and there are no changes or issues
+     * - Validates tours after updating dataset
+     * - Clears update settings (deletes file, etc.) after updating dataset
+     * - Returns error message if status is not confirm (or is confirm but things have changed) and there are issues
+     * - Builds update file and message if status is not confirm (or is, but things have changed) and there are no issues (note: file is built to prevent having to do everything all over again when it is time to update)
      * 
      * @param array $old_update The previous plugin options - used to check what values (if any) have changed and whether or not the user has been given a chance to review potential changes to the dataset
      * @param array $new_update The new plugin options - used to determine what should happen next
@@ -651,6 +675,9 @@ class LeafletTour {
     
     /**
      * Returns parsed upload markdown file if it exists and uploaded file has not changed. Otherwise (re)generates the parsed upload file. Returns file, or returns null if something went wrong and file was not parsed.
+     * - Returns existing file if uploaded file has not changed
+     * - Generates file if file does not exist or uploaded file has changed (and returns it)
+     * - Returns null if file fails to parse (or something else went wrong)
      * 
      * @param array $file_yaml
      * @param array $old_file_yaml
@@ -662,20 +689,34 @@ class LeafletTour {
             // (re)generate the dataset from the file
             try {
                 $json = self::parseDatasetUpload(array_values($file_yaml)[0]);
-                if ($json) $json_dataset = Dataset::fromJson($json);
-                if ($json_dataset) {
-                    $init_file = $json_dataset->initialize('tmp', []);
-                    $file->header($init_file->header());
-                    $file->save();
-                    return Dataset::fromFile($file);
+                if ($json) {
+                    $yaml = Dataset::initializeJsonDataset($json, 'update', []); // no need to worry about ids or names
+                    if ($yaml) {
+                        $file->header($yaml);
+                        $file->save();
+                        return Dataset::fromFile($file);
+                    }
                 }
             } catch (\Throwable $t) {}
+            // something went wrong - remove previous parsed file and return null
+            $file->delete();
             return null;
         }
         else return Dataset::fromFile($file);
     }
     /**
-     * Checks update settings for a variety of potential issues: Dataset no selected, invalid feature type (type for selected dataset does not match type for uploaded dataset), no dataset property (only if not replacement update), invalid dataset property (i.e. not in selected dataset properties list), invalid dataset property as default file property (i.e. not in uploaded dataset properties list), invalid file property (ditto), standard update with no settings (add, remove, modify all null or false)
+     * Checks update settings for a variety of potential issues: Dataset not selected, invalid feature type (type for selected dataset does not match type for uploaded dataset), no dataset property (only if not replacement update), invalid dataset property (i.e. not in selected dataset properties list), invalid dataset property as default file property (i.e. not in uploaded dataset properties list), invalid file property (ditto), standard update with no settings (add, remove, modify all null or false)
+     * - Returns error message if no dataset selected
+     * - Returns error message if update and selected dataset have different feature types
+     * - Returns error message if no dataset property selected (and update type is not replacement)
+     * - Returns error message if selected dataset property is invalid for selected dataset
+     * - Returns error message if selected dataset property is invalid for update file, and no file property is set
+     * - Returns error message if file property is invalid for update file
+     * - Returns error message if update type is standard but none of add, remove, or modify are true
+     * - Returns multiple error messages when applicable
+     * - Sets status to corrections (if errors)
+     * - Returns null if no errors found
+     * 
      * @param array $update
      * @param Dataset $upload_dataset
      * @param Dataset|null $dataset
@@ -718,6 +759,11 @@ class LeafletTour {
     }
     /**
      * Checks update settings for a variety of potential issues pertaining to confirming an update: selected dataset has since been removed or updated, temporary update file does not exist (should have already been created)
+     * - Returns error message if selected dataset no longer exists (status = corrections)
+     * - Returns error message if dataset has been updated since last save and there are now problems (status = corrections)
+     * - Rebuilds update and returns appropriate message if dataset has been updated since last save and there are no problems
+     * - Rebuilds update and returns appropriate message if the temporary update file does not exist
+     * - Returns null if no issues were found
      * 
      * @param array $new_update
      * @param Dataset $upload_dataset
@@ -754,6 +800,18 @@ class LeafletTour {
     // will save a file to the update folder
     /**
      * Matches features, creates a Dataset object using update settings, saves the dataset file as a temporary update file, and provides a detailed message indicating update options: Type of update, if standard - also what settings (add, modify, remove), replacement settings, matches found, what will happen to various features (matches, non-matches, ...)
+     * - Indicates update type (replacement, removal, or standard) in message
+     * - If features will be matched, indicates how they will be matched (all types)
+     * - If features are matched, includes list of matched features (all types, with exception)
+     * - Indicates if features are matched but there were no matches found (all types, with exception)
+     * - For replacement update, indicates whether or not features will be matched (warning if not)
+     * - For standard update, indicates which settings (add, remove, modify) were selected
+     * - For standard update, if add, indicates how many features will be added
+     * - For standard update, only indicates list of matched features (or lack thereof) if modify is true
+     * - For standard update, if remove, provides list of removed features (or indicates if none)
+     * - Builds update file and saves update information
+     * - Sets ready_for_update to true for selected dataset
+     * - Sets status to 'confirm'
      * 
      * @param array $update
      * @param Dataset $dataset
@@ -822,6 +880,10 @@ class LeafletTour {
     }
     /**
      * Determines if any significant changes have been made that would cause the tmp dataset (used to store potential changes) to require updating.
+     * - Returns true if file, dataset, type, or dataset_prop has changed
+     * - Returns true if dataset prop is set (not 'none' or 'coords') and file_prop has changed
+     * - Returns true if type is standard and add, modify, or remove has changed
+     * - Returns false if nothing has changed
      * 
      * @param array $old The previous "update" array (plugin config yaml)
      * @param array $new The new (to be saved) "update" array (plugin config yaml)
@@ -831,7 +893,8 @@ class LeafletTour {
         // values that need to be checked for changes
         $keys = ['file', 'dataset', 'type', 'dataset_prop'];
         // if dataset_prop is not 'none' or 'coords' then also need to check file_prop
-        if (!in_array(Utils::getStr($new, 'dataset_prop'), ['none', 'coords'])) $keys[] = 'file_prop';
+        $prop = Utils::getStr($new, 'dataset_prop');
+        if ($prop && !in_array($prop, ['none', 'coords'])) $keys[] = 'file_prop';
         // if update is standard then also need to check standard options
         if (Utils::getStr($new, 'type') === 'standard') $keys = array_merge($keys, ['modify', 'add', 'remove']);
         // check for changes
@@ -842,6 +905,9 @@ class LeafletTour {
     }
     /**
      * Creates a reasonably well-formatted list indicating all features listed in matches: Uses name and id, lists maximum of 15 features
+     * - Creates string listing up to 15 features (from matches)
+     * - Indicates however many features were not listed (if more than 15 matches)
+     * - Returns null for no matches
      * 
      * @param array $matches
      * @param array $features
@@ -879,371 +945,69 @@ class LeafletTour {
 
     // blueprint functions
 
-    // used for any blueprints
+    // plugin config only
     /**
-     * List of all datasets, indexed by name (title or id), possibly with option for 'none'
+     * List of all datasets, indexed by id, referenced by name (title or id), plus option for 'none'
+     * - Returns all datasets [id => name] plus options for 'none'
+     * - Includes update.dataset if set and invalid
      * 
-     * @param bool $include_none
+     * @param array $config
      * @return array
      */
-    public static function getDatasetsList($include_none) {
+    public static function getUpdateDatasetsList($config) {
         $list = [];
-        foreach (LeafletTour::getDatasets() as $id => $file) {
+        $datasets = LeafletTour::getDatasets();
+        foreach ($datasets as $id => $file) {
             $dataset = Dataset::fromLimitedArray($file->header(), ['title', 'id']);
             $name = $dataset->getName();
             $list[$id] = $name;
         }
-        if ($include_none) $list = array_merge(['none' => 'None'], $list);
+        $list = array_merge(['none' => 'None'], $list);
+        
+        // get current update.dataset (if any)
+        $update = Utils::getArr($config, 'update');
+        $id = Utils::getStr($update, 'dataset', null);
+        // add if invalid
+        if (($id !== null) && !isset($datasets[$id])) $list[$id] = 'Invalid, please remove';
         return $list;
     }
-
     /**
-     * List of all valid basemaps, indexed by name or file
+     * Returns select_optgroup options - opt group for each dataset, list of properties from each dataset, indexed by $dataset_id--prop--$property, includes 'none' and 'coords'
+     * - Returns all properties from all datasets, plus options for 'none' and 'coords'
+     * - Returns options as optgroup options - sublists under particular dataset
+     * - Indexes properties as: $dataset_id--prop--$property
+     * - Includes update.dataset_prop if set and invalid
      * 
+     * @param array $config
      * @return array
      */
-    public static function getBasemapList() {
-        $list = [];
-        foreach (LeafletTour::getBasemapInfo() as $file => $info) {
-            $list[$file] = Utils::getStr($info, 'name') ?: $file;
-        }
-        return $list;
-    }
+    public static function getUpdatePropertiesList($config) {
+        // get current update.dataset_prop (if any)
+        $update = Utils::getArr($config, 'update');
+        $current_prop = Utils::getStr($update, 'dataset_prop', null);
+        $current_prop = self::getDatasetProp($current_prop); // in case prop is in form of dataset_id--prop--property
 
-    /**
-     * Returns select_optgroup options - opt group for each dataset, list of properties from each dataset, indexed by $dataset_id--$property, includes 'none' and 'coords'
-     * 
-     * @return array
-     */
-    public static function getUpdatePropertiesList() {
         $list = [];
-        foreach (LeafletTour::getDatasets() as $id => $file) {
+        $datasets = LeafletTour::getDatasets();
+        foreach ($datasets as $id => $file) {
             $dataset = Dataset::fromLimitedArray($file->header(), ['id', 'title', 'properties']);
             $name = $dataset->getName();
             $sublist = [];
             foreach ($dataset->getProperties() as $prop) {
                 $sublist["$id--prop--$prop"] = $prop;
+                // check if prop is match for current prop - if so, remove current prop, as it is valid
+                if ($current_prop && ($current_prop === $prop)) $current_prop = null;
             }
             $list[] = [$name => $sublist];
         }
+        
+        // add current prop if invalid
+        if ($current_prop !== null) {
+            // regenerate current prop - might have been stripped of form 'dataset_id--prop--property'
+            $list[Utils::getStr($update, 'dataset_prop')] = 'Invalid, please remove';
+        }
+
         return array_merge(['none' => 'None', 'coords' => 'Coordinates'], $list);
-    }
-
-    // used for datasets
-
-    /**
-     * Get all properties for a given dataset.
-     * - Include option for 'none' (optional, useful for something like name_prop where this might be desirable)
-     * 
-     * @param MarkdownFile $file
-     * @param bool $include_none
-     * @return array [$prop => $prop]
-     */
-    public static function getDatasetPropertyList($file, $include_none) {
-        $props = Dataset::fromLimitedArray($file->header(), ['properties'])->getProperties();
-        $list = array_combine($props, $props);
-        if ($include_none) $list = array_merge(['none' => 'None'], $list);
-        return $list ?? [];
-    }
-
-    /**
-     * Get all properties for a given dataset, but with order possibly modified by existing auto popup properties. Essentially: Current options will be displayed in the order the list is given. So if a dataset has auto props 'f, b, a, c' and props 'a, b, c, d, e, f' the auto props will be shown as 'a, b, c, f'. Instead, the list would need to go 'f, b, a, c, d, e' so that the existing auto props are displayed correctly.
-     * 
-     * @param MarkdownFile $file
-     * @return array [$prop => $prop]
-     */
-    public static function getAutoPopupOptions($file) {
-        $dataset = Dataset::fromLimitedArray($file->header(), ['properties', 'auto_popup_properties']);
-        // first add exiting auto popup props as array keys so that they come first and in correct order
-        $list = array_flip($dataset->getAutoPopupProperties());
-        // next add the full list of prop => prop - any key not already in list will be added, and any key already in list will receive correct value
-        $props = $dataset->getProperties();
-        $list = array_merge($list, array_combine($props, $props));
-        return $list;
-    }
-
-    /**
-     * Get all properties for a given dataset as text input fields
-     * 
-     * @param MarkdownFile $file
-     * @return array
-     */
-    public static function getFeaturePropertiesFields($file) {
-        $fields = [];
-        // get dataset and list of properties
-        $props = Dataset::fromLimitedArray($file->header(), ['properties'])->getProperties();
-        foreach ($props as $prop) {
-            $fields[".$prop"] = [
-                'type' => 'text',
-                'label' => $prop,
-            ];
-        }
-        return $fields;
-    }
-
-    /**
-     * Return 'hidden' for line datasts, default value for others (allows selectively hiding shape options in blueprint)
-     * 
-     * @param MarkdownFile $file
-     * @param string $default
-     * @return string
-     */
-    public static function getShapeFillType($file, $default) {
-        $type = Feature::validateFeatureType($file->header()['feature_type']);
-        if (str_contains($type, 'LineString')) {
-            // LineString or MultiLineString
-            return 'hidden';
-        }
-        return $default;
-    }
-
-    /**
-     * Dynamically set default colors for path fillColor, active path color, and active path fillColor
-     * 
-     * @param MarkdownFile $file
-     * @param string $key
-     * @return string
-     */
-    // TODO: Make sure this still matches settings
-    public static function getDatasetDefaults($file, $key) {
-        $header = $file->header();
-        $path = Utils::getArr($header, 'path');
-        switch ($key) {
-            case 'path_fillColor':
-            case 'active_path_color':
-                // default: path color ?? default color
-                return Utils::getStr($path, 'color', null) ?? Dataset::DEFAULT_PATH['color'];
-            case 'active_path_fillColor':
-                // default: regular fill color
-                return Utils::getStr($path, 'fillColor', null) ?? self::getDatasetDefaults($file, 'path_fillColor');
-        }
-        return '';
-    }
-
-    // getters for tour blueprints
-
-    /**
-     * Return an array of fieldsets, one for each dataset in the tour's 'datasets' list. Dynamically determines if icon or shape options should be included. Dynamically sets defaults based on current dataset values. Dynamically determines if legend summary/symbol_alt defaults should be included (based on other tour override settings). Dynamically determines appropriate icon/shape option defaults (based on dataset and tour override settings).
-     * 
-     * @param MarkdownFile $file
-     * @return array
-     */
-    public static function getTourDatasetFields($file) {
-        $fields = [];
-        $datasets = Utils::getArr($file->header(), 'datasets');
-        $dataset_overrides = Utils::getArr($file->header(), 'dataset_overrides');
-        foreach (array_column($datasets, 'id') as $id) {
-            if ($dataset_file = Utils::get(LeafletTour::getDatasets(), $id)) {
-                $overrides = Utils::getArr($dataset_overrides, $id);
-                $dataset = Dataset::fromArray(array_diff_key($dataset_file->header(), array_flip(['features']))); // just because we don't need features
-                // legend summary default: only if legend text is not set in tour
-                $legend_summary_default = $dataset->getLegend('summary');
-                if ($legend_summary_default && Utils::getStr((Utils::getArr($overrides, 'legend')), 'text')) $legend_summary_default = null;
-                // legend symbol alt default: only set if path color/icon file is not set in tour (could also include path fillColor, border color, or anything else in that list if desired)
-                $symbol_default = $dataset->getLegend('symbol_alt');
-                if ($symbol_default && (Utils::getStr((Utils::getArr($overrides, 'icon')), 'file', null) || Utils::getStr((Utils::getArr($overrides, 'path')), 'color', null))) $symbol_default = null;
-                $name = "header.dataset_overrides.$id";
-                $options = [
-                    "$name.auto_popup_properties" => [
-                        'type' => 'select',
-                        'label' => 'Add Properties to Popup Content',
-                        'description' => 'Properties selected here will be used instead of properties selected in the dataset header. If only \'None\' is selected, then no properties will be added to popup content.',
-                        'options' => array_merge(['none' => 'None'], array_combine($dataset->getProperties(), $dataset->getProperties())),
-                        'multiple' => true,
-                        'toggleable' => true,
-                        'validate' => [
-                            'type' => 'array'
-                        ],
-                        'default' => $dataset->getAutoPopupProperties(),
-                    ],
-                    "$name.attribution" => [
-                        'type' => 'text',
-                        'label' => 'Dataset Attribution',
-                        'toggleable' => true,
-                        'default' => $dataset->getAttribution(),
-                    ],
-                    'legend_section' => [
-                        'type' => 'section',
-                        'title' => 'Legend Options',
-                    ],
-                    "$name.legend.text" => [
-                        'type' => 'text',
-                        'label' => 'Description for Legend',
-                        'description' => 'If this field is set then any legend summary from the dataset will be ignored, whether or not the legend summary override is set.',
-                        'toggleable' => true,
-                        'default' => $dataset->getLegend('text'),
-                    ],
-                    "$name.legend.summary" => [
-                        'type' => 'text',
-                        'label' => 'Legend Summary',
-                        'description' => 'Optional shorter version of the legend description.',
-                        'toggleable' => true,
-                        'default' => $legend_summary_default,
-                    ],
-                    "$name.legend.symbol_alt" => [
-                        'type' => 'text',
-                        'label' => 'Legend Symbol Alt Text',
-                        'description' => 'A brief description of the icon/symbol/shape used for each feature.',
-                        'toggleable' => true,
-                        'default' => $symbol_default,
-                    ],
-                ];
-                // add icon or path options
-                if ($dataset->getType() === 'Point') {
-                    $options["icon_section"] = [
-                        'type' => 'section',
-                        'title' => 'Icon Options',
-                        'text' => 'Only some of the icon options in the dataset configuration are shown here, but any can be customized by directly modifying the page header in expert mode.',
-                    ];
-                    $options["$name.icon.file"] = [
-                        'type' => 'filepicker',
-                        'label' => 'Icon Image File',
-                        'description' => 'If not set, the default Leaflet marker will be used',
-                        'preview_images' => true,
-                        // 'folder' => Grav::instance()['locator']->findResource('user://') . '/data/leaflet-tour/icons',
-                        'folder' => 'user://data/leaflet-tour/images/icons',
-                        'toggleable' => true,
-                    ];
-                    $file = Utils::getStr($dataset->getIcon(), 'file');
-                    // determine appropriate defaults for icon height/width if not directly set by dataset
-                    try {
-                        if (!$file) $file = $overrides['icon']['file'];
-                    } catch (\Throwable $t) {} // do nothing
-                    if ($file) $default = Dataset::CUSTOM_MARKER_FALLBACKS;
-                    else $default = Dataset::DEFAULT_MARKER_FALLBACKS;
-                    $height = Utils::getType($dataset->getIcon(), 'height', 'is_int') ?? $default['height'];
-                    $width = Utils::getType($dataset->getIcon(), 'width', 'is_int') ?? $default['width'];
-                    if ($file) $options["$name.icon.file"]['default'] = $file;
-                    $options["$name.icon.width"] = [
-                        'type' => 'number',
-                        'label' => 'Icon Width (pixels)',
-                        'toggleable' => true,
-                        'validate' => [
-                            'min' => 1
-                        ],
-                        'default' => $width,
-                    ];
-                    $options["$name.icon.height"] = [
-                        'type' => 'number',
-                        'label' => 'Icon Height (pixels)',
-                        'toggleable' => true,
-                        'validate' => [
-                            'min' => 1
-                        ],
-                        'default' => $height,
-                    ];
-                } else {
-                    $options['path_section'] = [
-                        'type' => 'section',
-                        'title' => 'Shape Options',
-                        'text' => 'Other shape/path options can be customized by directly modifying the page header in expert mode.'
-                    ];
-                    $options["$name.path.color"] = [
-                        'type' => 'colorpicker',
-                        'label' => 'Shape Color',
-                        'default' => Utils::getStr($dataset->getStrokeOptions(), 'color'),
-                        'toggleable' => true,
-                    ];
-                    $options["$name.border.color"] = [
-                        'type' => 'colorpicker',
-                        'label' => 'Border Color',
-                        'toggleable' => true,
-                        'default' => Utils::getStr($dataset->getBorder(), 'color'), // shows default even if no stroke - can change to getBorderOptions() if only want default when border stroke is true
-                    ];
-                }
-                $fields[$name] = [
-                    'type' => 'fieldset',
-                    'title' => $dataset->getName(),
-                    'collapsible' => true,
-                    'collapsed' => true,
-                    'fields' => $options,
-                ];
-            }
-        }
-        return $fields;
-    }
-
-    /**
-     * Return list of all features from datasets in the tour (with dataset name for convenience). Optionally return only Point features instead, with coordinates instead of dataset name.
-     * 
-     * @param MarkdownFile $file
-     * @param bool $only_points
-     * @return array
-     */
-    public static function getTourFeatures($file, $only_points) {
-        $list = [];
-        $ids = array_column(Utils::getArr($file->header(), 'datasets'), 'id');
-        $all_datasets = LeafletTour::getDatasets();
-        $datasets = [];
-        foreach ($ids as $id) {
-            if ($file = Utils::get($all_datasets, $id)) $datasets[$id] = Dataset::fromArray($file->header());
-        }
-        if ($only_points) return self::getPoints($datasets);
-        // implied else
-        foreach (array_values($datasets) as $dataset) {
-            foreach ($dataset->getFeatures() as $id => $feature) {
-                $list[$id] = $feature->getName() . ' ... (' . $dataset->getName() . ')';
-            }
-        }
-        return $list;
-    }
-
-    /**
-     * Return list of all features from all Point datasets with coordinates included for convenience
-     * 
-     * @param array $datasets
-     * @return array
-     */
-    public static function getPoints($datasets) {
-        $list = [];
-        foreach (array_values($datasets) as $dataset) {
-            if ($dataset->getType() === 'Point') {
-                $features = array_map(function($feature) {
-                    return $feature->getName() . ' (' . implode(',', $feature->getCoordinates()) . ')';
-                }, $dataset->getFeatures());
-                $list = array_merge($list, $features);
-            }
-        }
-        return array_merge(['none' => 'None'], $list);
-    }
-
-    // getters for view blueprints
-
-    /**
-     * Return list of all included features with dataset name for convenience (or all Point features instead, not just included)
-     * 
-     * @param MarkdownFile $file
-     * @param bool $only_points
-     * @return array
-     */
-    public static function getViewFeatures($file, $only_points) {
-        $list = [];
-        $ids = array_column(Utils::getArr($file->header(), 'datasets'), 'id');
-        $all_datasets = LeafletTour::getDatasets();
-        $datasets = [];
-        foreach ($ids as $id) {
-            if ($dataset_file = Utils::get($all_datasets, $id)) $datasets[$id] = Dataset::fromArray($dataset_file->header());
-        }
-        if ($only_points) {
-            return self::getPoints($datasets);
-        }
-        // implied else
-        $tour = Tour::fromFile($file, [], [], $all_datasets);
-        foreach ($tour->getIncludedFeatures() as $id => $feature) {
-            $list[$id] = $feature->getName() . ' ... (' . $datasets[$feature->getDatasetId()]->getName() . ')';
-        }
-        return $list;
-    }
-
-    /**
-     * Return the id for the view's tour
-     * 
-     * @param MarkdownFile $file Tour markdown file
-     * @return string
-     */
-    public static function getTourIdForView($file) {
-        $id = Utils::getStr($file->header(), 'id');
-        return $id;
     }
 }
 ?>

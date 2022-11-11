@@ -39,7 +39,7 @@ form:
                     .id:
                       type: select
                       label: Select Dataset (required)
-                      data-options@: ['Grav\Plugin\LeafletTourPlugin::getDatasetsList', false]
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourDatasetsList'
                       validate:
                         required: true
 
@@ -72,7 +72,7 @@ form:
               title: Dataset Overrides
               collapsible: true
               collapsed: true
-              data-fields@: 'Grav\Plugin\LeafletTourPlugin::getTourDatasetFields'
+              data-fields@: 'Grav\Plugin\LeafletTourPlugin::getTourDatasetOverrides'
 
             options_fieldset:
               type: fieldset
@@ -297,7 +297,7 @@ form:
                         header.start.location:
                           type: select
                           label: Center Location
-                          data-options@: ['Grav\Plugin\LeafletTourPlugin::getTourFeatures', true]
+                          data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourPoints'
                         
                         start_cols1:
                           type: columns
