@@ -16,8 +16,6 @@ form:
             header.id:
               type: hidden
               default: 'tmp  id'
-              validate:
-                required: true
 
             datasets_fieldset:
               type: fieldset

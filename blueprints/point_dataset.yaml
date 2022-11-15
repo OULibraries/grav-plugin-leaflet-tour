@@ -16,8 +16,6 @@ form:
                       label: Dataset Feature Type
                       default: 'Point'
                       readonly: true
-                      validate:
-                        required: true
         features:
           fields:
             header.features:

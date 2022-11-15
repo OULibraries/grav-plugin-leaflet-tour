@@ -20,8 +20,6 @@ form:
                         MultiLineString: MultiLineString
                         Polygon: Polygon
                         MultiPolygon: MultiPolygon
-                      validate:
-                        required: true
         features:
           fields:
             header.features:

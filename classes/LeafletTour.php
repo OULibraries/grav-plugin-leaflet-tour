@@ -396,6 +396,8 @@ class LeafletTour {
             // tour exists and needs to be updated and validated
             $datasets = self::getDatasets();
             $views = self::getTourViews($file);
+            // make sure tour has the right id
+            $yaml['id'] = $id;
             // validate
             $update = Tour::validateTourUpdate($yaml, $datasets, self::getConfig(), $views, $popup_image_path);
         } else {
@@ -450,6 +452,8 @@ class LeafletTour {
                 $name = $tour_id . '_' . (Utils::getStr($yaml, 'title') ?: 'view');
                 $id = self::generateId(null, $name, array_keys($view_ids));
             }
+            // make sure existing view keeps original id
+            else $yaml['id'] = $id;
             return Tour::validateViewUpdate(array_merge($yaml, ['id' => $id]), $tour_file->header(), self::getDatasets(), self::getConfig());
         } else return array_merge($yaml, ['id' => $id]);
     }

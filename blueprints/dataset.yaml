@@ -47,8 +47,6 @@ form:
                     header.id:
                       type: hidden
                       default: 'tmp  id'
-                      validate:
-                        required: true
 
                     header.feature_type:
                       type: hidden

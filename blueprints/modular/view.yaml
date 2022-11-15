@@ -14,8 +14,6 @@ form:
             header.id:
               type: hidden
               default: 'tmp  id'
-              validate:
-                required: true
             
             tour_id:
               type: hidden
