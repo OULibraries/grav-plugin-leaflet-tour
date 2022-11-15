@@ -245,40 +245,32 @@ form:
                   underline: false
 
                 .bounds.north:
-                  type: number
+                  type: text
                   label: North
                   validate:
                     required: true
-                    min: -90
-                    max: 90
-                    step: .0000001
+                    pattern: '^-?\d*\.?\d*$'
 
                 .bounds.south:
-                  type: number
+                  type: text
                   label: South
                   validate:
                     required: true
-                    min: -90
-                    max: 90
-                    step: .0000001
+                    pattern: '^-?\d*\.?\d*$'
                     
                 .bounds.east:
-                  type: number
+                  type: text
                   label: East
                   validate:
                     required: true
-                    min: -180
-                    max: 180
-                    step: .0000001
+                    pattern: '^-?\d*\.?\d*$'
 
                 .bounds.west:
-                  type: number
+                  type: text
                   label: West
                   validate:
                     required: true
-                    min: -180
-                    max: 180
-                    step: .0000001
+                    pattern: '^-?\d*\.?\d*$'
 
                 .zoom_section:
                   type: section
