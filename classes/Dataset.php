@@ -220,6 +220,8 @@ class Dataset {
                     // new feature is valid, generate id and add
                     $feature_count = self::nextFeatureCount($yaml['id'], array_keys($old_features), $feature_count);
                     $feature_yaml['id'] = $yaml['id'] . "--$feature_count";
+                    // set name if no custom name or name prop
+                    if (!$feature_yaml['name']) $feature_yaml['name'] = $feature_yaml['id'];
                 }
                 else continue; // leave this iteration of the for loop - no feature to finish validating and adding
             } else {
