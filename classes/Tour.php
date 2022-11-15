@@ -458,6 +458,7 @@ class Tour {
         $list = [];
         $data = Grav::instance()['locator']->findResource('user-data://');
         foreach ($basemap_info as $info) {
+            if (!is_array($info)) continue;
             $file = Utils::getStr($info, 'file');
             if (File::instance("$data/$file")->exists()) $list[$file] = Utils::getStr($info, 'name') ?: $file;
         }
