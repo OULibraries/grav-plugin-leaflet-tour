@@ -127,6 +127,7 @@ form:
               type: textarea
               label: Default Tour Attribution
               description: Provide some default text to include in the tour footer.
+              default: Map created using [Leaflet](https://leafletjs.com/)
         
         basemaps:
           type: tab
