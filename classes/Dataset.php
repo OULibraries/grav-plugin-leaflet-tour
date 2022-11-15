@@ -292,11 +292,24 @@ class Dataset {
         }
         // only proceed if there is at least one valid feature
         if (empty($features)) return null;
+        $properties = array_keys($properties);
+        // set best guess for name property
+        $name_prop = self::determineNameProperty($properties);
+        // set feature names
+        $named_features = [];
+        foreach ($features as $feature) {
+            // id - default
+            $name = $feature['id'];
+            // name prop?
+            if ($name_prop && ($prop = Utils::getStr($feature['properties'], $name_prop))) $name = $prop;
+            $named_features[] = array_merge(['name' => $name], $feature);
+        }
         $dataset = [
             'id' => $id,
             'feature_type' => $type,
-            'features' => $features,
-            'properties' => array_keys($properties),
+            'features' => $named_features,
+            'properties' => $properties,
+            'name_property' => $name_prop,
             'title' => Utils::getStr($json, 'name', null) ?? Utils::getStr($json, 'title', null) ?? $id,
             'feature_count' => $feature_count,
             'upload_file_path' => Utils::getStr($json, 'upload_file_path', null),
@@ -308,8 +321,6 @@ class Dataset {
             $dataset['border'] = self::DEFAULT_BORDER;
             $dataset['active_border'] = self::DEFAULT_ACTIVE_BORDER;
         }
-        // set best guess for name property
-        $dataset['name_property'] = self::determineNameProperty($dataset['properties']);
         // return array
         return $dataset;
     }
