@@ -93,6 +93,10 @@ form:
                       type: colorpicker
                       label: Border Color
                       default: "#ffffff"
+                    
+                    header.border.weight:
+                      type: hidden
+                      default: 2
 
             header.path.weight:
               type: number
@@ -110,6 +114,10 @@ form:
             #     min: 0
             #     max: 1
             #     step: 0.01
+
+            header.path.opacity:
+              type: hidden
+              default: 1.0
 
             path_fill_display:
               data-type@: ['Grav\Plugin\LeafletTourPlugin::getShapeFillType', 'fieldset']
@@ -180,7 +188,7 @@ form:
               type: number
               label: Stroke Width (active)
               toggleable: true
-              default: 3
+              default: 5
               validate:
                 min: 1
 
@@ -230,5 +238,9 @@ form:
                     min: 0
                     max: 1
                     step: 0.01
+
+            header.active_border.weight:
+              type: hidden
+              default: 4
             
             # Note: Additional Leaflet options: lineCap, lineJoin, dashArray, dashOffset

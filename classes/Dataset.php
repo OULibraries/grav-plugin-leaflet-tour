@@ -40,12 +40,15 @@ class Dataset {
     ];
     const DEFAULT_ACTIVE_PATH = [
         'weight' => 5,
-        'fillOpacity' => 0.4
+        'fillOpacity' => 0.2
     ];
     const DEFAULT_BORDER = [
         'stroke' => true,
         'color' => '#ffffff',
         'weight' => 2,
+    ];
+    const DEFAULT_ACTIVE_BORDER = [
+        'weight' => 4,
     ];
     // Default options for icon when no file is defined (default icon used), used when getting icon options
     const DEFAULT_MARKER_FALLBACKS = [
@@ -303,6 +306,7 @@ class Dataset {
             $dataset['path'] = self::DEFAULT_PATH;
             $dataset['active_path'] = self::DEFAULT_ACTIVE_PATH;
             $dataset['border'] = self::DEFAULT_BORDER;
+            $dataset['active_border'] = self::DEFAULT_ACTIVE_BORDER;
         }
         // set best guess for name property
         $dataset['name_property'] = self::determineNameProperty($dataset['properties']);
