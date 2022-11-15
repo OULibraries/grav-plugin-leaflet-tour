@@ -33,30 +33,26 @@ form:
                 #       fields:
 
                 .coordinates.lng:
-                  type: number
+                  type: text
                   label: Longitude (required)
-                  description: Use degrees with a maximum of seven decimal places.
+                  description: Decimal degrees
                   ordering@: .custom_name
                   validate:
                     required: true
-                    min: -180
-                    max: 180
-                    step: .0000001
+                    pattern: '^-?\d*\.?\d*$'
 
                     # .col2:
                     #   type: column
                     #   fields:
 
                 .coordinates.lat:
-                  type: number
+                  type: text
                   label: Latitude (required)
-                  description: Use degrees with a maximum of seven decimal places.
+                  description: Decimal degrees
                   ordering@: .coordinates.lng
                   validate:
                     required: true
-                    min: -90
-                    max: 90
-                    step: .0000001
+                    pattern: '^-?\d*\.?\d*$'
 
         icon:
           type: tab

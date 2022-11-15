@@ -181,13 +181,11 @@ form:
                               type: column
                               fields:
                                 header.start.distance:
-                                  type: number
+                                  type: text
                                   label: Distance from Center
-                                  description: Max of seven decimal places
                                   size: long
                                   validate:
-                                    min: 0
-                                    step: .0000001
+                                    pattern: '^-?\d*\.?\d*$'
 
                             start_col0_2:
                               type: column
@@ -215,25 +213,21 @@ form:
                               type: column
                               fields:
                                 header.start.lng:
-                                  type: number
+                                  type: text
                                   label: Center Longitude
-                                  description: Use degrees with a maximum of seven decimal places.
+                                  description: Decimal degrees
                                   validate:
-                                    min: -180
-                                    max: 180
-                                    step: .0000001
+                                    pattern: '^-?\d*\.?\d*$'
 
                             start_col2:
                               type: column
                               fields:
                                 header.start.lat:
-                                  type: number
+                                  type: text
                                   label: Center Latitude
-                                  description: Use degrees with a maximum of seven decimal places.
+                                  description: Decimal degrees
                                   validate:
-                                    min: -90
-                                    max: 90
-                                    step: .0000001
+                                    pattern: '^-?\d*\.?\d*$'
 
                     header.start_bounds_fieldset:
                       type: fieldset
@@ -255,18 +249,14 @@ form:
                                   label: North
                                   description: Latitude for the Northern (top) boundary of the map.
                                   validate:
-                                    min: -90
-                                    max: 90
-                                    step: .0000001
+                                    pattern: '^-?\d*\.?\d*$'
 
                                 header.start.bounds.south:
                                   type: number
                                   label: South
                                   description: Latitude for the Southern (bottom) boundary of the map.
                                   validate:
-                                    min: -90
-                                    max: 90
-                                    step: .0000001
+                                    pattern: '^-?\d*\.?\d*$'
 
                             s_col2:
                               type: column
@@ -277,15 +267,11 @@ form:
                                   label: East
                                   description: Longitude for the Eastern (right) boundary of the map.
                                   validate:
-                                    min: -180
-                                    max: 180
-                                    step: .0000001
+                                    pattern: '^-?\d*\.?\d*$'
 
                                 header.start.bounds.west:
                                   type: number
                                   label: West
                                   description: Longitude for the Western (left) boundary of the map.
                                   validate:
-                                    min: -180
-                                    max: 180
-                                    step: .0000001
+                                    pattern: '^-?\d*\.?\d*$'
