@@ -106,8 +106,8 @@ form:
               highlight: 1
               default: 1
               options:
-                1: Right
                 0: Left
+                1: Right
               validate:
                 type: bool
 
