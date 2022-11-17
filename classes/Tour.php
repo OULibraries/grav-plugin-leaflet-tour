@@ -456,7 +456,7 @@ class Tour {
      */
     public static function getBlueprintBasemapsOptions($yaml, $basemap_info) {
         $list = [];
-        $data = Grav::instance()['locator']->findResource('user-data://');
+        $data = Grav::instance()['locator']->getBase() . '/' . Utils::BASEMAP_ROUTE;
         foreach ($basemap_info as $info) {
             if (!is_array($info)) continue;
             $file = Utils::getStr($info, 'file');
