@@ -189,7 +189,9 @@ class LeafletTourPlugin extends Plugin {
 
     // getters for tour/view blueprints
     public static function getBasemapList(): array {
-        if ($file = Utils::getTourFile() ?? Utils::getTourFileFromView()) return Tour::getBlueprintBasemapsOptions($file->header(), Utils::getArr(LeafletTour::getConfig(), 'basemap_info'));
+        $config = Utils::getArr(LeafletTour::getConfig(), 'basemap_info');
+        if ($file = Utils::getTourFile() ?? Utils::getTourFileFromView()) return Tour::getBlueprintBasemapsOptions($file->header(), $config);
+        else return Tour::getBlueprintBasemapsOptions([], $config);
     }
 
     // getters for tour blueprints
