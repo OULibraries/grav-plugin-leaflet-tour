@@ -14,10 +14,6 @@ form:
             header.id:
               type: hidden
               default: 'tmp  id'
-            
-            tour_id:
-              type: hidden
-              data-default@: 'Grav\Plugin\LeafletTourPlugin::getTourIdForView'
 
             shortcodes_fieldset:
               type: fieldset

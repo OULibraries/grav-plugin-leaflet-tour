@@ -221,9 +221,4 @@ class LeafletTourPlugin extends Plugin {
         if (($tour = Utils::getTourFileFromView()) && ($view = Utils::getViewFile())) return Tour::getBlueprintPointOptions($tour->header(), LeafletTour::getDatasets(), $view->header());
         else return [];
     }
-
-    public static function getTourIdForView(): string {
-        if ($file = Utils::getTourFileFromView()) return Utils::getStr($file->header(), 'id');
-        else return '';
-    }
 }

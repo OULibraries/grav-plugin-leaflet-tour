@@ -430,7 +430,7 @@ class LeafletTour {
      */
     public static function handleViewPageSave($page): void {
         $id = Utils::getStr($page->getOriginalData()['header'], 'id'); // use old id - id should never be modified
-        $update = self::updateViewPage($id, $page->value('tour_id'), $page->header()->jsonSerialize());
+        $update = self::updateViewPage($id, $page->path(), $page->header()->jsonSerialize());
         $page->header($update);
     }
     /**
@@ -444,16 +444,22 @@ class LeafletTour {
      * @param array $yaml The actual updated view yaml (which requires validation)
      * @return array The updated view yaml with any modifications needed
      */
-    public static function updateViewPage($id, $tour_id, $yaml) {
-        if ($tour_file = Utils::get(self::getTours(), $tour_id)) {
+    public static function updateViewPage($id, $path, $yaml) {
+        // take view path, remove view folder name
+        $path = explode('/', $path);
+        array_pop($path);
+        $path = implode('/', $path);
+        $tour_file = MarkdownFile::instance("$path/tour.md");
+        // what data do we maybe have for finding tour id?
+        if ($tour_file->exists()) {
             $view_ids = array_keys(self::getTourViews($tour_file));
             if (!in_array($id, $view_ids)) {
                 // generate valid id
-                $name = $tour_id . '_' . (Utils::getStr($yaml, 'title') ?: 'view');
+                $name = Utils::getStr($tour_file->header(), 'id') . '_' . (Utils::getStr($yaml, 'title') ?: 'view');
                 $id = self::generateId(null, $name, array_keys($view_ids));
             }
             // make sure existing view keeps original id
-            else $yaml['id'] = $id;
+            // else $yaml['id'] = $id;
             return Tour::validateViewUpdate(array_merge($yaml, ['id' => $id]), $tour_file->header(), self::getDatasets(), self::getConfig());
         } else return array_merge($yaml, ['id' => $id]);
     }
