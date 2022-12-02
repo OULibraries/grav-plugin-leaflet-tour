@@ -978,7 +978,7 @@ class LeafletTour {
         $update = Utils::getArr($config, 'update');
         $id = Utils::getStr($update, 'dataset', null);
         // add if invalid
-        if (($id !== null) && !isset($datasets[$id])) $list[$id] = 'Invalid, please remove';
+        if (($id !== null) && ($id !== 'none') && !isset($datasets[$id])) $list[$id] = 'Invalid, please remove';
         return $list;
     }
     /**
@@ -1012,7 +1012,7 @@ class LeafletTour {
         }
         
         // add current prop if invalid
-        if ($current_prop !== null) {
+        if (($current_prop !== null) && ($current_prop !== 'none')) {
             // regenerate current prop - might have been stripped of form 'dataset_id--prop--property'
             $list[Utils::getStr($update, 'dataset_prop')] = 'Invalid, please remove';
         }
