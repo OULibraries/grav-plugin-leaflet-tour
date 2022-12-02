@@ -362,7 +362,7 @@ form:
             update.dataset:
               type: select
               label: Dataset to Update
-              data-options@: ['Grav\Plugin\LeafletTourPlugin::getDatasetsList', true]
+              data-options@: 'Grav\Plugin\LeafletTourPlugin::getUpdateDatasetsList'
 
             update.dataset_prop:
               type: select_optgroup
