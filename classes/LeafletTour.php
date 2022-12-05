@@ -863,18 +863,18 @@ class LeafletTour {
                 // note which settings are being applied
                 $msg .= "\r\n\r\n$match_method_msg ";
                 if ($add) {
-                    $msg .= "\r\n\r\n " . self::UPDATE_MSGS['standard_add'] . ': ' . sprintf(self::UPDATE_MSGS['standard_added'], (count($upload_dataset->getFeatures()) - count($matches)));
+                    $msg .= "\r\n\r\n" . self::UPDATE_MSGS['standard_add'] . ': ' . sprintf(self::UPDATE_MSGS['standard_added'], (count($upload_dataset->getFeatures()) - count($matches)));
                 }
                 if ($modify) {
-                    $msg .= "\r\n\r\n " . self::UPDATE_MSGS['standard_modify'] . ' ';
+                    $msg .= "\r\n\r\n" . self::UPDATE_MSGS['standard_modify'] . ' ';
                     if ($matches_msg) $msg .= self::UPDATE_MSGS['standard_matches'] . "\r\n$matches_msg";
                     else $msg .= self::UPDATE_MSGS['standard_no_matches'];
                 }
                 if ($remove) {
-                    $msg .= "\r\n\r\n " . self::UPDATE_MSGS['standard_remove'] . ' ';
+                    $msg .= "\r\n\r\n" . self::UPDATE_MSGS['standard_remove'] . ' ';
                     $removed = array_diff(array_keys($dataset->getFeatures()), array_values($matches));
                     $removed_msg = self::printMatches($removed, $dataset->getFeatures());
-                    if ($removed_msg) $msg .= self::UPDATE_MSGS['standard_removed'] . "\r\n$removed_msg";
+                    if ($removed_msg) $msg .= sprintf(self::UPDATE_MSGS['standard_removed'], count($removed)) . "\r\n$removed_msg";
                     else $msg .= self::UPDATE_MSGS['standard_removed_none'];
                 }
                 $tmp_dataset = Dataset::fromUpdateStandard($matches, $dataset, $upload_dataset, $add, $modify, $remove);
