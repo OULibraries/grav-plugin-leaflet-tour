@@ -430,7 +430,7 @@ class LeafletTour {
      */
     public static function handleViewPageSave($page): void {
         $id = Utils::getStr($page->getOriginalData()['header'], 'id'); // use old id - id should never be modified
-        $update = self::updateViewPage($id, $page->path(), $page->header()->jsonSerialize());
+        $update = self::updateViewPage($id, $page->route(), $page->header()->jsonSerialize());
         $page->header($update);
     }
     /**
@@ -448,7 +448,7 @@ class LeafletTour {
         // take view path, remove view folder name
         $path = explode('/', $path);
         array_pop($path);
-        $path = implode('/', $path);
+        $path = Grav::instance()['locator']->findResource('page://') . implode('/', $path);
         $tour_file = MarkdownFile::instance("$path/tour.md");
         // what data do we maybe have for finding tour id?
         if ($tour_file->exists()) {
