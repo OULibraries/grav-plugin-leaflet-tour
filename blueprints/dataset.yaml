@@ -142,7 +142,7 @@ form:
               validate:
                 type: commalist
 
-            header.rename_properties:
+            rename_properties:
               type: fieldset
               title: Rename Properties
               collapsed: true
