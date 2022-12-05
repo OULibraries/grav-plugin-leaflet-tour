@@ -408,7 +408,7 @@ function adjustMap() {
 // ---------- Map/Tour Initialization ---------- //
 const map = createMap(tour_options);
 map.fitBounds([[1,1],[2,2]]);
-if (tour_options.show_map_location_in_url) hash = new L.Hash(m);
+if (tour_options.show_map_location_in_url) hash = new L.Hash(map);
 tour.tile_layer = createTileServer(tour_options.tile_server);
 map.addLayer(tour.tile_layer);
 tour.basemaps = createBasemaps(tour_basemaps);
