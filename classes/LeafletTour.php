@@ -928,11 +928,13 @@ class LeafletTour {
         if (empty($matches)) return null;
         $count = 0;
         $msg = '';
-        foreach (array_values($matches) as $id) {
-            $msg .= "\r\n\t- " . $features[$id]->getName() . " ($id)";
+        // limit features to matches
+        $features = array_intersect_key($features, array_flip(array_values($matches)));
+        foreach ($features as $id => $feature) {
+            $msg .= "\r\n\t- " . $feature->getName() . " ($id)";
             $count++;
-            if (($count >= 15) && count($matches) > 15) {
-                $number = count($matches) - 15;
+            if (($count >= 15) && count($features) > 15) {
+                $number = count($features) - 15;
                 $msg .= "\r\n\t- ...and $number more";
                 break;
             }
