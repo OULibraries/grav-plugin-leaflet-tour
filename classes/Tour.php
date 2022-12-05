@@ -889,7 +889,15 @@ class Tour {
      * @return array
      */
     public static function getConfigBasemapInfo($plugin_config) {
-        return array_column(Utils::getArr($plugin_config, 'basemap_info'), null , 'file');
+        $info = [];
+        foreach (Utils::getArr($plugin_config, 'basemap_info') as $basemap) {
+            $filename = $basemap['file'];
+            $file = File::instance(Utils::BASEMAP_ROUTE . $filename);
+            if ($file->exists()) $info[$filename] = $basemap;
+        }
+        return $info;
+        // $info = array_column(Utils::getArr($plugin_config, 'basemap_info'), null , 'file');
+        // return array_column(Utils::getArr($plugin_config, 'basemap_info'), null , 'file');
     }
     /**
      * turn [id => file] into limited list of [id => Dataset]
