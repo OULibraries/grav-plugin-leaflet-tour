@@ -14,8 +14,6 @@ class Utils {
     /** Access uploaded icon image paths as 'route/filename' */
     const ICON_ROUTE = 'user/data/leaflet-tour/images/icons';
 
-    const STREAMS = ['user', 'page', 'image', 'account', 'environment', 'asset', 'blueprints', 'config', 'plugins', 'themes', 'theme', 'languages', 'user-data', 'system', 'cache', 'log', 'backup', 'tmp'];
-
     const TILE_SERVER_LIST = [
         'custom' => 'Custom URL',
         'other' => 'Other Leaflet Providers Tile Server',
