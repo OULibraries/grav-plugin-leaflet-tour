@@ -7,9 +7,12 @@ use RocketTheme\Toolbox\File\MarkdownFile;
 
 class Utils {
     
-    const BASEMAP_ROUTE = 'user/data/leaflet-tour/images/basemaps/';
-    const UPDATE_ROUTE = '/leaflet-tour/datasets/update/';
-    const IMAGE_ROUTE = 'user/data/leaflet-tour/images/';
+    /** Access uploaded basemap image paths as 'route/filename' or icon paths as 'route/icons/filename */
+    const BASEMAP_ROUTE = 'user/data/leaflet-tour/images/basemaps';
+    /** Access files in update folder as 'base/route/filename' */
+    const UPDATE_ROUTE = 'user/data/leaflet-tour/datasets/update';
+    /** Access uploaded icon image paths as 'route/filename' */
+    const ICON_ROUTE = 'user/data/leaflet-tour/images/icons';
 
     const STREAMS = ['user', 'page', 'image', 'account', 'environment', 'asset', 'blueprints', 'config', 'plugins', 'themes', 'theme', 'languages', 'user-data', 'system', 'cache', 'log', 'backup', 'tmp'];
 

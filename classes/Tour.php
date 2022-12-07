@@ -892,7 +892,7 @@ class Tour {
         $info = [];
         foreach (Utils::getArr($plugin_config, 'basemap_info') as $basemap) {
             $filename = $basemap['file'];
-            $file = File::instance(Utils::BASEMAP_ROUTE . $filename);
+            $file = File::instance(Utils::BASEMAP_ROUTE . "/$filename");
             if ($file->exists()) $info[$filename] = $basemap;
         }
         return $info;
@@ -1211,8 +1211,8 @@ class Tour {
                         'class' => 'basemap',
                     ];
                     // Use icon if provided
-                    if ($icon = Utils::getStr($basemap, 'icon')) $info['icon'] .= "icons/$icon";
-                    else $info['icon'] .= $file;
+                    if ($icon = Utils::getStr($basemap, 'icon')) $info['icon'] .= "/icons/$icon";
+                    else $info['icon'] .= "/$file";
                     $legend[] = $info;
                 }
             }
@@ -1241,7 +1241,7 @@ class Tour {
     public function getBasemapData() {
         return array_filter(array_map(function($info) {
             if ($bounds = Utils::getBounds(Utils::getArr($info, 'bounds'))) return [
-                'url' => Utils::BASEMAP_ROUTE . $info['file'],
+                'url' => Utils::BASEMAP_ROUTE . '/' . $info['file'],
                 'bounds' => Utils::getBounds(Utils::getArr($info, 'bounds')),
                 'options' => [
                     'max_zoom' => Utils::getType($info, 'max_zoom', 'is_int'),

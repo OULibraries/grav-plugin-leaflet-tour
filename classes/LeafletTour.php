@@ -668,7 +668,7 @@ class LeafletTour {
      * @return string
      */
     private static function getUpdateFolder(): string {
-        return Grav::instance()['locator']->findResource('user-data://') . '/leaflet-tour/datasets/update';
+        return Grav::instance()['locator']->getBase() . '/' . Utils::UPDATE_ROUTE;
     }
     /**
      * removes id and '--prop--'

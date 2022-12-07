@@ -645,7 +645,7 @@ class Dataset {
      */
     public function getIconOptions() {
         $icon = $this->getIcon(); // icon options as provided by user
-        $route = Utils::IMAGE_ROUTE . 'icons';
+        $route = Utils::ICON_ROUTE;
         $defaults = []; // fallback values for invalid/null values in icon, needs to be set
         $options = []; // icon options to return
         // determine correct defaults to use and set icon url
