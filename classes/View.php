@@ -62,7 +62,8 @@ class View {
         $this->extras = array_diff_key($options, array_flip($keys));
     }
     /**
-     * Creates view from file
+     * - Creates view from file
+     * - Sets file
      * 
      * @param MarkdownFile $file
      * @param array $basemap_ids

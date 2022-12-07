@@ -37,7 +37,7 @@ class Feature {
     private $dataset_id, $type, $name, $id, $custom_name, $popup, $hide, $coordinates, $properties, $extras;
     
     /**
-     * Prepares a feature object from a set of options. Provided coordinates are assumed to be valid - should be validated beforehand if necessary.
+     * Prepares a feature object from a set of options (sets and validates all options). Provided coordinates are assumed to be valid - should be validated beforehand if necessary.
      * - Sets and validates data type for all expected yaml options (no validation for coords)
      * - Accepts popup as either array (popup with key popup_content) or string (popup_content) (priority: string)
      * - Sets type and dataset_id as provided by dataset
@@ -79,7 +79,9 @@ class Feature {
     /**
      * Creates an initial yaml array for a feature from an entry in a geojson array.
      * - Returns array with coordinates and properties if coordinates are valid (otherwise null)
-     * - If dataset_type is provided, coordinates type must match to be considered valid
+     * - Validates feature type
+     * - Validates coordinates
+     * - If dataset type is provided, feature type must match
      * 
      * @param array $json The geojson feature, must be valid
      * @param string|null $dataset_type
@@ -98,7 +100,7 @@ class Feature {
     }
 
     /**
-     * Validates yaml for new or updated feature, called when valdiating a dataset as a whole
+     * Validates yaml for new or updated feature, called when validating a dataset as a whole
      * - Replaces invalid coords with default coords
      * - If no default coords and provided coords are invalid, returns null
      * - Modifies popup content if path is provided
@@ -130,6 +132,7 @@ class Feature {
 
     /**
      * Returns content that can be included in the dataset page header
+     * - Returns all expected values
      * 
      * @return array [id, name, custom_name, hide, popup => [popup_content], properties, coordinates]
      */
@@ -168,6 +171,8 @@ class Feature {
 
     /**
      * Returns the subset of the feature's properties specified by the input (and only for properties that have values)
+     * - Result includes all/only properties specified that have values
+     * - TODO: Preserve order of auto popup properties from dataset
      * 
      * @param array $auto_popup_properties
      * @return array [key => value]
@@ -240,7 +245,9 @@ class Feature {
     // feature utils
 
     /**
-     * Ensures that type is one of the valid geojson feature types, uses Point if no match (ignoring caps) is found
+     * Ensures that type is one of the valid geojson feature types, uses Point if no match (ignoring caps) is found. Returns either the matching feature type (ignoring caps) or 'Point'
+     * - Returns matching feature type, ignores/corrects caps
+     * - Returns 'Point' if type is not string or does not match anything
      * 
      * @param string $type Hopefully a valid feature type
      * @return string $type, possibly with modified capitalization, otherwise (invalid type) return 'Point'
@@ -251,7 +258,8 @@ class Feature {
     }
     /**
      * Turns valid json coordinates into yaml. Coordinates are assumed to be valid - does not validate.
-     * - Turns points into array with lng and lat, everything else into json encoded strings
+     * - Turns points into array with lng and lat
+     * - Turns non-points (shapes) into json encoded strings
      * - Returns null if something goes wrong (but not necessarily if coordinates are invalid)
      * 
      * @param array $coordinates Coordinates in json form, must be valid
@@ -268,7 +276,8 @@ class Feature {
     }
     /**
      * Turns valid yaml coordinates into json. Coordinates are assumed to be valid - does not validate.
-     * - Turns both point and shapes into accurate json
+     * - Turns point with lng and lat into accurate json
+     * - Turns shape with json string into accurate json
      * - Returns null if something goes wrong (but not necessarily if coordinates are invalid)
      * 
      * @param array|string $coordinates Coordinates in yaml form, must be valid
@@ -291,6 +300,7 @@ class Feature {
     }
     /**
      * Takes coordinates in yaml form and validates them
+     * - Returns valid coordinates as yaml, otherwise null (self::validateJsonCoordinates)
      * 
      * @param mixed $yaml (string with json or ['lng', 'lat'])
      * @param string $type (feature type) Must be a string, if value does not match one of the valid types, will be replaced with 'Point'
@@ -307,6 +317,7 @@ class Feature {
     }
     /**
      * Validates feature coordinates
+     * - Calls the appropriate validation method for the type provided
      * 
      * @param array $coordinates (json array)
      * @param string $type, should have been validated, will return null if type is not one of the valid feature types
@@ -325,6 +336,9 @@ class Feature {
     }
     /**
      * Validates coordinates: Must be an array of valid points
+     * - Returns valid coordinates or null
+     * - Input must be an array with at least two values
+     * - All values in input array must be valid points
      * 
      * @param array $coordinates Should be an array of points (function validates type)
      * @return array|null $coordinates if valid
@@ -340,6 +354,9 @@ class Feature {
     }
     /**
      * Validates coordinates: Must be an array of valid LineStrings
+     * - Returns valid coordinates or null
+     * - Input must be an array with at least one value
+     * - All values in input array must be valid LineStrings
      * 
      * @param array $coordinates Should be an array of LineStrings (function validates type)
      * @return array|null $coordinates if valid
@@ -355,6 +372,8 @@ class Feature {
     }
     /**
      * Linear ring requires at least four points, with the first and last matching.
+     * - Input must be a valid LineString
+     * - Input must have at least three unique values
      * 
      * @param array $coordinates Should be an array with at least three points (function validates type)
      * @return array|null $coordinates if valid, possibly modified if first and last points did not match (to close the ring)
@@ -370,6 +389,11 @@ class Feature {
     }
     /**
      * Validates coordinates: Must be an array of linear rings
+     * - Returns valid coordinates or null
+     * - Input must be an array with at least one value
+     * - All values in input array must be valid LineStrings
+     * - All values in input array must be valid linear rings (at leasts three unique values)
+     * - For each value in input array, adds additional point at end if needed to ensure that first and last points match
      * 
      * @param array $coordinates Should be an array of linear rings (function validates type)
      * @return array|null $coordinates if valid, possibly modified to close a given linear ring
@@ -387,6 +411,9 @@ class Feature {
     }
     /**
      * Validates coordinates: Must be an array of Polygons
+     * - Returns valid coordinates or null
+     * - Input must be an array with at least one value
+     * - All values in input array must be valid Polygons (modified if necessary)
      * 
      * @param array $coordinates Should be an array of polygons (function validates type)
      * @return array|null $coordinates if valid, possibly modified to close linear rings as needed
@@ -405,6 +432,9 @@ class Feature {
 
     /**
      * Prepends provided path to image paths for markdown images where the image path does not start with dot, slash, http, or a stream (has ://). Called when dataset or tour page is saved to ensure that any popup images uploaded to the dataset/tour page can be accessed wherever the popup is viewed.
+     * - Only modifies markdown images
+     * - Does not modify images where path begins with: dot (.), slash (/), or http
+     * - Does not modify images where path has a stream (indicated by ://)
      * 
      * @param string|null $content
      * @param string $path

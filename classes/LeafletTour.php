@@ -61,7 +61,7 @@ class LeafletTour {
 
     /**
      * Return all files in user/pages (any level of nesting) that end with '_dataset.md', indexed by id
-     * Just a wrapper for getFiles that returns datasets
+     * - Just a wrapper for getFiles that returns datasets
      * 
      * @return array
      */
@@ -70,7 +70,7 @@ class LeafletTour {
     }
     /**
      * Return all files in user/pages (any level of nesting) that end with 'tour.md', indexed by id
-     * Just a wrapper for getFiles that returns tours
+     * - Just a wrapper for getFiles that returns tours
      * 
      * @return array
      */
@@ -254,7 +254,7 @@ class LeafletTour {
     }
     /**
      * Loop through new files, look for files that don't exist in old files list and turn any found into new datasets
-     * - Creates new datasets for any valid new files (not in old files)
+     * - Creates and saves new datasets for any valid new files (not in old files)
      * 
      * @param array $data_files All uploaded dataset files from plugin yaml (should be json and js files only)
      * @param array $old_files The previous value for uploaded dataset files, before the plugin config was modified and saved
@@ -466,6 +466,7 @@ class LeafletTour {
     /**
      * Loops through all tours. Validates any that use the dataset with the provided id (as well as all of their views). Handles any renamed properties (dataset overrides for auto popup properties).
      * - Calls validation function for all tours and saves output
+     * - Only modifies tours that use the dataset referenced
      * 
      * @param string $dataset_id The id for the dataset that has been modified or deleted. Only tours that contain this dataset id will be validated.
      * @param array $update The new updated content for the dataset (to make sure that the correct values are checked). Provide an empty array if the dataset has been deleted.
@@ -580,7 +581,8 @@ class LeafletTour {
         return "<button type='button' id='$button_id' aria-haspopup='true' data-feature='$feature_id' class='btn view-popup-btn'>$text</button>";
     }
     /**
-     * Removes starting and ending paragraph tags from the provided text
+     * - Removes starting and ending paragraph tags from the provided text
+     * - Only modifies text if it has both starting and ending tags
      * 
      * @param string $text The text to modify
      * @return string $text, but with starting and ending paragraph tags removed (if they existed)
@@ -592,15 +594,15 @@ class LeafletTour {
 
     /**
      * Updates an existing dataset based on plugin options.
-     * - Cancels update if uploaded file was removed
      * - Returns error message if uploaded dataset fails to parse
      * - Returns error message if status is confirm, nothing has changed, but an issue is present
      * - Removes previous confirm error messages (if present) if status is confirm but confirm is not true
+     * - Returns error message if status is not confirm (or is confirm but things have changed) and there are issues
+     * - Cancels update if uploaded file was removed
+     * - Builds update file and message if status is not confirm (or is, but things have changed) and there are no issues (note: file is built to prevent having to do everything all over again when it is time to update)
      * - Updates the dataset if status is confirm, confirm is true, and there are no changes or issues
      * - Validates tours after updating dataset
      * - Clears update settings (deletes file, etc.) after updating dataset
-     * - Returns error message if status is not confirm (or is confirm but things have changed) and there are issues
-     * - Builds update file and message if status is not confirm (or is, but things have changed) and there are no issues (note: file is built to prevent having to do everything all over again when it is time to update)
      * 
      * @param array $old_update The previous plugin options - used to check what values (if any) have changed and whether or not the user has been given a chance to review potential changes to the dataset
      * @param array $new_update The new plugin options - used to determine what should happen next
@@ -812,8 +814,8 @@ class LeafletTour {
      * Matches features, creates a Dataset object using update settings, saves the dataset file as a temporary update file, and provides a detailed message indicating update options: Type of update, if standard - also what settings (add, modify, remove), replacement settings, matches found, what will happen to various features (matches, non-matches, ...)
      * - Indicates update type (replacement, removal, or standard) in message
      * - If features will be matched, indicates how they will be matched (all types)
-     * - If features are matched, includes list of matched features (all types, with exception)
-     * - Indicates if features are matched but there were no matches found (all types, with exception)
+     * - If features are matched and matches are found, includes list of matched features (replacement, removal)
+     * - Indicates whether or not matches were found (removal)
      * - For replacement update, indicates whether or not features will be matched (warning if not)
      * - For standard update, indicates which settings (add, remove, modify) were selected
      * - For standard update, if add, indicates how many features will be added
@@ -943,6 +945,7 @@ class LeafletTour {
     }
     /**
      * Provides a message indicating what settings are being used to match features
+     * - Returns appropriate message based on selected options
      * 
      * @param string|null $dataset_prop
      * @param string|null $file_prop

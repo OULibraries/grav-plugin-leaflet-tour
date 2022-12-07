@@ -123,6 +123,7 @@ class Dataset {
     }
     /**
      * Creates a new dataset from a valid markdown file
+     * - Sets all options from file, plus file
      * 
      * @param MarkdownFile $file
      * @return Dataset
@@ -132,6 +133,7 @@ class Dataset {
     }
     /**
      * Creates a new dataset from an array (equivalent to header data from a markdown file)
+     * - Sets all options from array
      * 
      * @param array $options
      * @return Dataset
@@ -141,6 +143,7 @@ class Dataset {
     }
     /**
      * Creates a dataset from an array, but only using the keys specified
+     * - Sets all options from array that are specified in input keys
      * 
      * @param array $options All dataset options
      * @param array $keys The keys to actually include
@@ -163,6 +166,7 @@ class Dataset {
      * - Generates new unique ids for new features (and updates feature_count accordingly)
      * - Renames feature properties if needed
      * - Provides correct path for modifying feature popup content images
+     * - Sets names for new features (yaml 'name')
      * - Uses constructor to validate all other values
      * 
      * @param array $yaml Dataset yaml to validate
@@ -251,6 +255,7 @@ class Dataset {
      * - Validates features - only includes features with valid coordinates
      * - Creates unique id for each valid feature
      * - Returns array if there is at least one valid feature, null otherwise
+     * - Sets yaml 'name' for each feature
      * - Sets properties list to properties from all valid features (invalid features don't contribute)
      * - Sets title/name, feature_count, and/or upload_file_path if provided in json
      * - Uses id if no title/name is provided
@@ -391,8 +396,9 @@ class Dataset {
     }
     /**
      * Creates a new dataset with most settings from the old dataset but features from the new dataset. Matched features retain some values.
-     * - Replaces existing features with features from new/update dataset (all features, matched or not, are kept in the same order as from the update dataset)
-     * - Retains values from matched features - id, some properties, custom name, etc.
+     * - Replaces existing features with features from new/update dataset
+     * - Places all features, matched or not, in the same order as from the update dataset (not the original)
+     * - Retains values from matched features - id, some properties, custom name, etc. (updates coordinates and properties)
      * - Creates new unique ids for new non-matched features (and updates feature_count to match)
      * - Merges original and update properties lists
      * - Does not modify anything else besides features, feature_count, and properties
@@ -430,7 +436,8 @@ class Dataset {
     }
     /**
      * Creates a new dataset with only those features that do not have matches
-     * - Removes all/only matching features from dataset features list (no other changes)
+     * - Removes all/only matching features from dataset features list
+     * - Changes nothing besides features list
      * 
      * @param array $matches List of all matches: [update_id => old_id] where update_id identifies the new feature data in the update dataset and old_id identifies the existing feature in the old dataset. In this case, only the old ids matter, as features are not being modified.
      * @param Dataset $old_dataset The existing dataset to be updated
@@ -447,9 +454,11 @@ class Dataset {
     }
     /**
      * Creates a new dataset with most settings from old dataset but features modified by new. Potentially: Adds new (from update, no match) features. Remove old (from original, no match) features. Modify coordinates and properties for matching features.
-     * - Iff modify, updates coordinates and properties for matching features (features remain in same order as from original dataset)
+     * - Iff modify, updates coordinates and properties for matching features
+     * - Keeps features (modified or not) in same order as from original dataset
      * - Iff remove, removes non-matching features from original dataset
-     * - Iff add, adds new features to end of list - generates new unique ids, updates feature_count accordingly
+     * - Iff add, adds new features to end of list - generates new unique ids
+     * - Iff add, updates feature_count based on new features added
      * - Iff modify and/or add, merges original and update properties lists
      * - Does not modify anything else besides features, feature_count, and properties
      * - Can perform multiple options (add, modify, remove) in one update without interference
@@ -603,7 +612,9 @@ class Dataset {
 
     /**
      * Returns content for the dataset page header
+     * - Returns all expected values
      * - Returns features as unindexed yaml (instead of indexed Feature objects)
+     * - Returns extras merged, not as separate array
      * 
      * @return array
      */
@@ -630,16 +641,59 @@ class Dataset {
     }
     /**
      * Merges defaults with icon settings and modifies them so they are the appropriate format for Leaflet IconOptions
-     * - iconUrl: Can be set by user as icon 'file' (from associated folder) or as iconUrl, otherwise default; determines which set of defaults are used
-     * - iconRetinaUrl: Can be set by user as icon 'retina' (from associated folder) or as iconRetinaUrl, otherwise default if it exists (no default for custom icons)
-     * - shadowUrl: Can be set by user as icon 'shadow' (from associated folder) or as shadowUrl, otherwise default if it exists (no default for custom icons)
-     * - iconSize: Can be set by user individually as 'height' and/or 'width' (must be positive integers) or as iconSize (only if no values for 'height' or 'width' are provided); valid values for 'height' and 'width' are combined with defaults
-     * - shadowSize: Can be set by user individually as 'shadow_height' and/or 'shadow_width' (must be positive integers) or as shadowSize (only if no values for 'height' or 'width' are provided); valid values for height and width are combined with defaults; if defaults array does not include shadow size options, the icon size determined above is used as defaults instead
-     * - tooltipAnchor: Can be set by user individually as 'tooltip_anchor_x' and/or 'tooltip_anchor_y' (must be integers) or as tooltipAnchor (only if no x or y values are provided); valid values for x and y are combined with defaults
-     * - iconAnchor: Can be set by user individually as 'anchor_x' and/or 'anchor_y' (must be integers) or as iconAnchor (only if no x or y values are provided); valid values for x and y are combined with defaults (if they exist); iconAnchor is only included if there are valid values for both x and y
-     * - shadowAnchor: Can be set by user individually as 'shadow_anchor_x' and 'shadow_anchor_y' (must be integers) or as shadowAnchor (only if no x or y values are provided); no defaults; shadowAnchor is only included if there are valid values for both x and y
-     * - className: Created by combining default class name with user provided values for 'className' and 'class'; additional class is added if user has set 'rounding' as true
-     * - Includes extra options but not unused yaml options - The yaml keys will not be included in the returned array (i.e. iconSize will be included, but not 'height' or 'width'). Any values set that are not in the leaflet or blueprint/yaml keys will be added to the returned array, allowing for potential additional customization.
+     * 
+     * iconUrl: Can be set by user as icon 'file' (from associated folder) or as iconUrl, otherwise default; determines which set of defaults are used
+     * - Can be set by user as icon 'file' (from associated folder)
+     * - Can be set by user as iconUrl (if icon.file invalid or not set)
+     * - Default icon file used if neither icon.file nor icon.iconUrl are valid
+     * 
+     * iconRetinaUrl: Can be set by user as icon 'retina' (from associated folder) or as iconRetinaUrl, otherwise default if it exists (no default for custom icons)
+     * - Can be set by user as icon 'retina' (from associated folder)
+     * - Can be set by user as iconRetinaUrl (if icon.retina invalid or not set)
+     * - Default retina file used if neither icon.retina nor icon.iconRetinaUrl are valid (and icon is default)
+     * - Nothing used if neither icon.retina nor icon.iconRetinaUrl are valid (and icon is custom)
+     * 
+     * shadowUrl: Can be set by user as icon 'shadow' (from associated folder) or as shadowUrl, otherwise default if it exists (no default for custom icons)
+     * - Can be set by user as icon 'shadow' (from associated folder)
+     * - Can be set by user as shadowUrl (if icon.shadow invalid or not set)
+     * - Default shadow file used if neither icon.shadow nor icon.shadowUrl are valid (and icon is default)
+     * - Nothing used if neither icon.shadow nor icon.shadowUrl are valid (and icon is custom)
+     * 
+     * iconSize: Can be set by user individually as 'height' and/or 'width' (must be positive integers) or as iconSize (only if no values for 'height' or 'width' are provided); valid values for 'height' and 'width' are combined with defaults
+     * - Can be set by user as icon 'height' and/or icon 'width' (must be positive integers)
+     * - Can be set by user as iconSize (only if both icon.height and icon.width are not set - invalid counts as set)
+     * - Uses correct default values for height and/or width - default icon
+     * - Uses correct default values for height and/or width - custom icon
+     * 
+     * shadowSize: Can be set by user individually as 'shadow_height' and/or 'shadow_width' (must be positive integers) or as shadowSize (only if no values for 'height' or 'width' are provided); valid values for height and width are combined with defaults; if defaults array does not include shadow size options, the icon size determined above is used as defaults instead
+     * - Can be set by user as icon 'shadow_height' and/or icon 'shadow_width' (must be positive integers)
+     * - Can be set by user as shadowSize (only if both icon.shadow_height and icon.shadow_width are not set - invalid counts as set)
+     * - Uses correct default values for height and/or width - default icon
+     * - Uses regular icon height/width (if set) as defaults - custom icon
+     * 
+     * iconAnchor: Can be set by user individually as 'anchor_x' and/or 'anchor_y' (must be integers) or as iconAnchor (only if no x or y values are provided); valid values for x and y are combined with defaults (if they exist); iconAnchor is only included if there are valid values for both x and y
+     * - Can be set by user as 'anchor_x' and/or 'anchor_y' (must be integers)
+     * - Can be set by user as iconAnchor (only if both anchor_x and anchor_y are not set - invalid counts as set)
+     * - Uses correct defaults for x and y - default icon
+     * - Only includes values for custom icon if x and y are both set and valid (i.e. no defaults needed)
+     * 
+     * tooltipAnchor: Can be set by user individually as 'tooltip_anchor_x' and/or 'tooltip_anchor_y' (must be integers) or as tooltipAnchor (only if no x or y values are provided); valid values for x and y are combined with defaults
+     * - Can be set by user as 'tooltip_anchor_x' and/or 'tooltip_anchor_y' (must be integers)
+     * - Can be set by user as tooltipAnchor (only if both tooltip_anchor_x and tooltip_anchor_y are not set - invalid counts as set)
+     * - Uses correct defaults for x and y - default icon
+     * - Uses correct defaults for x and y - custom icon
+     * 
+     * shadowAnchor: Can be set by user individually as 'shadow_anchor_x' and 'shadow_anchor_y' (must be integers) or as shadowAnchor (only if no x or y values are provided); no defaults; shadowAnchor is only included if there are valid values for both x and y
+     * - Can be set by user as 'shadow_anchor_x' and/or 'shadow_anchor_y' (must be integers)
+     * - Can be set by user as shadowAnchor (only if both shadow_anchor_x and shadow_anchor_y are not set - invalid counts as set)
+     * - Only includes values for if x and y are both set and valid (i.e. no defaults needed)
+     * 
+     * className: Created by combining default class name with user provided values for 'className' and 'class'; additional class is added if user has set 'rounding' as true
+     * - Class name starts with default class name
+     * - User can add values to class name using icon.className
+     * - If icon.rounding is true, class name ends with 'round'
+     * 
+     * Includes extra options but not unused yaml options - The yaml keys will not be included in the returned array (i.e. iconSize will be included, but not 'height' or 'width'). Any values set that are not in the leaflet or blueprint/yaml keys will be added to the returned array, allowing for potential additional customization.
      * 
      * @return array
      */
@@ -950,6 +1004,9 @@ class Dataset {
     }
     /**
      * If no key is provided, returns normal legend. If key is provided and value exists and is string, returns value. Otherwise returns null.
+     * - Returns normal legend if key is not provided
+     * - Returns value for key provided only if key exists and is a string
+     * - Returns null if key is provided but does not exist or is not a string
      * 
      * @param string|null $key
      * @return array|mixed
@@ -1037,7 +1094,9 @@ class Dataset {
 
     /**
      * Creates GeoJSON array for the dataset
-     * - Returns GeoJSON array with all type, name, and features
+     * - Returns GeoJSON array with all features
+     * - Sets 'name' to dataset name
+     * - Sets 'type' to 'FeatureCollection'
      * 
      * @param array $yaml
      * @return array
@@ -1059,6 +1118,7 @@ class Dataset {
     /**
      * Determines the appropriate number to use for a new unique feature id. Feature id will be created as "$id--$number". Starts with number from feature count, then increments by one until the generated id would be unique. Returns that number.
      * - Only returns count for unique feature id (increments count as much as necessary)
+     * - if feature count is invalid, starts at 1
      * 
      * @param string $id The dataset id, used for the first part of the feature id
      * @param array $feature_ids Existing feature ids - the new id must not match any of these
@@ -1076,8 +1136,10 @@ class Dataset {
     }
     /**
      * Lists any matches between original and update features, using either coordinates or a chosen property. Does not verify that coordinates/property is unique for all features. Results are undefined if the values are not, so choose carefully. Returns an array linking the ids from the update features to the ids of their matches in the original features.
-     * - Matches features via coordinates correctly (for points and shapes)
-     * - Matches features via properties correctly (with or without file prop set)
+     * - Matches point features via coordinates correctly
+     * - Matches shape features via coordinates correctly
+     * - Matches features via properties correctly (dataset prop only)
+     * - Matches features via properties correctly (dataset prop and file prop)
      * 
      * @param string $dataset_prop Either 'coords' or a valid dataset property
      * @param string|null $file_prop Irrelevent if dataset prop is coords. If provided, is used as the 'dataset prop' for the update features (i.e. match dataset property 'x' to update property 'y')
@@ -1117,7 +1179,7 @@ class Dataset {
     }
     /**
      * Determines a unique route for a dataset
-     * - Route: pages/datasets/[cleaned up name]
+     * - Creates route consisting of: pages/datasets/[cleaned up name]
      * - Increments slug to avoid duplicates (regardless of type)
      * 
      * @param string $name The title or id of the dataset
@@ -1138,7 +1200,11 @@ class Dataset {
     }
 
     /**
-     * First priority is property called name, next is property beginning or ending with name, and last resort is first property, if available
+     * Returns the best guess for dataset name property (if properties exist)
+     * - Returns null if no properties exist
+     * - Returns property called 'name' if one exists (ignore caps)
+     * - Returns the first property beginning or ending with 'name' if no property is called 'name' (ignore caps)
+     * - Returns the first property is no property is called 'name' or begins or ends with 'name' (ignore caps)
      * 
      * @param array $properties
      * @return string|null The value for the name_property
@@ -1158,6 +1224,7 @@ class Dataset {
      * Note that the return array may include an old property (as included in the rename_properties fieldset) that has been removed from the properties list. Any such values will be added to the end of the properties list.
      * - Renames properties in properties list, preserving order (or adding to end if removed)
      * - Cannot rename properties to empty value or existing value
+     * - Only the first property will be renamed if attempting to rename two properties to the same value
      * 
      * @param array $rename rename_properties from dataset yaml
      * @param array $properties properties from dataset yaml

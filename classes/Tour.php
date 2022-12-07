@@ -198,7 +198,8 @@ class Tour {
     }
     /**
      * called when view is saved
-     * - validates view - calls function (Uses tour yaml to generate temp values: point ids, included ids, popups)
+     * - validates view - calls function
+     * - Uses tour yaml to generate temp values: point ids, included ids, popups
      * 
      * @param array $view_yaml
      * @param array $tour_yaml
@@ -805,8 +806,8 @@ class Tour {
         return array_intersect_key(array_column(Utils::getArr($yaml, 'datasets'), null, 'id'), $datasets);
     }
     /**
-     * Returns only datasets with entries in datasets
-     * Validates auto popup properties if set
+     * - Returns only datasets with entries in datasets
+     * - Validates auto popup properties if set
      * 
      * @param array $yaml
      * @param array $datasets [id => Datasets] (only tour datasets)
@@ -883,7 +884,8 @@ class Tour {
 
     // get/build/prep values - for validation or otherwise
     /**
-     * Get basemap info from plugin config, indexed by file
+     * - Get basemap info from plugin config, indexed by file
+     * - Only include valid info - file must exist
      * 
      * @param array $plugin_config
      * @return array
@@ -956,8 +958,8 @@ class Tour {
         return $included;
     }
     /**
-     * Merges dataset overrides with dataset objects
-     * Only returns datasets with at least one included feature
+     * - Merges dataset overrides with dataset objects
+     * - Only returns datasets with at least one included feature
      * 
      * @param array $included_features [id => Feature]
      * @param array $datasets [id => Dataset] (tour only)
@@ -1039,9 +1041,10 @@ class Tour {
     }
     /**
      * Returns id => name for any feature that has popup content, based on dataset and tour settings:
-     * - If popup content set by tour
-     * - If popup content set by dataset and not removed by tour
-     * - If auto popup set by tour/dataset
+     * - Return id => name for features with popup content
+     * - Include features with popup content set by tour
+     * - Include features with popup content set by dataset and not removed by tour
+     * - Include features with auto popup set by tour/dataset
      * 
      * @param array $included_features [id => Feature]
      * @param array $tour_features [id => yaml]
@@ -1233,7 +1236,7 @@ class Tour {
         ]);
     }
     /**
-     * Combines appropriate information from basemap info list (all basemap in tour and views) to pass to template/javascript in order to add them to the map
+     * - Combines appropriate information from basemap info list (all basemap in tour and views) to pass to template/javascript in order to add them to the map
      * - Uses function to validate bounds
      * 
      * @return array [id => [url, bounds, options => [max_zoom, min_zoom]], ...]
@@ -1252,7 +1255,7 @@ class Tour {
         }, $this->getBasemapInfo()));
     }
     /**
-     * Combines appropriate information from datasets to pass to template/javascript in order to set up tour
+     * - Combines appropriate information from datasets to pass to template/javascript in order to set up tour
      * - Returns icon or shape options as appropriate for dataset type
      * 
      * @return array [id => [id, features => [], legend_summary, icon or various shape options], ...]
@@ -1318,6 +1321,8 @@ class Tour {
     }
     /**
      * Checks if user set additional value 'body_classes' in tour yaml. Also adds class for 'map-on-left' if setting is applicable
+     * - contains any classes from 'body_classes'
+     * - if map on right is false, ends with ' map-on-left'
      * 
      * @return string
      */
@@ -1337,6 +1342,7 @@ class Tour {
     }
     /**
      * Returns value for this tour's attribution if set, otherwise default value from plugin config
+     * TODO: Should be possible to overwrite with blank
      * 
      * @return string|null
      */
@@ -1352,7 +1358,8 @@ class Tour {
         return Utils::getStr($this->getTileServer(), 'attribution', null);
     }
     /**
-     * Returns attribution info for all included basemaps (if set)
+     * - Returns attribution info for all included basemaps (if set)
+     * - Does not include entries for basemaps without attribution set
      * 
      * @return array [string]
      */
@@ -1360,7 +1367,8 @@ class Tour {
         return array_filter(array_column($this->getBasemapInfo(), 'attribution'));
     }
     /**
-     * Returns attribution info for all included datasets (if set)
+     * - Returns attribution info for all included datasets
+     * - Does not include entries for datasets with no value for attribution
      * 
      * @return array [string]
      */

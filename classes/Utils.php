@@ -32,7 +32,8 @@ class Utils {
     ];
 
     /**
-     * Check if a key exists within an array. Return its value if it does, or the default value otherwise.
+     * Check if a key exists within an array.
+     * - Return value if key exists in array, default value otherwise
      * 
      * @param array $list The array to check
      * @param string $key The key to check for
@@ -44,7 +45,8 @@ class Utils {
         else return $default;
     }
     /**
-     * Check if a key exists in an array and if a given function applied to its value returns true. Return the value if so, or the default value otherwise.
+     * Check if a key exists in an array and if a given function applied to its value returns true.
+     * - Return value if key exists and function evaluates to true, default value otherwise
      * 
      * @param array $list The array to check
      * @param string $key The key to check for
@@ -57,7 +59,8 @@ class Utils {
         else return $default;
     }
     /**
-     * Check if a key exists in an array and if its value is a string. Return the value if so, or the default value otherwise.
+     * Check if a key exists in an array and its value is a string.
+     * - Return value if key exists and value is string, default value otherwise
      * 
      * @param array $list The array to check
      * @param string $key The key to check for
@@ -69,7 +72,8 @@ class Utils {
         else return $default;
     }
     /**
-     * Check if a key exists within an array and if its value is an array. Return the value if so, or the default value otherwise.
+     * Check if a key exists within an array and its value is an array.
+     * - Return value if key exists and value is array, default value otherwise
      * 
      * @param array $list The array to check
      * @param string $key The key to check for
@@ -82,7 +86,8 @@ class Utils {
     }
 
     /**
-     * Search a directory recursively for any files matching the provided key.
+     * Search a directory recursively for any files that have routes ending with the provided key.
+     * - Result includes all files ending with the input key (and nothing else)
      * 
      * @param string $key The name of the template file (or other file, really) to look for. Passing 'dataset.md' would get any file ending in 'dataset.md'
      * @param array $results List of pages found so far. Only to be used when calling recursively.
@@ -110,6 +115,8 @@ class Utils {
     }
     /**
      * Processes input from the key(s) to check for a matching route in the file system. Deals with potential for files to have the folder numeric prefix option set.
+     * - Returns the correct page for the key provided, if it exists (null otherwise)
+     * - Works for pages with numeric prefix whether or not prefix is included in the key
      * 
      * @param string|array $key Can be the string or the already exploded string representing the page route
      * @param string $template_name The name of the markdown file to look for (do not include '.md')
@@ -188,6 +195,7 @@ class Utils {
     /**
      * Returns the view page currently being edited
      * 
+     * @return MarkdownFile|null The file for the view page, or null if no such file exists
      */
     public static function getViewFile() {
         return self::getPageFromKey(self::getCurrentBlueprintKey(), 'view');
@@ -195,6 +203,8 @@ class Utils {
 
     /**
      * Checks if input is an array with two numeric inputs that fall in the correct range for longitude (-180 to 180) and latitude (-90 to 90)
+     * - Input must be an array with two numeric values
+     * - Values must be valid for longitude and latitude
      * 
      * @param array $coords Should be array with two floats (function validates type). First is longitude, second is latitude.
      * @return bool True if is valid, false if not
@@ -208,6 +218,8 @@ class Utils {
     }
     /**
      * Checks if input is an array with keys north, south, east, and west, each pointing to a valid numeric value (lng/lat)
+     * - Input must be an array with all four keys: north, south, east, west
+     * - Returns modified array if valid (southwest, northeast) or null
      * 
      * @param array $bounds The (hopefully) array to check (function validates type)
      * @return null|array [[float, float], [float, float]] (southwest, northeast) if valid
@@ -222,7 +234,11 @@ class Utils {
     }
 
     /**
-     * Removes whitepsace, makes everything lower case, and handles special characters
+     * Returns a string that would make an acceptable folder name
+     * - Trims leading/trailing whitespace
+     * - Replaces groups of whitespace with dash
+     * - Changes capital letters to lowercase
+     * - Removes special chars (only include letters, numbers, underscores, or dashes)
      * 
      * @param string $string The string to clean
      * @return string The cleaned string
