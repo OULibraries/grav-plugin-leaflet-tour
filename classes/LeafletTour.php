@@ -315,14 +315,15 @@ class LeafletTour {
      * Called when dataset page is saved. Performs validation and passes updates to tours and views.
      * 
      * @param PageObject $page The update object, used to access (and modify) the new values
+     * @param string $default_type The default feature type, in case the page is being saved for the first time from expert mode (Point or LineString)
      */
-    public static function handleDatasetPageSave($page) {
+    public static function handleDatasetPageSave($page, $default_type) {
         // make sure dataset has a valid id
         $id = Utils::getStr($page->getOriginalData()['header'], 'id'); // use old id - id should never be modified
         $rename_properties = $page->value('rename_properties');
         $yaml = $page->header()->jsonSerialize();
         $export = $page->value('export_geojson');
-        $update = self::updateDatasetPage($id, $rename_properties, $yaml, $export, $page->path());
+        $update = self::updateDatasetPage($id, $rename_properties, $yaml, $export, $page->path(), $default_type);
         $page->header($update);
     }
     /**
@@ -330,6 +331,7 @@ class LeafletTour {
      * - Validates new and existing datasets (provides original yaml if it exists)
      * - Provides renamed properties to datasets for validation
      * - Generates new ids for new datasets
+     * - Generates correct default feature type for new dataset (Point for point, LineString for shape)
      * - Creates GeoJSON export file if export is true
      * - For existing datasets, validates all tours containing the dataset
      * 
@@ -337,9 +339,11 @@ class LeafletTour {
      * @param array $rename_properties Hopefully an array - will be used to update properties if any values have been renamed
      * @param array $yaml The actual updated dataset yaml (which requires validation)
      * @param bool $export Hopefully a bool - if true, a GeoJSON export file will be created and saved in the dataset's parent folder
+     * @param string $path Filepath of the page
+     * @param string $default_type The default feature type, in case the page is being saved for the first time from expert mode (Point or LineString)
      * @return array The updated dataset yaml with any modifications needed
      */
-    public static function updateDatasetPage($id, $rename_properties, $yaml, $export, $path) {
+    public static function updateDatasetPage($id, $rename_properties, $yaml, $export, $path, $default_type) {
         $datasets = self::getDatasets();
         if ($file = Utils::get($datasets, $id)) {
             // dataset exists and needs to be updated and validated
@@ -360,7 +364,8 @@ class LeafletTour {
             $id = self::generateId(null, $name, array_keys($datasets));
             // validate
             $props = Utils::getArr($yaml, 'properties');
-            $update = Dataset::validateUpdate(array_merge($yaml, ['id' => $id]), array_combine($props, $props), $path);
+            $update = Dataset::validateUpdate(array_merge($yaml, ['id' => $id]), array_combine($props, $props), $path, ['feature_type' => $default_type]);
+            // note: includes feature type in "old yaml" to provide a default, just in case the page is being saved in expert mode
         }
         return $update;
     }

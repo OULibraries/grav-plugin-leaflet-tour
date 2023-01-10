@@ -109,8 +109,10 @@ class LeafletTourPlugin extends Plugin {
         else if (method_exists($obj, 'template')) {
             switch ($obj->template()) {
                 case 'shape_dataset':
+                    LeafletTour::handleDatasetPageSave($obj, 'LineString');
+                    break;
                 case 'point_dataset':
-                    LeafletTour::handleDatasetPageSave($obj);
+                    LeafletTour::handleDatasetPageSave($obj, 'Point');
                     break;
                 case 'tour':
                     LeafletTour::handleTourPageSave($obj);
