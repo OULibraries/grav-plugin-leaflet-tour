@@ -112,6 +112,9 @@ body {
     padding-top: 20px;
     margin: 0;
 }
+.attribution-section img {
+    margin: 5px 0;
+}
 
 // mobile
 @media(max-width: ($mobile - 1)) {
