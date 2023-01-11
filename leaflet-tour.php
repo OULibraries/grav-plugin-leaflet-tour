@@ -216,11 +216,19 @@ class LeafletTourPlugin extends Plugin {
 
     // getters for view blueprints
     public static function getViewFeatures(): array {
-        if (($tour = Utils::getTourFileFromView()) && ($view = Utils::getViewFile()))  return Tour::getBlueprintViewFeatureOptions($tour->header(), $view->header(), LeafletTour::getDatasets());
+        if ($tour = Utils::getTourFileFromView()) {
+            if ($view = Utils::getViewFile()) $header = $view->header();
+            else $header = [];
+            return Tour::getBlueprintViewFeatureOptions($tour->header(), $header, LeafletTour::getDatasets());
+        }
         else return [];
     }
     public static function getViewPoints(): array {
-        if (($tour = Utils::getTourFileFromView()) && ($view = Utils::getViewFile())) return Tour::getBlueprintPointOptions($tour->header(), LeafletTour::getDatasets(), $view->header());
+        if ($tour = Utils::getTourFileFromView()) {
+            if ($view = Utils::getViewFile()) $header = $view->header();
+            else $header = [];
+            return Tour::getBlueprintPointOptions($tour->header(), LeafletTour::getDatasets(), $header);
+        }
         else return [];
     }
 }
