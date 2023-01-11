@@ -124,7 +124,7 @@
             {# Create narrative column #}
             <div id="scrolly" class="column">
                 <div id="tour">
-                    <h1 data-view="tour" class="scroll-top step">{{ page.title }}</h1>
+                    <h1 data-view="_tour" class="scroll-top step">{{ page.title }}</h1>
                     {{ content|raw }}
                     {% if tour.getFeaturePopups()|length > 0 %}
                         <div>
@@ -132,7 +132,7 @@
                             <a href="{{ page.url }}/popups">All popup content</a>
                         </div>
                     {% endif %}
-                    <div data-view="tour" class="step bottom-step"></div>
+                    <div data-view="_tour" class="step bottom-step"></div>
                 </div>
                 <div id="view-content">
                     {% for view in page.collection() if view.template == 'modular/view' and not view.header.visible is same as (false) %}
