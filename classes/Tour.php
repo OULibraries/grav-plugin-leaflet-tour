@@ -448,6 +448,7 @@ class Tour {
     /**
      * Called by tour or view blueprint to generate list of valid basemaps
      * - Provides list of all valid basemaps (in dataset info and file exists)
+     * - If any basemaps are currently set, keeps those basemaps in order and at front of list
      * - Indexes list by file, but references by name instead if set
      * - Includes any invalid 'basemaps' currently set
      * 
@@ -456,6 +457,9 @@ class Tour {
      * @return array
      */
     public static function getBlueprintBasemapsOptions($yaml, $basemap_info) {
+        // get currently set basemaps (if any) (simple array of strings)
+        $current = Utils::getArr($yaml, 'basemaps');
+        // create empty list populate with key value pairs for all valid basemaps
         $list = [];
         $data = Grav::instance()['locator']->getBase() . '/' . Utils::BASEMAP_ROUTE;
         foreach ($basemap_info as $info) {
@@ -463,7 +467,11 @@ class Tour {
             $file = Utils::getStr($info, 'file');
             if (File::instance("$data/$file")->exists()) $list[$file] = Utils::getStr($info, 'name') ?: $file;
         }
-        // invalid?
+        // determine which currently set basemaps are valid
+        $valid = array_intersect($current, array_keys($list));
+        // move currently set valid basemaps to front of list
+        $list = array_merge(array_flip($valid), $list);
+        // check for currently set invalid basemaps
         $invalid = array_diff(Utils::getArr($yaml, 'basemaps'), array_keys($list));
         foreach ($invalid as $key) {
             $list[$key] = 'Invalid, please remove';
