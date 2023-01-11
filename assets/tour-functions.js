@@ -240,7 +240,7 @@ class TourShape extends TourFeature {
         if (this.tmp_tooltip) this.main_layer.openTooltip(this.tmp_tooltip);
         else this.main_layer.openTooltip();
         this.main_layer.setStyle(this.dataset.active_path);
-        if (this.stroke) this.stroke.setStyle(this.dataset.active_stroke);
+        if (this.stroke_layer) this.stroke_layer.setStyle(this.dataset.active_stroke);
 
         if (!map.getBounds().contains(this.main_layer.getTooltip().getLatLng())) {
             this.main_layer.openTooltip(); // reset tooltip
