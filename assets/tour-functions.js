@@ -71,6 +71,7 @@ class TourFeature {
         el.setAttribute("data-feature", this.id);
         // focus element needs class, data-feature attribute, and possibly role/aria-haspopup attributes (for point, this will actually be the same element)
         let focus = this.focus_element;
+        if (el !== focus) focus.id = this.id + '-focus-el';
         focus.classList.add("focus-el");
         focus.setAttribute("data-feature", this.id); // redundant for points
         if (this.has_popup) {
@@ -117,10 +118,10 @@ class TourPoint extends TourFeature {
         });
         // ignore shape layer
     }
-    modify() {
-        super.modify();
-        this.focus_element.id = this.id + '-focus';
-    }
+    // modify() {
+    //     super.modify();
+    //     this.focus_element.id = this.id + '-focus';
+    // }
     activate(map, e) {
         super.activate(map, e);
         if (!map.getBounds().contains(this.point_layer.getLatLng())) {
