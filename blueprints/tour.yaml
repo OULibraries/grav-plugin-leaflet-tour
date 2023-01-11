@@ -28,7 +28,7 @@ form:
                   type: list
                   size: long
                   style: vertical
-                  collapsed: true
+                  collapsed: false
                   collapsible: true
                   btnLabel: Add Dataset
                   controls: both

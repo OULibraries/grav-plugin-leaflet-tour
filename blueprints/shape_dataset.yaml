@@ -14,7 +14,7 @@ form:
                     header.feature_type:
                       type: select
                       label: Dataset Feature Type
-                      description: This cannot be changed once set.
+                      description: This can only be changed if the dataset had or will have no features.
                       options:
                         LineString: LineString
                         MultiLineString: MultiLineString
