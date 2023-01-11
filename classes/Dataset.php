@@ -403,7 +403,7 @@ class Dataset {
      * - Merges original and update properties lists
      * - Does not modify anything else besides features, feature_count, and properties
      * 
-     * @param array $matches List of all matches: [update_id => old_id] where update_id identifies the new feature data in the update dataset and old_id identifies the existing feature in the old dataset
+     * @param array $matches List of all matches: [update_id => old_id] where update_id identifies the new feature data in the update dataset and old_id identifies the existing feature in the old dataset, order does not matter
      * @param Dataset $old_dataset The existing dataset to be updated
      * @param Dataset $update_dataset A temporary dataset containing update options
      * @return Dataset
@@ -439,7 +439,7 @@ class Dataset {
      * - Removes all/only matching features from dataset features list
      * - Changes nothing besides features list
      * 
-     * @param array $matches List of all matches: [update_id => old_id] where update_id identifies the new feature data in the update dataset and old_id identifies the existing feature in the old dataset. In this case, only the old ids matter, as features are not being modified.
+     * @param array $matches List of all matches: [update_id => old_id] where update_id identifies the new feature data in the update dataset and old_id identifies the existing feature in the old dataset. In this case, only the old ids matter, as features are not being modified. Order does not matter
      * @param Dataset $old_dataset The existing dataset to be updated
      * @return Dataset
      */
@@ -463,7 +463,7 @@ class Dataset {
      * - Does not modify anything else besides features, feature_count, and properties
      * - Can perform multiple options (add, modify, remove) in one update without interference
      * 
-     * @param array $matches List of all matches: [update_id => old_id] where update_id identifies the new feature data in the update dataset and old_id identifies the existing feature in the old dataset
+     * @param array $matches List of all matches: [update_id => old_id] where update_id identifies the new feature data in the update dataset and old_id identifies the existing feature in the old dataset, order does not matter
      * @param Dataset $old_dataset The existing dataset to be updated
      * @param Dataset $update_dataset A temporary dataset containing update options
      * @param bool|null $add Indicates if "add" flag is set (add new features to dataset)
@@ -1140,39 +1140,40 @@ class Dataset {
      * - Matches shape features via coordinates correctly
      * - Matches features via properties correctly (dataset prop only)
      * - Matches features via properties correctly (dataset prop and file prop)
+     * - Returns features in order of original features from dataset
      * 
      * @param string $dataset_prop Either 'coords' or a valid dataset property
      * @param string|null $file_prop Irrelevent if dataset prop is coords. If provided, is used as the 'dataset prop' for the update features (i.e. match dataset property 'x' to update property 'y')
      * @param array $original_features [id => Feature] from existing dataset
      * @param array $update_features [id => Feature] from temporary update dataset
-     * @return array [tmp/update_id => original_id]
+     * @return array [tmp/update_id => original_id] (in original feature order)
      */
     public static function matchFeatures($dataset_prop, $file_prop, $original_features, $update_features) {
         $matches = [];
         if ($dataset_prop === 'coords') {
             // match features based on coordinates, must be exact match
-            // first create index of original feature coordinates to reference
-            $index = array_flip(array_map(function($feature) {
-                return json_encode($feature->getJsonCoordinates());
-            }, $original_features)); // returns coords => id, due to array_flip
+            // first create index of new feature coordinates to reference
+            $index = array_flip(array_map(function($update_feature) {
+                return json_encode($update_feature->getJsonCoordinates());
+            }, $update_features)); // returns coords => tmp id, due to array_flip
             // then look for matches
-            foreach ($update_features as $tmp_id => $update_feature) {
-                $coords = json_encode($update_feature->getJsonCoordinates());
-                if ($id = Utils::get($index, $coords)) $matches[$tmp_id] = $id;
+            foreach ($original_features as $id => $feature) {
+                $coords = json_encode($feature->getJsonCoordinates());
+                if ($tmp_id = Utils::get($index, $coords)) $matches[$tmp_id] = $id;
             }
         } else {
             // match features based on properties
             // first create index of original feature property values to reference
             $index = [];
-            foreach ($original_features as $id => $feature) {
+            foreach ($update_features as $tmp_id => $update_feature) {
                 // note that this won't work well if more than one feature has the same value for the property
-                if ($value = $feature->getProperty($dataset_prop)) $index[$value] = $id;
+                if ($value = $update_feature->getProperty($file_prop ?: $dataset_prop)) $index[$value] = $tmp_id;
             }
             // then look for matches
-            foreach ($update_features as $tmp_id => $update_feature) {
+            foreach ($original_features as $id => $feature) {
                 // use dataset prop as default file prop
-                $value = $update_feature->getProperty($file_prop ?: $dataset_prop);
-                if ($id = Utils::get($index, $value)) $matches[$tmp_id] = $id;
+                $value = $feature->getProperty($dataset_prop);
+                if ($tmp_id = Utils::get($index, $value)) $matches[$tmp_id] = $id;
             }
         }
         return $matches;
