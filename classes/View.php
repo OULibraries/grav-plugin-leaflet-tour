@@ -238,7 +238,7 @@ class View {
                         $bounds['distance'] = $dist * 1000;
                         break;
                     case 'feet':
-                        $bounds['distance'] = $dist / 0.3048;
+                        $bounds['distance'] = $dist * 0.3048;
                         break;
                     case 'miles':
                         $bounds['distance'] = $dist * 1609.34;
