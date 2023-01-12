@@ -3,7 +3,7 @@
     <ul>
         {% for prop, value in feature.auto %}
             <li>
-                <span class="auto-prop">{{ prop }}</span>
+                <span class="auto-prop">{{ prop }}:</span>
                 <span class="auto-value">{{ leaflet_tour.stripParagraph(value|markdown)|raw }}</span>
             </li>
         {% endfor %}
