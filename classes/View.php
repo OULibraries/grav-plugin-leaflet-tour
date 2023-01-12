@@ -275,6 +275,7 @@ class View {
      * - Returns list only if list_popup_buttons is true, otherwise empty array
      * - Returns [id => name] for all features in popus list and view features list
      * - Removes any features from list that already have a popup button provided via shortcode in the view content
+     * - Returns feature in order set by view features list
      * 
      * @return array [id => name]
      */
@@ -282,7 +283,11 @@ class View {
         if (!$this->getOverrides()['list_popup_buttons']) return [];
         $content = ($file = $this->getFile()) ? $file->markdown() : '';
         $buttons = [];
-        $popups = array_intersect_key($this->getPopups(), array_flip($this->getFeatures()));
+        // all popups [id => name] from tour, view features [id]
+        // put features from view at front of popups list
+        $popups = array_merge(array_flip($this->getFeatures()), $this->getPopups());
+        // filter - only feature from view and in popups list should be included
+        $popups = array_intersect_key($popups, $this->getPopups(), array_flip($this->getFeatures()));
         foreach ($popups as $id => $name) {
             if (!preg_match("/\[popup-button\\s+id\\s*=\\s*\"?$id/", $content)) $buttons[$id] = $name;
         }
