@@ -103,7 +103,7 @@ class Tour {
         $basemap_ids = array_keys($basemap_info);
         $point_ids = array_keys($features); // as above, can use all features, not just points, because start bounds calculation will verify
         $included_ids = array_keys($this->features);
-        $popups = array_column($this->feature_popups, 'name', 'id');
+        $popups = array_combine(array_keys($this->feature_popups), array_column($this->feature_popups, 'name'));
         foreach ($views as $id => $file) {
             $view = View::fromFile($file, $basemap_ids, $point_ids, $included_ids, $popups, $features, $this->view_options);
             $basemaps = array_merge($basemaps, $view->getBasemaps());
@@ -1086,7 +1086,7 @@ class Tour {
      * @param array $included_features [id => Feature]
      * @param array $tour_features [id => yaml]
      * @param array $datasets [id => Dataset] (merged datasets)
-     * @return array [id => [name, auto, x]]
+     * @return array [id => [name, auto, popup]]
      */
     public static function prepareFeaturePopupContent($included_features, $tour_features, $datasets) {
         $popups = [];

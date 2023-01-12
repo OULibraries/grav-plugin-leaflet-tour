@@ -136,7 +136,7 @@
                 </div>
                 <div id="view-content">
                     {% for view in page.collection() if view.template == 'modular/view' and not view.header.visible is same as (false) %}
-                        {{ view.content|raw }}
+                        {% include 'partials/view.html.twig' with { 'view': view, 'view_obj': tour.getViews()[view.header.id] } %}
                     {% endfor %}
                 </div>
                 {% include 'partials/tour-attribution.html.twig' with {'tour':tour} %}
