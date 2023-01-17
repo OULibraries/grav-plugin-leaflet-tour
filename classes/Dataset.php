@@ -752,21 +752,42 @@ class Dataset {
     /**
      * Determines if the provided array has a key with a value that is a positive integer. Returns the value if so, otherwise null.
      * 
-     * @param array $icon The array to check
+     * @param array $array The array to check
      * @param string $key The key to look for
      * @return int|null
      */
-    private static function getPositiveInt($icon, $key) {
-        $int = Utils::getType($icon, $key, 'is_int');
+    public static function getPositiveInt($array, $key) {
+        $int = Utils::getType($array, $key, 'is_int');
         if ($int && ($int >= 0)) return $int;
         else return null;
     }
-    // TODO: Need to test situation where feature only has active border, not regular border: Should work fine up through this point, but the JS is not prepared to handle that
     /**
-     * Combines all the necessary shape options that will actually be applied to features on the map.
+     * Determines if the provided array has a value for the key that is a number greater than or equal to zero and less than or equal to one. Returns value if valid, otherwise null.
+     * 
+     * @param array $array The array to check
+     * @param string $key The key to look for
+     * @return ?float
+     */
+    public static function checkOpacity($array, $key) {
+        $opacity = Utils::get($array, $key);
+        if (!is_numeric($opacity) || $opacity < 0 || $opacity > 1) return null;
+        else return $opacity;
+    }
+    /**
+     * Keep any additional values set that aren't in the standard list of accepted options
+     * 
+     * @param array $options The options so far
+     * @param array $original Where to look for extras
+     * @return array The options with extras added
+     */
+    public static function addExtras($options, $original) {
+        $keys = ['stroke', 'color', 'opacity', 'weight', 'fill', 'fillColor', 'fillOpacity'];
+        return array_merge($options, array_diff_key($original, array_flip($keys)));
+    }
+    /**
+     * Combines all the necessary shape options that will actually be applied to features on the map. This function is important because any "border" will have to go below the stroke. Therefore, the base object (including any fill for polygons) should use border settings if applicable, with stroke provided in a separate array.
      * - Returns empty array for point datasets
-     * - If feature has border, this includes a 'path' array with border and fill options (and 'active_path')
-     * - If feature has border and stroke, a 'stroke' array is included with stroke options only (the switcharound is necessary for appropriate layering on the map) (and 'active_stroke')
+     * - If feature has border, this includes a 'path' array with border and fill options (and 'active_path'); a 'stroke' (and 'active_stroke') array is included with stroke options only (the switcharound is necessary for appropriate layering on the map)
      * - Otherwise if feature has no border, this includes a 'path' array with stroke and fill options (and 'active_path')
      * 
      * @return array
@@ -774,16 +795,12 @@ class Dataset {
     public function getShapeOptions() {
         if ($this->getType() === 'Point') return [];
         $border = $this->getBorderOptions();
-        $active_border = $this->getActiveBorderOptions();
         $options = [];
-        if ($border) {
+        if (!empty($border)) {
             $options['path'] = array_merge($border, $this->getFillOptions());
-            $options['active_path'] = array_merge($active_border, $this->getActiveFillOptions());
-            $stroke = $this->getStrokeOptions();
-            if ($stroke['stroke']) {
-                $options['stroke'] = $stroke;
-                $options['active_stroke'] = $this->getActiveStrokeOptions();
-            }
+            $options['active_path'] = array_merge($this->getActiveBorderOptions(), $this->getActiveFillOptions());
+            $options['stroke'] = $this->getStrokeOptions();
+            $options['active_stroke'] = $this->getActiveStrokeOptions();
         } else {
             $options['path'] = array_merge($this->getStrokeOptions(), $this->getFillOptions());
             $options['active_path'] = array_merge($this->getActiveStrokeOptions(), $this->getActiveFillOptions());
@@ -792,64 +809,60 @@ class Dataset {
     }
     /**
      * Validates path stroke settings (stroke, opacity, weight, color) and merges with defaults. Sets 'fill' to false. Does not include any other fill settings, but does include any additional settings added by the user.
-     * - Performs validation via validateStrokeOptions, with defaults from constant and settings from path
+     * - Validates stroke - false only if set to false and feature type is polygon; true otherwise
+     * - Uses validation function to set opacity, weight, color, and fill (with defaults from the default_path constant)
+     * - Adds extras - uses function
      * 
      * @return array
      */
     public function getStrokeOptions() {
-        return self::validateStrokeOptions(self::DEFAULT_PATH, $this->getPath());
+        $path = $this->getPath();
+        $default = self::DEFAULT_PATH;
+        $options = self::validateStrokeOptions($path, $default);
+        // set stroke (can only be false for polygons)
+        if (str_contains($this->getType(), 'Polygon') && (Utils::get($path, 'stroke') === false)) $options['stroke'] = false;
+        else $options['stroke'] = true;
+        return self::addExtras($options, $path);
     }
     /**
      * Validates active path stroke settings (stroke, opacity, weight, color) and merges with defaults (which are the regular stroke options). Sets 'fill' to false. Does not include any other fill settings, but does include any additional settings added by the user.
-     * - Performs validation via validateStrokeOptions with defaults from stroke options and settings from active path
-     * - Uses 'stroke' value from stroke options
+     * - Validates stroke - uses default value
+     * - Uses validation function to set opacity, weight, color, and fill (with defaults from the stroke options)
+     * - Adds extras - uses function (includes values from stroke options)
      * 
      * @return array
      */
     public function getActiveStrokeOptions() {
-        $stroke = $this->getStrokeOptions();
-        $active = array_merge($this->getActivePath(), ['stroke' => $stroke['stroke']]);
-        return self::validateStrokeOptions($stroke, $active);
+        $path = $this->getActivePath();
+        $default = $this->getStrokeOptions();
+        $options = self::validateStrokeOptions($path, $default);
+        $options['stroke'] = $default['stroke'];
+        return self::addExtras($options, array_merge($default, $path));
     }
     /**
      * Validates path stroke settings (stroke, opacity, weight, color) and merges with defaults. Sets 'fill' to false. Does not include any other fill settings, but does include any additional settings added by the user.
-     * - Validates path stroke setting data types (stroke: bool, opacity: number, weight: init, color: string)
-     * - Validates opacity: Must be between 0 and 1 inclusive
-     * - Validates weight: Must be positive int
-     * - Replaces any invalid stroke options with provided defaults (assumes options to be set in defaults, will throw error if they are not)
+     * - Validates opacity: Must be between 0 and 1 inclusive (uses function)
+     * - Validates weight: Must be positive int (uses function)
+     * - Replaces any invalid stroke options (opacity, weight, color) with provided defaults (assumes options to be set in defaults, will throw error if they are not)
      * - Sets 'fill' to false
-     * - Does not include any additional fill settings, does include additional settings added by user
      * 
-     * @param array $default Must have valid values for stroke, opacity, weight, and color
      * @param array $path
+     * @param array $default Must have valid values for stroke, opacity, weight, and color
      * @return array
      */
-    public static function validateStrokeOptions($default, $path) {
-        $options = [];
-        // stroke must be bool
-        $options['stroke'] = Utils::getType($path, 'stroke', 'is_bool') ?? $default['stroke'];
-        // opacity must be number between 0 and 1 inclusive
-        $opacity = Utils::getType($path, 'opacity', 'is_numeric', 100);
-        if ($opacity < 0 || $opacity > 1) $opacity = $default['opacity'];
-        $options['opacity'] = $opacity;
-        // weight must be positive integer
-        $weight = Utils::getType($path, 'weight', 'is_int', -7);
-        if ($weight < 1) $weight = $default['weight'];
-        $options['weight'] = $weight;
-        // color must be string
-        $options['color'] = Utils::getStr($path, 'color') ?: $default['color'];
-        // fill should be false
-        $options['fill'] = false;
-        // add extras (including extras from default)
-        $keys = ['stroke', 'color', 'opacity', 'weight', 'fill', 'fillColor', 'fillOpacity'];
-        $options = array_merge($options, array_diff_key(array_merge($default, $path), array_flip($keys)));
-        return $options;
+    public static function validateStrokeOptions($path, $default) {
+        return [
+            'opacity' => self::checkOpacity($path, 'opacity') ?? $default['opacity'],
+            'weight' => self::getPositiveInt($path, 'weight') ?? $default['weight'],
+            'color' => Utils::getStr($path, 'color') ?: $default['color'],
+            'fill' => false
+        ];
     }
     /**
      * Validates path fill settings (fill, fillOpacity, and fillColor) and merges with defaults.
      * - Returns empty array for points and lines
      * - Validates fill: Must be bool, replaces invalid with value from defaults const
-     * - Validates fillOpacity: Must be number between 0 and 1 inclusive, replaces invalid with value from defaults const
+     * - Validates fillOpacity: Must be number between 0 and 1 inclusive, replaces invalid with value from defaults const (use function to validate)
      * - Validates fillColor: Must be string, replaces invalid with value from stroke options
      * - Does not include any stroke settings, but does include any additional settings added by the user
      * 
@@ -861,23 +874,23 @@ class Dataset {
         else {
             $default = self::DEFAULT_PATH;
             $path = $this->getPath();
-            $options = [];
-            // fill must be bool
-            $options['fill'] = Utils::getType($path, 'fill', 'is_bool') ?? $default['fill'];
-            // validate opacity
-            $options['fillOpacity'] = self::checkOpacity(Utils::get($path, 'fillOpacity')) ?? $default['fillOpacity'];
-            // need fill color
-            $options['fillColor'] = Utils::getStr($path, 'fillColor') ?: $this->getStrokeOptions()['color'];
+            $options = [
+                // fill must be bool
+                'fill' => Utils::getType($path, 'fill', 'is_bool') ?? $default['fill'],
+                // validate fill opacity with function
+                'fillOpacity' => self::checkOpacity($path, 'fillOpacity') ?? $default['fillOpacity'],
+                // fill color must be string
+                'fillColor' => Utils::getStr($path, 'fillColor') ?: $this->getStrokeOptions()['color']
+            ];
             // add extras
-            $keys = ['stroke', 'color', 'opacity', 'weight', 'fill', 'fillColor', 'fillOpacity'];
-            return array_merge($options, array_diff_key($path, array_flip($keys)));
+            return self::addExtras($options, $path);
         }
     }
     /**
      * Validates active path fill settings (fill, fillOpacity, and fillColor) and merges with defaults.
      * - Returns empty array for points and lines
      * - Uses fill value from regular fill options
-     * - Validates fillOpacity: Must be number between 0 and 1 inclusive, replaces invalid with value from fill options
+     * - Validates fillOpacity: Must be number between 0 and 1 inclusive, replaces invalid with value from fill options (use function to validate)
      * - Validates fillColor: Must be string, replaces invalid with path fillColor if set, otherwise color from active stroke options
      * - Does not include any stroke settings, but does include any additional settings added by the user
      * 
@@ -888,23 +901,23 @@ class Dataset {
         if (!str_contains($this->getType(), 'Polygon')) return [];
         else {
             $path = $this->getActivePath();
-            $options = $this->getFillOptions();
-            // fill opacity - validate
-            $opacity = self::checkOpacity(Utils::get($path, 'fillOpacity'));
-            if ($opacity !== null) $options['fillOpacity'] = $opacity;
-            // fill color - must be string, use regular fill as default, then active/regular/default color
-            $options['fillColor'] = Utils::getStr($path, 'fillColor',) ?: Utils::getStr($this->getPath(), 'fillColor') ?: $this->getActiveStrokeOptions()['color'];
+            $default = $this->getFillOptions();
+            $options = [
+                'fill' => $default['fill'],
+                'fillOpacity' => self::checkOpacity($path, 'fillOpacity') ?? $default['fillOpacity'],
+                // use regular fill as default, then whatever stroke color is used for active stroke
+                'fillColor' => Utils::getStr($path, 'fillColor',) ?: Utils::getStr($this->getPath(), 'fillColor') ?: $this->getActiveStrokeOptions()['color']
+            ];
             // add extras (including extras from regular fill options)
-            $keys = ['stroke', 'color', 'opacity', 'weight', 'fill', 'fillColor', 'fillOpacity'];
-            return array_merge($options, array_diff_key($path, array_flip($keys)));
+            return self::addExtras($options, array_merge($default, $path));
         }
     }
     /**
      * Validates border settings (stroke, color, opacity, weight) and merges with defaults.
-     * - Validates stroke and color - must be bool and string, returns empty array if either one is invalid or falsy
-     * - Validates opacity: Must be number between 0 and 1 inclusive, replaces invalid with value from stroke options
-     * - Validates weight: Must be positive int, replaces invalid with value from defaults const
-     * - Modifies weight if path stroke is true: modified weight =  weight + path weight + weight
+     * - Returns empty array if stroke is not true for both stroke options and border (otherwise sets 'stroke' to true)
+     * - Validates color - must be string, returns empty array if not set and valid
+     * - Validates opacity: Must be number between 0 and 1 inclusive, replaces invalid with value from stroke options (uses function)
+     * - Validates weight: Must be positive int, replaces invalid with value from defaults const (uses function), then must be doubled and added to path weight
      * - Sets 'fill' to false
      * - Does not include other fill options, but does include any additional settings added by the user
      * 
@@ -913,72 +926,51 @@ class Dataset {
     public function getBorderOptions() {
         $border = $this->getBorder();
         $path = $this->getStrokeOptions();
-        $stroke = Utils::getType($border, 'stroke', 'is_bool');
+        if (!$path['stroke'] || !Utils::getType($border, 'stroke', 'is_bool')) return [];
         $color = Utils::getStr($border, 'color', null);
-        // stroke and color must be set and valid
-        if ($stroke && $color) {
-            // add weight and opacity
-            $opacity = $this->checkOpacity(Utils::get($border, 'opacity')) ?? $path['opacity'];
-            $weight = Utils::getType($border, 'weight', 'is_int', -7);
-            if ($weight < 1) $weight = self::DEFAULT_BORDER['weight'];
-            // modify weight if path stroke is true
-            if ($path['stroke']) {
-                $weight = ($weight * 2) + $path['weight'];
-            }
-            // fill should be false
-            $options = ['stroke' => true, 'color' => $color, 'opacity' => $opacity, 'weight' => $weight, 'fill' => false];
+        // color must be set and valid
+        if ($color) {
+            $options = [
+                'stroke' => true,
+                'color' => $color,
+                'opacity' => $this->checkOpacity($border, 'opacity') ?? $path['opacity'],
+                // validate and modify weight
+                'weight' => ((self::getPositiveInt($border, 'weight') ?? self::DEFAULT_BORDER['weight']) * 2) + $path['weight'],
+                'fill' => false,
+            ];
             // add extras
-            $keys = ['stroke', 'color', 'opacity', 'weight', 'fill', 'fillColor', 'fillOpacity'];
-            $options = array_merge($options, array_diff_key($border, array_flip($keys)));
-            return $options;
+            return self::addExtras($options, $border);
         }
         else return [];
     }
     /**
-     * Checks provided value: Must be a number greater than or equal to zero and less than or equal to one. Returns value if valid, otherwise null.
-     * 
-     * @param float $opacity
-     * @return ?float
-     */
-    private static function checkOpacity($opacity) {
-        if (!is_numeric($opacity) || $opacity < 0 || $opacity > 1) return null;
-        else return $opacity;
-    }
-    /**
      * Validates active border settings (stroke, color, opacity, weight) and merges with defaults.
-     * - Returns empty array if regular border is empty
-     * - Uses 'stroke' from border'
+     * - Returns empty array if regular border is empty (otherwise sets 'stroke' to true)
      * - Validates color: Must be string, replaces invalid/empty with value from border
-     * - Validates opacity: Must be number between 0 and 1 inclusive, replaces invalid with value from border if valid, otherwise with value from active stroke options
-     * - Validates weight: Must be positive int, replaces invalid with value from border if valid, otherwise with value from defaults const
-     * - Modifies weight if active path stroke (from options) is true: weight + active path weight + weight
+     * - Validates opacity: Must be number between 0 and 1 inclusive, replaces invalid with value from border if valid, otherwise with value from active stroke options (use function to validate)
+     * - Validates weight: Must be positive int, replaces invalid with value from border if valid, otherwise with value from defaults const; then doubles weight and adds active path weight
      * - Sets 'fill' to false
      * - Does not include other fill options, but does include any additional settings added by the user
      * 
      * @return array
      */
     public function getActiveBorderOptions() {
-        $options = $this->getBorderOptions();
-        if (empty($options)) return [];
-        $active = $this->getActiveBorder();
+        $border_options = $this->getBorderOptions();
+        if (empty($border_options)) return [];
+        $active_border = $this->getActiveBorder();
         $border = $this->getBorder();
-        $active_path = $this->getActiveStrokeOptions();
-        // color
-        if ($color = Utils::getStr($active, 'color', null)) $options['color'] = $color;
-        // opacity - use active border if valid, otherwise regular border if set, otherwise active path/regular/default
-        $options['opacity'] = $this->checkOpacity(Utils::get($active, 'opacity')) ?? $this->checkOpacity(Utils::get($border, 'opacity')) ?? $active_path['opacity'];
-        // weight - active border, regular border, default
-        $weight = Utils::getType($active, 'weight', 'is_int', -7);
-        if ($weight < 1) $weight = Utils::getType($border, 'weight', 'is_int', -7);
-        if ($weight < 1) $weight = self::DEFAULT_BORDER['weight'];
-        // modify weight if path stroke is true
-        if ($active_path['stroke']) {
-            $weight = ($weight * 2) + $active_path['weight'];
-        }
-        $options['weight'] = $weight;
+        $active_stroke = $this->getActiveStrokeOptions();
+        $options = [
+            'stroke' => true,
+            'color' => Utils::getStr($active_border, 'color', null) ?? $border_options['color'],
+            // opacity - use active border if valid, otherwise regular border if set, otherwise active path/regular/default
+            'opacity' => $this->checkOpacity($active_border, 'opacity') ?? $this->checkOpacity($border, 'opacity') ?? $active_stroke['opacity'],
+            // validate and modify weight
+            'weight' => ((self::getPositiveInt($active_border, 'weight') ?? self::getPositiveInt($border, 'weight') ?? self::DEFAULT_BORDER['weight']) * 2) + $active_stroke['weight'],
+            'fill' => false,
+        ];
         // add extras
-        $keys = ['stroke', 'color', 'opacity', 'weight', 'fill', 'fillColor', 'fillOpacity'];
-        return array_merge($options, array_diff_key($active, array_flip($keys)));
+            return self::addExtras($options, array_merge($border_options, $active_border));
     }
     /**
      * Returns title or id
