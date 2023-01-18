@@ -40,7 +40,7 @@ class Dataset {
     ];
     const DEFAULT_ACTIVE_PATH = [
         'weight' => 5,
-        'fillOpacity' => 0.2
+        'fillOpacity' => 0.4
     ];
     const DEFAULT_BORDER = [
         'stroke' => true,
