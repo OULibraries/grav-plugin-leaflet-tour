@@ -279,7 +279,7 @@ class TourShape extends TourFeature {
     deactivate() {
         super.deactivate();
         this.main_layer.setStyle(this.dataset.path);
-        if (this.stroke) this.stroke.setStyle(this.dataset.stroke);
+        if (this.stroke_layer) this.stroke_layer.setStyle(this.dataset.stroke);
         this.tmp_tooltip = null;
     }
 }
