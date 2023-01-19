@@ -143,7 +143,10 @@ $(document).ready(function() {
     if (!tour.views.get(view_id)) view_id = '_tour';
 
     // go to view bounds or saved bounds - need to set map center and zoom before modifying features
-    if (lng && lat) map.flyTo([lat, lng], zoom ?? map.getZoom(), { animate: false });
+    if (lng && lat) {
+        if (!zoom) zoom = map.getZoom();
+        map.flyTo([lat, lng], zoom, { animate: false });
+    }
     else {
         map.flyToBounds(tour.views.get(view_id).bounds, { padding: FLY_TO_PADDING, animate: false, duration: 0 });
         if (zoom) map.setZoom(zoom, { animate: false });
