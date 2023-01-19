@@ -67,7 +67,7 @@ form:
                     export_geojson:
                       type: toggle
                       label: Export Dataset
-                      description: Will create a json file in the page folder that can then be downloaded. The file will include geojson representations of features with custom name and popup content added to feature properties if set.
+                      description: Will create a json file in the page folder that can then be downloaded. The file will include geojson representations of features with custom name and popup content added to feature properties if set. You must save the dataset page at least once before using this.
                       style: vertical
                       highlight: 1
                       default: 0
@@ -118,7 +118,6 @@ form:
               label: Legend Summary
               description: Optional shorter version of the legend description. If provided, this will be used instead of the legend description as additional labelling for each feature on the map for users of assistive technology.
 
-            # TODO: Include?
             header.legend.symbol_alt:
               type: text
               label: Legend Symbol Alt Text

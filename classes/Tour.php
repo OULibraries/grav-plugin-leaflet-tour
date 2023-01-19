@@ -825,7 +825,6 @@ class Tour {
         $overrides = [];
         // only tour datasets
         foreach (array_intersect_key(Utils::getArr($yaml, 'dataset_overrides'), $datasets) as $id => $override) {
-            // if (!is_array($override)) continue; // TODO: Useful?
             // validate auto popup props (if set)
             $dataset = Utils::get($datasets, $id);
             // props should only contain values from dataset properties, could also contain none
