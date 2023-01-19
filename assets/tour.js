@@ -73,6 +73,11 @@ if ($("#scrolly .step").length > 0) {
 //     console.log('zoom: ' + map.getZoom() + ', center: ' + parseFloat(map.getCenter().lat.toFixed(4)) + ', ' + parseFloat(map.getCenter().lng.toFixed(4)));
 // }
 // map.on("click", printMapState);
+// print click location
+// map.on('click', function(ev){
+//     var latlng = map.mouseEventToLatLng(ev.originalEvent);
+//     console.log(latlng.lat + ', ' + latlng.lng);
+// });
 
 map.on("zoomend", function() {
     adjustBasemaps(tour_state.view, tour_state, map, tour.tile_layer);
