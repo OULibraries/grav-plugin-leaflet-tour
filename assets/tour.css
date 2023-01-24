@@ -112,6 +112,10 @@ body {
   margin: 0;
 }
 
+.attribution-section img {
+  margin: 5px 0;
+}
+
 @media (max-width: 799px) {
   .tour-desktop-only {
     display: none;
@@ -221,7 +225,7 @@ body {
     border-left: none;
   }
 
-  .has-dialog #map-nav {
+  .has-dialog #map-nav, .has-dialog #map, .has-dialog .zoom-btns {
     display: none;
   }
 
@@ -305,6 +309,7 @@ body {
   main .desktop-btns .go-to-view-btn:focus {
     opacity: 1;
     transition: opacity 0.5s;
+    pointer-events: auto;
   }
 
   #settings-modal .dialog-content {
