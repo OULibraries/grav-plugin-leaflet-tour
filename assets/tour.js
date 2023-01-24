@@ -136,7 +136,7 @@ $(document).ready(function() {
         }
     }
     // return to previous scroll position if applicable
-    let scroll_top = sessionStorage.getItem('scroll_top');
+    let scroll_top = sessionStorage.getItem(loc + '_scroll_top');
     document.getElementById("tour-wrapper").scrollTop = scroll_top ?? 0;
     // check for saved view, use '_tour' if no valid view is saved
     let view_id = sessionStorage.getItem('tour_view') ?? '_tour';
@@ -323,7 +323,7 @@ function doWindowScrollAction() {
     // toggle back to top and save scroll position for session
     if (scroll_top > BACK_TO_TOP_Y) $("#back-to-top").addClass("active");
     else $("#back-to-top").removeClass("active");
-    sessionStorage.setItem('scroll_top', scroll_top);
+    sessionStorage.setItem(window.location.pathname + '_scroll_top', scroll_top);
 }
 
 function checkMapToggleScroll() {
