@@ -116,6 +116,10 @@ body {
   margin: 5px 0;
 }
 
+.auto-prop {
+  font-weight: bold;
+}
+
 @media (max-width: 799px) {
   .tour-desktop-only {
     display: none;
