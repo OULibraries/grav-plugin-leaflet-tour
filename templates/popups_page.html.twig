@@ -3,7 +3,7 @@
 {% set tour = leaflet_tour.getTour(page.parent().header.id) %}
 
 {% set tour_title = tour.getTitle() ?? 'Tour' %}
-{% set title = page.title ?? tour_title  ~ ' Popup Content' %}
+{% set title = page.title ?? (tour_title  ~ ' Popup Content') %}
 
 {% block page_title %}
     <title>{{ title ~ " | " ~ site.title}}</title>

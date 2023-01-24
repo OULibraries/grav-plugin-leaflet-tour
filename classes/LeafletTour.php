@@ -417,7 +417,7 @@ class LeafletTour {
             $file = MarkdownFile::instance("$path/popups/popups_page.md");
             // if tour has popups and page does not exist: create page
             if (Utils::get($update, 'has_popups') && !$file->exists()) {
-                $file->header(['visible' => 0, 'title' => Utils::getStr($update, 'title') ?: Utils::getStr($update, 'id') . ' Popup Content']);
+                $file->header(['visible' => 0, 'title' => (Utils::getStr($update, 'title') ?: Utils::getStr($update, 'id')) . ' Popup Content']);
                 $file->save();
             }
             // if tour does not have popups and page does exist: remove page
