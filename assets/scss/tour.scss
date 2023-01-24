@@ -47,6 +47,7 @@ body {
         img, svg {
             margin: 10px;
             background-color: #fff;
+            flex-shrink: 0;
         }
         img.basemap {
             max-width: 20%;
