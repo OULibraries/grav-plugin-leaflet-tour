@@ -1334,7 +1334,6 @@ class Tour {
      * @return string
      */
     public function getBodyClasses() {
-        // TODO: Accept body_classes as an array
         $classes = Utils::getStr($this->getExtras(), 'body_classes');
         if (!$this->getOverrides()['map_on_right']) $classes .= ' map-on-left';
         return $classes;

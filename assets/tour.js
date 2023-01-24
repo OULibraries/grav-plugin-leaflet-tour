@@ -278,11 +278,6 @@ $(document).ready(function() {
     modifyLinks();
 });
 
-// TODO: This should really move to the theme depending on how I deal with aria-haspopup
-function toggleExpanded(btn) {
-    btn.setAttribute("aria-expanded", btn.getAttribute("aria-expanded") == "true" ? "false" : "true");
-}
-
 function enterView(id, fly_to = true) {
     let view = tour.views.get(id);
     if (!view) return;
