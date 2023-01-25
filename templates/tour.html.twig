@@ -34,7 +34,7 @@
 
 {# Allow theme CSS to overwrite Leaflet CSS, and allow tour-specific CSS to overwrite all other CSS. #}
 {% block stylesheets %}
-    {% do assets.addCss('plugin://leaflet-tour/assets/leaflet/leaflet.css') %}
+    {% do assets.addCss('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/leaflet.css') %}
     {{ parent() }}
     {% do assets.addCss('plugin://leaflet-tour/assets/tour.css') %}
 {% endblock stylesheets %}
@@ -43,8 +43,8 @@
 {% block javascripts %}
     {{ parent() }}
     {# JS to add after page HTML #}
-    {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/leaflet.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/leaflet/leaflet-hash.js', {group:'bottom'}) %}
+    {% do assets.addJs('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/leaflet.js', {group:'bottom'}) %}
+    {% do assets.addJs('https://cdnjs.cloudflare.com/ajax/libs/leaflet-hash/0.2.1/leaflet-hash.min.js', {group:'bottom'}) %}
 
     {% do assets.addJs('https://unpkg.com/intersection-observer', {group:'bottom'}) %}
     {% do assets.addJs('https://unpkg.com/scrollama', {group:'bottom'}) %}

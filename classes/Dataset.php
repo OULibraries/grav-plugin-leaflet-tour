@@ -52,17 +52,17 @@ class Dataset {
     ];
     // Default options for icon when no file is defined (default icon used), used when getting icon options
     const DEFAULT_MARKER_FALLBACKS = [
-        'iconUrl' => 'user/plugins/leaflet-tour/images/marker-icon.png',
+        'iconUrl' => 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/images/marker-icon.png',
         'width' => 25,
         'height' => 41,
         'anchor_x' => 12,
         'anchor_y' => 41,
         'tooltip_anchor_x' => 2,
         'tooltip_anchor_y' => 0,
-        'shadowUrl' => 'user/plugins/leaflet-tour/images/marker-shadow.png',
+        'shadowUrl' => 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/images/marker-shadow.png',
         'shadow_width' => 41,
         'shadow_height' => 41,
-        'iconRetinaUrl' => 'user/plugins/leaflet-tour/images/marker-icon-2x.png',
+        'iconRetinaUrl' => 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/images/marker-icon-2x.png',
         'className' => 'leaflet-marker'
     ];
     // Default options for icon when file is defined (custom icon provided), used when getting icon options
