@@ -61,19 +61,19 @@
         <header id="top">
             <div class="header">{% block header %}{{ parent() }}{% endblock %}</div>
             {# Options button and modal #}
-            <button type="button" id="open-settings-btn" class="tour-desktop-only icon-btn" aria-haspopup="true" onClick="openDialog('settings-modal', this)">
-                <i class="fas fa-cog" aria-hidden="true"></i>
+            <button type="button" id="open-settings-btn" class="tour-desktop-only icon-btn settings-btn dialog-open-btn" aria-haspopup="true" data-opens="settings-modal">
+                <i class="fa fa-cog" aria-hidden="true"></i>
                 <span class="sr-only">Settings</span>
             </button>
         </header>
         {# Navigation will not be shown in mobile map view #}
         {% block navigation %}{{ parent() }}{% endblock %}
         {# Sticky options - only for mobile, changes between content and map views #}
-        <nav aria-label="Map" id="map-nav" class="tour-mobile-only">
+        <nav aria-label="Map" id="map-nav" class="tour-mobile-only content-toggle-wrapper">
             {# Toggle button - could change position and formatting, but for now will go with a hamburger style #}
-            <button type="button" id="mobile-map-toggle-btn" aria-expanded="false" aria-controls="map-nav-options" class="map-only icon-btn hamburger-btn dual-bg" data-toggles="map-nav-options">
-                <i class="fas fa-minus" aria-hidden="true"></i>
-                <i class="fas fa-bars" aria-hidden="true"></i>
+            <button type="button" id="mobile-map-toggle-btn" aria-expanded="false" aria-controls="map-nav-options" class="map-only icon-btn hamburger-btn dual-bg content-toggle-btn">
+                <i class="fa fa-times" aria-hidden="true"></i>
+                <i class="fa fa-bars" aria-hidden="true"></i>
                 {# TODO: Options or Menu? #}
                 <span class="sr-only">Options</span>
             </button>
@@ -89,8 +89,8 @@
                 <div role="dialog" id="settings-modal" aria-labelledby="settings-label" aria-modal="true" class="hidden">
                     <div class="dialog-top">
                         <h2 id="settings-label" class="dialog-label">Settings</h2>
-                        <button type="button" id="settings-close-btn" class="icon-btn" onClick="closeDialog(this)">
-                            <i class="fas fa-times" aria-hidden="true"></i>
+                        <button type="button" id="settings-close-btn" class="icon-btn close-btn dialog-close-btn">
+                            <i class="fa fa-times" aria-hidden="true"></i>
                             <span class="sr-only">Close</span>
                         </button>
                     </div>
@@ -146,11 +146,11 @@
                 {# Zoom Buttons #}
                 <div class="zoom-btns">
                     <button type="button" class="icon-btn dual-bg" id="zoom-in-btn">
-                        <i class="fas fa-plus" aria-hidden="true"></i>
+                        <i class="fa fa-plus" aria-hidden="true"></i>
                         <span class="sr-only">Zoom Map In</span>
                     </button>
                     <button type="button" class="icon-btn dual-bg" id="zoom-out-btn">
-                        <i class="fas fa-minus" aria-hidden="true"></i>
+                        <i class="fa fa-minus" aria-hidden="true"></i>
                         <span class="sr-only">Zoom Map Out</span>
                     </button>
                 </div>

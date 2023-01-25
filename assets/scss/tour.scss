@@ -15,12 +15,12 @@ body {
     .icon-btn {
         border-radius: 0;
         position: relative;
-    }
-    #zoom-out-btn {
-        border-bottom-width: 1px;
+        height: 30px;
+        width: 30px;
+        font-size: 18px;
     }
     #zoom-in-btn {
-        border-top-width: 1px;
+        margin-bottom: 5px;
     }
     button:focus-visible {
         z-index: 2;
@@ -127,6 +127,10 @@ body {
     margin: 5px 0;
 }
 
+.la-times-circle {
+    font-size: 44px;
+}
+
 // mobile
 @media(max-width: ($mobile - 1)) {
     .tour-desktop-only {
@@ -187,8 +191,10 @@ body {
                 display: initial;
             }
             #mobile-map-toggle-btn {
+                display: flex;
                 margin: 10px;
                 float: right;
+                font-size: 26px;
             }
             #map-nav-options {
                 display: none;
@@ -289,6 +295,9 @@ body {
     #open-settings-btn {
         align-self: start;
         margin: 5px 0;
+        font-size: 28px;
+        height: 40px;
+        width: 40px;
     }
     #main-nav {
         margin: 10px 10px 0;

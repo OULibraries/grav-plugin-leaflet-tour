@@ -168,10 +168,6 @@ $(document).ready(function() {
 
     // interaction
     $("#nav-toggle-btn").on("click", checkMapToggleScroll);
-    $("#mobile-map-toggle-btn").on("click", function() {
-        $(this).parent().toggleClass('expanded');
-        toggleExpanded(this);
-    });
     $("#map-toggle-btn").on("click", function() {
         if (this.getAttribute("data-map-active") === "false") switchToMap(this.id);
         else switchToContent();
