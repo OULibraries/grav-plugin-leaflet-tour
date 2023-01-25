@@ -34,7 +34,7 @@ class TourFeature {
         else {
             // shape feature, needs some basic options and visibly hidden class
             return {
-                iconUrl: 'user/plugins/leaflet-tour/images/marker-icon.png',
+                iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/images/marker-icon.png',
                 iconSize: [14, 14],
                 className: 'focus-marker sr-only'
             };
