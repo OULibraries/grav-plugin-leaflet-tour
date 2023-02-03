@@ -1,45 +1,28 @@
-// constants
-const SCROLLAMA_OFFSET = 0.33; // note: There are a couple things that rely on this number, so be careful if modifying
-const SCROLLAMA_DEBUG = false; // Never modify this - setting to true makes it impossible to scroll
-const SCROLLAMA_ENTER_VIEW_WAIT =  500; // half a second
-
-const FLY_TO_PADDING = [10, 10];
-
 // tour state
-const tour = {
+var tour = {
     tile_layer: null,
     feature_layer: null,
 }
-const page_state = {
+var page_state = {
     save_scroll_pos: true, // save the (vertical) scroll position
     scroll_pos: 0, // the saved (vertical) scroll position
 }
-const tour_state = {
+var tour_state = {
     map_needs_adjusting: true,
     animation: true,
     view: null,
     basemaps: [], // active basemaps
 }
 
-function adjustMap() {
-    map.invalidateSize();
-    view = tour_state.view ?? tour.views.get('_tour');
-    if ((bounds = view.bounds)) map.flyToBounds(bounds, { padding: FLY_TO_PADDING, animate: false });
-}
-
 // ---------- Map/Tour Initialization ---------- //
 const map = createMap(tour_options);
-map.fitBounds([[1,1],[2,2]]);
 if (tour_options.show_map_location_in_url) hash = new L.Hash(map);
 tour.tile_layer = createTileServer(tour_options.tile_server);
 map.addLayer(tour.tile_layer);
 tour.basemaps = createBasemaps(tour_basemaps);
 tour.datasets = tour_datasets;
-tour.point_layer = createPointLayer();
-map.addLayer(tour.point_layer);
-tour.shape_layer = createShapeLayer();
-map.addLayer(tour.shape_layer);
 tour.features = tour_features;
+map.createPane('featurePane');
 tour.features.forEach(createFeature);
 tour.views = tour_views;
 setupViews(tour.views, tour.features, tour.basemaps);
@@ -69,38 +52,12 @@ if ($("#scrolly .step").length > 0) {
         }
     });
 }
-// function printMapState() {
-//     console.log('zoom: ' + map.getZoom() + ', center: ' + parseFloat(map.getCenter().lat.toFixed(4)) + ', ' + parseFloat(map.getCenter().lng.toFixed(4)));
-// }
-// map.on("click", printMapState);
-// print click location
-// map.on('click', function(ev){
-//     var latlng = map.mouseEventToLatLng(ev.originalEvent);
-//     console.log(latlng.lat + ', ' + latlng.lng);
-// });
 
-map.on("zoomend", function() {
-    adjustBasemaps(tour_state.view, tour_state, map, tour.tile_layer);
-    // adjust zoom buttons
-    let zoom_out = document.getElementById("zoom-out-btn");
-    let zoom_in = document.getElementById("zoom-in-btn");
-    zoom_out.disabled = false;
-    zoom_in.disabled = false;
-    if (map.getZoom() <= map.getMinZoom()) zoom_out.disabled = true;
-    else if (map.getZoom() >= map.getMaxZoom()) zoom_in.disabled = true;
-    // save zoom level
-    sessionStorage.setItem(window.location.pathname + '_zoom', map.getZoom());
-});
-map.on("moveend", function() {
-    // save center
-    let loc = window.location.pathname;
-    sessionStorage.setItem(loc + '_lng', map.getCenter().lng);
-    sessionStorage.setItem(loc + '_lat', map.getCenter().lat);
-});
+map.on("zoomend", handleMapZoom);
+map.on("movend", handleMapMove);
 
 let window_scroll_tick = false;
 
-// ---------- General Setup ---------- //
 $(document).ready(function() {
     let loc = window.location.pathname;
     let lng = parseFloat(sessionStorage.getItem(loc + '_lng'));
@@ -135,13 +92,13 @@ $(document).ready(function() {
             $("#view-content").css("padding-bottom", diff + "px");
         }
     }
+
     // return to previous scroll position if applicable
     let scroll_top = sessionStorage.getItem(loc + '_scroll_top');
     document.getElementById("tour-wrapper").scrollTop = scroll_top ?? 0;
     // check for saved view, use '_tour' if no valid view is saved
     let view_id = sessionStorage.getItem('tour_view') ?? '_tour';
     if (!tour.views.get(view_id)) view_id = '_tour';
-
     // go to view bounds or saved bounds - need to set map center and zoom before modifying features
     if (lng && lat) {
         if (!zoom) zoom = map.getZoom();
@@ -151,12 +108,9 @@ $(document).ready(function() {
         map.flyToBounds(tour.views.get(view_id).bounds, { padding: FLY_TO_PADDING, animate: false, duration: 0 });
         if (zoom) map.setZoom(zoom, { animate: false });
     }
-    
-    // features
-    // for (let feature of tour.features.values()) {
-    //     feature.modify();
-    // }
-    modifyFeatures(tour.features);
+
+    // modify features
+    // tour.features.forEach(feature => feature.modify());
 
     // set view - no flyTo, but need to handle other aspects of setting view
     enterView(view_id, false);
@@ -167,6 +121,7 @@ $(document).ready(function() {
     $("#map").prepend(controls);
 
     // interaction
+    // map and nav
     $("#nav-toggle-btn").on("click", checkMapToggleScroll);
     $("#map-toggle-btn").on("click", function() {
         if (this.getAttribute("data-map-active") === "false") switchToMap(this.id);
@@ -187,6 +142,8 @@ $(document).ready(function() {
     $("#zoom-in-btn").on("click", function() {
         map.zoomIn();
     });
+
+    // legend
     $("#legend-toggle-btn").on("click", function() {
         $("#" + this.getAttribute("aria-controls")).toggleClass("minimized");
         toggleExpanded(this);
@@ -195,40 +152,69 @@ $(document).ready(function() {
     $("#legend-close-btn").on("click", toggleMobileLegend);
     $(".legend-checkbox").on("input", function() {
         toggleDataset(this.value, tour.datasets, !this.checked);
-    })
+    });
     $("#legend-basemaps-toggle").on("click", function() {
         this.parentElement.parentElement.classList.toggle("expanded");
         toggleExpanded(this);
-    })
+    });
+
     // features
-    $(".leaflet-pane .hover-el").on("click", function(e) {
+    // focus element
+    // move focus to feature to activate
+    $(".leaflet-pane .focus-el").on("focus", function(e) {
         e.stopPropagation();
-        getFeature(this).openPopup();
-    }).on("mouseover", function(e) {
+        tour.features.get(this.getAttribute("data-feature")).activate(map, e);
+    })
+    // move focus away to deactivate
+    .on("blur", function(e) {
         e.stopPropagation();
-        getFeature(this).activate(map, e);
-    }).on("mouseout", function(e) {
+        tour.features.get(this.getAttribute("data-feature")).deactivate();
+    })
+    // "click" button (native html) to open popup
+    .on("click", function(e) {
         e.stopPropagation();
-        // only deactivate if feature does not have focus
-        let feature = getFeature(this);
-        if (!(feature.focus_element === document.activeElement))feature.deactivate();
+        tour.features.get(this.getAttribute("data-feature")).click();
     });
-    $(".leaflet-pane .focus-el").on("keypress", function(e) {
+    // hover element
+    // hover over feature to activate
+    $(".leaflet-pane .hover-el").on("mouseover", function(e) {
         e.stopPropagation();
-        if (e.which === 32 || e.which === 13) {
-            getFeature(this).openPopup();
+        tour.features.get(this.getAttribute("data-feature")).activate(map, e);
+    })
+    // remove hover from feature to deactivate
+    .on("mouseout", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).mouseoutFeature();
+    })
+    // click feature to open popup or activate/give focus
+    .on("click", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).click();
+    });
+    // tooltip
+    // remove hover from tooltip to deactivate
+    $(".leaflet-pane .leaflet-tooltip").on("mouseout", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).mouseoutTooltip();
+    })
+    // click tooltip to open popup or activate/give focus
+    .on("click", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).click();
+    });
+    // esc key hides any active tooltips
+    $(document).on("keyup", function(e) {
+        if ((e.which || e.keyCode) === aria.KeyCode.ESC) {
+            $(".leaflet-tooltip:not(.hide)").addClass("tmp-hide");
         }
-    }).on("focus", function(e) {
-        e.stopPropagation();
-        getFeature(this).activate(map, e);
-    }).on("blur", function(e) {
-        e.stopPropagation(e);
-        getFeature(this).deactivate();
     });
+
     // views
+    // click show view button to enter view
     $(".show-view-btn").on("click", function() {
         enterView(this.getAttribute("data-view"));
     });
+    // click go to view button to move focus to map
     $(".go-to-view-btn").on("click", function() {
         if (isMobile()) {
             enterView(this.getAttribute("data-view"));
@@ -239,25 +225,31 @@ $(document).ready(function() {
             $("#map").focus();
         }
     });
+    // click back to view button to return focus to go to view button
     $("#back-to-view-btn").on("click", function() {
         this.classList.remove("active");
         $("#" + this.getAttribute("data-view")).focus();
     });
+
+    // other
+    // click reset button to reset the (tour) view
     $(".reset-view-btn").on("click", function() {
         enterView('_tour');
     });
+    // click popup button to open modal dialog
     $(".view-popup-btn").on("click", function() {
         let feature_id = this.getAttribute("data-feature");
         openDialog(feature_id + "-popup", this);
-        $(this).one("focus", function(e) {
-            // when focus returns, make sure the feature is activated
-            tour.features.get(this.getAttribute("data-feature")).activate(map, e);
-            $(this).one("blur", function() {
-                // when focus leaves deactivate the feature
-                tour.features.get(this.getAttribute("data-feature")).deactivate();
-            });
-        });
+        // $(this).one("focus", function(e) {
+        //     // when focus returns, make sure the feature is activated
+        //     tour.features.get(this.getAttribute("data-feature")).activate(map, e);
+        //     $(this).one("blur", function() {
+        //         // when focus leaves deactivate the feature
+        //         tour.features.get(this.getAttribute("data-feature")).deactivateCheck();
+        //     });
+        // });
     });
+
     // scrolling (desktop)
     $("#tour-wrapper").on("scroll", function() {
         if (!window_scroll_tick) {
@@ -273,33 +265,6 @@ $(document).ready(function() {
     // call theme method (there may be new links to modify)
     modifyLinks();
 });
-
-function enterView(id, fly_to = true) {
-    let view = tour.views.get(id);
-    if (!view) return;
-    // If the new view is differnt, exit the old one
-    if (tour_state.view && (tour_state.view.id !== view)) exitView();
-    // set new view
-    tour_state.view = view;
-    toggleViewFeatures(view, tour.features, true);
-    // if applicable, fly to view bounds
-    if (fly_to) {
-        if (view.bounds && !isMobile()) {
-            map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING });
-        }
-        else if (isMobile()) {
-            map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING, animate: false });
-            tour_state.map_needs_adjusting = true; // TODO: maybe?
-        }
-    }
-    adjustBasemaps(view, tour_state, map, tour.tile_layer);
-    sessionStorage.setItem('tour_view', id);
-}
-function exitView() {
-    // unhide previously hidden features
-    toggleViewFeatures(tour_state.view, tour.features, false);
-    sessionStorage.setItem('tour_view', '');
-}
 
 function toggleMobileLegend() {
     $("body").toggleClass("legend-active");
@@ -369,9 +334,6 @@ function switchToContent() {
     btn2.removeAttr("aria-expanded");
 }
 
-function getFeature(el) {
-    return tour.features.get(el.getAttribute("data-feature"));
-}
 function isMobile() {
     return (window.innerWidth < 799);
 }

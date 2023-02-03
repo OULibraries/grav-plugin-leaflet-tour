@@ -1,290 +1,330 @@
 /**
- * This document is for: Only functions (and classes, I guess), particularly only ones that need to be tested. It should not contain code that will run without a function call. Functions will be called by either tour.js or tour-test.js.
- */
+ * This document is for: Only functions and classes (and constants, I guess), particularly only ones that need to be tested (and only functions related to leaflet). It should not contain code that will run without a function call. Functions will be called by either tour.js or tour-test.js.
+*/
 
 const BUFFER_WEIGHT = 21;
 const DEFAULT_TILE_SERVER = 'OpenTopoMap';
+const SCROLLAMA_OFFSET = 0.33; // note: There are a couple things that rely on this number, so be careful if modifying
+const SCROLLAMA_DEBUG = false; // Never modify this - setting to true makes it impossible to scroll
+const SCROLLAMA_ENTER_VIEW_WAIT =  500; // half a second
+
+const FLY_TO_PADDING = [10, 10];
 
 /**
- * Things common to all features
+ * @property {String} id - unique identifier for feature
+ * @property {String} name
+ * @property {Boolean} has_popup - if the feature has associated popup content
+ * @property {Object} dataset - data provided from Tour
+ * @property {Object} coordinates - Leaflet coordinates, LatLng form (transformed from GeoJSON)
+ * @property {Boolean} hide_view - feature should be hidden, not in the current view
+ * @property {Boolean} hide_dataset - feature should be hidden, dataset toggled off in legend
+ * @property {Object} focus_element - HTML object that will receive focus
+ * @property {Object} hover_layer - Leaflet layer for the object that will receive hover: its element could be the same as focus_element, could be a child of focus_element, could be totally different - implementation specific
+ * @property {Object} tooltip - Leaflet layer for the object's tooltip
  */
 class TourFeature {
-    // properties
-    id; name; has_popup; geometry;
-    // leaflet objects
-    point_layer; dataset;
-    // status
-    hide_view; hide_dataset;
-    /**
-     * @param {Object} feature Data provided from Tour
-     * @param {Map} datasets Map of id to dataset data
-     */
-    constructor(feature, datasets) {
-        this.geometry = feature.geometry;
-        let props = feature.properties;
-        this.dataset = datasets.get(props.dataset);
-        this.id = props.id;
-        this.name = props.name;
+    id; name; has_popup; dataset; coordinates; hide_view; hide_dataset; focus_element; hover_layer; tooltip;
+    // todo
+    constructor(feature, datasets, map) {
+        // set properties
+        this.id = feature.properties.id;
+        this.name = feature.properties.name;
+        this.has_popup = feature.properties.has_popup;
+        this.dataset = datasets.get(feature.properties.dataset);
+        this.coordinates = this.coordsToLatLngs(feature.geometry);
+        // and state
         this.hide_view = false;
         this.hide_dataset = false;
-        this.has_popup = props.has_popup;
+        // build
     }
-    get icon_options() {
-        if (this.dataset.icon) return this.dataset.icon;
-        else {
-            // shape feature, needs some basic options and visibly hidden class
-            return {
-                iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/images/marker-icon.png',
-                iconSize: [14, 14],
-                className: 'focus-marker sr-only'
-            };
-        }
-    }
+    // todo some getters for convenience
+    get hover_element() { return this.hover_layer.getElement(); }
+    get elements() { return $(this.focus_element).add(this.hover_element); }
     get alt_text() {
-        return this.name + (this.dataset.legend_summary ? ", " + this.dataset.legend_summary : "") + (this.has_popup ? ", open popup" : "");
+        return this.name + (this.dataset.legend_summary ? ", " + this.dataset.legend_summary : "");
     }
-    get focus_element() { return this.point_layer._icon; }
-    get elements() {
-        return $(this.tooltip).add(this.focus_element);
-    }
-    addToLayer(layer) {
-        this.point_layer = layer;
-        // Note: point features will bind tooltip to this layer, shape featurs will not
-    }
-    bindTooltip(layer) {
-        // TODO: aria-hidden on each tooltip, or on the whole tooltip pane?
-        layer.bindTooltip(String('<div aria-hidden="true">' + this.name) + '</div>', {
-            permanent: false,
-            className: this.dataset.id,
-            sticky: false,
-        });
-    }
-    addToLayers(point_layer, shape_layer) {} // to be defined by point vs. shape
-    // called after feature is created and document is ready
-    modify() {
-        let el = this.hover_element;
-        // hover element needs id, additional classes, and data-feature attribute
-        el.id = this.id;
-        el.classList.add(this.dataset.id);
-        el.classList.add("hover-el");
-        el.classList.add(this.has_popup ? "has-popup" : "no-popup");
-        el.setAttribute("data-feature", this.id);
-        // focus element needs class, data-feature attribute, and possibly role/aria-haspopup attributes (for point, this will actually be the same element)
-        let focus = this.focus_element;
-        if (el !== focus) focus.id = this.id + '-focus-el';
-        focus.classList.add("focus-el");
-        focus.setAttribute("data-feature", this.id); // redundant for points
+    // because GeoJSON arrays are [lng, lat] and latlngs are [lat, lng] - don't ask me why
+    coordsToLatLngs(geometry) {} // to be extended by child classes
+    // todo
+    createFocusElement(map) {
+        // create basic html element
         if (this.has_popup) {
-            focus.setAttribute("role", "button");
-            focus.setAttribute("aria-haspopup", "true");
+            this.focus_element = document.createElement("button");
+            // accessibility info: type, aria-haspopup
+            this.focus_element.setAttribute("type", "button");
+            this.focus_element.setAttribute("aria-haspopup", "true");
         }
+        else {
+            this.focus_element = document.createElement("div");
+            // make focusable
+            this.focus_element.setAttribute("tabindex", "0");
+        }
+        // add id, classes, reference to feature, etc.
+        this.focus_element.id = this.id + "-focus";
+        this.focus_element.classList.add("focus-el");
+        // implementation specific: give class "leaflet-pane", add to map as pane
+        this.focus_element.classList.add("leaflet-pane");
+        map._panes[this.id] = this.focus_element; // adds to map object
+        map.getPane("markerPane").appendChild(this.focus_element); // adds to html
+        // implementation specific: other considered option: give class sr-only, add text, and add to an already existing map pane
     }
+    createFeatureLayer(feature, map) {} // to be extended by child classes
+    // todo
+    bindTooltip(layer) {
+        layer.bindTooltip(String('<div class="tooltip" aria-hidden="true">' + this.name) + '</div>', {
+            permanent: true,
+            className: "hide", // hidden by default (display: none)
+            sticky: false,
+            interactive: true,
+        });
+        // have to open tooltip to actually create and add the element
+        layer.openTooltip();
+        this.tooltip = layer.getTooltip();
+        if (this.has_popup) this.tooltip.getElement().classList.add("has-popup");
+    }
+    // Interaction Methods
+    // todo
     toggleHidden() {
-        let hide = (this.hide_dataset || this.hide_view);
-        this.elements.attr("aria-hidden", hide).css("display", (hide ? "none" : "block"));
+        // only show element if it is not hidden by any method, otherwise hide it
+        // using class "hide" will set any elements to display none
+        if (this.hide_dataset || this.hide_view) $(this.elements).addClass("hide");
+        else $(this.elements).removeClass("hide");
     }
-    openPopup() {
-        if (this.has_popup) openDialog(this.id+"-popup", this.focus_element);
+    // call when hover element is clicked
+    click() {
+        // handles click event - will either set focus on feature or open popup dialog
+        if (this.has_popup) openDialog(this.id + "-popup", this.focus_element);
         else this.focus_element.focus();
     }
+    // call when feature receives hover/focus
     activate(map, e) {
-        this.main_layer.openTooltip();
+        // do nothing if feature is hidden
+        if (this.hide_dataset || this.hide_view) return;
+        // open tooltip if it isn't already
+        if (this.tooltip.getElement().classList.contains("hide")) this.openTooltip(map, e);
+        // make sure feature is visible (only if event called because focus)
+        if (this.focus_element === document.activeElement) this.checkFeatureVisible(map, e);
+        // give feature "active" class
+        this.hover_element.classList.add("active");
+    }
+    checkFeatureVisible(map, e) {} // to be extended by child classes
+    openTooltip(map, e) {
+        this.tooltip.getElement().classList.remove("hide"); // make it visible
+        this.hover_layer.openTooltip(); // reset tooltip
+        // to be extended by child classes (if needed)
     }
     deactivate() {
-        this.main_layer.closeTooltip();
+        // hide tooltip
+        this.tooltip.getElement().classList.add("hide");
+        // remove possible tmp hide class
+        this.tooltip.getElement().classList.remove("tmp-hide");
+        // remove "active" class
+        this.hover_element.classList.remove("active");
+        // to be extended by child classes (if needed)
+    }
+    // to be called when the hover element experiences mouseout
+    mouseoutFeature() {
+        // ignore if feature has focus or if tooltip has hover
+        if ((this.focus_element === document.activeElement) || $(this.tooltip.getElement()).is(":hover")) return;
+        else this.deactivate();
+    }
+    // to be called when the tooltip experiences mouseout
+    mouseoutTooltip() {
+        // ignore if feature has focus or hover element has hover
+        if ((this.focus_element === document.activeElement) || $(this.hover_element).is(":hover")) return;
+        else this.deactivate();
     }
 }
 class TourPoint extends TourFeature {
-    constructor(feature, datasets) { super(feature, datasets); }
-    get hover_element() { return this.point_layer._icon; }
+    constructor(feature, datasets, map) {
+        super(feature, datasets, map);
+        // creates standalone html element that will be used as focus element, either added as a pane or to a pane or whatever depending on implementation decisions; also adds the element to the map
+        this.createFocusElement(map);
+        // creates feature layer(s), adds to map, and modifies as needed - some of the specifics will depend on implementation decisions
+        this.createFeatureLayer(feature, map);
+        // create tooltip and open it for the first time (binds it to hover_layer)
+        this.bindTooltip(this.hover_layer);
+
+        // make sure all elements reference feature (hover, focus, tooltip)
+        this.focus_element.setAttribute("data-feature", this.id);
+        this.hover_element.setAttribute("data-feature", this.id);
+        this.tooltip.getElement().setAttribute("data-feature", this.id);
+        if (this.has_popup) this.hover_element.classList.add("has-popup");
+    }
     get elements() {
         return super.elements.add(this.point_layer._shadow);
     }
-    get tooltip() {
-        return this.point_layer.getTooltip().getElement();
+    coordsToLatLngs(geometry) {
+        return L.GeoJSON.coordsToLatLng(geometry.coordinates);
     }
-    get main_layer() { return this.point_layer; }
-    get main_element() { return this.point_layer._icon; }
-    addToLayer(layer) {
-        super.addToLayer(layer);
-        this.bindTooltip(layer);
-    }
-    // called when creating feature, add the feature geojson to point layer
-    addToLayers(point_layer, shape_layer) {
-        point_layer.addData({
-            type: 'Feature',
-            geometry: this.geometry,
-            properties: { id: this.id },
+    createFeatureLayer(feature, map) {
+        // icon marker
+        this.hover_layer = L.marker(this.coordinates, {
+            icon: L.icon({ ...this.dataset.icon, id: this.id + '-hover' }),
+            alt: this.alt_text, // implementation specific, if ignoring images, use ""
+            pane: this.id, // implementation specific, other option would use set pane (probably 'markerPane')
         });
-        // ignore shape layer
+        this.hover_layer.addTo(map);
+        // add class
+        this.hover_layer.getElement().classList.add("hover-el");
+        // remove tabindex
+        this.hover_layer.getElement().removeAttribute("tabindex");
     }
-    // modify() {
-    //     super.modify();
-    //     this.focus_element.id = this.id + '-focus';
-    // }
-    activate(map, e) {
-        super.activate(map, e);
-        if (!map.getBounds().contains(this.point_layer.getLatLng())) {
-            map.panTo(this.point_layer.getLatLng(), { animate: true });
-        }
+    checkFeatureVisible(map, e) {
+        let point = this.hover_layer.getLatLng();
+        if (!map.getBounds().contains(point)) map.panTo(point, { animate: true });
     }
 }
 class TourShape extends TourFeature {
-    // svg layers (may have just one, may have all three)
-    main_layer; stroke_layer; buffer_layer;
-    // only set if feature should have buffer
-    buffer_weight;
-    tmp_tooltip;
-    constructor(feature, datasets) {
-        super(feature, datasets);
-        // buffer for: anything with stroke under buffer weight and/or any line/polygon with both stroke and border
-        if (this.dataset.path.weight < BUFFER_WEIGHT) {
-            // add buffer, use default buffer weight
-            this.buffer_weight = BUFFER_WEIGHT;
-        }
-        else if (this.dataset.stroke) {
-            // add buffer, set buffer weight
-            this.buffer_weight = this.dataset.path.weight;
-        }
-    }
-    get is_line() {
-        return this.geometry.type.toLowerCase().includes('linestring');
-    }
-    get hover_element() {
-        if (this.buffer_layer) return this.buffer_layer._path;
-        else return this.main_layer._path;
+    path_layer; stroke_layer;
+    constructor(feature, datasets, map) {
+        super(feature, datasets, map);
+        // creates standalone html element that will be used as focus element, either added as a pane or to a pane or whatever depending on implementation decisions; also adds the element to the map
+        this.createFocusElement(map);
+        // creates feature layer(s), adds to map, and modifies as needed - some of the specifics will depend on implementation decisions
+        this.createFeatureLayer(feature, map);
+        // create tooltip and open it for the first time (binds it to hover_layer)
+        this.bindTooltip(this.hover_layer);
+
+        // make sure all elements reference feature (hover, focus, tooltip)
+        this.focus_element.setAttribute("data-feature", this.id);
+        this.hover_element.setAttribute("data-feature", this.id);
+        this.tooltip.getElement().setAttribute("data-feature", this.id);
+        if (this.has_popup) this.hover_element.classList.add("has-popup");
     }
     get elements() {
-        let elements = super.elements.add(this.main_layer._path);
-        if (this.stroke_layer) elements = elements.add(this.stroke_layer._path);
-        if (this.buffer_layer) elements = elements.add(this.buffer_layer._path);
-        return elements;
+        // entirely possible none of this matters, since the focus element should theoretically wrap all of these and therefore hide them when it is hidden
+        // redundancy if hover and path aren't the same doesn't matter
+        let elements = super.elements.add(this.path_layer.getElement()).add(this.hover_layer.getElement());
+        if (this.stroke_layer) return elements.add(this.stroke_layer.getElement());
+        else return elements;
     }
-    get tooltip() {
-        return this.main_layer.getTooltip().getElement();
-    }
-    get main_element() {
-        return this.main_layer._path;
-    }
-    getStyle(layer_type) {
-        switch (layer_type) {
-            case 'main':
-                return this.dataset.path;
-            case 'stroke':
-                return this.dataset.stroke;
-            case 'buffer':
-                let options = {
-                    stroke: true,
-                    weight: this.buffer_weight,
-                    opacity: 0,
-                };
-                // only include fill if feature is not a line and has fill
-                if (this.is_line || !this.dataset.path.fill) return { ...options, fill: false };
-                else return { ...options, fill: true, fillColor: 'transparent' };
+    coordsToLatLngs(geometry) {
+        let nesting;
+        switch (geometry.type.toLowerCase()) {
+            case "linestring":
+                nesting = 0;
+                break;
+            case "multilinestring":
+            case "polygon":
+                nesting = 1;
+                break;
+            case "multipolygon":
+                nesting = 2;
+                break;
+            default:
+                console.log('uh-oh'); // TODO tmp
         }
+        return L.GeoJSON.coordsToLatLngs(geometry.coordinates, nesting);
     }
-    getGeoJson(layer_type) {
-        if (layer_type === 'Point') {
-            return {
-                type: 'Feature',
-                geometry: {}
-            }
+    createFeatureLayer(feature, map) {
+        // determine if buffer is needed
+        let buffer = null;
+        // need buffer if stroke/border weight less than const
+        if (this.dataset.path.weight < BUFFER_WEIGHT) buffer = BUFFER_WEIGHT;
+        // need buffer if weight greater than or equal, but has border (use the path weight)
+        else if (this.dataset.stroke) buffer = this.dataset.path.weight;
+
+        // determine if feature is line or polygon
+        let line = feature.geometry.type.toLowerCase().includes('linestring');
+
+        // create path layer
+        this.path_layer = this.createShape(line, { ...this.dataset.path, pane: this.id });
+        this.path_layer.addTo(map);
+        // maybe create stroke layer
+        if (this.dataset.stroke) {
+            this.stroke_layer = this.createShape(line, { ...this.dataset.stroke, pane: this.id });
+            this.stroke_layer.addTo(map);
+        }
+        // maybe create buffer layer - if so, set as hover layer, otherwise set path layer
+        if (buffer) {
+            this.hover_layer = this.createShape(line, {
+                stroke: true,
+                color: 'transparent',
+                weight: buffer,
+                opacity: 0,
+                fill: this.dataset.path.fill,
+                fillColor: 'transparent',
+                fillOpacity: 0,
+                pane: this.id,
+            });
+            this.hover_layer.addTo(map);
         } else {
-            let json = this.geoJson;
-            json.properties.layer_type = layer_type;
-            return json;
+            this.hover_layer = this.path_layer;
+        }
+        // add class to hover element
+        this.hover_element.classList.add("hover-el");
+        // add svg accessibility info (since not ignoring), role, title, aria-labelledby
+        let svg = this.hover_element.parentElement.parentElement; // nesting: svg - g - path
+        let title = document.createElement("title");
+        title.innerHTML = this.alt_text;
+        title.id = this.id + "-title";
+        svg.insertBefore(title, svg.firstChild); // place title as first element in svg
+        svg.setAttribute("role", "img");
+        svg.setAttribute("aria-labelledby", this.id + "-title");
+    }
+    createShape(line, options) {
+        if (line) return L.polyline(this.coordinates, options);
+        else return L.polygon(this.coordinates, options);
+    }
+    checkFeatureVisible(map, e) {
+        // after opening tooltip, the tooltip location should be within viewport - if not, feature is not visible
+        if (!map.getBounds().contains(this.tooltip.getLatLng())) {
+            // pan to feature
+            map.panTo(this.hover_layer.getCenter(), { animate: true });
+            // save feature to store state (so timeout function can reference it)
+            tour_state.tmp_feature = this;
+            // set timeout: wait until map finishes panning before checking if feature is fully in view
+            setTimeout(function() {
+                let feature = tour_state.tmp_feature;
+                tour_state.tmp_feature = null;
+                // all of feature not in viewport? - zoom out
+                if (!map.getBounds().contains(feature.hover_layer.getBounds())) map.flyToBounds(feature.hover_layer.getBounds(), { animate: true, noMoveStart: true });
+            }, 250); // .25s = animation duration
+            // reopen tooltip, just in case
+            this.hover_layer.openTooltip();
         }
     }
-    addToShapeLayer(layer, layer_type) {
-        switch (layer_type) {
-            case 'main':
-                this.main_layer = layer;
-                this.bindTooltip(this.main_layer);
-                break;
-            case 'stroke':
-                this.stroke_layer = layer;
-                break;
-            case 'buffer':
-                this.buffer_layer = layer;
-                break;
-        }
-    }
-    // called when creating feature, add to shape layer up to three times, then add to point layer
-    addToLayers(point_layer, shape_layer) {
-        let json = {
-            type: 'Feature',
-            geometry: this.geometry,
-        };
-        // first add the basic shape geometry data
-        shape_layer.addData({
-            ...json,
-            properties: { id: this.id, layer_type: 'main' }
-        });
-        // then add stroke if applicable
-        if (this.dataset.stroke) shape_layer.addData({ ...json, properties: { id: this.id, layer_type: 'stroke' }});
-        // then add buffer if applicable
-        if (this.buffer_weight) shape_layer.addData({ ...json, properties: { id: this.id, layer_type: 'buffer' }});
-        // then add point, using center from main layer
-        let center = this.main_layer.getCenter();
-        point_layer.addData({
-            type: 'Feature',
-            geometry: {
-                type: 'Point',
-                coordinates: [center.lng, center.lat],
-            },
-            properties: { id: this.id }
-        });
-    }
-    activate(map, e) {
-        // open initial tooltip
-        if (this.tmp_tooltip) this.main_layer.openTooltip(this.tmp_tooltip);
-        else this.main_layer.openTooltip();
-        this.main_layer.setStyle(this.dataset.active_path);
+    openTooltip(map, e) {
+        super.openTooltip(map, e);
+        // this is a good place to update style, too, I guess
+        this.path_layer.setStyle(this.dataset.active_path);
         if (this.stroke_layer) this.stroke_layer.setStyle(this.dataset.active_stroke);
-
-        if (!map.getBounds().contains(this.main_layer.getTooltip().getLatLng())) {
-            this.main_layer.openTooltip(); // reset tooltip
-            // if hover: move tooltip to mouse location (by modifying offset)
+        // current tooltip location not in viewport?
+        if (!map.getBounds().contains(this.tooltip.getLatLng())) {
+            let latlng = null;
+            // activation from hover event?
             if (this.focus_element !== document.activeElement) {
-                this.tmp_tooltip = map.mouseEventToLatLng(e);
-            } 
+                // tooltip moves to point closest to mouse location (note: simply moving tooltip to mouse location doesn't work well because of the buffer element)
+                latlng = this.getTmpLatLng(map.mouseEventToLayerPoint(e));
+            }
+            // activation from focus event?
             else {
-                // if bounding box is in view, try moving tooltip to the closest layer point
-                if (map.getBounds().intersects(this.main_layer.getBounds())) {
-                    try {
-                        let point = this.main_layer.closestLayerPoint(map.latLngToLayerPoint(map.getCenter()));
-                        let latlng = map.layerPointToLatLng([point['x'], point['y']]);
-                        if (map.getBounds().contains(latlng)) this.tmp_tooltip = latlng;
-                    } catch (e) {
-                        // do nothing
-                    }
-                }
-                if (!this.tmp_tooltip) {
-                    // either bounding box is not in view or it is, but the closest layer point is not - pan and possibly zoom to feature
-                    map.panTo(this.main_layer.getCenter(), { animate: true });
-                    tour_state.tmp_feature = this;
-                    setTimeout(function() {
-                        let feature = tour_state.tmp_feature;
-                        tour_state.tmp_feature = null;
-                        if (!map.getBounds().contains(feature.main_layer.getBounds())) map.flyToBounds(feature.main_layer.getBounds(), { animate: true, noMoveStart: true });
-                    }, 250); // wait for .25s (animation duration) before checking
-                }
+                // move tooltip to closest layer point to map center
+                try {
+                    latlng = this.getTmpLatLng(map.latLngToLayerPoint(map.getCenter()));
+                } catch (e) {} // do nothing
             }
-
-            if (this.tmp_tooltip) {
-                this.main_layer.openTooltip(this.tmp_tooltip);
-            }
-        } 
+            // if new coords generated for tooltip, reset it
+            if (latlng) this.hover_layer.openTooltip(latlng);
+        }
+    }
+    getTmpLatLng(layer_point) {
+        let point = this.hover_layer.closestLayerPoint(layer_point);
+        let latlng = map.layerPointToLatLng([point['x'], point['y']]);
+        if (map.getBounds().contains(latlng)) return latlng;
+        else return null;
     }
     deactivate() {
         super.deactivate();
-        this.main_layer.setStyle(this.dataset.path);
+        this.path_layer.setStyle(this.dataset.path);
         if (this.stroke_layer) this.stroke_layer.setStyle(this.dataset.stroke);
-        this.tmp_tooltip = null;
     }
+
 }
 
 // ---------- Tour Setup Functions ---------- //
+
 /**
  * @param {Object} options tour_options from Tour/template
  * @returns L.map
@@ -298,6 +338,8 @@ function createMap(options) {
     if (max = options.max_zoom) m.setMaxZoom(max);
     if (min = options.min_zoom) m.setMinZoom(min);
     if (bounds = options.max_bounds) m.setMaxBounds(bounds);
+    // go ahead and give the map some bounds - may prevent some errors/bugs
+    m.fitBounds([[1,1],[2,2]]);
     return m;
 }
 function createTileServer(options) {
@@ -332,61 +374,16 @@ function setTileServerAttr(section, server) {
     }
     return section;
 }
-/**
- * Create layer for all features. Point features will use the correct icon options. Shape features will have hidden points at their center.
- * - tour.features must exist
- */
-function createPointLayer() {
-    return L.geoJson(null, {
-        pointToLayer: function(json, latlng) {
-            let feature = tour.features.get(json.properties.id);
-            return L.marker(latlng, {
-                icon: new L.Icon(feature.icon_options),
-                alt: feature.alt_text,
-                riseOnHover: true,
-            });
-        },
-        onEachFeature: function(json, layer) {
-            tour.features.get(json.properties.id).addToLayer(layer);
-        },
-        interactive: true,
-    });
-}
-/**
- * Create layer for all feature paths, each feature may be added multiple times.
- * - tour.features must exist
- */
-function createShapeLayer() {
-    return L.geoJson(null, {
-        style: function(json) {
-            return tour.features.get(json.properties.id).getStyle(json.properties.layer_type);
-        },
-        onEachFeature: function(json, layer) {
-            tour.features.get(json.properties.id).addToShapeLayer(layer, json.properties.layer_type);
-        }
-    });
-}
-/**
- * Called via forEach on tour features list - transforms feature data from Tour into TourFeature objects with necessary settings
- * - tour.datasets must exist
- * - tour.point_layer and tour.shape_layer must exist
- */
-function createFeature(value, key, map) {
+// requires map, tour
+function createFeature(value, key, features) {
     let feature;
-    if (value.geometry.type === 'Point') {
-        feature = new TourPoint(value, tour.datasets);
-    } else {
-        feature = new TourShape(value, tour.datasets);
-    }
+    if (value.geometry.type === 'Point') feature = new TourPoint(value, tour.datasets, map);
+    else feature = new TourShape(value, tour.datasets, map);
     if (feature) {
-        map.set(key, feature);
-        feature.addToLayers(tour.point_layer, tour.shape_layer);
+        features.set(key, feature);
+        // add reference to dataset (for easy toggling)
         feature.dataset.features.push(feature);
     }
-}
-// to be called after map is ready modifies html values as needed
-function modifyFeatures(features) {
-    features.forEach(feature => feature.modify());
 }
 function createBasemaps(basemap_data) {
     let basemaps = new Map();
@@ -402,7 +399,7 @@ function createBasemaps(basemap_data) {
  * @param {array} feature_ids
  * @param {array} default_bounds 
  */
-function createBounds(start_bounds, feature_ids, features, default_bounds) {
+ function createBounds(start_bounds, feature_ids, features, default_bounds) {
     if (start_bounds) {
         // either calculate from distance or pass on the already set bounds
         if (start_bounds.distance) {
@@ -411,12 +408,13 @@ function createBounds(start_bounds, feature_ids, features, default_bounds) {
         else return start_bounds;
     }
     else if (feature_ids.length > 0) {
-        // set bounds based on feature ids
-        let group = new L.FeatureGroup();
-        for (let id of feature_ids) {
-            group.addLayer(features.get(id).main_layer);
-        }
-        return group.getBounds();
+    // set bounds based on feature ids
+    let group = new L.FeatureGroup();
+    for (let id of feature_ids) {
+        let feature = features.get(id);
+        group.addLayer(feature.hover_layer);
+    }
+    return group.getBounds();
     }
     else {
         return default_bounds;
@@ -458,6 +456,56 @@ function adjustBasemaps(view, state, map, server) {
     if (!state.basemaps.length || !view.remove_tile_server) map.addLayer(server);
     else map.removeLayer(server);
 }
+function adjustMap() {
+    map.invalidateSize();
+    view = tour_state.view ?? tour.views.get('_tour');
+    if ((bounds = view.bounds)) map.flyToBounds(bounds, { padding: FLY_TO_PADDING, animate: false });
+}
+function handleMapZoom() {
+    adjustBasemaps(tour_state.view, tour_state, map, tour.tile_layer);
+    // adjust zoom buttons
+    let zoom_out = document.getElementById("zoom-out-btn");
+    let zoom_in = document.getElementById("zoom-in-btn");
+    zoom_out.disabled = false;
+    zoom_in.disabled = false;
+    if (map.getZoom() <= map.getMinZoom()) zoom_out.disabled = true;
+    else if (map.getZoom() >= map.getMaxZoom()) zoom_in.disabled = true;
+    // save zoom level
+    sessionStorage.setItem(window.location.pathname + '_zoom', map.getZoom());
+}
+function handleMapMove() {
+    // save center
+    let loc = window.location.pathname;
+    sessionStorage.setItem(loc + '_lng', map.getCenter().lng);
+    sessionStorage.setItem(loc + '_lat', map.getCenter().lat);
+}
+
+function enterView(id, fly_to = true) {
+    let view = tour.views.get(id);
+    if (!view) return;
+    // If the new view is differnt, exit the old one
+    if (tour_state.view && (tour_state.view.id !== view)) exitView();
+    // set new view
+    tour_state.view = view;
+    toggleViewFeatures(view, tour.features, true);
+    // if applicable, fly to view bounds
+    if (fly_to) {
+        if (view.bounds && !isMobile()) {
+            map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING });
+        }
+        else if (isMobile()) {
+            map.flyToBounds(view.bounds, { padding: FLY_TO_PADDING, animate: false });
+            tour_state.map_needs_adjusting = true; // TODO: maybe?
+        }
+    }
+    adjustBasemaps(view, tour_state, map, tour.tile_layer);
+    sessionStorage.setItem('tour_view', id);
+}
+function exitView() {
+    // unhide previously hidden features
+    toggleViewFeatures(tour_state.view, tour.features, false);
+    sessionStorage.setItem('tour_view', '');
+}
 function toggleViewFeatures(view, features, hide) {
     if (view.only_show_view_features && (view.features.length > 0)) {
         features.forEach(function(feature) {
@@ -474,3 +522,15 @@ function toggleDataset(id, datasets, hide) {
         feature.toggleHidden();
     });
 }
+
+// a couple of utility functions I might want for testing or something
+
+// function printMapState() {
+//     console.log('zoom: ' + map.getZoom() + ', center: ' + parseFloat(map.getCenter().lat.toFixed(4)) + ', ' + parseFloat(map.getCenter().lng.toFixed(4)));
+// }
+// map.on("click", printMapState);
+// print click location
+// map.on('click', function(ev){
+//     var latlng = map.mouseEventToLatLng(ev.originalEvent);
+//     console.log(latlng.lat + ', ' + latlng.lng);
+// });
