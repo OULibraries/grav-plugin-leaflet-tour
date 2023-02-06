@@ -152,7 +152,7 @@ class TourPoint extends TourFeature {
         if (this.has_popup) this.hover_element.classList.add("has-popup");
     }
     get elements() {
-        return super.elements.add(this.point_layer._shadow);
+        return super.elements.add(this.hover_layer._shadow);
     }
     coordsToLatLngs(geometry) {
         return L.GeoJSON.coordsToLatLng(geometry.coordinates);
