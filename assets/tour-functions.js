@@ -62,15 +62,22 @@ class TourFeature {
         // add id, classes, reference to feature, etc.
         this.focus_element.id = this.id + "-focus";
         this.focus_element.classList.add("focus-el");
+        // implementation specific: add sr-only class and set text
+        this.focus_element.classList.add("sr-only");
+        this.focus_element.text = this.alt_text;
+        // implementation specific: add element to "focusPane"
+        map.getPane("focusPane").appendChild(this.focus_element);
+
         // implementation specific: give class "leaflet-pane", add to map as pane
-        this.focus_element.classList.add("leaflet-pane");
-        map._panes[this.id] = this.focus_element; // adds to map object
-        map.getPane("markerPane").appendChild(this.focus_element); // adds to html
+        // this.focus_element.classList.add("leaflet-pane");
+        // map._panes[this.id] = this.focus_element; // adds to map object
+        // map.getPane("markerPane").appendChild(this.focus_element); // adds to html
         // implementation specific: other considered option: give class sr-only, add text, and add to an already existing map pane
     }
     createFeatureLayer(feature, map) {} // to be extended by child classes
     // todo
     bindTooltip(layer) {
+        // todo: possibly remove the aria-hidden, if it works best on the pane as a whole
         layer.bindTooltip(String('<div class="tooltip" aria-hidden="true">' + this.name) + '</div>', {
             permanent: true,
             className: "hide", // hidden by default (display: none)
@@ -161,8 +168,8 @@ class TourPoint extends TourFeature {
         // icon marker
         this.hover_layer = L.marker(this.coordinates, {
             icon: L.icon({ ...this.dataset.icon, id: this.id + '-hover' }),
-            alt: this.alt_text, // implementation specific, if ignoring images, use ""
-            pane: this.id, // implementation specific, other option would use set pane (probably 'markerPane')
+            alt: "", // implementation specific, ignore images
+            // pane: this.id, // implementation specific, use default pane
         });
         this.hover_layer.addTo(map);
         // add class
@@ -193,7 +200,6 @@ class TourShape extends TourFeature {
         if (this.has_popup) this.hover_element.classList.add("has-popup");
     }
     get elements() {
-        // entirely possible none of this matters, since the focus element should theoretically wrap all of these and therefore hide them when it is hidden
         // redundancy if hover and path aren't the same doesn't matter
         let elements = super.elements.add(this.path_layer.getElement()).add(this.hover_layer.getElement());
         if (this.stroke_layer) return elements.add(this.stroke_layer.getElement());
@@ -229,11 +235,11 @@ class TourShape extends TourFeature {
         let line = feature.geometry.type.toLowerCase().includes('linestring');
 
         // create path layer
-        this.path_layer = this.createShape(line, { ...this.dataset.path, pane: this.id });
+        this.path_layer = this.createShape(line, { ...this.dataset.path });
         this.path_layer.addTo(map);
         // maybe create stroke layer
         if (this.dataset.stroke) {
-            this.stroke_layer = this.createShape(line, { ...this.dataset.stroke, pane: this.id });
+            this.stroke_layer = this.createShape(line, { ...this.dataset.stroke });
             this.stroke_layer.addTo(map);
         }
         // maybe create buffer layer - if so, set as hover layer, otherwise set path layer
@@ -246,7 +252,6 @@ class TourShape extends TourFeature {
                 fill: this.dataset.path.fill,
                 fillColor: 'transparent',
                 fillOpacity: 0,
-                pane: this.id,
             });
             this.hover_layer.addTo(map);
         } else {
@@ -254,14 +259,15 @@ class TourShape extends TourFeature {
         }
         // add class to hover element
         this.hover_element.classList.add("hover-el");
-        // add svg accessibility info (since not ignoring), role, title, aria-labelledby
-        let svg = this.hover_element.parentElement.parentElement; // nesting: svg - g - path
-        let title = document.createElement("title");
-        title.innerHTML = this.alt_text;
-        title.id = this.id + "-title";
-        svg.insertBefore(title, svg.firstChild); // place title as first element in svg
-        svg.setAttribute("role", "img");
-        svg.setAttribute("aria-labelledby", this.id + "-title");
+        // implementation specific: ignore svg
+        // // add svg accessibility info (since not ignoring), role, title, aria-labelledby
+        // let svg = this.hover_element.parentElement.parentElement; // nesting: svg - g - path
+        // let title = document.createElement("title");
+        // title.innerHTML = this.alt_text;
+        // title.id = this.id + "-title";
+        // svg.insertBefore(title, svg.firstChild); // place title as first element in svg
+        // svg.setAttribute("role", "img");
+        // svg.setAttribute("aria-labelledby", this.id + "-title");
     }
     createShape(line, options) {
         if (line) return L.polyline(this.coordinates, options);
@@ -340,6 +346,8 @@ function createMap(options) {
     if (bounds = options.max_bounds) m.setMaxBounds(bounds);
     // go ahead and give the map some bounds - may prevent some errors/bugs
     m.fitBounds([[1,1],[2,2]]);
+    // implementation specific: add "focusPane" to map
+    m.createPane("focusPane");
     return m;
 }
 function createTileServer(options) {
