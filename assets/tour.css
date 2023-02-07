@@ -442,11 +442,16 @@ body {
     top: 20px;
   }
 
+  #tour-wrapper {
+    min-width: 320px;
+  }
+
   #map-wrapper {
     position: fixed;
     top: 0;
     right: 0;
     height: 100vh;
+    max-width: calc(100% - 320px);
   }
 
   .legend-wrapper {
