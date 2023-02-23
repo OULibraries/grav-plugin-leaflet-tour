@@ -39,7 +39,6 @@
     {% do assets.addCss('plugin://leaflet-tour/assets/tour.css') %}
 {% endblock stylesheets %}
 
-{# TODO: Determine if I can provide the leaflet files themselves, or if I will need to access them via CDN #}
 {% block javascripts %}
     {{ parent() }}
     {# JS to add after page HTML #}

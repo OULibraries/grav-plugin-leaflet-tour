@@ -29,7 +29,7 @@ form:
                   type: textarea
                   label: Coordinate Array (required)
                   ordering@: .custom_name
-                  description: "TODO: Describe"
+                  description: "Put a valid GeoJSON coordinate array here. Check out some [example coordinates](https://stevage.github.io/geojson-spec/#appendix-A) if needed, but keep in mind that you will provide this as one line (i.e. with white-space removed), rather than multiple lines as shown in the examples."
                   validate:
                     required: true
                     max: 500000
