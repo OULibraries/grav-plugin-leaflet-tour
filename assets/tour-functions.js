@@ -64,7 +64,7 @@ class TourFeature {
         this.focus_element.classList.add("focus-el");
         // implementation specific: add sr-only class and set text
         this.focus_element.classList.add("sr-only");
-        this.focus_element.text = this.alt_text;
+        this.focus_element.innerHTML = this.alt_text;
         // implementation specific: add element to "focusPane"
         map.getPane("focusPane").appendChild(this.focus_element);
 

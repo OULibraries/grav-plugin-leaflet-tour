@@ -22,7 +22,7 @@ map.addLayer(tour.tile_layer);
 tour.basemaps = createBasemaps(tour_basemaps);
 tour.datasets = tour_datasets;
 tour.features = tour_features;
-map.createPane('featurePane');
+// map.createPane('featurePane');
 tour.features.forEach(createFeature);
 tour.views = tour_views;
 setupViews(tour.views, tour.features, tour.basemaps);
