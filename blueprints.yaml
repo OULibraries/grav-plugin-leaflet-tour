@@ -241,7 +241,7 @@ form:
                 .bounds_section:
                   type: section
                   title: Bounds (required)
-                  text: Provide latitude and longitude values (in degrees) to position the basemap. Do not use more than seven decimal places.
+                  text: Provide latitude and longitude values (in degrees) to position the basemap.
                   underline: false
 
                 .bounds.north:
