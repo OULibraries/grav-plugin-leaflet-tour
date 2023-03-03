@@ -1,604 +1,339 @@
-var tourState = {
+// tour state
+var tour = {
+    tile_layer: null,
+    feature_layer: null,
+}
+var page_state = {
+    save_scroll_pos: true, // save the (vertical) scroll position
+    scroll_pos: 0, // the saved (vertical) scroll position
+}
+var tour_state = {
+    map_needs_adjusting: true,
+    animation: true,
     view: null,
-    tmpView: null,
-    basemaps: [],
-    activeBasemaps: [],
-    mapAnimation: true,
-    scrollyPos: 0,
-    mapNeedsAdjusting: true,
+    basemaps: [], // active basemaps
 }
 
-// extend icon to all for setting id and button role - basically just allowing me to set some element attributes when the icon is created
-L.Icon.ModalIcon = L.Icon.extend({
-    createIcon: function(oldIcon) {
-        var img = L.Icon.prototype.createIcon.call(this, oldIcon);
-        if (this.options.id) img.setAttribute('id', this.options.id);
-        if (this.options.role) img.setAttribute('role', this.options.role);
-        return img;
-    },
-    createShadow: function(oldIcon) {
-        var img = L.Icon.prototype.createShadow.call(this, oldIcon);
-        if (img) img.setAttribute('aria-hidden', 'true');
-        return img;
-    },
-});
-function modalIcon(options) {
-    return new L.Icon.ModalIcon(options);
-}
+// ---------- Map/Tour Initialization ---------- //
+const map = createMap(tour_options);
+if (tour_options.show_map_location_in_url) hash = new L.Hash(map);
+tour.tile_layer = createTileServer(tour_options.tile_server);
+map.addLayer(tour.tile_layer);
+tour.basemaps = createBasemaps(tour_basemaps);
+tour.datasets = tour_datasets;
+tour.features = tour_features;
+// map.createPane('featurePane');
+tour.features.forEach(createFeature);
+tour.views = tour_views;
+setupViews(tour.views, tour.features, tour.basemaps);
 
-// create map
-var map = L.map('map', {
-    zoomControl: true,
-    maxZoom: tourOptions.maxZoom,
-    minZoom: tourOptions.minZoom,
-    attributionControl: false,
-});
+// ---------- Scrollama ---------- //
+let scrolly_temp_view = null;
+// for some reason scrollama is triggered twice at the beginning, needs to be ignored both times
+let scrolly_wait = 2;
 
-if (tourOptions.showMapLocationInUrl) var hash = new L.Hash(map);
-if (tourOptions['maxBounds']) map.setMaxBounds(tourOptions['maxBounds']);
-
-// Basemaps - Tile Server
-//map.createPane('tileserverPane');
-//map.getPane('tileserverPane').style.zIndex = 400;
-let tileLayerOptions = {
-    minZoom: tourOptions.minZoom,
-    maxZoom: tourOptions.maxZoom,
-}
-if (tourOptions.stamenTileServer) {
-    tileLayerOptions.maxNativeZoom = 13;
-    var tileLayer = new L.StamenTileLayer(tourOptions.stamenTileServer, tileLayerOptions);
-}
-else var tileLayer = L.tileLayer(tourOptions.tileServer, tileLayerOptions);
-map.addLayer(tileLayer);
-
-// set up additional image basemaps
-for (let [key, basemap] of tourBasemaps) {
-    //map.createPane('pane_' + key);
-    //map.getPane('pane_' + key).style.zIndex = 400;
-    let layer = L.imageOverlay(basemap.file, basemap.bounds, {
-        minZoom: basemap.minZoom,
-        maxZoom: basemap.maxZoom
-    });
-    tourBasemaps.set(key, layer);
-}
-
-// set up datasets (without features, to start with - just creating the list and defining the options)
-for (let [key, dataset] of tourDatasets) {
-    let layer = L.geoJson(null, {
-        // marker icons - for points
-        pointToLayer: function(feature, latlng) {
-            return createMarker(feature.properties, latlng, dataset);
-        },
-        // style - for paths
-        style: function(geoJsonFeature) {
-            return dataset.pathOptions;
-        },
-        // initial setup
-        onEachFeature: function (feature, layer) {
-            setupFeature(feature, layer);
-        },
-        interactive: true,
-        // extra
-        dataset: dataset,
-    });
-    tourDatasets.set(key, layer);
-    map.addLayer(layer);
-}
-
-// function I can modify as needed for styling markers
-function createMarker(props, latlng, dataset) {
-    // handle alt text and popup existence
-    let altText = props.name;
-    let options = { ...dataset.iconOptions };
-    if (dataset.legendAltText) altText += ", " + dataset.legendAltText;
-    if (props.hasPopup) {
-        altText += ", open popup";
-        options.className += " has-popup";
-        options.role = "button";
-    }
-    else options.className += " no-popup";
-
-    options.id = props.id;
-    // create marker
-    let marker = L.marker(latlng, {
-        icon: modalIcon(options),
-        alt: altText,
-        riseOnHover: true,
-        id: props.id
-    });
-    return marker;
-}
-function setFeatureInteraction() {
-    setIconInteraction();
-    setPathInteraction();
-}
-function setIconInteraction() {
-    // because trying to use leaflet's setup was a stupid idea
-    // allow focusing on map icons that aren't buttons
-    $(".has-popup").on("click keypress", function(e) {
-        if (e.type === "click" || e.which === 32 || e.which === 13) {
-            e.stopPropagation();
-            openDialog(this.id+"-popup", this);
-        }
-    });
-    $(".no-popup").on("click", function(e) {
-        if (e.type === "click" || e.which === 32 || e.which === 13) {
-            let feature = tourFeatures.get(this.id);
-            feature.layer._icon.focus();
-            feature.layer.getTooltip().getElement().classList.add("active");
-        }
-    });
-    $(".has-popup, .no-popup").on("focus mouseover", function(e) {
-        // make tooltip active when focusing/hovering over icon
-        tourFeatures.get(this.id).layer.getTooltip().getElement().classList.add("active");
-    }).on("blur mouseout", function(e) {
-        // make tooltip inactive when ending focus/hover onver icon
-        if (!(this === document.activeElement)) tourFeatures.get(this.id).layer.getTooltip().getElement().classList.remove("active");
-    });
-}
-function setPathInteraction() {
-    // make sure all paths have id and class
-    // also make sure they have an additional element added to the end of the pane that is screen reader only
-    for (let [id, feature] of tourFeatures) {
-        if (feature.type !== "Point") {
-            let props = feature.layer.feature.properties;
-            let dataset = tourDatasets.get(props.dataSource).options.dataset;
-            // set alt text
-            let altText = props.name;
-            if (dataset.legendAltText) altText += ", " + dataset.legendAltText;
-            // create image element - receives focus
-            let element = document.createElement("img");
-            element.classList.add("sr-only");
-            element.id = id + "-element";
-            element.setAttribute("data-feature", id);
-            element.setAttribute("tabindex", "0");
-            // if feature has popup, img element becomes button to open popup
-            if (props.hasPopup) {
-                element.classList.add("element-has-popup");
-                element.setAttribute("role", "button");
-                altText += ", open popup";
-            } else {
-                element.classList.add("element-no-popup");
-            }
-            element.setAttribute("alt", altText);
-            // treat lines and polygons different so that lines can have extra buffer for hover
-            // include polygons with no fill as lines
-            if (feature.type === "LineString" || feature.type === "MultiLineString" || !(dataset.pathOptions.fill ?? true)) {
-                // create extra feature
-                let extraProps = { lineBuffer: true, featureId: props.id };
-                let extra = { type: "Feature", properties: extraProps, geometry: feature.layer.feature.geometry };
-                // add extra feature to dataset
-                tourDatasets.get(props.dataSource).addData(extra);
-                let lineBuffer = tourFeatures.get(id).lineBuffer;
-                // set extra feature style
-                lineBuffer.setStyle({ stroke: true, weight: 21, opacity: 0});
-                // add id to path
-                feature.layer._path.id = id;
-                // add id to extra path
-                lineBuffer._path.id = id+'extra';
-                lineBuffer._path.setAttribute('data-featureId', id);
-                // add class to extra path based on whether or not feature has popup
-                if (props.hasPopup) lineBuffer._path.classList.add("path-has-popup");
-                else lineBuffer._path.classList.add("path-no-popup");
-                lineBuffer._path.classList.add("line");
-            } else {
-                // add id to path element
-                feature.layer._path.id = id;
-                // add class to path based on whether or not feature has popup
-                if (props.hasPopup) feature.layer._path.classList.add("path-has-popup");
-                else feature.layer._path.classList.add("path-no-popup");
-                feature.layer._path.classList.add("polygon");
-            }
-            $(".leaflet-marker-pane").append(element);
-        }
-    }
-    // path functions
-    // clicking on path opens popup - polygon
-    $(".polygon.path-has-popup").on("click", function(e) {
-        let id = this.id;
-        e.stopPropagation();
-        openDialog(id+"-popup", document.getElementById(id+"-element"));
-    });
-    // clicking on path opens popup - line
-    $(".line.path-has-popup").on("click", function(e) {
-        let id = this.getAttribute("data-featureId");
-        e.stopPropagation();
-        openDialog(id+"-popup", document.getElementById(id+"-element"));
-    });
-    // clicking on path without popup moves focus to special element - polygon
-    $(".polygon.path-no-popup").on("click", function(e) {
-        let id = this.id;
-        setActivePath(id);
-        document.getElementById(id+"-element").focus();
-    });
-    // clicking on path without popup moves focus to special element - line
-    $(".line.path-no-popup").on("click", function(e) {
-        let id = this.getAttribute("data-featureId");
-        setActivePath(id);
-        document.getElementById(id+"-element").focus();
-    });
-    // let keypress on special element open popup
-    $(".element-has-popup").on("keypress", function(e) {
-        if (e.which === 32 || e.which === 13) {
-            e.stopPropagation();
-            openDialog(this.getAttribute("data-feature")+"-popup", this);
-        }
-    });
-    // make tooltip active and change style when hovering over path - polygon
-    $(".polygon.path-has-popup, .polygon.path-no-popup").on("mouseover", function(e) {
-        setActivePath(this.id);
-    }).on("mouseout", function(e) {
-        // make tooltip inactive and revert style when ending hover over path
-        if (!(document.getElementById(this.id+"-element") === document.activeElement)) endActivePath(this.id);
-    });
-    // make tooltip active and change style when hovering over path - line
-    $(".line.path-has-popup, .line.path-no-popup").on("mouseover", function(e) {
-        setActivePath(this.getAttribute("data-featureId"));
-    }).on("mouseout", function(e) {
-        // make tooltip inactive and revert style when ending hover over path
-        let id = this.getAttribute("data-featureId");
-        if (!(document.getElementById(id) === document.activeElement)) endActivePath(id);
-    });
-    // make tooltip active and change path style when focusing on special element
-    $(".element-has-popup, .element-no-popup").on("focus", function(e) {
-        setActivePath(this.getAttribute("data-feature"));
-    }).on("blur", function(e) {
-        // make tooltip inactive and revert path style when ending focus on special element
-        endActivePath(this.getAttribute("data-feature"));
-    });
-}
-function setActivePath(id) {
-    let feature = tourFeatures.get(id);
-    feature.layer.getTooltip().getElement().classList.add("active");
-    feature.layer.setStyle(tourDatasets.get(feature.dataset).options.dataset.pathActiveOptions);
-}
-function endActivePath(id) {
-    let feature = tourFeatures.get(id);
-    feature.layer.getTooltip().getElement().classList.remove("active");
-    feature.layer.setStyle(tourDatasets.get(feature.dataset).options.dataset.pathOptions);
-}
-function setupFeature(geoJsonFeature, layer) {
-    let props = geoJsonFeature.properties;
-    if (props.lineBuffer) {
-        let featureId = props.featureId;
-        tourFeatures.get(featureId).lineBuffer = layer;
-        return;
-    }
-    let featureId = props.id;
-    let feature = tourFeatures.get(featureId);
-    feature.layer = layer;
-    if (props.name !== null) createTooltip(props.name, props.dataSource, layer);
-}
-function createTooltip(name, datasetId, layer) {
-    layer.bindTooltip(String('<div aria-hidden="true">' + name) + '</div>', {
-        permanent: true,
-        className: datasetId,
-        // Option: interactive true
-    });
-    labels.push(layer);
-    addLabel(layer, totalMarkers);
-    layer.added = true;
-    totalMarkers++;
-}
-
-var tourFeatures = new Map();
-
-// loop through features and add where relevant
-for (let [featureId, feature] of Object.entries(tourFeaturesJson)) {
-    tourFeatures.set(featureId, {
-        name: feature.properties.name,
-        dataset: feature.properties.dataSource,
-        type: feature.geometry.type,
-    });
-    tourDatasets.get(feature.properties.dataSource).addData(feature);
-}
-
-// deal with non-point tooltips - without this, tooltips associated with polygons that are much smaller than the starting view may be bound way too far off
-for (let feature of tourFeatures.values()) {
-    if (feature.type !== "Point") {
-        map.fitBounds(feature.layer.getBounds());
-        feature.layer.closeTooltip();
-        feature.layer.openTooltip();
-    }
-}
-
-// set map and view bounds
-if (!tourOptions.bounds) {
-    let tmpFeatureGroup = L.featureGroup(Array.from(tourDatasets.values()));
-    tourOptions.bounds = tmpFeatureGroup.getBounds();
-}
-for (let [viewId, view] of tourViews) {
-    if (!view.bounds && view.features.length > 0) {
-        let tmpFeatureGroup = new L.FeatureGroup();
-        for (let id of view.features) {
-            tmpFeatureGroup.addLayer(tourFeatures.get(id).layer);
-        }
-        view.bounds = tmpFeatureGroup.getBounds();
-    }
-}
-
-// set map bounds
-if (tourOptions.bounds) map.fitBounds(tourOptions.bounds, { padding: [10, 10] });
-
-setBasemaps();
-
-resetAllLabels();
-
-// map "on" functions
-map.on("layeradd", function(){
-    resetAllLabels();
-});
-map.on("layerremove", function(){
-    resetAllLabels();
-});
-map.on("zoomend", function(){
-    resetAllLabels();
-    checkBasemaps();
-    $(".leaflet-control-zoom a").removeAttr("aria-disabled");
-    $(".leaflet-disabled").attr("aria-disabled", "true");
-});
-
-function resetAllLabels() {
-    resetLabels(Array.from(tourDatasets.values()));
-}
-// Determines the correct basemaps based on the view
-function setBasemaps() {
-    // clear out basemap list
-    tourState.basemaps = [];
-    // tour basemaps
-    if (!tourState.view || !tourViews.get(tourState.view).noTourBasemaps) {
-        for (let basemap of tourOptions.tourMaps) {
-            tourState.basemaps.push(basemap);
-        }
-    }
-    // view basemaps
-    if (tourState.view) {
-        for (let basemap of tourViews.get(tourState.view).basemaps) {
-            tourState.basemaps.push(basemap);
-        }
-    }
-    // determine which basemaps should actually be active
-    checkBasemaps();
-    // default basemaps status will be checked in the above function
-}
-
-// Determines the correct basemaps based on the zoom
-function checkBasemaps() {
-    // make list of which basemaps should be active
-    let newBasemaps = [];
-    for (let basemap of tourState.basemaps) {
-        let layer = tourBasemaps.get(basemap);
-        if (map.getZoom() >= layer.options.minZoom && map.getZoom() <= layer.options.maxZoom) newBasemaps.push(basemap);
-    }
-    // remove basemaps if necessary
-    for (let basemap of tourState.activeBasemaps) {
-        if (!newBasemaps.includes(basemap)) map.removeLayer(tourBasemaps.get(basemap));
-    }
-    // add basemaps
-    tourState.activeBasemaps = newBasemaps;
-    for (let basemap of tourState.activeBasemaps) {
-        let layer = tourBasemaps.get(basemap);
-        if (!map.hasLayer(layer)) map.addLayer(layer);
-    }
-    // check default basemap
-    if (tourState.activeBasemaps.length > 0 && ((tourState.view && tourViews.get(tourState.view).removeTileServer) || (tourOptions.removeTileServer))) {
-        if (map.hasLayer(tileLayer)) map.removeLayer(tileLayer);
-    } else {
-        if (!map.hasLayer(tileLayer)) map.addLayer(tileLayer);
-    }
-}
-
-// fix map issues - only call when absolutely necessary
-function adjustMap() {
-    if (window.innerWidth < mobileWidth && tourState.mapNeedsAdjusting) {
-        map.invalidateSize();
-        let zoom = map.getZoom();
-        map.zoomIn(1, { animate: false });
-        map.setZoom(zoom, { animate: false });
-        tourState.mapNeedsAdjusting = false;
-    }
-}
-
-// -------------------------------------------------
-// -------------------------------------------------
-// --------------- end of map setup ----------------
-// -------------------------------------------------
-// -------------------------------------------------
-
-// tour setup
-
-// Question - potential customization options
-var scrollamaOptions = {
-    debug: false,
-    offset: 0.33,
-};
-
-// scrollama setup
-if ($("#scrolly #scroll-text .step").length > 0) {
+if ($("#scrolly .step").length > 0) {
     scroller = scrollama();
     scroller.setup({
-        step: "#scrolly #scroll-text .step",
-        offset: scrollamaOptions.offset,
-        debug: scrollamaOptions.debug
+        step: "#scrolly .step",
+        offset: SCROLLAMA_OFFSET,
+        debug: SCROLLAMA_DEBUG,
+        container: document.getElementById("tour-wrapper"),
     }).onStepEnter(function(e) {
-        // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
-        tourState.tmpView = e.element.getAttribute("id");
-        setTimeout(function() {
-            if (tourState.tmpView !== tourState.view && tourState.mapAnimation) {
-                enterView(tourState.tmpView);
-                tourState.mapNeedsAdjusting = true;
-            }
-        }, 500);
-    }).onStepExit(function(e) {
-        // use timeout function to ensure that exitView is only called when a view is exited but no new view is entered
-        tourState.tmpView = null;
-        setTimeout(function() {
-            if (!tourState.tmpView && tourState.mapAnimation) {
-                exitView();
-                tourState.mapNeedsAdjusting = true;
-            }
-        }, 600);
+        if (scrolly_wait) {
+            scrolly_wait--;
+        }
+        else if (!isMobile() && tour_state.animation) {
+            scrolly_temp_view = e.element.getAttribute("data-view");
+            // use timeout function so that if multiple views are scrolled through at once, only the last view will be truly entered
+            setTimeout(function() {
+                enterView(scrolly_temp_view);
+            }, SCROLLAMA_ENTER_VIEW_WAIT);
+        }
     });
 }
 
+map.on("zoomend", handleMapZoom);
+map.on("movend", handleMapMove);
+
+let window_scroll_tick = false;
+
 $(document).ready(function() {
+    let loc = window.location.pathname;
+    let lng = parseFloat(sessionStorage.getItem(loc + '_lng'));
+    let lat = parseFloat(sessionStorage.getItem(loc + '_lat'));
+    let zoom = parseInt(sessionStorage.getItem(loc + '_zoom'));
 
-    // this function modified from theme.js - overrides the function there, but relies on variables and function set there
-    window.onscroll = function(e) {
-        if (!current.scrollTick) {
-            setTimeout(function () {
-                toggleBackToTop();
-                // adjust header for desktop
-                if (window.innerWidth >= mobileWidth) {
-                    let target = document.getElementById("top").scrollHeight+20;
-                    if (document.body.scrollTop > target || document.documentElement.scrollTop > target) $("#top").addClass("scrolled");
-                    else $("#top").removeClass("scrolled");
-                }
-                // save scrollyPos for mobile
-                else if (tourState.scrolly) tourState.scrollyPos = window.scrollY;
-                current.scrollTick = false;
-            }, 100);
+    // set tile server attribution if needed
+    setTileServerAttr($("#server-attribution"), tour.tile_layer);
+    // let section = $("#server-attribution");
+    // if (!section.html()) {
+    //     let a = tour.tile_layer.options.attribution;
+    //     if (a) section.html("<span>Tile Server: </span>" + a);
+    // }
+    if (!isMobile()) {
+        // make sure "tour" size and last view size are sufficient for all views to be enterable via scrollama
+        // "tour" view
+        let top_height = document.getElementById("top").offsetHeight + document.getElementById("main-nav").offsetHeight + document.getElementById("tour").offsetHeight;
+        let target = (window.innerHeight * 2) / 5;
+        let diff = target - top_height;
+        if (diff > 0) {
+            $("#tour").css("padding-bottom", diff + "px");
         }
-        current.scrollTick = true;
-    };
+        // last view
+        let last_height = Array.from(document.getElementsByClassName("step")).pop().offsetHeight;
+        for (let id of ['attribution', 'footer']) {
+            let el = document.getElementById(id);
+            if (el) last_height += el.offsetHeight;
+        }
+        target = (window.innerHeight * 3) / 4;
+        diff = target - last_height;
+        if (diff > 0) {
+            $("#view-content").css("padding-bottom", diff + "px");
+        }
+    }
 
-    if (tourOptions.wideCol) $("body").addClass("wide-column");
+    // return to previous scroll position if applicable
+    let scroll_top = sessionStorage.getItem(loc + '_scroll_top');
+    document.getElementById("tour-wrapper").scrollTop = scroll_top ?? 0;
+    // check for saved view, use '_tour' if no valid view is saved
+    let view_id = sessionStorage.getItem('tour_view') ?? '_tour';
+    if (!tour.views.get(view_id)) view_id = '_tour';
+    // go to view bounds or saved bounds - need to set map center and zoom before modifying features
+    if (lng && lat) {
+        if (!zoom) zoom = map.getZoom();
+        map.flyTo([lat, lng], zoom, { animate: false });
+    }
+    else {
+        map.flyToBounds(tour.views.get(view_id).bounds, { padding: FLY_TO_PADDING, animate: false, duration: 0 });
+        if (zoom) map.setZoom(zoom, { animate: false });
+    }
+
+    // modify features
+    // tour.features.forEach(feature => feature.modify());
+
+    // set view - no flyTo, but need to handle other aspects of setting view
+    enterView(view_id, false);
+
     // move map controls for more sensible DOM order
     let controls = $(".leaflet-control-container");
     controls.remove();
     $("#map").prepend(controls);
 
-    setFeatureInteraction();
-
-    // button functions - toggles
-    $("#header-toggle-btn").on("click", function(e) {
-        $('body').toggleClass('menu-hidden-mobile');
-        $(this).toggleClass('expanded');
-        let expanded = ($(this).attr('aria-expanded')==='true');
-        $(this).attr('aria-expanded', expanded);
-        window.localStorage.setItem('headerExpanded', expanded);
+    // interaction
+    // map and nav
+    $("#nav-toggle-btn").on("click", checkMapToggleScroll);
+    $("#map-toggle-btn").on("click", function() {
+        if (this.getAttribute("data-map-active") === "false") switchToMap(this.id);
+        else switchToContent();
     });
-    if (window.localStorage.getItem('headerExpanded') === 'false') $("#header-toggle").click();
+    $("#map-animation-toggle").on("click", function() {
+        let checked = this.getAttribute("aria-checked") === 'true' ? false : true;
+        this.setAttribute("aria-checked", checked);
+        tour_state.animation = checked;
+        sessionStorage.setItem('animation', checked);
+    });
+    // load animation settings
+    if (sessionStorage.getItem('animation') === 'false') $("#map-animation-toggle").click();
+    // legend (and zoom buttons)
+    $("#zoom-out-btn").on("click", function() {
+        map.zoomOut();
+    });
+    $("#zoom-in-btn").on("click", function() {
+        map.zoomIn();
+    });
 
-    $("#content-toggle-btn").on("click", function(e) {
-        if (this.getAttribute("data-current") === "scrolly") {
-            switchToMap(this.getAttribute("id"));
-            // Question: explicitly set focus to map?
-            adjustMap();
-        } else {
-           switchToContent(this.getAttribute("data-focus"));
+    // legend
+    $("#legend-toggle-btn").on("click", function() {
+        $("#" + this.getAttribute("aria-controls")).toggleClass("minimized");
+        toggleExpanded(this);
+    });
+    $("#mobile-legend-btn").on("click", toggleMobileLegend);
+    $("#legend-close-btn").on("click", toggleMobileLegend);
+    $(".legend-checkbox").on("input", function() {
+        toggleDataset(this.value, tour.datasets, !this.checked);
+    });
+    $("#legend-basemaps-toggle").on("click", function() {
+        this.parentElement.parentElement.classList.toggle("expanded");
+        toggleExpanded(this);
+    });
+
+    // features
+    // focus element
+    // move focus to feature to activate
+    $(".leaflet-pane .focus-el").on("focus", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).activate(map, e);
+    })
+    // move focus away to deactivate
+    .on("blur", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).deactivate();
+    })
+    // "click" button (native html) to open popup
+    .on("click", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).click();
+    });
+    // hover element
+    // hover over feature to activate
+    $(".leaflet-pane .hover-el").on("mouseover", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).activate(map, e);
+    })
+    // remove hover from feature to deactivate
+    .on("mouseout", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).mouseoutFeature();
+    })
+    // click feature to open popup or activate/give focus
+    .on("click", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).click();
+    });
+    // tooltip
+    // remove hover from tooltip to deactivate
+    $(".leaflet-pane .leaflet-tooltip").on("mouseout", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).mouseoutTooltip();
+    })
+    // click tooltip to open popup or activate/give focus
+    .on("click", function(e) {
+        e.stopPropagation();
+        tour.features.get(this.getAttribute("data-feature")).click();
+    });
+    // esc key hides any active tooltips
+    $(document).on("keyup", function(e) {
+        if ((e.which || e.keyCode) === aria.KeyCode.ESC) {
+            $(".leaflet-tooltip:not(.hide)").addClass("tmp-hide");
         }
     });
-    
-    $("#legend-toggle-btn").on("click", function(e) {
-        $(".legend").toggleClass("minimized");
-        $(e).attr("aria-expanded", ($(e).attr("aria-expanded")==="true"));
-    });
 
-    $("#map-animation-toggle").on("input", function(e) {
-        let on = (this.checked);
-        tourState.mapAnimation = on;
-        window.localStorage.setItem("mapAnimation", on);
-    });
-    if (window.localStorage.getItem("mapAnimation") === "false") $("#map-animation-toggle").click();
-
-    // legend checkboxes
-    $(".legend-checkbox").on("input", function(e) {
-        for (let [featureId, feature] of tourFeatures) {
-            if (feature.dataset === this.value) {
-                feature.hideDataSource = !this.checked;
-                toggleHideFeature(feature);
-            }
-        }
-        // Question: Info to give screen reader?
-        resetAllLabels();
-    });
-
-    // other buttons
-    $("#reset-view-btn").on("click", exitView);
-
-    $(".show-view-btn").on("click", function(e) {
-        if (window.innerWidth < mobileWidth) { // constant from theme
-            // Question: Is the change of focus to map expected? Should I also change focus on desktop?
-            switchToMap(this.getAttribute("id"));
-            $("#map").focus();
-        }
+    // views
+    // click show view button to enter view
+    $(".show-view-btn").on("click", function() {
         enterView(this.getAttribute("data-view"));
     });
+    // click go to view button to move focus to map
+    $(".go-to-view-btn").on("click", function() {
+        if (isMobile()) {
+            enterView(this.getAttribute("data-view"));
+            switchToMap(this.id);
+        }
+        else {
+            $("#back-to-view-btn").attr("data-view", this.id).addClass("active");
+            $("#map").focus();
+        }
+    });
+    // click back to view button to return focus to go to view button
+    $("#back-to-view-btn").on("click", function() {
+        this.classList.remove("active");
+        $("#" + this.getAttribute("data-view")).focus();
+    });
+
+    // other
+    // click reset button to reset the (tour) view
+    $(".reset-view-btn").on("click", function() {
+        enterView('_tour');
+    });
+    // click popup button to open modal dialog
+    $(".view-popup-btn").on("click", function() {
+        let feature_id = this.getAttribute("data-feature");
+        openDialog(feature_id + "-popup", this);
+        // $(this).one("focus", function(e) {
+        //     // when focus returns, make sure the feature is activated
+        //     tour.features.get(this.getAttribute("data-feature")).activate(map, e);
+        //     $(this).one("blur", function() {
+        //         // when focus leaves deactivate the feature
+        //         tour.features.get(this.getAttribute("data-feature")).deactivateCheck();
+        //     });
+        // });
+    });
+
+    // scrolling (desktop)
+    $("#tour-wrapper").on("scroll", function() {
+        if (!window_scroll_tick) {
+            setTimeout(function() {
+                scrolly_wait = 0;
+                doWindowScrollAction();
+                window_scroll_tick = false;
+            }, 100);
+        }
+        window_scroll_tick = true;
+    });
+
+    // call theme method (there may be new links to modify)
+    modifyLinks();
 });
 
-function switchToMap(focusElement) {
+function toggleMobileLegend() {
+    $("body").toggleClass("legend-active");
+    $("#legend-wrapper").toggleClass("tour-desktop-only");
+}
+
+// Modify window.onscroll function from theme
+function doWindowScrollAction() {
+    let scroll_top = document.getElementById("tour-wrapper").scrollTop;
+    if (isMobile()) {
+        if (page_state.save_scroll_pos) {
+            // save scroll position for mobile
+            page_state.scroll_pos = scroll_top;
+            checkMapToggleScroll();
+        } else return;
+    }
+    // toggle back to top and save scroll position for session
+    if (scroll_top > BACK_TO_TOP_Y) $("#back-to-top").addClass("active");
+    else $("#back-to-top").removeClass("active");
+    sessionStorage.setItem(window.location.pathname + '_scroll_top', scroll_top);
+}
+
+function checkMapToggleScroll() {
+    // make sure that map-nav does not become sticky/absolute until the main navigation has been passed (whether or not main nav is expanded)
+    let height = $("header").get(0).offsetHeight + parseFloat($(".tour-wrapper").first().css("padding-top")) + document.getElementById("main-nav").offsetHeight;
+    if (page_state.scroll_pos >= height) {
+        $("#map-nav").addClass('scrolled');
+    } else $('#map-nav').removeClass('scrolled');
+}
+
+// overwrite function from theme to do nothing
+function expandNav() {
+    // do nothing
+}
+
+/**
+ * For mobile, switch to viewing the leaflet map. Called by the content toggle button and any show view buttons.
+ * 
+ * @param focus_id - (String) The id of the element calling the function, which will be saved so that focus can be returned to that element when switching back to content.
+ */
+function switchToMap(focus_id) {
     $("body").addClass("map-active");
-    // Question: explicitly set focus to map?
-    // change button text/value
-    // set button data-focus to focusElement
-    $("#content-toggle-btn").attr("data-focus", focusElement).attr("data-current", "map").text("View Content");
+    page_state.save_scroll_pos = false; // don't want scrolling to affect position when returning to content
+    $("#map").focus(); // TODO: Ensure that this is the sensible/expected decision
+    $("#map-toggle-btn").attr("data-focus", focus_id).attr("data-map-active", "true").text("Leave Map");
+    if (tour_state.map_needs_adjusting) {
+        adjustMap();
+        tour_state.map_needs_adjusting = false;
+    }
 }
-function switchToContent(focusElement) {
+
+/**
+ * For mobile, switch to viewing the narrative content. Called by the map toggle button.
+ */
+function switchToContent() {
     $("body").removeClass("map-active");
-    tourState.scrolly = true;
-    window.scrollTo(0, tourState.scrollyPos);
-    // Question: If no contentFocus, do I need to explicitly put focus somewhere? (e.g. used map toggle button to go to map)
-    if (focusElement) document.getElementById(focusElement).focus(); 
-    // change button text/value
-    $("#content-toggle-btn").attr("data-focus", "").attr("data-current", "scrolly").text("View Map");
+    // make sure scroll position is saved and remembered
+    page_state.save_scroll_pos = true;
+    document.getElementById("tour-wrapper").scrollTop = page_state.scroll_pos;
+    // remember and return to previous focus (the id of the element used to switch to the map should have been saved in the content toggle button)
+    let btn = $("#map-toggle-btn");
+    $("#" + btn.attr("data-focus")).focus();
+    btn.attr("data-focus", "").attr("data-map-active", "false").text("View Map");
+    // collapse map toggle button
+    let btn2 = $("#mobile-map-toggle-btn");
+    btn2.parent().removeClass("expanded");
+    btn2.removeAttr("aria-expanded");
 }
 
-function toggleHideFeature(feature) {
-    let hide = (feature.hideDataSource || feature.hideNonView);
-    let tooltip = feature.layer.getTooltip().getElement();
-    if (feature.type === "Point") {
-        // hide tooltip, icon, and possibly shadow
-        let icon = feature.layer._icon;
-        let shadow = feature.layer._shadow;
-        $(tooltip).add(icon).add(shadow).attr("aria-hidden", hide).css("display", (hide ? 'none' : 'block'));
-    }
-    else {
-        let img = document.getElementById(feature.layer.feature.properties.id+"-element");
-        let path = feature.layer._path;
-        if (feature.type === "LineString" || feature.type === "MultiLineString") {
-            let buffer = feature.lineBuffer._path;
-            $(tooltip).add(img).add(path).add(buffer).attr("aria-hidden", hide).css("display", (hide ? 'none' : 'block'));
-        }
-        else $(tooltip).add(img).add(path).attr("aria-hidden", hide).css("display", (hide ? 'none' : 'block'));
-    }
-}
-
-function toggleHideNonViewFeatures(viewId, hide) {
-    let view = tourViews.get(viewId);
-    // ignore if feature list is empty
-    if (!view.features) return;
-    for (let [featureId, feature] of tourFeatures) {
-        if (!view.features.includes(featureId)) {
-            // toggle
-            feature.hideNonView = hide;
-            toggleHideFeature(feature);
-        }
-    }
-}
-
-function enterView(id) {
-    if (tourState.view && tourViews.get(tourState.view).onlyShowViewFeatures) toggleHideNonViewFeatures(tourState.view, false);
-    if (id) {
-        tourState.view = id;
-        let view = tourViews.get(id);
-        if (view.onlyShowViewFeatures) toggleHideNonViewFeatures(id, true);
-        if (view.bounds) {
-            // Option: Any instance where I would want to add { animate: boolean } to flyTo args? (if so, add to else flyTo statement, too)
-            map.flyToBounds(view.bounds, { padding: [10, 10] });
-        }
-        // just in case
-        if (tourState.mapNeedsAdjusting) adjustMap();
-    } else {
-        // exit view
-        //if (!tourState.view) return; // already no view
-        tourState.view = null;
-        if (tourOptions.bounds) map.flyToBounds(tourOptions.bounds, { padding: [10, 10] });
-    }
-    // adjust basemaps - call here because we need setBasemaps(), not just checkBasemaps()
-    setBasemaps();
-}
-
-function exitView() {
-    enterView(null);
+function isMobile() {
+    return (window.innerWidth < 799);
 }

@@ -1,215 +1,174 @@
 {% extends 'partials/base.html.twig' %}
 
-{% set pluginConfig = config.plugins['leaflet-tour'] %}
-{% set tourData = leafletTour.getTour(page) %}
+{% set plugin_config = config.plugins['leaflet-tour'] %}
+{% set tour = leaflet_tour.getTour(header.id) %}
 
-{# Add CSS #}
+{% set datasets = tour.getLegendDatasets() %}
+{% set basemaps = tour.getLegendBasemaps() %}
+{% set has_legend = (datasets|length > 0) or (basemaps|length > 0) %}
+
+{% block starting_scripts %}
+    {{ parent() }}
+    {# Set some important map data #}
+    <script>
+        {# let tour_padding = '{{ plugin_config.fly_to_padding ?? header.fly_to_padding }}'; #}
+        const tour_options = {{ tour.getTourData()|json_encode|raw }};
+        let tour_basemaps = {{ tour.getBasemapData()|json_encode|raw }};
+        let tour_datasets = new Map(Object.entries({{ tour.getDatasetData()|json_encode|raw }}));
+        const tour_features = new Map(Object.entries({{ tour.getFeatureData()|json_encode|raw }}));
+        let tour_views = new Map(Object.entries({{ tour.getViewData()|json_encode|raw }}));
+    </script>
+    {% set col_width = tour.getColumnWidth() %}
+    {# Putting this here so it can be dynamic #}
+    <style>
+        @media (min-width: 800px) {
+            .tour-wrapper {
+                width: {{ col_width }}%;
+            }
+            #map-wrapper {
+                width: {{ 100 - col_width }}%;
+            }
+        }
+    </style>
+{% endblock starting_scripts %}
+
+{# Allow theme CSS to overwrite Leaflet CSS, and allow tour-specific CSS to overwrite all other CSS. #}
 {% block stylesheets %}
-    {% do assets.addCss('plugin://leaflet-tour/assets/qgis2web/leaflet.css') %}
+    {% do assets.addCss('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/leaflet.css') %}
     {{ parent() }}
     {% do assets.addCss('plugin://leaflet-tour/assets/tour.css') %}
 {% endblock stylesheets %}
 
-{# Add Javascript #}
 {% block javascripts %}
     {{ parent() }}
     {# JS to add after page HTML #}
-    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.rotatedMarker.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet.pattern.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/leaflet-hash.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/rbush.min.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/labelgun.min.js', {group:'bottom'}) %}
-    {% do assets.addJs('plugin://leaflet-tour/assets/qgis2web/labels.js', {group:'bottom'}) %}
-    {# Question: Download these? #}
+    {% do assets.addJs('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.6.0/leaflet.js', {group:'bottom'}) %}
+    {% do assets.addJs('https://cdnjs.cloudflare.com/ajax/libs/leaflet-hash/0.2.1/leaflet-hash.min.js', {group:'bottom'}) %}
+
     {% do assets.addJs('https://unpkg.com/intersection-observer', {group:'bottom'}) %}
     {% do assets.addJs('https://unpkg.com/scrollama', {group:'bottom'}) %}
     {% do assets.addJs('https://stamen-maps.a.ssl.fastly.net/js/tile.stamen.js?v1.3.0', {group:'bottom'}) %}
+    {% do assets.addJs('https://cdnjs.cloudflare.com/ajax/libs/leaflet-providers/1.13.0/leaflet-providers.min.js', {group:'bottom'}) %}
+    {% do assets.addJs('plugin://leaflet-tour/assets/tour-functions.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/tour.js', {group:'bottom'}) %}
-
-    <script>
-        // set important map data
-        var tourBasemaps = new Map(Object.entries({{ tourData.getBasemaps()|json_encode|raw }}));
-        var tourViews = new Map(Object.entries({{ tourData.getViews()|json_encode|raw }}));
-        var tourFeaturesJson = {{ tourData.getFeatures()|json_encode|raw }};
-        var tourOptions = {{ tourData.getOptions()|json_encode|raw }};
-        var tourDatasets = new Map(Object.entries({{ tourData.getDatasets()|json_encode|raw }}));
-        // load before theme.js - make nav menu collapsed by default
-        if (sessionStorage.getItem("nav-expanded") === null) sessionStorage.setItem("nav-expanded", "false");
-    </script>
-    
 {% endblock javascripts %}
 
-{% block header %}
-<div id="header-wrapper">
-    <div class="mobile-row">
-        {# Call the header from the basic theme - logo, site title #}
-        {{ parent() }}
-        <button id="header-toggle-btn" aria-expanded="true" class="mobile-only hamburger-btn expanded">
-            <i class="fas fa-minus" aria-hidden="true"></i>
-            <i class="fas fa-bars" aria-hidden="true"></i>
-            <span class="sr-only">Toggle Menu</span>
-        </button>
-    </div>
-    {# Setting button should be available regardless of screen size, but it should be part of the row allowing switching between map and content views on mobile, instead of a standalone button #}
-    <div id="header-options-wrapper" class="mobile-row">
-        <nav aria-label="Map and Content">
-            <button id="content-toggle-btn" class="btn" data-current="scrolly">View Map</button>
+{% block body %}
+<body id="body" class="{{ tour.getBodyClasses() }}">
+    <a href="#main" id="main-skip-link" class="skip-link">Skip to Content</a>
+    <div id="tour-wrapper" class="tour-wrapper">
+        <header id="top">
+            <div class="header">{% block header %}{{ parent() }}{% endblock %}</div>
+            {# Options button and modal #}
+            <button type="button" id="open-settings-btn" class="tour-desktop-only icon-btn settings-btn dialog-open-btn" aria-haspopup="true" data-opens="settings-modal">
+                <i class="fa fa-cog" aria-hidden="true"></i>
+                <span class="sr-only">Settings</span>
+            </button>
+        </header>
+        {# Navigation will not be shown in mobile map view #}
+        {% block navigation %}{{ parent() }}{% endblock %}
+        {# Sticky options - only for mobile, changes between content and map views #}
+        <nav aria-label="Map" id="map-nav" class="tour-mobile-only content-toggle-wrapper">
+            {# Toggle button - could change position and formatting, but for now will go with a hamburger style #}
+            <button type="button" id="mobile-map-toggle-btn" aria-expanded="false" aria-controls="map-nav-options" class="map-only icon-btn hamburger-btn dual-bg content-toggle-btn">
+                <i class="fa fa-times" aria-hidden="true"></i>
+                <i class="fa fa-bars" aria-hidden="true"></i>
+                {# TODO: Options or Menu? #}
+                <span class="sr-only">Options</span>
+            </button>
+            <div id="map-nav-options">
+                <button type="button" id="map-toggle-btn" class="btn" data-map-active="false">View Map</button>
+                {% if has_legend %}<button type="button" id="mobile-legend-btn" aria-haspopup="true" class="map-only btn">Open Legend</button>{% endif %}
+                <button type="button" id="map-reset-btn" class="map-only btn reset-view-btn">Reset Map</button>
+            </div>
         </nav>
-        <button id="open-settings-btn" class="icon-btn" onClick="openDialog('settings-dialog', this)">
-            <i class="fa fas fa-cog" aria-hidden="true"></i>
-            <span class="sr-only">Open settings</span>
-        </button>
-    </div>
-</div>
-<nav id="main-nav" aria-label="Primary" class="main-nav">
-    <div class="nav-menu-btn">
-        <button id="toggle-nav-btn" class="nav-item dd-btn dd-caret-btn" aria-expanded="false" data-toggle="main-nav-list">
-            <span>Menu</span>
-            <i class="fas fa-caret-up" aria-hidden="true"></i>
-            <i class="fas fa-caret-down" aria-hidden="true"></i>
-        </button>
-    </div>
-    <ul id="main-nav-list" class="hide" role="list">
-        {# Use the nav macro from the basic theme #}
-        {% import 'partials/nav_macro.html.twig' as nav_macro %}
-        {{ nav_macro.loop(pages)}}
-    </ul>
-</nav>
-{% endblock header %}
 
-{% block navigation %}{% endblock navigation %} {# clear navigation block - already included in header #}
-
-{% block main %}
-{% include 'partials/settings.html.twig' %} {# modal dialog box, requires js and css from basic theme #}
-<div id="scrolly"> {# Identifies scrollama content #}
-    <div class="scroll-top">
-        <h1>{{ page.title }}</h1>
-        <div id="scrolly-content">
-            {{ content|raw }}
-        </div>
-        <a class="btn" href="{{ pages.url }}popups/{{ page.slug }}">View all popup content</a>
-    </div>
-    <div id="scroll-text">
-    {% for view in page.collection() if view.template == 'modular/view' %}
-        {# Including all view logic here. It did something wonky when trying to put much of this in view.html.twig #}
-        {% set viewId = tourData.getViewId(view) %}
-        <div class="step" id="{{ viewId }}">
-            <h2>{{ view.header.title }}</h2>
-            <button data-view="{{ viewId }}" id="show-view-{{ viewId }}" class="btn show-view-btn">Show View</button>
-            {{ view.content|raw }}
-            {% set viewPopups = tourData.getViewPopups(viewId) %}
-            {% if viewPopups|length > 0 %}
-            <ul class="list-unstyled">
-                {% for feature in viewPopups %}
-                <li><button id="{{ viewId }}_{{ feature.id }}_btn" class="btn view-popup-btn" onClick="openDialog('{{ feature.id }}-popup', this)">View {{ feature.name }} popup</button></li>
-                {% endfor %}
-            </ul>
-            {% endif %}
-        </div>
-    {% endfor %}
-    </div>
-    {# Add back to top button before the map, since it only affects the narrative column #}
-    {% include 'partials/bits/back_to_top.html.twig' %}
-</div>
-<div id="map-wrapper" role="region" aria-label="Map">
-    <a href="#footer" id="skip-map-link" class="skip-link">Skip to Footer</a>
-    {# Legend #}
-    {% set legendList = tourData.getLegend() %}
-    {% if legendList|length > 0 %}
-    <div class="legend">
-        <div class="legend-top">
-            <h2>Legend</h2>
-            <button id="legend-toggle-btn" aria-expanded="true" class="icon-btn">
-                <i class="fas fa-minus" aria-hidden="true"></i>
-                <div class="toggle sr-only">Legend</div>
-                <i class="fas fa-plus" aria-hidden="true"></i>
-            </button>
-        </div>
-        <ul class="list-unstyled" role="list">
-        {% for item in legendList %}
-            <li>
-                {% if header.legend_toggles %} {# Each legend item should be a checkbox so it can be toggled #}
-                <label>
-                    <input type="checkbox" class="legend-checkbox" value="{{ item.dataSource }}" checked>
-                {% else %}
-                <div>
-                {% endif %}
-                    {% if item.iconFile is defined %}
-                    <img class="legend-icon" src="{{ item.iconFile }}" alt="{{ item.iconAltText }}" style="height: {{ item.iconHeight }}px; width: {{ item.iconWidth }}px;">
-                    {% elseif item.featureType is same as 'line' %} {# Use svg instead of icon #}
-                        <svg width="14px" height="14px">
-                            <rect x="0" y="0" width="14" height="14" fill="{{ item.color }}" />
-                        </svg>
-                    {% else %} {# svg is more complicated for polygons, as there is both stroke and fill to consider #}
-                        {% set weight = (item.weight|default(1)) - 1 %}
-                        {% set size = 14 + (2 * weight) %}
-                        <svg width="{{ size }}px" height="{{ size }}px">
-                            <rect x="{{ weight }}" y="{{ weight }}" width="14" height="14"
-                                {% if item.color is defined %} stroke="{{ item.color }}" stroke-width="{{ item.weight }}" stroke-opacity="{{ item.opacity }}" {% endif %}
-                                {% if item.fillColor is defined %} fill="{{ item.fillColor }}" fill-opacity="{{ item.fillOpacity }}" {% endif %}
-                            />
-                        </svg>
+        <main id="main">
+            <div class="dialog-backdrop">
+                <div role="dialog" id="settings-modal" aria-labelledby="settings-label" aria-modal="true" class="hidden">
+                    <div class="dialog-top">
+                        <h2 id="settings-label" class="dialog-label">Settings</h2>
+                        <button type="button" id="settings-close-btn" class="icon-btn close-btn dialog-close-btn">
+                            <i class="fa fa-times" aria-hidden="true"></i>
+                            <span class="sr-only">Close</span>
+                        </button>
+                    </div>
+                    <div class="dialog-content">
+                        {# <div class="option">
+                            <label class="toggle-switch">
+                                <span class="switch">
+                                    <input id="map-animation-toggle" type="checkbox" class="sr-only" aria-checked="true" checked>
+                                    <span class="slider" aria-hidden="true"></span>
+                                </span>
+                                <span class="label">Map automatically changes when scrolling</span>
+                            </label>
+                        </div> #}
+                        <div class="option">
+                            <button type="button" id="map-animation-toggle" role="switch" aria-checked="true">
+                                <span class="label">Scrolling Changes Map</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" height="30" width="52">
+                                    <rect class="container" x="1" y="1" height="28" width="50" rx="15" />
+                                    <circle class="toggle" cx="15" cy="15" r="11" />
+                                </svg>
+                                <span class="on" aria-hidden="true">On</span>
+                                <span class="off" aria-hidden="true">Off</span>
+                            </button>
+                        </div>
+                        <div class="option">
+                            <button type="button" id="reset-view-btn" class="btn reset-view-btn">Reset Map</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {# Create narrative column #}
+            <div id="scrolly" class="column">
+                <div id="tour">
+                    <h1 data-view="_tour" class="scroll-top step">{{ page.title }}</h1>
+                    {{ content|raw }}
+                    {% if tour.getFeaturePopups()|length > 0 %}
+                        <div>
+                            {# TODO: Clearer indication of what this is/does or something #}
+                            <a href="{{ page.url }}/popups">All popup content</a>
+                        </div>
                     {% endif %}
-                    <span>{{ item.legendText }}</span>
-                {% if header.legend_toggles %}</label> {# Make sure to provide the closing tag if items are toggleable #}
-                {% else %}</div>
-                {% endif %}
-            </li>
-        {% endfor %}
-        </ul>
-    </div>
-    {% endif %}
-    <div id="map"> {# This is what leaflet will populate #}
-    </div>
-</div>
-{% for feature in tourData.getPopups() %}
-{# Leaflet also does popups, but I found it harder to customize them for accessibility. These popups function as modal dialog windows. #}
-<div class="dialog-backdrop">
-    <div role="dialog" id="{{ feature.id }}-popup" aria-labelledby="{{ feature.id }}-popup-label" aria-modal="true" class="hidden">
-        <div class="dialog-top">
-            <h2 id="{{ feature.id }}-popup-label" class="dialog-label">{{ feature.name }}</h2>
-            <button id="{{ feature.id }}-close-btn" class="icon-btn" onClick="closeDialog(this)">
-                <i class="fas fa-times" aria-hidden="true"></i>
-                <span class="sr-only">Close</span>
-            </button>
-        </div>
-        <div class="popup-content">
-            {{ feature.popup|markdown }}
-            {#% include 'partials/bits/back_to_top.html.twig' %#}
-        </div>
-    </div>
-</div>
-{% endfor %}
-{% endblock main %}
-
-{% block backtotop %}{% endblock backtotop %} {# clear block - already included in main content #}
-
-{% block footer %}
-    {% set attribution = tourData.getAttribution() %}
-    {% if attribution|length > 0 %}
-    <div id="attribution-section" class="footer-section">
-        Resources used:
-        <ul class="attribution-list list-unstyled" role="list">
-            {% for item in attribution %}
-                <li>
-                {% if item.url %}
-                    <a href="{{ item.url }}" target="_blank" class="attribution">{{ item.name }}<span class="sr-only"> Opens in new tab</span></a>
-                {% else %}
-                    <span class="attribution">{{ item.name }}</span>
-                {% endif %}
-                {% if not item.isLast %} <i aria-hidden="true" class="fas fa-circle"></i>{% endif %}</li>
+                    <div data-view="_tour" class="step bottom-step"></div>
+                </div>
+                <div id="view-content">
+                    {% for view in page.collection() if view.template == 'modular/view' and not view.header.visible is same as (false) %}
+                        {% include 'partials/view.html.twig' with { 'view': view, 'view_obj': tour.getViews()[view.header.id] } %}
+                    {% endfor %}
+                </div>
+                {% include 'partials/tour-attribution.html.twig' with {'tour':tour} %}
+            </div>
+            <div id="map-wrapper" role="region" aria-label="Map">
+                <a href="#map-end" id="skip-map-link" class="skip-link tour-desktop-only">Skip Map</a>
+                {# Zoom Buttons #}
+                <div class="zoom-btns">
+                    <button type="button" class="icon-btn dual-bg" id="zoom-in-btn">
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                        <span class="sr-only">Zoom Map In</span>
+                    </button>
+                    <button type="button" class="icon-btn dual-bg" id="zoom-out-btn">
+                        <i class="fa fa-minus" aria-hidden="true"></i>
+                        <span class="sr-only">Zoom Map Out</span>
+                    </button>
+                </div>
+                {# Legend #}
+                {% if has_legend %}{% include 'partials/legend.html.twig' with {'tour':tour, 'datasets':datasets, 'basemaps':basemaps} %}{% endif %}
+                <div id="map"></div>
+                <div id="map-end"></div>
+                <button data-view="" id="back-to-view-btn" class="skip-link tour-desktop-only">Back to View</button>
+            </div>
+            {# feature modal popups #}
+            {% for id, feature in tour.getFeaturePopups() %}
+                {% include 'partials/modal-popup.html.twig' with {'id': id, 'feature': feature} %}
             {% endfor %}
-        </ul>
+        </main>
+
+        {% block footer_wrapper %}{{ parent() }}{% endblock %}
+        {% block back_to_top %}{{ parent() }}{% endblock %}
     </div>
-    {% endif %}
-    {% set attribution = tourData.getExtraAttribution() %}
-    {% if attribution|length > 0 %}
-    <div class="footer-section">
-        {% for item in attribution %}
-            {{ item|raw }}
-        {% endfor %}
-    </div>
-    {% endif %}
-    {{ parent() }}
-{% endblock footer %}
+    {% block bottom %}{{ parent() }}{% endblock %}
+
+</body>
+{% endblock body %}

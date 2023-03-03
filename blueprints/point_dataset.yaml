@@ -1,0 +1,240 @@
+title: Point Dataset
+extends@: dataset
+
+form:
+  fields:
+    tabs:
+      fields:
+        options:
+          fields:
+            cols:
+              fields:
+                col1:
+                  fields:
+                    header.feature_type:
+                      type: text
+                      label: Dataset Feature Type
+                      default: 'Point'
+                      readonly: true
+        features:
+          fields:
+            header.features:
+              fields:
+
+                # no columns in list
+                # .coordsCols:
+                #   type: columns
+                #   ordering@: .custom_name
+                #   fields:
+                #     .col1:
+                #       type: column
+                #       fields:
+
+                .coordinates.lng:
+                  type: text
+                  label: Longitude (required)
+                  description: Decimal degrees
+                  ordering@: .custom_name
+                  validate:
+                    required: true
+                    pattern: '^-?\d*\.?\d*$'
+
+                    # .col2:
+                    #   type: column
+                    #   fields:
+
+                .coordinates.lat:
+                  type: text
+                  label: Latitude (required)
+                  description: Decimal degrees
+                  ordering@: .coordinates.lng
+                  validate:
+                    required: true
+                    pattern: '^-?\d*\.?\d*$'
+
+        icon:
+          type: tab
+          title: Icon
+          fields:
+
+            header.icon.file:
+              type: filepicker
+              label: Icon Image File
+              description: If not set, the default Leaflet marker will be used.
+              preview_images: true
+              folder: 'user://data/leaflet-tour/images/icons'
+            
+            header.icon.rounding:
+              type: toggle
+              label: Round Icons
+              description: Will turn square icons into circles and rectangular icons into ovals.
+              highlight: 1
+              default: 0
+              options:
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
+              validate:
+                type: bool
+
+            icon_size_section:
+              type: section
+              title: Icon Size
+              text: Icon width and height will default to 14 (pixels) for custom icons.
+
+            icon_size_cols:
+              type: columns
+              fields:
+                col1:
+                  type: column
+                  fields:
+
+                    header.icon.width:
+                      type: number
+                      label: Icon Width
+                      validate:
+                        min: 1
+
+                col2:
+                  type: column
+                  fields:
+
+                    header.icon.height:
+                      type: number
+                      label: Icon Height
+                      validate:
+                        min: 1
+
+            icon_anchor_section:
+              type: section
+              title: Icon Anchor
+              text: "The coordinates of the 'tip' of the icon (relative to its top left corner). The icon will be aligned so that this point is at the marker's geographical location. Centered by default. If you are using a custom icon, both the x and y values must be provided or the custom icon anchor settings will be ignored."
+
+            icon_anchor_cols:
+              type: columns
+              fields:
+                col1:
+                  type: column
+                  fields:
+
+                    header.icon.anchor_x:
+                      type: number
+                      label: Icon Anchor X
+                      description: Moves icon left (use negative values to move it right)
+
+                col2:
+                  type: column
+                  fields:
+
+                    header.icon.anchor_y:
+                      type: number
+                      label: Icon Anchor Y
+                      description: Moves icon up (use negative values to move it down)
+
+            icon_tooltip_section:
+              type: section
+              title: Icon Tooltip Anchor
+              text: The coordinates of the point from which tooltips will open, relative to the icon anchor. (The tooltips are the labels with feature names.)
+
+            icon_tooltip_cols:
+              type: columns
+              fields:
+                col1:
+                  type: column
+                  fields:
+
+                    header.icon.tooltip_anchor_x:
+                      type: number
+                      label: Tooltip Anchor X
+                      description: Moves tooltip right (use negative values to move it left)
+
+                col2:
+                  type: column
+                  fields:
+
+                    header.icon.tooltip_anchor_y:
+                      type: number
+                      label: Tooltip Anchor Y
+                      description: Moves tooltip down (use negative values to move it up)
+
+            icon_shadow_section:
+              type: section
+              title: Icon Shadow
+
+            header.icon.shadow:
+              type: filepicker
+              label: Shadow Image File
+              description: Defaults to the default Leaflet marker shadow if the default Leaflet marker is used. Otherwise defaults to none.
+              preview_images: true
+              folder: 'user://data/leaflet-tour/images/icons'
+
+            icon_shadow_size_display:
+              type: section
+              title: Icon Shadow Size
+              text: Shadow width and height default to 14 (pixels) for custom icons.
+
+            icon_shadow_size_cols:
+              type: columns
+              fields:
+                col1:
+                  type: column
+                  fields:
+
+                    header.icon.shadow_width:
+                      type: number
+                      label: Shadow Width
+                      validate:
+                        min: 1
+
+                col2:
+                  type: column
+                  fields:
+                  
+                    header.icon.shadow_height:
+                      type: number
+                      label: Shadow Height
+                      validate:
+                        min: 1
+
+            icon_shadow_anchor_section:
+              type: section
+              title: Icon Shadow Anchor
+              text: "The coordinates of the 'tip' of the shadow (relative to its top left corner). If not set, uses the same values as icon anchor. Both the x and y values must be provided or the custom shadow anchor settings will be ignored."
+
+            icon_shadow_anchor_cols:
+              type: columns
+              fields:
+                col1:
+                  type: column
+                  fields:
+
+                    header.icon.shadow_anchor_x:
+                      type: number
+                      label: Shadow Anchor X
+                      # TODO: Description: What direction does this move the shadow?
+
+                col2:
+                  type: column
+                  fields:
+
+                    header.icon.shadow_anchor_y:
+                      type: number
+                      label: Shadow Anchor Y
+                      # TODO: Description: What direction does this move the shadow?
+
+            extra_options_section:
+              type: section
+              title: Additional Icon Options
+
+            header.icon.class:
+              type: text
+              label: Class Name
+              description: A class name that can be used to select the icon when adding custom CSS
+              validate:
+                pattern: '[a-zA-Zа-яA-Я0-9_-]+'
+
+            header.icon.retina:
+              type: filepicker
+              label: Retina Icon Image
+              description: Completely optional image to use for Retina screen devices instead
+              preview_images: true
+              folder: 'user://data/leaflet-tour/images/icons'

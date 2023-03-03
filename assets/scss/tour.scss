@@ -1,554 +1,602 @@
-@use "sass:color";
+$mobile: 800px;
+$min-col-width: 320px;
 
-// Question: Is hiding the scrollbar bad for accessibility?
-::-webkit-scrollbar {
-    display: none;
-}
+// anything that is completely unaffected by mobile vs. desktop view
 body {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-    overflow-wrap: break-word;
+    overflow-y: hidden; // scroll set for narrative column specifically
 }
-
-.dialog-backdrop.active {
-    z-index: 900;
+#tour-wrapper {
+    height: 100vh;
+    overflow-y: auto;
 }
-
-$theme-color-1: #070f4e;
-$accent-color-1: #fff;
-$theme-color-2: #505050;
-$nav-border: color.adjust($theme-color-2, $lightness: 35%);
-
-$tablet: 600px;
-
-@mixin font-size($val) {
-    font-size: 1px * $val;
-    font-size: .1rem * $val;
-}
-@mixin flex() {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-}
-@mixin double-outline() {
+.zoom-btns {
     position: absolute;
-    height: 100%;
-    width: 100%;
-    top: 0;
-    right: 0;
-    content: '';
-    pointer-events: none;
-    box-shadow:
-        0 0 0 1px white,
-        0 0 0 2px blue;
-}
-@mixin focus-outline() {
-    &:focus::before {
-        @include double-outline();
-    }
-}
-@mixin hover-outline() {
-    &:hover::before, &:focus::before {
-        @include double-outline();
-    }
-}
-
-/* Header */
-header {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    #header-wrapper {
-        overflow: hidden; // Question: Is overflow hidden okay?
-    }
-    #open-settings-btn {
-        margin: 10px;
-        height: 32px;
-        width: 32px;
-    }
-    .main-nav {
-        width: 100%;
-        padding: 5px;
-        #toggle-nav-btn {
-            margin: 0;
-            @include font-size(18);
-            &.expanded {
-                border-bottom: 1px solid $nav-border;
-            }
-        }
-        .nav-item {
-            @include font-size(16);
-            line-height: 1.8;
-        }
-        ul ul .nav-item {
-            @include font-size(14);
-        }
-    }
-    // phone styles
-    @media (max-width: $tablet - 1) {
-        #header-wrapper {
-            height: 100px;
-            width: 100%;
-            @include font-size(20);
-            .text {
-                padding: 0;
-                flex-grow: 1;
-                text-align: center;
-                height: inherit;
-                a, span {
-                    display: block;
-                    height: inherit;
-                }
-            }
-        }
-        #header-toggle-btn {
-            margin: 10px;
-        }
-        .mobile-row {
-            display: flex;
-            width: 100%;
-            height: 50px;
-            justify-content: space-between;
-            align-items: center;
-            nav {
-                flex-grow: 1;
-                display: flex;
-                justify-content: center;
-                button {
-                    margin: 5px 0;
-                    //width: 100%;
-                    min-width: 30%;
-                    padding: 10px;
-                    border-color: $theme-color-1;
-                    background-color: $accent-color-1;
-                    color: $theme-color-1;
-                    &:hover, &:focus {
-                        background-color: $theme-color-1;
-                        color: $accent-color-1;
-                        //border-color: #e2e2e2;
-                    }
-                    &.btn-disabled {
-                        background-color: #e2e2e2 !important;
-                        color: #333 !important;
-                        &:focus {
-                            box-shadow: none;
-                            //outline: 2px dashed black;
-                            //outline-offset: -5px;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    // tablet/desktop styles
-    @media (min-width: $tablet) {
-        width: 33%; // column size
-        @include font-size(22);
-        transition: font-size .2s, line-height .2s;
-        &.scrolled {
-            line-height: 1.7;
-            @include font-size(17);
-            nav {
-                padding: 0 5px;
-                #toggle-nav-btn {
-                    @include font-size(16);
-                    &.expanded {
-                        @include font-size(18);
-                    }
-                }
-            }
-        }
-        #header-wrapper {
-            width: 100%;
-            .text {
-                margin-right: 35px;
-                padding: 1rem 5%;
-            }
-        }
-        #open-settings-btn {
-            position: absolute;
-            margin: 5px;
-            top: 0;
-            right: 0;
-        }
-        #header-options-wrapper {
-            nav {
-                display: none;
-            }
-        }
-    }
-}
-
-/* Content */
-main {
-    padding: 0;
-    margin: 0 !important;
-    // z-index: 0; interfering with popups
-    @media (min-width: $tablet) {
-        width: 33%; // column size
-    }
-}
-#scrolly {
-    padding: 1rem 5%;
-    .scroll-top {
-        margin-bottom: 1.5rem;
-    }
-    .step {
-        padding: 1rem 0;
-    }
-    @media (min-width: $tablet) {
-        #back-to-top {
-            right: calc(67% + 1rem); // column size
-        }
-    }
-}
-
-/* Map */
-
-#map-wrapper {
-    .legend {
-        z-index: 700;
+    z-index: 700;
+    padding: 5px;
+    .icon-btn {
+        border-radius: 0;
         position: relative;
-        top: 15px;
-        left: calc(50% - 9px);
-        background-color: white;
-        padding: 15px;
-        border-radius: 10px;
-        border: 2px solid black;
-        width: calc(50% - 30px);
-        max-width: 500px;
-        .legend-top {
-            @include flex();
-            justify-content: space-between;
-            padding-bottom: 15px;
-        }
+        height: 30px;
+        width: 30px;
+        font-size: 18px;
+    }
+    #zoom-in-btn {
+        margin-bottom: 5px;
+    }
+    button:focus-visible {
+        z-index: 2;
+    }
+}
+.legend-wrapper {
+    .legend-top {
+        display: flex;
+        flex-wrap: wrap;
         h2 {
-            @include font-size(22);
-            border: none;
             margin: 0;
-            padding: 0 5px;
+            flex-grow: 1;
+            border: none;
         }
-        #legend-toggle-btn {
-            border-radius: 5px;
-            .fa-plus {
-                display: none;
-            }
-        }
-        label {
-            @include flex();
-            cursor: pointer;
-        }
-        li>div {
-            @include flex();
-        }
+    }
+    fieldset {
+        border: none;
+    }
+    li, label {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        padding: 5px 0;
         img, svg {
             margin: 10px;
+            background-color: #fff;
+            flex-shrink: 0;
         }
-        &.minimized {
-            padding: 5px 0;
-            width: 120px;
-            border: none;
-            left: calc(100% - 125px);
-            .legend-top {
-                padding: 0;
-            }
-            h2 {
-                font-weight: normal;
-                @include font-size(19);
-            }
-            #legend-toggle-btn {
-                position: absolute;
-                height: 100%;
-                width: 100%;
-                background: transparent;
-                justify-content: flex-end;
-                .fa-plus {
-                    display: inline-block;
-                }
-            }
-            ul, .fa-minus {
-                display: none;
-            }
+        img.basemap {
+            max-width: 20%;
+        }
+        img.round {
+            border-radius: 50%;
+        }
+        span {
+            padding: 0 10px;
         }
     }
-    #map {
-        position: fixed;
-        top: auto;
-        bottom: 0;
-        padding: 0;
-        &:focus::before {
-            position: absolute;
-            height: calc(100% - 8px);
-            width: calc(100% - 8px);
-            top: 4px;
-            right: 4px;
-            content: '';
-            z-index: 700;
-            pointer-events: none;
-            box-shadow:
-                0 0 0 2px white,
-                0 0 0 4px blue;
-        }
-        img {
-            margin: 0;
-        }
-        // map controls
-        .leaflet-control-zoom {
-            a {
-                outline-offset: 0;
-                user-select: none;
-                width: 3rem;
-                height: 3rem;
-                color: #333;
-                @include font-size(22);
-                &:focus {
-                    outline: revert !important;
-                }
-                &:hover {
-                    outline: 1px solid #333;
-                    background-color: #e1e1e1;
-                }
-                &.leaflet-control-zoom-in:hover {
-                    border-bottom: none;
-                    &.leaflet-disabled:hover {
-                        border-bottom: 1px solid #ccc;
-                        border-top: none;
-                    }
-                }
-                &.leaflet-control-zoom-out {
-                    border-top: 1px solid #ccc;
-                    &:hover {
-                        border-top: none;
-                    }
-                    &.leaflet-disabled:hover {
-                        border-top: 1px solid #ccc;
-                    }
-                }
-                &.leaflet-disabled {
-                    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 10 10'> <path d='M10 0 L0 10' fill='none' stroke='%23444444' stroke-width='.5' /></svg>");
-                    color: #444;
-                    &:hover {
-                        outline: none;
-                        background-color: #f4f4f4;
-                    }
-                }
+    h3 {
+        font-size: 22px;
+    }
+}
+#map {
+    height: 100%;
+    img {
+        box-shadow: none;
+    }
+    .leaflet-pane {
+        .hover-el, .leaflet-tooltip {
+            pointer-events: auto;
+            cursor: default;
+            &.has-popup {
+                cursor: pointer;
             }
         }
-        // markers
-        .leaflet-interactive {
-            padding: 4px;
-            top: -4px;
-            left: -4px;
-            border-radius: 5px;
-            &:focus, &:hover {
-                box-shadow: inset 0 0 0 1px black, inset 0 0 0 2px white, inset 0 0 0 10px black;
-                outline: revert !important;
+        .leaflet-marker-icon {
+            padding: 3px;
+            // padding moves the icon, to move it back:
+            top: -5px;
+            left: -5px;
+            box-sizing: content-box;
+            border: 2px solid transparent;
+            box-shadow: none;
+            max-width: none;
+            &.round {
+                border-radius: 50%;
             }
-            &.no-popup, &.path-no-popup {
-                cursor: default;
-                cursor: not-allowed;
+            &:hover, &:focus-visible, &.active {
+                border: 2px solid #000;
+                box-shadow: 0 0 2px 2px #fff inset;
+                z-index: 1000 !important; // have to use this because leaflet modifies the html element's "style" attribute
             }
+        }
+        .focus-el {
+            pointer-events: auto;
+            outline: none; // img has outline (well, border, because I can do more with a border) and is the element that needs to show focus, not this one
         }
         // tooltips
         .leaflet-tooltip {
-            //text-shadow:
-            //    -1px 0 #000,
-            //    0 1px #000,
-            //    1px 0 #000,
-            //    0 -1px #000;
-            //color: #fff;
-            color: #333;
             font-family: Verdana, Helvetica, Arial, sans-serif;
-            @include font-size(13.5);
-            &.active {
-                box-shadow: 0 0 2px 2px #333, 0 0 2px 3px #fff;
-                //font-weight: bold;
-                //@include font-size(14);
-                // https://www.w3schools.com/css/css3_shadows.asp */
-                //text-shadow:
-                //    -2px 0 #000,
-                //    0 2px #000,
-                //    2px 0 #000,
-                //    0 -2px #000,
-                //    0 0 8px white;
-                opacity: 1 !important;
-                //background-color: #777;
-                //background-color: rgba(0,0,0,.5);
-                //border-radius: 1rem;
-                z-index: 700;
+            font-size: 12px;
+            margin: 0; // margins that would be added to account for pseudo element cancel out margins that would need to be added to account for padding
+            pointer-events: auto;
+            // overwrite styles so they can be moved to child element
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
+            z-index: 800;
+            &::before {
+                content: none;
             }
-        }
-    }
-    // phone
-    @media (max-width: $tablet - 1) {
-        display: none;
-        #skip-map-link {
-            display: none;
-        }
-        .legend {
-            &.minimized {
-                h2 {
-                    margin-left: 7px;
-                }
-                #legend-toggle-btn {
-                    // position: absolute;
-                    // height: 100%;
-                    // width: 100%;
-                    // background: transparent;
-                    // justify-content: flex-end;
-                    .fa-plus {
-                        margin-right: 15px;
-                    }
-                }
-                &:hover {
-                    background-color: #d9d9d9;
-                }
-            }
-        }
-        #map {
-            height: calc(100% - 100px);
-            left: 0;
-            width: 100%;
-        }
-    }
-    // desktop
-    @media (min-width: $tablet) {
-        #skip-map-link {
-            position: fixed;
-            left: calc(33% + 1rem); // column size
-        }
-        .legend {
-            position: fixed;
-            width: 30%;
-            right: 15px;
-            left: auto;
-            &.minimized {
-                width: 150px;
-                left: calc(100% - 170px);
-                // #legend-toggle-btn {
-                //     margin-right: 10px;
-                // }
-                h2 {
-                    margin-left: 10%;
-                }
-                #legend-toggle-btn .fa-plus {
-                    margin-right: 15%;
-                }
-            }
-        }
-        #map {
-            left: 33%; // column size
-            width: 67%; // column size
-            height: 100%;
-        }
-    }
-}
-
-/* Footer */
-footer {
-    padding: 1rem 0 3rem 0;
-    &>div {
-        padding: 1rem 5%;
-    }
-    // desktop
-    @media (min-width: $tablet) {
-        width: 33%; // column size
-    }
-}
-#attribution-section {
-    text-align: left;
-    .attribution-list {
-        text-align: center;
-        margin-top: .5rem;
-        li {
-            display: inline-block;
-            &:last-child .fa-circle {
+            &.tmp-hide {
                 display: none;
             }
+            // move styles to child element (and add a couple of my own
+            .tooltip {
+                padding: 6px;
+                background-color: #fff;
+                border: 1px solid #fff; // but what is the purpose?
+                border-radius: 3px;
+                color: #333;
+                white-space: nowrap; // TODO: Change this?
+                box-shadow: 0 1px 3px rgb(0 0 0 / 40%);
+                // TODO: pointer events, user select?
+                &::before {
+                    position: absolute;
+                    border: 6px solid transparent;
+                    background: transparent;
+                    content: "";
+                }
+            }
         }
-        .attribution {
-            text-decoration: none;
-            background-color: #ddd;
-            border-radius: 2rem;
-            padding: .2rem .9rem;
-            border: 2px solid transparent;
-            color: #000;
-            white-space: nowrap;
+        .leaflet-tooltip-bottom, .leaflet-tooltip-top {
+            .tooltip::before {
+                // center horizontally
+                left: 50%;
+                margin-left: -6px;
+            }
         }
-        a.attribution:hover, a.attribution:focus {
-            text-decoration: underline;
-            border-color: #000;
+        .leaflet-tooltip-top .tooltip::before {
+            bottom: 0;
+            margin-bottom: -6px; // original 12, but padding already provides 6
+            border-top-color: #fff;
         }
-        .fa-circle {
-            @include font-size(8);
-            padding: 0 .5rem;
+        .leaflet-tooltip-bottom .tooltip::before {
+            top: 0;
+            margin-top: -6px; // original 12, but padding already provides 6
+            border-bottom-color: #fff;
         }
+        .leaflet-tooltip-left, .leaflet-tooltip-right {
+            .tooltip::before {
+                // center vertically
+                top: 50%;
+                margin-top: -6px;
+            }
+        }
+        .leaflet-tooltip-left .tooltip::before {
+            right: 0;
+            margin-right: -6px; // original 12, but padding already provides 6
+            border-left-color: #fff;
+        }
+        .leaflet-tooltip-right .tooltip::before {
+            left: 0;
+            margin-left: -6px; // original 12, but padding already provides 6
+            border-right-color: #fff;
+        }
+    }
+    
+    &::after {
+        content: "";
+        z-index: 650;
+        pointer-events: none; // seems to prevent attempting to give map focus when a feature is activated
+    }
+    &:focus-visible::after {
+        display: block;
+        position: relative;
+        height: 100%;
+        width: 100%;
+        box-shadow: 0 0 2px 2px #000 inset;
+        outline: 2px solid #fff;
+        outline-offset: -4px; // room for both border and outline
     }
 }
+.dialog-content {
+    padding: 30px;
+    padding-top: 20px;
+    margin: 0;
+}
+.dialog-top {
+    flex-wrap: nowrap;
+    button {
+        flex-shrink: 0;
+        margin-left: 10px;
+    }
+}
+.auto-prop {
+    font-weight: bold;
+}
+.attribution-section img {
+    margin: 5px 0;
+}
 
-/* Other mobile vs. desktop */
-@media(max-width: $tablet - 1) {
-    .menu-hidden-mobile {
-        header {
-            float: right;
-            background-color: transparent;
-        }
-        #header-options-wrapper, nav, .text, .logo {
+// .la-times-circle {
+//     font-size: 44px;
+// }
+
+// mobile
+@media(max-width: ($mobile - 1)) {
+    .tour-desktop-only {
+        display: none;
+    }
+    #tour-wrapper {
+        display: grid;
+    }
+    header {
+        grid-column: 1 / 3;
+    }
+    #main-nav {
+        margin: 20px 20px 0;
+        grid-column: 1 / 3;
+    }
+    #map-nav {
+        grid-column: 2;
+        z-index: 700;
+        margin-right: 20px;
+        position: sticky;
+        top: 0;
+        right: 0;
+        .map-only {
             display: none;
         }
-        #header-wrapper {
-            height: auto;
-        }
-        #map-wrapper {
-            .legend {
-                top: 52px;
-            }
-            #map {
-                height: 100%;
-            }
+        #map-toggle-btn {
+            margin: 10px 0;
         }
     }
+    main {
+        grid-column: 1 / 3;
+        padding: 0;
+        margin: 0;
+    }
+    #scrolly {
+        padding: 0 20px 20px;
+    }
+    #map-wrapper {
+        display: none;
+    }
     .map-active {
-        #main-nav, footer, #scrolly {
+        header, #main-nav, #scrolly, footer, #back-to-top {
             display: none;
+        }
+        #tour-wrapper {
+            display: grid;
+            grid-template-rows: min-content min-content 1fr;
+            grid-template-columns: 1fr min-content;
+            height: 100vh;
+        }
+        #map-nav {
+            grid-row: 2;
+            grid-column: 2;
+            position: initial;
+            margin-right: 0;
+            display: block;
+            .map-only {
+                display: initial;
+            }
+            #mobile-map-toggle-btn {
+                display: flex;
+                margin: 10px;
+                float: right;
+                font-size: 26px;
+            }
+            #map-nav-options {
+                display: none;
+            }
+            &.expanded {
+                grid-row: 1;
+                grid-column: 1 / 3;
+                #map-nav-options {
+                    display: flex;
+                    flex-direction: column;
+                    // TODO: Could do much nicer styling, but this is good enough for now
+                    button {
+                        margin: 0;
+                    }
+                }
+            }
+        }
+        main {
+            grid-row: 2 / 4;
+            grid-column: 1 / 3;
         }
         #map-wrapper {
             display: block;
+            height: 100%;
+            width: 100%;
         }
     }
-    #scrolly {
-        .scroll-top {
-            min-height: calc(33vh + 40px); // scrollamaOptions.offset - 33%
+    .legend-active {
+        #map-nav, #map, .zoom-btns {
+            display: none;
+        }
+        #tour-wrapper {
+            display: block;
+        }
+        .legend-wrapper {
+            padding: 15px;
+            .legend-top {
+                border-bottom: 2px solid;
+                h2 {
+                    padding-top: 10px;
+                }
+                #legend-close-btn {
+                    margin-right: 5px;
+                }
+            }
+            .legend-basemaps {
+                h3 {
+                    margin-top: 20px;
+                    padding-left: 0;
+                    border-left: none;
+                }
+            }
+        }
+    }
+    .has-dialog {
+        #map-nav, #map, .zoom-btns {
+            display: none;
+        }
+    }
+    .modal-popup [role="dialog"] {
+        overflow-y: auto;
+        border: none;
+        top: 0;
+        left: 0;
+        transform: none;
+        min-height: 100vh;
+        max-height: 100vh;
+        width: 100vw;
+        .dialog-top {
+            position: unset;
+            .icon-btn {
+                position: fixed;
+                margin: 15px;
+                top: 0;
+                right: 0;
+            }
+            h2 {
+                margin-right: 20px;
+            }
+        }
+        .dialog-content {
+            overflow-y: unset;
         }
     }
     footer {
-        min-height: calc(67vh - 160px) // (1 - scrollamaOptions.offset) - 67%
+        grid-column: 1 / 3;
     }
 }
-@media (min-width: $tablet) {
-    .wide-column {
-        header, main, footer {
-            width: 40%;
+// desktop
+@media(min-width: $mobile) {
+    .tour-mobile-only {
+        display: none;
+    }
+    header {
+        font-size: 20px;
+        padding: 10px;
+    }
+    #open-settings-btn {
+        align-self: start;
+        margin: 5px 0;
+        font-size: 28px;
+        height: 40px;
+        width: 40px;
+    }
+    #main-nav {
+        margin: 10px 10px 0;
+        padding-right: 5px;
+        .toggle-wrapper {
+            display: block;
         }
-        #scrolly #back-to-top {
-            right: calc(60% + 1rem);
+        #main-nav-list {
+            border-top: 1px solid;
+            padding-top: 0;
         }
-        #map-wrapper {
-            #skip-map-link {
-                left: calc(40% + 1rem);
+        #main-nav-list.collapsed {
+            display: none;
+        }
+    }
+    main {
+        .bottom-step {
+            width: 100%;
+            height: 30px;
+        }
+        #view-content {
+            h2 {
+                margin-top: 10px;
             }
-            #map {
-                left: 40%;
-                width: 60%;
+        }
+        z-index: 0;
+        .dialog-backdrop {
+            z-index: 800;
+            margin: 0;
+        }
+        .desktop-btns {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+
+            .go-to-view-btn {
+                opacity: 0;
+                pointer-events: none;
+                transition: none;
+                &:focus {
+                    opacity: 1;
+                    transition: opacity .5s;
+                    pointer-events: auto;
+                }
+            }
+        }
+    }
+    #settings-modal {
+        .dialog-content {
+            padding-top: 0;
+            margin: 10px 30px;
+            .option {
+                margin: 30px 10px;
+                label {
+                    display: flex;
+                    flex-wrap: wrap;
+                    align-items: center;
+                    cursor: pointer;
+                    .label {
+                        padding: 0;
+                        margin-left: 10px;
+                    }
+                }
             }
         }
     }
     #scrolly {
-        .scroll-top {
-            min-height: calc(33vh - 60px); // scrollamaOptions.offset - 33%
+        padding: 20px;
+    }
+    #skip-map-link {
+        position: absolute;
+        top: -70px;
+        transition: top .5s ease;
+        left: 20px;
+        z-index: 900;
+        &:focus {
+            top: 20px;
+        }
+    }
+    #tour-wrapper {
+        min-width: 320px;
+    }
+    #map-wrapper {
+        position: fixed;
+        top: 0;
+        right: 0;
+        height: 100vh;
+        max-width: calc(100% - 320px);
+    }
+    .legend-wrapper {
+        z-index: 700;
+        position: absolute;
+        box-sizing: border-box;
+        margin: 10px;
+        margin-right: clamp(10px, 2.5%, 30px);
+        margin-top: clamp(10px, 2.5%, 30px);
+        top: 0;
+        right: 0;
+        width: calc(50% - 30px);
+        max-width: 400px;
+        min-width: 300px;
+        padding: 10px 0;
+        background-color: white;
+        border: 2px solid black;
+        color: #333;
+        border-radius: 10px;
+        .legend {
+            overflow-y: auto;
+            max-height: calc(100vh - 70px);
+            padding: 5px 15px;
+        }
+        .legend-top {
+            align-items: center;
+            border-bottom: 1px solid; // maybe
+            padding-bottom: 15px;
+            h2 {
+                padding: 0;
+                font-size: 24px;
+            }
+            #legend-toggle-btn {
+                border-radius: 5px;
+                transform: translateY(-3px);
+                .fa-plus {
+                    display: none;
+                }
+            }
+        }
+        &.minimized {
+            width: 200px;
+            width: clamp(180px, 30%, 400px);
+            .legend {
+                padding: 2px 15px;
+            }
+            .legend-top {
+                padding: 0;
+                border: none;
+                #legend-toggle-btn {
+                    // margin-right: 0;
+                    transform: none;
+                    .fa-minus {
+                        display: none;
+                    }
+                    .fa-plus {
+                        display: inline-block;
+                    }
+                }
+            }
+            .legend-basemaps, #legend-data-list {
+                display: none;
+            }
+        }
+        &.dark { // only necessary for desktop - mobile will automatically match theme
+            background-color: #333;
+            color: #fff;
+        }
+        .legend-basemaps {
+            h3 {
+                margin: 0;
+                border: none;
+            }
+            #legend-basemaps-toggle {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                width: 100%;
+                font: inherit;
+                span {
+                    padding-right: 10px;
+                    padding-left: 5px;
+                }
+            }
+            li {
+                padding: 0;
+            }
+            #legend-basemaps-list {
+                display: none;
+            }
+            &.expanded {
+                .maps-heading {
+                    border-bottom-width: 1px;
+                    border-bottom-style: solid;
+                }
+                #legend-basemaps-list {
+                    display: block;
+                }
+            }
+        }
+    }
+    #back-to-view-btn {
+        display: none;
+        position: absolute;
+        opacity: 0;
+        z-index: 700;
+        pointer-events: none;
+        bottom: 10px;
+        right: 20px;
+        transition: none;
+        &.active {
+            display: inline-block;
+        }
+        &:focus {
+            opacity: 1;
+            transition: opacity .5s;
+            pointer-events: all;
         }
     }
     footer {
-        min-height: calc(67vh - 360px); // (1 - scrollamaOptions.offset) - 67%
+        padding: 10px 30px;
+    }
+    #back-to-top {
+        position: sticky;
+        float: right;
+        right: 20px;
+    }
+    .map-on-left {
+        #tour-wrapper {
+            position: absolute;
+            right: 0;
+        }
+        #map-wrapper {
+            right: unset;
+            left: 0;
+        }
     }
 }

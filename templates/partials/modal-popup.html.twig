@@ -1,0 +1,14 @@
+<div class="dialog-backdrop modal-popup">
+    <div role="dialog" id="{{ id }}-popup" aria-labelledby="{{ id }}-popup-label" aria-modal="true" class="hidden">
+        <div class="dialog-top">
+            <h2 id="{{ id }}-popup-label" class="dialog-label">{{ feature.name }}</h2>
+            <button type="button" id="{{ id }}-close-btn" class="icon-btn close-btn dialog-close-btn">
+                <i class="fa fa-times" aria-hidden="true"></i>
+                <span class="sr-only">Close</span>
+            </button>
+        </div>
+        <div class="popup-content dialog-content">
+            {% include 'partials/popup-content.html.twig' with {'feature': feature} %}
+        </div>
+    </div>
+</div>

@@ -1,0 +1,59 @@
+<div class="legend-wrapper tour-desktop-only {% if page.header.legend.dark %} dark {% endif %}" id="legend-wrapper">
+    <div class="legend">
+        <div class="legend-top">
+            <h2>Legend </h2>
+            {# TODO: Should this really be using aria-controls in this way? It might be better to adjust the html to be more sensible in this regard #}
+            <button type="button" id="legend-toggle-btn" class="tour-desktop-only icon-btn" aria-expanded="true" aria-controls="legend-wrapper">
+                <i class="fa fa-minus" aria-hidden="true"></i>
+                <i class="fa fa-plus" aria-hidden="true"></i>
+                <span class="toggle sr-only">Legend</span>
+            </button>
+            <button type="button" id="legend-close-btn" class="tour-mobile-only icon-btn close-btn dialog-close-btn">
+                <i class="fa fa-times" aria-hidden="true"></i>
+                <span class="sr-only">Close Legend</span>
+            </button>
+        </div>
+    {% if datasets|length > 0 %}
+        {% if tour.getLegendToggles() %}
+            <fieldset id="legend-data-list">
+            {# TODO: Best wording? #}
+                <legend class="sr-only">Included Datasets</legend>
+                {% for item in datasets %}
+                    <label class="legend-item-wrapper">
+                        <input type="checkbox" class="legend-checkbox" value="{{ item.id }}" checked />
+                        {% include 'partials/legend-item.html.twig' with {'item': item} %}
+                    </label>
+                {% endfor %}
+            </fieldset>
+        {% else %}
+            <ul id="legend-data-list" class="list-unstyled" role="list">
+                {% for item in datasets %}
+                    <li class="legend-item-wrapper">
+                        {% include 'partials/legend-item.html.twig' with {'item': item} %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endif %}
+    {% if basemaps|length > 0 %}
+    <div class="legend-basemaps expanded">
+        <h3>
+            <span class="tour-mobile-only maps-heading">Maps</span>
+            <button type="button" id="legend-basemaps-toggle" class="tour-desktop-only maps-heading disclosure" aria-expanded="true" aria-controls="legend-basemaps-list">
+                <svg aria-hidden="true" height="18" width="18">
+                    <path d="m 2,7 l 7,7 l 7,-7" fill="none" stroke="currentColor" stroke-width="3" />
+                </svg>
+                <span>Maps</span>
+            </button>
+        </h3>
+        <ul id="legend-basemaps-list" class="list-unstyled" role="list">
+            {% for item in basemaps %}
+                <li class="legend-item-wrapper">
+                    {% include 'partials/legend-item.html.twig' with {'item': item} %}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    </div>
+</div>

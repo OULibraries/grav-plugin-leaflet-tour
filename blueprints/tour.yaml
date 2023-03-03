@@ -6,38 +6,45 @@ form:
     tabs:
       type: tabs
       active: 1
-      
       fields:
-        tour: # new tab
+        tour:
           type: tab
           title: Tour
           ordering@: content
           fields:
-            
-            header.data_set:
-              type: fieldset
-              title: Tour Data
-              collapsible: true
-              collapsed: false
-              fields:
 
-               header.datasets:
+            header.id:
+              type: hidden
+              default: 'tmp  id'
+
+            datasets_fieldset:
+              type: fieldset
+              title: Tour Datasets
+              collapsible: true
+              collapsed: true
+              fields:
+                
+                header.datasets:
                   type: list
                   size: long
                   style: vertical
-                  collapsed: true
+                  collapsed: false
+                  collapsible: true
                   btnLabel: Add Dataset
+                  controls: both
                   fields:
-                    .file:
+
+                    .id:
                       type: select
-                      label: Select the Dataset
-                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getDatasetFiles'
+                      label: Select Dataset (required)
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourDatasetsList'
                       validate:
                         required: true
-                    .show_all:
+
+                    .include_all:
                       type: toggle
-                      label: Show All Features
-                      description: "If this is checked, all features in the dataset will be included. If not, only features in the features list (further down) will be included."
+                      label: Include All Features
+                      description: If disabled, only features added to the features list (further down) will be included.
                       highlight: 1
                       default: 1
                       options:
@@ -45,378 +52,341 @@ form:
                         0: PLUGIN_ADMIN.DISABLED
                       validate:
                         type: bool
-                    .legend:
-                      type: section
-                      title: Legend Overrides
-                      underline: false
-                    .legend_text:
-                      type: text
-                      label: Description for Legend
-                    .legend_alt:
-                      type: text
-                      label: Legend Alt Text
-                      description: Optional shorter version of the legend description that will be included as alt text for icons on the map. If empty, the legend description will be used.
-                    .icon_alt:
-                      type: text
-                      label: Icon Alt Text
-                      description: A brief description of the image. Will be included as alt text for the icon within the legend.
-                    .icon:
-                      type: fieldset
-                      title: Icon Overrides
-                      text: "Note that only some of the options provided in the dataset configuration are present. You can still override any options not shown by directly modifying the page header in expert mode."
-                      collapsed: true
-                      collapsible: true
-                      fields:
-                        .file:
-                          type: filepicker
-                          label: Icon Marker
-                          description: If not set, the default Leaflet marker will be used.
-                          preview_images: true
-                          folder: 'user://data/leaflet-tour/images/markers'
-                        .width:
-                          type: number
-                          label: Icon Width (pixels)
-                          description: Defaults to 14.
-                          validate:
-                            min: 1
-                        .height:
-                          type: number
-                          label: Icon Height (pixels)
-                          description: Defaults to 14.
-                          validate:
-                            min: 1
-                        .use_defaults:
-                          type: toggle
-                          label: Use Default Values
-                          description: Will override any options set in the dataset configuration but not for this page with default values.
-                          highlight: 1
-                          default: 0
-                          options:
-                            1: PLUGIN_ADMIN.ENABLED
-                            0: PLUGIN_ADMIN.DISABLED
-                          validate:
-                            type: bool
-                        .anchor_x:
-                          type: hidden
-                        .anchor_y:
-                          type: hidden
-                        .tooltip_anchor_x:
-                          type: hidden
-                        .tooltip_anchor_y:
-                          type: hidden
-                        .shadow:
-                          type: hidden
-                        .shadow_width:
-                          type: hidden
-                        .shadow_height:
-                          type: hidden
-                        .shadow_anchor_x:
-                          type: hidden
-                        .shadow_anchor_y:
-                          type: hidden
-                        .class:
-                          type: hidden
-                        .retina:
-                          type: hidden
-                    .svg:
-                      type: hidden
-                    .svg.stroke:
-                      type: hidden
-                    .svg.color:
-                      type: hidden
-                    .svg.weight:
-                      type: hidden
-                    .svg.opacity:
-                      type: hidden
-                    .svg.fill:
-                      type: hidden
-                    .svg.fillColor:
-                      type: hidden
-                    .svg.fillOpacity:
-                      type: hidden
-                    .svg_active:
-                      type: hidden
-                    .svg_active.stroke:
-                      type: hidden
-                    .svg_active.color:
-                      type: hidden
-                    .svg_active.weight:
-                      type: hidden
-                    .svg_active.opacity:
-                      type: hidden
-                    .svg_active.fill:
-                      type: hidden
-                    .svg_active.fillColor:
-                      type: hidden
-                    .svg_active.fillOpacity:
-                      type: hidden
-            
-            header.start_section:
-              type: section
-              title: Starting Position
-              underline: true
-              text: By default, the starting bounds will be determined by all included features. You can override this by providing bounds manually in the page header (expert mode) or by choosing a center and a distance (in degrees) from it. You can choose a location for the center or set the latitude and longitude manually.
-            
-            header.start.location:
-              type: select
-              label: Central Location
-              data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourLocations'
-            
-            header.start.long:
-              type: number
-              label: Center Longitude
-              validate:
-                min: -180
-                max: 180
-                step: .0000001
-            
-            header.start.lat:
-              type: number
-              label: Center Latitude
-              validate:
-                min: -90
-                max: 90
-                step: .0000001
-            
-            header.start.distance:
-              type: number
-              label: Distance from Starting Center
-              size: long
-              validate:
-                min: 0
-                step: .0000001
 
-            header.options_section:
-              type: section
-              title: General Options
-              underline: true
-            
-            header.legend:
-              type: toggle
-              label: Include Legend
-              description: "Adds a legend to the map, assuming at least one legend description is set."
-              highlight: 1
-              default: 1
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
-                
-            header.legend_toggles:
-              type: toggle
-              label: Allow Toggling Datasets in Legend
-              description: "Adds a checkbox for each dataset in the legend that can be used to show/hide features on the map. (Requires including a legend)"
-              highlight: 1
-              default: 0
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
-            
-            header.only_show_view_features:
-              type: toggle
-              label: Only Show Current View Features
-              description: "When in a specific view, only the features associated with that view will be shown on the map. This setting can be overriden by individual view settings."
-              highlight: 1
-              default: 0
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
-            
-            header.list_popup_buttons:
-              type: toggle
-              label: List View Popup Buttons
-              description: Buttons to go to all view feature popups will be added at the end of each view. Uncheck this option if you are going to manually determine where the buttons will be located using shortcodes. Can be overriden by individual view settings.
-              highlight: 1
-              default: 1
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
-            
-            header.remove_tile_server:
-              type: toggle
-              label: Remove Tile Server
-              description: If toggled, will remove the tile server when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. Can be overriden by individual view settings.
-              highlight: 1
-              default: 1
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
-            
-            header.basemaps:
-              type: list
-              label: Additional Basemap Images
-              style: vertical
-              btnLabel: Add Basemap
-              fields:
-                .file:
-                  type: select
-                  label: Select the basemap
-                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getBasemaps'
-                  validate:
-                    required: true
-                    
-            header.features_set:
-              type: fieldset
-              title: Feature Overrides
-              icon: map-marker
-              collapsed: true
-              collapsible: true
-              fields:
-
-                # Option: Select properties to automatically add to popups (dataset override)?
-
-                header.features:
-                  type: list
-                  label: Features
-                  description: A list (in order) of all features included in the tour. This is not necessary for a given dataset if the "show all" option has been selected. Feature information can also be edited directly from the dataset page configuration.
-                  style: vertical
-                  collapsed: true
-                  btnLabel: Add Feature
-                  controls: both
-                  fields:
-                    .id:
-                      type: select
-                      label: Feature
-                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourFeatures'
-                      validate:
-                        required: true
-                    .remove_popup:
+                    .add_all:
                       type: toggle
-                      label: Remove Default Popup
-                      description: Will prevent default popup (as set in dataset configuration) from being displayed, even if no popup content is provided to override it. It is not necessary if popup content is provided below, as this will automatically override the default popup.
-                      # Note: Still needs better wording, especially if automatically adding properties to a popup becomes a thing
+                      label: Add All Features
+                      description: On save, all (non-hidden) features from the dataset will automatically be added to the features list, if they are not already in the list.
                       highlight: 1
                       default: 0
                       options:
-                        1: PLUGIN_ADMIN.ENABLED
                         0: PLUGIN_ADMIN.DISABLED
+                        1: PLUGIN_ADMIN.ENABLED
                       validate:
                         type: bool
-                    .popup_content:
-                      type: editor
-                      label: Popup Content
-                      description: Leave blank for no popup window. Current content may not show up until you click inside the text area.
-                      validate:
-                        type: textarea
-            
-            header.advanced_set:
+
+            header.dataset_overrides_fieldset:
               type: fieldset
-              title: Advanced
-              icon: cog
-              collapsed: true
+              title: Dataset Overrides
               collapsible: true
+              collapsed: true
+              data-fields@: 'Grav\Plugin\LeafletTourPlugin::getTourDatasetOverrides'
+
+            options_fieldset:
+              type: fieldset
+              title: General Options
+              collapsible: true
+              collapsed: true
               fields:
 
-                header.maxbounds_section:
+                legend_section:
                   type: section
-                  title: Maximum Map Bounds
-                  text: These will define how far the map can be panned. All four values must be provided or map bounds will be ignored.
-                
-                header.maxbounds_cols:
-                  type: columns
-                  fields:
-                    header.maxbounds_col_1:
-                      type: column
-                      fields:
-                        
-                        header.max_bounds.north:
-                          type: number
-                          label: North
-                          description: Latitude for the Northern (top) boundary of the map.
-                          validate:
-                            min: -90
-                            max: 90
-                            step: .0000001
-                        
-                        header.max_bounds.south:
-                          type: number
-                          label: South
-                          description: Latitude for the Southern (bottom) boundary of the map.
-                          validate:
-                            min: -90
-                            max: 90
-                            step: .0000001
-                    
-                    header.maxbounds_col_2:
-                      type: column
-                      fields:
-                        
-                        header.max_bounds.east:
-                          type: number
-                          label: East
-                          description: Longitude for the Eastern (right) boundary of the map.
-                          validate:
-                            min: -180
-                            max: 180
-                            step: .0000001
-                        
-                        header.max_bounds.west:
-                          type: number
-                          label: West
-                          description: Longitude for the Western (left) boundary of the map.
-                          validate:
-                            min: -180
-                            max: 180
-                            step: .0000001
-                
-                header.zoom_section:
-                  type: section
-                  title: Zoom
-                  underline: false
-                
-                header.zoom_cols:
-                  type: columns
-                  fields:
-                    header.zoom_col_1:
-                      type: column
-                      fields:
-                        
-                        header.zoom_min:
-                          type: number
-                          label: Minimum Zoom
-                          description: The map will not zoom out further than this level. Defaults to 8.
-                          default: 8
-                          validate:
-                            min: 0
-                            max: 28
-                            step: 1
-                    
-                    header.zoom_col_2:
-                      type: column
-                      fields:
-                        
-                        header.zoom_max:
-                          type: number
-                          label: Maximum Zoom
-                          description: The map will not zoom in further than this level. Defaults to 16.
-                          default: 16
-                          validate:
-                            min: 0
-                            max: 28
-                            step: 1
-            
-            header.overrides_set:
-              type: fieldset
-              title: Overrides
-              icon: flag
-              collapsed: true
-              collapsible: true
-              fields:
-                
-                header.wide_column:
+                  title: Legend Options
+                  underline: true
+
+                header.legend.include:
                   type: toggle
+                  label: Include Legend
+                  description: Adds a legend to the map, as long as at least one legend description is set.
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+
+                header.legend.toggles:
+                  type: toggle
+                  label: Allow Toggling Datasets in Legend
+                  description: Adds a checkbox for each dataset in the legend, which can be used to show/hide features for that dataset on the map. Requires including a legend.
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
+
+                header.legend.basemaps:
+                  type: toggle
+                  label: Include Basemaps in Legend
+                  description: Adds a basemaps section to the legend, listing any basemaps used by the tour. Does not include the tile server. Basemaps will not be toggleable, even if datasets are. Requires include a legend.
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
+
+                header.legend.dark:
+                  type: toggle
+                  label: Dark Legend
+                  description: Modifies the legend to have white text on a dark background. Recommended if using a dark theme.
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
+
+                plugin_overrides_section:
+                  type: section
+                  title: Plugin Options Overrides
+                  text: These options override the default options set from the plugin configuration.
+                  underline: true
+
+                header.column_width:
+                  type: number
+                  label: Narrative Column Width
+                  description: Can set the desired percentage of the available viewport width for the narrative column to use.
                   toggleable: true
-                  label: Wide Narrative Column
-                  description: "If toggled, will change the narrative width from 33% to 40% of the page width. Overrides plugin setting."
+                  validate:
+                    min: 0
+                    max: 100
+                    step: 1
+
+                header.overrides.map_on_right:
+                  type: toggle
+                  label: Map Location
+                  description: Determines if the map will be displayed on the right side of the page (with narrative column on the left) or on the left of the page (with narrative column on the right).
+                  toggleable: true
+                  highlight: 1
+                  default: 1
+                  options:
+                    0: Left
+                    1: Right
+                  validate:
+                    type: bool
+
+                header.overrides.show_map_location_in_url:
+                  type: toggle
+                  label: Show Map Location in URL
+                  description: If toggled, the current zoom level and center coordinates of the map location will be included in the page URL at the top of a given user's browser.
+                  toggleable: true
+                  highlight: 1
+                  default: 0
+                  options:
+                    0: PLUGIN_ADMIN.DISABLED
+                    1: PLUGIN_ADMIN.ENABLED
+                  validate:
+                    type: bool
+
+                header.attribution:
+                  type: textarea
+                  label: Tour Attribution
+                  toggleable: true
+                  description: Provide some text to include in the tour footer. Can be plain text, markdown or HTML.
+
+                tile_server_section:
+                  type: section
+                  title: Tile Server and Basemaps
+                  text: Choose one of the tile servers from the dropdown menu, or input the URL and attribution for a tile server of your choice. You can also select additional basemaps to add. The tile server options will override the defaults from the plugin configuration.
+                  underline: true
+
+                # TODO: Change default?
+                # TODO: Add more description regarding the Leaflet Providers options
+                header.tile_server.select:
+                  type: select
+                  label: Select a Tile Server
+                  toggleable: true
+                  default: 'OpenTopoMap'
+                  description: "This dropdown provides a few options from Leaflet Providers. Go to the [Leaflet Providers GitHub page](https://github.com/leaflet-extras/leaflet-providers) for additional options and information. Please note that some options require additional information or actions. For example, to use Esri/ArcGIS maps you must register and abide by their terms of service."
+                  markdown: true
+                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServerList'
+
+                header.tile_server.url:
+                  type: text
+                  label: Custom Tile Server URL
+                  toggleable: true
+                  description: Make sure to select "custom" for the tile server (here or in the plugin configuration) to use this field.
+
+                header.tile_server.name:
+                  type: text
+                  label: Name of Leaflet Provider Tile Server
+                  toggleable: true
+                  description: Use this if the server you want to use is not listed in the dropdown. Check the Leaflet Providers documentation for information on available maps.
+
+                header.tile_server.key:
+                  type: text
+                  label: API Key / Access Token
+                  toggleable: true
+                  description: If required, provide an API key or access token. Required for HEREv3, Jawg Maps, Mapbox, MapTiler Cloud, Thunderforest, TomTom, and Geoportail France.
+
+                header.tile_server.id:
+                  type: text
+                  label: ID or Variant
+                  toggleable: true
+                  description: "If relevant, provide an id or variant. Providers: Jawg Maps, Mapbox, Geoportail France"
+
+                header.tile_server.attribution:
+                  type: text
+                  label: Custom Tile Server Attribution
+                  toggleable: true
+                  description: Add some HTML to include in the tour footer. Will overwrite the default tile server attribution for Leaflet Providers maps.
+
+                header.basemaps:
+                  type: select
+                  label: Additional Basemap Images
+                  description: Select any number of basemaps previously uploaded to the plugin configuration and added to the plugin basemaps information list.
+                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getBasemapList'
+                  multiple: true
+                  validate:
+                    type: array
+
+            advanced_fieldset:
+              type: fieldset
+              title: Advanced Options
+              collapsible: true
+              collapsed: true
+              fields:
+
+                header.start_fieldset:
+                  type: fieldset
+                  title: Starting Tour Position
+                  # Don't love this, but fieldset text does not seem to be working
+                  info: By default, starting bounds will be determined by all included features. Here you can override that behavior.
+                  # text: "By default, the starting bounds for the tour will be determined by all included features. You can override this by providing bounds manually or by choosing a center and a distance from that center. You can choose a Point feature from any dataset included in the tour as the center, or you can set the latitude and longitude manually."
+                  name: name
+                  label: label
+                  collapsible: true
+                  collapsed: true
+                  fields:
+
+                    header.start_location_fieldset:
+                      type: fieldset
+                      title: Choose Center and Distance
+                      info: 'Option 1: Choose a center (Point feature or coordinates) and distance (in degrees)'
+                      collapsible: true
+                      collapsed: false
+                      fields:
+
+                        start_cols0:
+                          type: columns
+                          fields:
+                            start_col0_1:
+                              type: column
+                              fields:
+                                header.start.distance:
+                                  type: text
+                                  label: Distance from Center
+                                  size: long
+                                  validate:
+                                    pattern: '^-?\d*\.?\d*$'
+
+                            start_col0_2:
+                              type: column
+                              fields:
+                                header.start.units:
+                                  type: select
+                                  label: Distance Units
+                                  size: long
+                                  default: meters
+                                  options:
+                                    meters: Meters (m)
+                                    kilometers: Kilometers (km)
+                                    feet: Feet (ft)
+                                    miles: Miles (mi)
+
+                        header.start.location:
+                          type: select
+                          label: Center Location
+                          data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourPoints'
+                        
+                        start_cols1:
+                          type: columns
+                          fields:
+                            start_col1:
+                              type: column
+                              fields:
+                                header.start.lng:
+                                  type: text
+                                  label: Center Longitude
+                                  description: Decimal degrees
+                                  validate:
+                                    pattern: '^-?\d*\.?\d*$'
+
+                            start_col2:
+                              type: column
+                              fields:
+                                header.start.lat:
+                                  type: text
+                                  label: Center Latitude
+                                  description: Decimal degrees
+                                  validate:
+                                    pattern: '^-?\d*\.?\d*$'
+
+                    header.start_bounds_fieldset:
+                      type: fieldset
+                      title: Choose Start Bounds
+                      info: 'Option 2: Manually provide starting bounds.'
+                      collapsible: true
+                      collapsed: true
+                      fields:
+                  
+                        start_bounds_columns:
+                          type: columns
+                          fields:
+                            s_col1:
+                              type: column
+                              fields:
+
+                                header.start.bounds.north:
+                                  type: text
+                                  label: North
+                                  description: Latitude for the Northern (top) boundary of the map.
+                                  validate:
+                                    pattern: '^-?\d*\.?\d*$'
+
+                                header.start.bounds.south:
+                                  type: text
+                                  label: South
+                                  description: Latitude for the Southern (bottom) boundary of the map.
+                                  validate:
+                                    pattern: '^-?\d*\.?\d*$'
+
+                            s_col2:
+                              type: column
+                              fields:
+
+                                header.start.bounds.east:
+                                  type: text
+                                  label: East
+                                  description: Longitude for the Eastern (right) boundary of the map.
+                                  validate:
+                                    pattern: '^-?\d*\.?\d*$'
+
+                                header.start.bounds.west:
+                                  type: text
+                                  label: West
+                                  description: Longitude for the Western (left) boundary of the map.
+                                  validate:
+                                    pattern: '^-?\d*\.?\d*$'
+              
+                view_defaults_section:
+                  type: section
+                  title: View Defaults
+                  text: The following set default options for the view. They can be overridden from the view configuration.
+                  underline: true
+
+                header.view_options.remove_tile_server:
+                  type: toggle
+                  label: Remove Tile Server
+                  description: Removes the tile server from the map entirely when a custom basemap is currently in use. This will save loading time, but may look odd if the custom basemap does not cover sufficient area. This sets behavior for the tour itself when not in any view, as well as the default view behavior.
+                  highlight: 1
+                  default: 1
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+
+                header.view_options.only_show_view_features:
+                  type: toggle
+                  label: Only Show Current View Features
+                  description: When in a specific view, only the features included in that particular view will be displayed on the map.
                   highlight: 1
                   default: 0
                   options:
@@ -425,40 +395,156 @@ form:
                   validate:
                     type: bool
 
-                header.show_map_location_in_url:
+                header.view_options.list_popup_buttons:
                   type: toggle
-                  toggleable: true
-                  label: Show Map Location in URL
-                  description: "Includes the zoom level and center coordinates of the map location in the URL, allowing users to share a link of exactly where they are looking. Overrides plugin settings."
+                  label: List Feature Popup Buttons
+                  description: Buttons for all feature popups will be added at the end of each view. Any buttons already included in that view's content (using shortcodes) will be excluded from the list to avoid repetition.
                   highlight: 1
-                  default: 1
+                  default: 0
                   options:
                     1: PLUGIN_ADMIN.ENABLED
                     0: PLUGIN_ADMIN.DISABLED
                   validate:
                     type: bool
-                
-                header.tileserver_section:
+
+                max_bounds_section:
                   type: section
-                  title: Tile Server
-                  text: Choose one of the tile servers from the dropdown, or input the URL and attribution info for a tile server.
+                  title: Maximum Map Bounds
+                  text: These will define how far the map can be panned. All four values must be provided or map bounds will be ignored. If the tour or view bounds exceed the max bounds, the max bounds will be ignored or modified. Provide all values in degrees with a maximum of seven decimal places.
                   underline: true
-            
-                header.tile_server_select:
-                  type: select
-                  label: Select a Tile Server
-                  data-options@: 'Grav\Plugin\LeafletTourPlugin::getTileServers'
+                  
+                max_bounds_columns:
+                  type: columns
+                  fields:
+                    max_col1:
+                      type: column
+                      fields:
+
+                        header.max_bounds.north:
+                          type: text
+                          label: North
+                          description: Latitude for the Northern (top) boundary of the map.
+                          validate:
+                            pattern: '^-?\d*\.?\d*$'
+
+                        header.max_bounds.south:
+                          type: text
+                          label: South
+                          description: Latitude for the Southern (bottom) boundary of the map.
+                          validate:
+                            pattern: '^-?\d*\.?\d*$'
+
+                    max_col2:
+                      type: column
+                      fields:
+
+                        header.max_bounds.east:
+                          type: text
+                          label: East
+                          description: Longitude for the Eastern (right) boundary of the map.
+                          validate:
+                            pattern: '^-?\d*\.?\d*$'
+
+                        header.max_bounds.west:
+                          type: text
+                          label: West
+                          description: Longitude for the Western (left) boundary of the map.
+                          validate:
+                            pattern: '^-?\d*\.?\d*$'
+
+                zoom_section:
+                  type: section
+                  title: Zoom
+                  text: Define the maximum and minimum zoom levels (from 0 to 28) for the map.
+                  underline: true
+
+                zoom_columns:
+                  type: columns
+                  fields:
+                    col1:
+                      type: column
+                      fields:
+
+                        header.max_zoom:
+                          type: number
+                          label: Maximum Zoom
+                          description: The map will not zoom in closer than this level.
+                          validate:
+                            min: 0
+                            max: 28
+                            step: 1
+
+                    col2:
+                      type: column
+                      fields:
+
+                        header.min_zoom:
+                          type: number
+                          label: Minimum Zoom
+                          description: The map will not zoom out farther than this level.
+                          validate:
+                            min: 0
+                            max: 28
+                            step: 1
+
+                attribution_section:
+                  type: section
+                  title: Attribution
+                  underline: true
                 
-                header.tile_server.url:
-                  type: text
-                  label: Tile Server URL
-                
-                header.tile_server.attribution_text:
-                  type: text
-                  label: Tile Server Attribution
-                  description: This text will be displayed in the footer.
-                
-                header.tile_server.attribution_url:
-                  type: text
-                  label: Tile Server Attribution URL
-                  description: If provided, the attribution will become a link to this URL.
+                header.no_attribution:
+                  type: toggle
+                  label: Ignore Attribution
+                  description: When toggled will prevent the automatic creation of an attribution section. Attribution set for the tour, datasets, basemaps, and tile server will not be included on the page by default and will need to be added manually to the page content.
+                  highlight: 0
+                  default: 0
+                  options:
+                    1: PLUGIN_ADMIN.ENABLED
+                    0: PLUGIN_ADMIN.DISABLED
+                  validate:
+                    type: bool
+
+            features_fieldset:
+              type: fieldset
+              title: Features
+              icon: map-marker
+              collapsible: true
+              collapsed: true
+              fields:
+
+                header.features:
+                  type: list
+                  label: Included Features
+                  description: A list (in order) of all features included in the tour. This is not necessary for features of a given dataset if the "include all" option has been selected, but it still provides a method for determining feature order, including hidden features, and/or overriding feature popup content. When possible, it is better to edit feature popup content directly from the dataset page.
+                  style: vertical
+                  collapsed: true
+                  btnLabel: Add Feature
+                  controls: both
+                  placement: position
+                  fields:
+
+                    .id:
+                      type: select
+                      label: Feature (required)
+                      data-options@: 'Grav\Plugin\LeafletTourPlugin::getTourFeatures'
+                      validate:
+                        required: true
+
+                    .remove_popup:
+                      type: toggle
+                      label: Remove Popup
+                      description: If popup content has been added for this feature from the dataset, that content will not be displayed. It will also remove any automatically created popup content from properties selected in the dataset. If you want to modify the popup content but keep the automatically created content, use the override option below.
+                      highlight: 1
+                      default: 0
+                      options:
+                        1: PLUGIN_ADMIN.ENABLED
+                        0: PLUGIN_ADMIN.DISABLED
+                      validate:
+                        type: bool
+
+                    .popup_content:
+                      type: editor
+                      label: Popup Content
+                      description: Overrides the feature popup content from the dataset configuration. Does not affect properties that have been selected to automatically add. Note that current content may not show up until you click inside the text area.
+                      validate:
+                        type: textarea

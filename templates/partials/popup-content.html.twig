@@ -1,0 +1,17 @@
+{% if feature.auto|length > 0 %}
+<div class="auto-popup">
+    <ul>
+        {% for prop, value in feature.auto %}
+            <li>
+                <span class="auto-prop">{{ prop }}:</span>
+                <span class="auto-value">{{ leaflet_tour.stripParagraph(value|markdown)|raw }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+{% if feature.popup %}
+<div class="custom-popup">
+    {{ feature.popup|markdown }}
+</div>
+{% endif %}

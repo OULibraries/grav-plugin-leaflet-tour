@@ -1,0 +1,30 @@
+{% if item.icon %}
+    <img class="legend-icon {{ item.class }}" src="{{ item.icon }}" alt="{{ item.symbol_alt }}" height="{{ item.height }}" width="{{ item.width }}">
+{% else %} {# Line or Plygon - use svg #}
+    {% set size = 28 %}
+    <svg {% if item.symbol_alt %}role="img" aria-labelledby="{{ item.id }}-symbol-alt"{% else %}aria-hidden="true"{% endif %} width="{{ size }}px" height="{{ size }}px" style="margin: 5px;">
+        {% if item.symbol_alt %}<title id="{{ item.id }}-symbol-alt">{{ item.symbol_alt }}</title>{% endif %}
+        {% if item.polygon %}
+            {% if item.fill.fill %}
+                <rect x="0" y="0" width="{{ size }}" height="{{ size }}" fill="{{ item.fill.fillColor }}" fill-opacity="{{ item.fill.fillOpacity }}" />
+            {% endif %}
+            {% set offset = 3 %}
+            {# {% set offset = item.border|length ? offset + 2 : offset %}
+            {% set offset = item.stroke.stroke ? offset + 1 : offset %} #}
+            {% set size = size - (2 * offset) %}
+            {% if item.border|length %}
+                <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" stroke="{{ item.border.color }}" stroke-width="{{ offset * 2 }}" fill="transparent" />
+                {% if item.stroke.stroke %}
+                    <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" stroke="{{ item.stroke.color }}" stroke-width="2" fill="transparent" />
+                {% endif %}
+            {% elseif item.stroke.stroke %}
+                <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" stroke="{{ item.stroke.color }}" stroke-width="{{ offset * 2 }}" fill="transparent" />
+            {% endif %}
+        {% else %}
+            {% set offset = item.border|length ? 2 : 0 %}
+            {% set size = size - (2 * offset) %}
+            <rect x="{{ offset }}" y="{{ offset }}" width="{{ size }}" height="{{ size }}" {% if item.border|length %} stroke="{{ item.border.color }}" stroke-width="4" {% endif %} fill="{{ item.stroke.color }}" />
+        {% endif %}
+    </svg>
+{% endif %}
+<span>{{ leaflet_tour.stripParagraph(item.text|markdown)|raw }}</span>

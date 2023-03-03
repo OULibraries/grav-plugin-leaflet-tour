@@ -1,0 +1,14 @@
+<div id="{{ view.header.id }}">
+    {{ view.content|raw }}
+    {% set popups_list = view_obj.getPopupButtonsList() %}
+    {% if popups_list|length > 0 %}
+        <ul class="list-unstyled" role="list">
+            {% for id, name in popups_list %}
+                <li>
+                    {{ leaflet_tour.buildPopupButton(id, id ~ '-popup-btn', name)|raw }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <div class="step bottom-step" data-view="{{ view.header.id }}"></div>
+</div>
