@@ -54,7 +54,7 @@ if ($("#scrolly .step").length > 0) {
 }
 
 map.on("zoomend", handleMapZoom);
-map.on("movend", handleMapMove);
+map.on("moveend", handleMapMove);
 
 let window_scroll_tick = false;
 
