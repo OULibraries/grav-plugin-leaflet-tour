@@ -5,6 +5,8 @@ $min-col-width: 320px;
 body {
     // overflow-y: hidden; // scroll set for narrative column specifically
     position: fixed;
+    height: 100%;
+    width: 100%; // causes problems in mobile map view otherwise
 }
 #tour-wrapper {
     height: 100vh;
