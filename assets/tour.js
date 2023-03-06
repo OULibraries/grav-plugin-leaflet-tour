@@ -78,7 +78,7 @@ $(document).ready(function() {
         let target = (window.innerHeight * 2) / 5;
         let diff = target - top_height;
         if (diff > 0) {
-            $("#tour").css("padding-bottom", diff + "px");
+            $("#tour .bottom-step").css("height", (diff + 30) + "px");
         }
         // last view
         let last_height = Array.from(document.getElementsByClassName("step")).pop().offsetHeight;
