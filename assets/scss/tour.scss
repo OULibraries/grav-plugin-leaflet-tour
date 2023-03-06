@@ -3,7 +3,8 @@ $min-col-width: 320px;
 
 // anything that is completely unaffected by mobile vs. desktop view
 body {
-    overflow-y: hidden; // scroll set for narrative column specifically
+    // overflow-y: hidden; // scroll set for narrative column specifically
+    position: fixed;
 }
 #tour-wrapper {
     height: 100vh;
