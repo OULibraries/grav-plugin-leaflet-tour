@@ -60,7 +60,7 @@ class TourFeature {
             this.focus_element.setAttribute("tabindex", "0");
         }
         // add id, classes, reference to feature, etc.
-        this.focus_element.id = this.id + "-focus";
+        this.focus_element.id = this.id + "-focus-el";
         this.focus_element.classList.add("focus-el");
         // implementation specific: add sr-only class and set text
         this.focus_element.classList.add("sr-only");
