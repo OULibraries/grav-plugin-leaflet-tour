@@ -367,7 +367,8 @@ form:
             update.dataset_prop:
               type: select_optgroup
               label: Property from Dataset
-              description: Select a property from the dataset that can be used to match features in the dataset to features in the dataset file. This is required for everything but a total replacement update, and is still recommended for most total replacement updates. Read the documentation for a complete description.
+              description: Select a property from the dataset that can be used to match features in the dataset to features in the dataset file. Read the documentation for a complete description.
+              # This is required for everything but a total replacement update, and is still recommended for most total replacement updates.
               data-options@: 'Grav\Plugin\LeafletTourPlugin::getUpdatePropertiesList'
 
             update.file_prop:
@@ -379,7 +380,8 @@ form:
             # TODO: Best info to put here...
               type: display
               label: Choosing an Update Type
-              content: "- Standard: Allows modifying, adding, and/or removing features.\r\n- Removal: Removes any features found in the upload from the dataset.\r\n- Replacement: Replaces all features in the dataset with the features in the upload.\r\n\r\nRead the documentation for a more detailed description of the update types."
+              content: "- Standard: Allows modifying, adding, and/or removing features.\r\n- Removal: Removes any features found in the upload from the dataset.\r\n\r\nRead the documentation for a more detailed description of the update types."
+              # \r\n- Replacement: Replaces all features in the dataset with the features in the upload.
               style: vertical
               markdown: true
 
@@ -389,12 +391,12 @@ form:
               options:
                 standard: Standard
                 removal: Removal
-                replacement: Replacement
+                # replacement: Replacement
 
             standard_update_section:
               type: section
               title: Standard Update Options
-              text: These options only apply to standard updates, not replacement or removal updates.
+              text: These options only apply to standard updates, not removal updates.
               underline: false
 
             update.modify:

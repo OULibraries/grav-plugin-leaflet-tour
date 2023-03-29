@@ -34,11 +34,11 @@ class LeafletTour {
         'match_props_same' => "Features from the existing dataset and the upload file will be identified by the property %s. Features with identical ids will be considered matching.",
         'match_props_diff' => "Features in the existing dataset will be identified by the property %s, while features in the upload file will be identifid by the property %s. Features with identical ids will be considered matching.",
         // replacement
-        'replacement' => 'You have chosen a total dataset replacement. Features from the existing dataset will be completely replaced by features from the uploaded file.',
-        'replace_prop' => 'Settings like custom name and popup content will be preserved for matching features. Existing tours or views using matching features will retain those features.',
-        'replace_no_prop' => 'Warning! No settings have been provided to identify and match features. Feature content from the original dataset will not be preserved. All features from the dataset will be removed from tours or views using them.',
-        'replace_no_matches' => 'No matches were found between features from the existing dataset and features from the file upload. Additional content and feature identification will not be preserved.',
-        'replace_matches' => 'The following feature(s) have matches and will be preserved:',
+        // 'replacement' => 'You have chosen a total dataset replacement. Features from the existing dataset will be completely replaced by features from the uploaded file.',
+        // 'replace_prop' => 'Settings like custom name and popup content will be preserved for matching features. Existing tours or views using matching features will retain those features.',
+        // 'replace_no_prop' => 'Warning! No settings have been provided to identify and match features. Feature content from the original dataset will not be preserved. All features from the dataset will be removed from tours or views using them.',
+        // 'replace_no_matches' => 'No matches were found between features from the existing dataset and features from the file upload. Additional content and feature identification will not be preserved.',
+        // 'replace_matches' => 'The following feature(s) have matches and will be preserved:',
         // removal
         'removal' => 'You have chosen to remove all features from the existing dataset that match the features provided in the update file.',
         'remove_matches' => 'The following feature(s) have matches and will be removed:',
@@ -748,7 +748,7 @@ class LeafletTour {
             if ($dataset->getType() !== $upload_dataset->getType()) $issues[] = sprintf(self::UPDATE_MSGS['invalid_feature_type'], $upload_dataset->getType(), $dataset->getType());
             // check for issue: no dataset property (only applies if this is not a replacement update)
             $prop = self::getDatasetProp(Utils::getStr($update, 'dataset_prop', null));
-            if ((!$prop || $prop === 'none') && Utils::getStr($update, 'type') !== 'replacement') $issues[] = self::UPDATE_MSGS['no_dataset_prop'];
+            if ((!$prop || $prop === 'none') /*&& Utils::getStr($update, 'type') !== 'replacement'*/) $issues[] = self::UPDATE_MSGS['no_dataset_prop'];
             // check for other property issues
             else if ($prop && !in_array($prop, ['none', 'coords'])) {
                 // check for issue: invalid dataset property
@@ -842,17 +842,17 @@ class LeafletTour {
         $matches = Dataset::matchFeatures($dataset_prop ?? 'none', Utils::getStr($update, 'file_prop'), $dataset->getFeatures(), $upload_dataset->getFeatures());
         $matches_msg = self::printMatches($matches, $dataset->getFeatures());
         switch (Utils::getStr($update, 'type')) {
-            case 'replacement':
-                $msg = self::UPDATE_MSGS['replacement'] . "\r\n\r\n";
-                if ($dataset_prop && ($dataset_prop !== 'none')) {
-                    // features will be matched, include the appropriate messaging
-                    $msg .= "$match_method_msg " . self::UPDATE_MSGS['replace_prop'] . ' ';
-                    if ($matches_msg) $msg .= self::UPDATE_MSGS['replace_matches'] . "\r\n$matches_msg";
-                    else $msg .= self::UPDATE_MSGS['replace_no_matches'];
-                }
-                else $msg .= self::UPDATE_MSGS['replace_no_prop'];
-                $tmp_dataset = Dataset::fromUpdateReplace($matches, $dataset, $upload_dataset);
-                break;
+            // case 'replacement':
+            //     $msg = self::UPDATE_MSGS['replacement'] . "\r\n\r\n";
+            //     if ($dataset_prop && ($dataset_prop !== 'none')) {
+            //         // features will be matched, include the appropriate messaging
+            //         $msg .= "$match_method_msg " . self::UPDATE_MSGS['replace_prop'] . ' ';
+            //         if ($matches_msg) $msg .= self::UPDATE_MSGS['replace_matches'] . "\r\n$matches_msg";
+            //         else $msg .= self::UPDATE_MSGS['replace_no_matches'];
+            //     }
+            //     else $msg .= self::UPDATE_MSGS['replace_no_prop'];
+            //     $tmp_dataset = Dataset::fromUpdateReplace($matches, $dataset, $upload_dataset);
+            //     break;
             case 'removal':
                 $msg = self::UPDATE_MSGS['removal'] . "\r\n\r\n$match_method_msg ";
                 if ($matches_msg) $msg .= self::UPDATE_MSGS['remove_matches'] . "\r\n$matches_msg";

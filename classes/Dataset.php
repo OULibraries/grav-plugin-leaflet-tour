@@ -408,32 +408,32 @@ class Dataset {
      * @param Dataset $update_dataset A temporary dataset containing update options
      * @return Dataset
      */
-    public static function fromUpdateReplace($matches, $old_dataset, $update_dataset) {
-        $features = [];
-        $feature_count = $old_dataset->getFeatureCount();
-        // keep features in the order they have in replacement file, but treat new features and existing (matched) features differently
-        foreach ($update_dataset->getFeatures() as $update_id => $update_feature) {
-            // match feature will have id in matches
-            if (($old_id = Utils::get($matches, $update_id)) && ($old_feature = Utils::get($old_dataset->getFeatures(), $old_id))) {
-                // preserve everything except coordinates and properties (and partially preserve properties)
-                $features[] = array_merge($old_feature->toYaml(), [
-                    'coordinates' => $update_feature->getYamlCoordinates(),
-                    'properties' => array_merge($old_feature->getProperties(), $update_feature->getProperties()),
-                ]);
-            } else {
-                // create new feature id
-                // get the correct feature count for the new id - no need to pass in the ids of any other new features, since feature count is being incremented, meaning there is no danger of duplication
-                $feature_count = self::nextFeatureCount($old_dataset->getId(), array_keys($old_dataset->getFeatures()), $feature_count);
-                $id = $old_dataset->getId() . "--$feature_count";
-                $features[] = array_merge($update_feature->toYaml(), ['id' => $id]);
-            }
-        }
-        return new Dataset(array_merge($old_dataset->toYaml(), [
-            'features' => $features,
-            'feature_count' => $feature_count,
-            'properties' => array_unique(array_merge($old_dataset->getProperties(), $update_dataset->getProperties())),
-        ]));
-    }
+    // public static function fromUpdateReplace($matches, $old_dataset, $update_dataset) {
+    //     $features = [];
+    //     $feature_count = $old_dataset->getFeatureCount();
+    //     // keep features in the order they have in replacement file, but treat new features and existing (matched) features differently
+    //     foreach ($update_dataset->getFeatures() as $update_id => $update_feature) {
+    //         // match feature will have id in matches
+    //         if (($old_id = Utils::get($matches, $update_id)) && ($old_feature = Utils::get($old_dataset->getFeatures(), $old_id))) {
+    //             // preserve everything except coordinates and properties (and partially preserve properties)
+    //             $features[] = array_merge($old_feature->toYaml(), [
+    //                 'coordinates' => $update_feature->getYamlCoordinates(),
+    //                 'properties' => array_merge($old_feature->getProperties(), $update_feature->getProperties()),
+    //             ]);
+    //         } else {
+    //             // create new feature id
+    //             // get the correct feature count for the new id - no need to pass in the ids of any other new features, since feature count is being incremented, meaning there is no danger of duplication
+    //             $feature_count = self::nextFeatureCount($old_dataset->getId(), array_keys($old_dataset->getFeatures()), $feature_count);
+    //             $id = $old_dataset->getId() . "--$feature_count";
+    //             $features[] = array_merge($update_feature->toYaml(), ['id' => $id]);
+    //         }
+    //     }
+    //     return new Dataset(array_merge($old_dataset->toYaml(), [
+    //         'features' => $features,
+    //         'feature_count' => $feature_count,
+    //         'properties' => array_unique(array_merge($old_dataset->getProperties(), $update_dataset->getProperties())),
+    //     ]));
+    // }
     /**
      * Creates a new dataset with only those features that do not have matches
      * - Removes all/only matching features from dataset features list
