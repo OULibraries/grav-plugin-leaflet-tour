@@ -232,6 +232,11 @@ form:
                   description: Choose an icon to represent the basemap in a map legend. If no icon is provided, a small version or a portion of the original basemap will be used instead.
                   preview_images: true
                   folder: 'user://data/leaflet-tour/images/basemaps/icons'
+                
+                .legend_alt:
+                  type: text
+                  label: Legend Alternative Text
+                  description: Alternative text that will be applied to the basemap image/icon displayed in the legend
 
                 .attribution:
                   type: text

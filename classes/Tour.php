@@ -1219,6 +1219,7 @@ class Tour {
                         'text' => $text,
                         'icon' => Utils::BASEMAP_ROUTE,
                         'class' => 'basemap',
+                        'symbol_alt' => Utils::getStr($basemap, 'legend_alt'),
                     ];
                     // Use icon if provided
                     if ($icon = Utils::getStr($basemap, 'icon')) $info['icon'] .= "/icons/$icon";
