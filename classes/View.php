@@ -4,18 +4,20 @@ namespace Grav\Plugin\LeafletTour;
 use RocketTheme\Toolbox\File\MarkdownFile;
 
 /**
- * @property MarkdownFile|null $file
- * @property array|null $starting_bounds
- * @property array $overrides
- * @property array $basemaps
- * @property array $features
- * @property bool $no_tour_basemaps
- * @property array $popups [id => name]
- * @property array $extras
+ * @property MarkdownFile|null $file The view page
+ * @property array|null $starting_bounds [[float, float], [float, float]] or [distance => float, lat => float, lng => float], bounds the viewport must included when entering the view, calculated in constructor
+ * @property array $overrides [remove_tile_server, only_show_view_features, list_popup_buttons], three bools
+ * @property array $basemaps [string], all basemaps to include in the view (not counting tour basemaps)
+ * @property array $features [string], list of all view features
+ * @property bool $no_tour_basemaps Indicates whether or not tour basemaps should be included with the view basemaps
+ * @property array $popups [id => name], list of view features that have popup content
+ * @property array $extras [key => value]
  */
 class View {
 
+    // msg to display in the blueprint when no features with popup content are included in the view
     const DEFAULT_SHORTCODES = 'There is nothing here. Add some features to the view first.';
+    // defaults in case view options and their tour counterparts are not set
     const DEFAULT_OPTIONS = [
         'remove_tile_server' =>  true,
         'only_show_view_features' => false,
@@ -130,7 +132,6 @@ class View {
         $start = Utils::getArr($yaml, 'start');
         if (!Utils::getStr($start, 'location') || !in_array(Utils::getStr($start, 'location'), $point_ids)) $start['location'] = 'none';
         $features = [];
-        // TODO: Test for features - correct input and output [[id => string], ...]
         foreach (Utils::getArr($yaml, 'features') as $feature_yaml) {
             if (($id = Utils::getStr($feature_yaml, 'id')) && in_array($id, $included_ids)) $features[] = ['id' => $id];
         }
@@ -179,7 +180,7 @@ class View {
      * 
      * @param array $view_options
      * @param array $tour_options
-     * @return array
+     * @return array [remove_tile_server, only_show_view_features, list_popup_buttons], three bools
      */
     public static function buildOverrides($view_options, $tour_options) {
         $overrides = [];
@@ -219,7 +220,7 @@ class View {
      * 
      * @param array $start Start options from tour/view yaml
      * @param Feature|null $feature A Point feature if start.location is valid
-     * @return array|null
+     * @return array|null [[float, float], [float, float]] or [distance => float, lat => float, lng => float]
      */
     public static function calculateStartingBounds($start, $feature) {
         // first priority: manually set bounds
@@ -296,36 +297,37 @@ class View {
 
     // Simple getters
     /**
-     * @return MarkdownFile|null
+     * @return MarkdownFile|null The view page
      */
     public function getFile() { return $this->file; }
     /**
-     * @return array
+     * @return array [string], all basemaps to include in the view (not counting tour basemaps)
      */
     public function getBasemaps() { return $this->basemaps; }
     /**
-     * @return array
+     * @return array [remove_tile_server, only_show_view_features, list_popup_buttons], three bools
      */
     public function getOverrides() { return $this->overrides; }
     /**
-     * @return array
+     * @return array [string], list of all view features
      */
     public function getFeatures() { return $this->features; }
     /**
-     * @return array
+     * @return array [key => value]
      */
     public function getExtras() { return $this->extras; }
     /**
+     * Indicates whether or not tour basemaps should be included with the view basemaps
      * @return bool
      */
     public function hasNoTourBasemaps() { return $this->no_tour_basemaps; }
     // Getters for values generated in constructor
     /**
-     * @return array|null
+     * @return array|null [[float, float], [float, float]] or [distance => float, lat => float, lng => float], bounds the viewport must included when entering the view, calculated in constructor
      */
     public function getStartingBounds() { return $this->starting_bounds; }
     /**
-     * @return array
+     * @return array [id => name], list of view features that have popup content
      */
     public function getPopups() { return $this->popups; }
 }

@@ -4,16 +4,16 @@ namespace Grav\Plugin\LeafletTour;
 
 /**
  * A feature is equivalent to one GeoJSON object - a Point, LineString, Polygon, etc. - that can be displayed on a map.
- * @property string|null $dataset_id from/based on feature's dataset
- * @property string $type from/based on feature's dataset
- * @property string|null $name based on dataset and feature yaml
- * @property string|null $id from yaml
- * @property string|null $custom_name from yaml
- * @property string|null $popup from yaml
- * @property bool $hide from yaml
- * @property array|string $coordinates from yaml
- * @property array $properties from yaml
- * @property array $extras from yaml
+ * @property string|null $dataset_id Identifier for feature's dataset, comes from dataset yaml
+ * @property string $type Point, LineString, MultiLineString, Polygon, or MultiPolygon, comes from dataset yaml
+ * @property string|null $name Name for the feature, based on dataset and feature yaml
+ * @property string|null $id Unique identifier for the feature
+ * @property string|null $custom_name Name for the feature, overrides name determined from dataset name property and feature properties
+ * @property string|null $popup Popup content for the feature
+ * @property bool $hide Indicates if feature should automatically be included/added in tours when dataset is included
+ * @property array|string $coordinates ['lng' => float, 'lat' => float] or GeoJSON coordinate array (as string)
+ * @property array $properties [key => value]
+ * @property array $extras [key => value]
  */
 class Feature {
 
@@ -172,7 +172,6 @@ class Feature {
     /**
      * Returns the subset of the feature's properties specified by the input (and only for properties that have values)
      * - Result includes all/only properties specified that have values
-     * - TODO: Preserve order of auto popup properties from dataset
      * 
      * @param array $auto_popup_properties
      * @return array [key => value]
@@ -197,48 +196,49 @@ class Feature {
     
     // ordinary getters - no logic, just to prevent direct interaction with object properties
     /**
-     * @return string|null
+     * @return string|null Unique identifier for the feature
      */
     public function getId() { return $this->id; }
     /**
-     * @return array
+     * @return array [key => value]
      */
     public function getProperties() { return $this->properties; }
     /**
-     * @return array|string
+     * @return array|string ['lng' => float, 'lat' => float] or GeoJSON coordinate array (as string)
      */
     public function getYamlCoordinates() { return $this->coordinates; }
     /**
-     * @return array
+     * @return array GeoJSON coordinate array
      */
     public function getJsonCoordinates() { return self::yamlCoordsToJson($this->coordinates, $this->type); }
     /**
-     * @return string|null
+     * @return string|null Name for the feature, overrides name determined from dataset name property and feature properties
      */
     public function getCustomName() { return $this->custom_name; }
     /**
-     * @return array
+     * @return array [key => value]
      */
     public function getExtras() { return $this->extras; }
     /**
+     * Indicates if feature should automatically be included/added in tours when dataset is included
      * @return bool
      */
     public function isHidden() { return $this->hide; }
     /**
-     * @return string|null
+     * @return string|null Popup content for the feature
      */
     public function getPopup() { return $this->popup; }
 
     /**
-     * @return string|null
+     * @return string|null Identifier for feature's dataset
      */
     public function getDatasetId() { return $this->dataset_id; }
     /**
-     * @return string|null
+     * @return string|null Name for the feature, based on dataset and feature yaml
      */
     public function getName() { return $this->name; }
     /**
-     * @return string
+     * @return string Point, LineString, MultiLineString, Polygon, or MultiPolygon
      */
     public function getType() { return $this->type; }
 

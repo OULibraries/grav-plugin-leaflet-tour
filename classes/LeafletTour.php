@@ -10,6 +10,7 @@ use Grav\Common\Filesystem\Folder;
 
 class LeafletTour {
     
+    // regex for finding JSON var when parsing a .js file
     const JSON_VAR_REGEX = '/^.*var(\s)+json_(\w)*(\s)+=(\s)+/';
 
     // There may be a better way to store these, but it definitely doesn't make sense to hardcode them into the functions
@@ -33,12 +34,6 @@ class LeafletTour {
         'match_coords' => 'Features will be identified by their coordinates. Features with identical coordinates in the existing dataset and the update file will be considered matching.',
         'match_props_same' => "Features from the existing dataset and the upload file will be identified by the property %s. Features with identical ids will be considered matching.",
         'match_props_diff' => "Features in the existing dataset will be identified by the property %s, while features in the upload file will be identifid by the property %s. Features with identical ids will be considered matching.",
-        // replacement
-        // 'replacement' => 'You have chosen a total dataset replacement. Features from the existing dataset will be completely replaced by features from the uploaded file.',
-        // 'replace_prop' => 'Settings like custom name and popup content will be preserved for matching features. Existing tours or views using matching features will retain those features.',
-        // 'replace_no_prop' => 'Warning! No settings have been provided to identify and match features. Feature content from the original dataset will not be preserved. All features from the dataset will be removed from tours or views using them.',
-        // 'replace_no_matches' => 'No matches were found between features from the existing dataset and features from the file upload. Additional content and feature identification will not be preserved.',
-        // 'replace_matches' => 'The following feature(s) have matches and will be preserved:',
         // removal
         'removal' => 'You have chosen to remove all features from the existing dataset that match the features provided in the update file.',
         'remove_matches' => 'The following feature(s) have matches and will be removed:',
@@ -63,7 +58,7 @@ class LeafletTour {
      * Return all files in user/pages (any level of nesting) that end with '_dataset.md', indexed by id
      * - Just a wrapper for getFiles that returns datasets
      * 
-     * @return array
+     * @return array [id => MarkdownFile]
      */
     public static function getDatasets() {
         return self::getFiles('_dataset', 'dataset');
@@ -72,7 +67,7 @@ class LeafletTour {
      * Return all files in user/pages (any level of nesting) that end with 'tour.md', indexed by id
      * - Just a wrapper for getFiles that returns tours
      * 
-     * @return array
+     * @return array [id => MarkdownFile]
      */
     public static function getTours() {
         return self::getFiles('tour', 'tour');
@@ -84,7 +79,7 @@ class LeafletTour {
      * 
      * @param string $key Determines which files are returned - everything in the user/pages folder ending in $key.md
      * @param string $default_id If id is invalid and the file header does not have a 'title' set, this is used to generate the id instead
-     * @return array A list of all files found, indexed by id
+     * @return array [id => MarkdownFile], a list of all files found, indexed by id
      */
     public static function getFiles($key, $default_id) {
         $all_files = Utils::findTemplateFiles("$key.md");
@@ -155,7 +150,7 @@ class LeafletTour {
      * - If a view does not have a valid id, generates a new one (and saves to file)
      * 
      * @param MarkdownFile $file The tour markdown file
-     * @return array MarkdownFile objects for any view modules in the tour file's parent folder, indexed by id
+     * @return array [id => MarkdownFile], files for any view modules in the tour file's parent folder, indexed by id
      */
     public static function getTourViews($file) {
         // get views
@@ -195,7 +190,7 @@ class LeafletTour {
     /**
      * Getter for something from Grav (plugin config)
      * 
-     * @return array
+     * @return array plugin yaml
      */
     public static function getConfig(): array {
         return Grav::instance()['config']->get('plugins.leaflet-tour');
@@ -203,7 +198,7 @@ class LeafletTour {
     /**
      * Get basemap_info list (if it exists) from plugin config, index by 'file'
      * 
-     * @return array [file => [info], ...]
+     * @return array [file => [basemap info]]
      */
     public static function getBasemapInfo() {
         $basemaps = Utils::getArr(self::getConfig(), 'basemap_info');
@@ -581,8 +576,7 @@ class LeafletTour {
      * @return string
      */
     public static function buildPopupButton($feature_id, $button_id, $name, $text = null) {
-        $text = trim($text) ?: $name; // TODO: Determine default text?
-        // return "<button id='$button_id' aria-haspopup='true' onClick=\"openDialog('$feature_id-popup', this)\" class='btn view-popup-btn'>$text</button>";
+        $text = trim($text) ?: $name;
         return "<button type='button' id='$button_id' aria-haspopup='true' data-feature='$feature_id' class='btn view-popup-btn'>$text</button>";
     }
     /**
@@ -611,7 +605,7 @@ class LeafletTour {
      * 
      * @param array $old_update The previous plugin options - used to check what values (if any) have changed and whether or not the user has been given a chance to review potential changes to the dataset
      * @param array $new_update The new plugin options - used to determine what should happen next
-     * @return array $new_update with any needed modifications to indicate the current status of the update
+     * @return array $new_update update options with any needed modifications to indicate the current status of the update
      */
     public static function handleDatasetUpdate($old_update, $new_update) {
         // cancel update?
@@ -737,7 +731,7 @@ class LeafletTour {
      * @param array $update
      * @param Dataset $upload_dataset
      * @param Dataset|null $dataset
-     * @return array|null
+     * @return array|null modified update options
      */
     public static function checkForIssues($update, $upload_dataset, $dataset) {
         $issues = [];
@@ -786,7 +780,7 @@ class LeafletTour {
      * @param Dataset $upload_dataset
      * @param string|null $dataset_id
      * @param array $datasets
-     * @return array|null
+     * @return array|null modified update options
      */
     public static function checkForConfirmIssues($new_update, $upload_dataset, $dataset_id, $datasets) {
         // check for issue: dataset has been removed
@@ -833,7 +827,7 @@ class LeafletTour {
      * @param array $update
      * @param Dataset $dataset
      * @param Dataset $upload_dataset
-     * @return array
+     * @return array modified update options
      */
     public static function buildUpdate($update, $dataset, $upload_dataset) {
         $dataset_prop = self::getDatasetProp(Utils::getStr($update, 'dataset_prop'));
@@ -842,17 +836,6 @@ class LeafletTour {
         $matches = Dataset::matchFeatures($dataset_prop ?? 'none', Utils::getStr($update, 'file_prop'), $dataset->getFeatures(), $upload_dataset->getFeatures());
         $matches_msg = self::printMatches($matches, $dataset->getFeatures());
         switch (Utils::getStr($update, 'type')) {
-            // case 'replacement':
-            //     $msg = self::UPDATE_MSGS['replacement'] . "\r\n\r\n";
-            //     if ($dataset_prop && ($dataset_prop !== 'none')) {
-            //         // features will be matched, include the appropriate messaging
-            //         $msg .= "$match_method_msg " . self::UPDATE_MSGS['replace_prop'] . ' ';
-            //         if ($matches_msg) $msg .= self::UPDATE_MSGS['replace_matches'] . "\r\n$matches_msg";
-            //         else $msg .= self::UPDATE_MSGS['replace_no_matches'];
-            //     }
-            //     else $msg .= self::UPDATE_MSGS['replace_no_prop'];
-            //     $tmp_dataset = Dataset::fromUpdateReplace($matches, $dataset, $upload_dataset);
-            //     break;
             case 'removal':
                 $msg = self::UPDATE_MSGS['removal'] . "\r\n\r\n$match_method_msg ";
                 if ($matches_msg) $msg .= self::UPDATE_MSGS['remove_matches'] . "\r\n$matches_msg";
@@ -972,7 +955,7 @@ class LeafletTour {
      * - Includes update.dataset if set and invalid
      * 
      * @param array $config
-     * @return array
+     * @return array [$id => string]
      */
     public static function getUpdateDatasetsList($config) {
         $list = [];
@@ -999,7 +982,7 @@ class LeafletTour {
      * - Includes update.dataset_prop if set and invalid
      * 
      * @param array $config
-     * @return array
+     * @return array [dataset_name => [$id--prop--$prop => prop]]
      */
     public static function getUpdatePropertiesList($config) {
         // get current update.dataset_prop (if any)

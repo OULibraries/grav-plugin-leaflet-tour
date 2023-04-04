@@ -7,29 +7,30 @@ use RocketTheme\Toolbox\File\MarkdownFile;
 use RocketTheme\Toolbox\File\File;
 
 /**
- * @property array $views Provided in constructor, ['id' => View]
- * @property array $plugin_config Provided in constructor
+ * @property array $views [id => View], all views belonging to the tour, provided in constructor
+ * @property array $plugin_config Plugin yaml, provided in constructor
  * 
- * @property string|null $attribution From yaml
- * @property array $datasets [id => Dataset]: Calculated in constructor
- * @property array $features [id => Feature]: Calculated in constructor
- * @property array $feature_popups [id => [name, auto, popup]]: Calculated in constructor
- * @property array $legend [include, toggles, basemaps, dark]: From yaml
- * @property array $tile_server [provider or url, key, id, attribution]: Calculated in constructor
- * @property array $basemaps [string]: From yaml
- * @property array $basemap_info [filename => array]: Calculated in constructor
- * @property array|null $starting_bounds Calculated in constructor
- * @property array $overrides [map_on_right, show_map_location_in_url]: From yaml
- * @property array $view_options [remove_tile_server, only_show_view_features, list_popup_buttons]: From yaml
- * @property array $max_bounds [north, south, east, west]: From yaml
- * @property array $extras [key => value]: From yaml
- * @property bool $no_attribution From yaml
- * @property int|null $column_width From yaml
- * @property int|null $max_zoom From yaml
- * @property int|null $min_zoom From yaml
+ * @property string|null $attribution General attribution for the tour
+ * @property array $datasets [id => Dataset], all datasets in the tour, calculated in constructor
+ * @property array $features [id => Feature], all features to include in the tour, calculated in constructor
+ * @property array $feature_popups [id => [name, auto, popup]], popup content for all features included in the tour, calculated in constructor
+ * @property array $legend [include, toggles, basemaps, dark], set of four bools
+ * @property array $tile_server [provider or url, key, id, attribution], set of strings, calculated in constructor
+ * @property array $basemaps [string] File names for all basemaps included in the tour (not counting basemaps from views)
+ * @property array $basemap_info [filename => array], info for all basemaps included in the tour and its views, calculated in constructor
+ * @property array|null $starting_bounds [[float, float], [float, float]] or [distance => float, lat => float, lng => float], bounds the viewport must included when entering the tour, calculated in constructor
+ * @property array $overrides [map_on_right, show_map_location_in_url], set of two bools
+ * @property array $view_options [remove_tile_server, only_show_view_features, list_popup_buttons], set of three bools
+ * @property array $max_bounds [north, south, east, west], set of four strings/floats
+ * @property array $extras [key => value]
+ * @property bool $no_attribution If true, attribution section will not be included in tour, so no tour, basemap, dataset, or tile server attribution will be automatically included
+ * @property int|null $column_width Width of the narrative column (percentage)
+ * @property int|null $max_zoom Tour cannot be zoomed in past this value
+ * @property int|null $min_zoom Tour cannot be zoomed out past this value
  */
 class Tour {
 
+    // values to use if various fields are invalid or not set
     const DEFAULT_LEGEND = [
         'include' => true,
         'toggles' => false,
@@ -163,7 +164,7 @@ class Tour {
      * @param array $plugin_config
      * @param array $views [id => file]
      * @param string $path
-     * @return array
+     * @return array validated tour yaml
      */
     public static function validateTourUpdate($yaml, $datasets, $plugin_config, $views, $path) {
         // validate yaml data types (standard and in arrays)
@@ -205,7 +206,7 @@ class Tour {
      * @param array $tour_yaml
      * @param array $datasets [id => file]
      * @param array $plugin_config
-     * @return array
+     * @return array validated view yaml
      */
     public static function validateViewUpdate($view_yaml, $tour_yaml, $datasets, $plugin_config) {
         // prepare temp values for view validation
@@ -235,7 +236,7 @@ class Tour {
      * @param array $views [id => file]
      * @param string $dataset_id
      * @param array|null $renamed_properties [old => new]
-     * @return array|null
+     * @return array|null validated tour yaml
      */
     public static function validateDatasetUpdate($yaml, $datasets, $views, $dataset_id, $renamed_properties = null) {
         // does tour use dataset?
@@ -276,7 +277,7 @@ class Tour {
      * 
      * @param array $yaml
      * @param array $datasets [id => file]
-     * @return array
+     * @return array [id => name]
      */
     public static function getBlueprintDatasetOptions($yaml, $datasets) {
         $list = [];
@@ -306,7 +307,10 @@ class Tour {
      * 
      * @param array $yaml
      * @param array $datasets [id => file]
-     * @return array
+     * @return array - [$prefix.auto_popup_properties => array, $prefix.attribution => array, legend_section => array, $prefix.legend.text => array, $prefix.legend.summary => array, $prefix.legend.symbol_alt => array] plus icon or shape fields
+     * - note: $prefix is header.dataset_overrides.$dataset_id
+     * - icon fields: [icon_section => array, $prefix.icon.file => array, $prefix.icon.width => array, $prefix.icon.height => array]
+     * - shape fields: [path_section => array, $prefix.path.color => array, $prefix.border.color => array]
      */
     public static function getBlueprintDatasetOverrides($yaml, $datasets) {
         $fields = [];
@@ -354,7 +358,7 @@ class Tour {
      * 
      * @param array $yaml
      * @param array $datasets [id => file]
-     * @return array
+     * @return array [$id => $name ($dataset)]
      */
     public static function getBlueprintFeatureOptions($yaml, $datasets) {
         $list = [];
@@ -386,7 +390,7 @@ class Tour {
      * @param array $tour_yaml
      * @param array $datasets [id => file]
      * @param array|null $view_yaml
-     * @return array
+     * @return array [$id => $name (coords)]
      */
     public static function getBlueprintPointOptions($tour_yaml, $datasets, $view_yaml = null) {
         $list = [];
@@ -421,7 +425,7 @@ class Tour {
      * @param array $tour_yaml
      * @param array $view_yaml
      * @param array $datasets [id => file]
-     * @return array
+     * @return array [$id => $name ($dataset)]
      */
     public static function getBlueprintViewFeatureOptions($tour_yaml, $view_yaml, $datasets) {
         $list = [];
@@ -454,7 +458,7 @@ class Tour {
      * 
      * @param array $yaml
      * @param array $basemap_info
-     * @return array
+     * @return array [filename => basemap name]
      */
     public static function getBlueprintBasemapsOptions($yaml, $basemap_info) {
         // get currently set basemaps (if any) (simple array of strings)
@@ -489,7 +493,7 @@ class Tour {
      * @param Dataset $dataset
      * @param array $overrides The override yaml for the dataset provided
      * @param string $prefix
-     * @return array
+     * @return array [$prefix.auto_popup_properties => array]
      */
     public static function getAutoPopupOverridesField($dataset, $overrides, $prefix) {
         $default = $dataset->getAutoPopupProperties();
@@ -534,7 +538,7 @@ class Tour {
      * @param Dataset $dataset
      * @param array $overrides
      * @param string $prefix
-     * @return array
+     * @return array [legend_section, $prefix.legend.text, $prefix.legend.summary, $prefix.legend.symbol_alt], set of field arrays
      */
     public static function getLegendOverridesFields($dataset, $overrides, $prefix) {
         // validate overrides, just in case
@@ -590,7 +594,7 @@ class Tour {
      * @param Dataset $dataset
      * @param array $overrides
      * @param string $prefix
-     * @return array
+     * @return array [icon_section, $prefix.icon.file, $prefix.icon.width, $prefix.icon.height], set of field arrays
      */
     public static function getIconOverridesFields($dataset, $overrides, $prefix) {
         $icon = Utils::getArr($overrides, 'icon');
@@ -645,7 +649,7 @@ class Tour {
      * @param Dataset $dataset
      * @param array $overrides
      * @param string $prefix
-     * @return array
+     * @return array [path_section, $prefix.path.color, $prefix.border.color], set of field arrays
      */
     public static function getShapeOverridesFields($dataset, $prefix) {
         return [
@@ -676,7 +680,7 @@ class Tour {
      * - Keeps extra options (not as separate array)
      * 
      * @param array $yaml
-     * @return array
+     * @return array validated yaml
      */
     public static function validateYaml($yaml) {
         $options = $yaml;
@@ -714,7 +718,7 @@ class Tour {
      * - Validates max_bounds - all values (north, south, east, west): int or null if set
      * 
      * @param array $yaml
-     * @return array
+     * @return array validated yaml
      */
     public static function validateYamlFull($yaml) {
         // validate data types - basic
@@ -767,9 +771,6 @@ class Tour {
         $options['basemaps'] = array_values(array_filter($options['basemaps'], function($input) {
             return is_string($input);
         }));
-        // $options['basemaps'] = array_map(function($input) {
-        //     if (is_string($input)) return $input;
-        // }, $options['basemaps']);
         // start - location, distance, units, lng, lat, bounds (location already validated)
         foreach (['distance', 'lng', 'lat'] as $key) {
             if (array_key_exists($key, $options['start'])) $options['start'][$key] = Utils::getType($options['start'], $key, 'is_numeric');
@@ -895,7 +896,7 @@ class Tour {
      * - Only include valid info - file must exist
      * 
      * @param array $plugin_config
-     * @return array
+     * @return array [filename => array]
      */
     public static function getConfigBasemapInfo($plugin_config) {
         $info = [];
@@ -930,7 +931,7 @@ class Tour {
      * - Returns all feature objects from all datasets included in tour
      * 
      * @param array $datasets [id => Dataset] (tour only)
-     * @return array
+     * @return array [id => Feature]
      */
     public static function getFeatureObjects($datasets) {
         $features = [];
@@ -971,7 +972,7 @@ class Tour {
      * @param array $included_features [id => Feature]
      * @param array $datasets [id => Dataset] (tour only)
      * @param array $dataset_overrides [id => yaml]
-     * @return array
+     * @return array [id => Dataset]
      */
     public static function prepareMergedDatasets($included_features, $datasets, $dataset_overrides) {
         $merged_datasets = [];
@@ -993,7 +994,7 @@ class Tour {
      * 
      * @param array $tile_server (yaml)
      * @param array $plugin_config
-     * @return array
+     * @return array [provider or url => string, attribution => string] plus other provided options
      */
     public static function prepareTileServerOptions($tile_server, $plugin_config) {
         // tour options
@@ -1019,7 +1020,7 @@ class Tour {
      * Validates tile server selection: If custom, url must be provided, return url. If other, name must be provided, return as provider. Otherwise return selection as provider.
      * 
      * @param array $options [select, url, name, ...]
-     * @return array|null
+     * @return array|null [url or provider => string]
      */
     private static function getServerSelection($options) {
         if ($select = Utils::getStr($options, 'select')) {
@@ -1037,7 +1038,7 @@ class Tour {
      * Returns list of feature ids for all Point datasets
      * 
      * @param array $datasets [id => Dataset] (tour only)
-     * @return array
+     * @return array [string]
      */
     public static function preparePointIds($datasets) {
         $ids = [];
@@ -1109,7 +1110,7 @@ class Tour {
      * 
      * @param array $overrides from yaml
      * @param array $plugin_config
-     * @return array
+     * @return array [map_on_right => bool, show_map_location_in_url => bool]
      */
     public static function prepareOverrides($tour_overrides, $plugin_config) {
         $config = Utils::getArr($plugin_config, 'tour_options');
@@ -1143,7 +1144,7 @@ class Tour {
      * @param array $features [id => Feature]
      * @param array $tour_datasets yaml, already validated, indexed by id
      * @param array $datasets [id => Dataset] (only tour)
-     * @return array
+     * @return array [id => Feature] updated tour features list, indexed by id
      */
     public static function addAllFeatures($tour_features, $tour_datasets, $datasets) {
         $list = $tour_features;
@@ -1168,7 +1169,7 @@ class Tour {
      * - Point datasets have modified class
      * - Shape datasets have polygon, stroke, fill, and border
      * 
-     * @return array [[array of dataset legend info], ...]
+     * @return array [[id => string, symbol_alt => string, text => string, class => string]] plus each dataset will also have either [icon => string, width => int, height => int] or [polygon => bool, stroke => array, fill => array, border => array]
      */
     public function getLegendDatasets() {
         $legend = [];
@@ -1206,7 +1207,7 @@ class Tour {
      * - All basemaps have file, text, icon, and class
      * - Basemaps use icon if provided, otherwise the file itself
      * 
-     * @return array [file, text, icon, class]
+     * @return array [[file => string, text => string, icon => string, class => 'basemap', symbol_alt => string]]
      */
     public function getLegendBasemaps() {
         $legend = [];
@@ -1233,7 +1234,7 @@ class Tour {
     /**
      * Returns information to pass to template/javascript in order to set up tour
      * 
-     * @return array [map_on_right, show_map_location_in_url, tile_server, max_zoom, min_zoom, max_bounds]
+     * @return array [map_on_right => bool, show_map_location_in_url => bool, tile_server => array, max_zoom => int, min_zoom => int, max_bounds => array]
      */
     public function getTourData() {
         return array_merge($this->getOverrides(), [
@@ -1247,7 +1248,7 @@ class Tour {
      * - Combines appropriate information from basemap info list (all basemap in tour and views) to pass to template/javascript in order to add them to the map
      * - Uses function to validate bounds
      * 
-     * @return array [id => [url, bounds, options => [max_zoom, min_zoom]], ...]
+     * @return array [id => [url => string, bounds => array, options => [max_zoom => int, min_zoom => int]]]
      */
     public function getBasemapData() {
         return array_filter(array_map(function($info) {
@@ -1266,7 +1267,7 @@ class Tour {
      * - Combines appropriate information from datasets to pass to template/javascript in order to set up tour
      * - Returns icon or shape options as appropriate for dataset type
      * 
-     * @return array [id => [id, features => [], legend_summary, icon or various shape options], ...]
+     * @return array [id => [id => string, features => [], legend_summary => string]] plus either icon or various shape options for each dataset
      */
     public function getDatasetData() {
         return array_map(function($dataset) {
@@ -1287,7 +1288,7 @@ class Tour {
      * - Returns valid geojson features
      * - Includes properties: id, name, dataset, has_popup
      * 
-     * @return array [id => [type, geometry => [type, coordinates], properties => [id, name, dataset, has_popup]], ...]
+     * @return array [id => [type => 'Feature', geometry => [type => string, coordinates => array], properties => [id => string, name => string, dataset => string, has_popup => bool]]]
      */
     public function getFeatureData() {
         return array_map(function($feature) {
@@ -1311,7 +1312,7 @@ class Tour {
      * - Begins with basic tour data, using id '_tour'
      * - Includes view data from all views
      * 
-     * @return array [id => [features, basemaps, remove_tile_server, bounds, only_show_view_features], ...]
+     * @return array [id => [features => array, basemaps => array, remove_tile_server => bool, bounds => array, only_show_view_features => bool]]
      */
     public function getViewData() {
         // start with tour
@@ -1349,7 +1350,6 @@ class Tour {
     }
     /**
      * Returns value for this tour's attribution if set, otherwise default value from plugin config
-     * TODO: Should be possible to overwrite with blank
      * 
      * @return string|null
      */
@@ -1397,7 +1397,7 @@ class Tour {
     /**
      * Returns tour's view options merged with defaults
      * 
-     * @return array
+     * @return array [remove_tile_server, only_show_view_features, list_popup_buttons], three bools
      */
     public function getViewOptions() {
         return array_merge(View::DEFAULT_OPTIONS, $this->view_options);
@@ -1405,7 +1405,7 @@ class Tour {
     /**
      * Returns legend options merged with defaults
      * 
-     * @return array
+     * @return array [include, toggles, basemaps, dark], four bools
      */
     public function getLegend() {
         return array_merge(self::DEFAULT_LEGEND, $this->legend);
@@ -1413,56 +1413,56 @@ class Tour {
 
     // simple getters
     /**
-     * @return array
+     * @return array [id => View], all views belonging to the tour
      */
     public function getViews() { return $this->views; }
     /**
-     * @return array
+     * @return array Plugin yaml
      */
     public function getPluginConfig() { return $this->plugin_config; }
     // Getters for values from yaml
     /**
-     * @return string|null
+     * @return string|null General attribution for the tour
      */
     public function getAttribution() { return $this->attribution; }
     /**
-     * @return array
+     * @return array [id => Dataset], all datasets in the tour, calculated in constructor
      */
     public function getDatasets() { return $this->datasets; }
     /**
-     * @return array
+     * @return array [id => Feature], all features to include in the tour, calculated in constructor
      */
     public function getFeatures() { return $this->features; }
     /**
-     * @return array
+     * @return array [id => [name, auto, popup]], popup content for all features included in the tour, calculated in constructor
      */
     public function getFeaturePopups() { return $this->feature_popups; }
     /**
-     * @return array
+     * @return array [provider or url, key, id, attribution], set of strings, calculated in constructor
      */
     public function getTileServer() { return $this->tile_server; }
     /**
-     * @return array
+     * @return array [string] File names for all basemaps included in the tour (not counting basemaps from views)
      */
     public function getBasemaps() { return $this->basemaps; }
     /**
-     * @return array
+     * @return array [filename => array], info for all basemaps included in the tour and its views, calculated in constructor
      */
     public function getBasemapInfo() { return $this->basemap_info; }
     /**
-     * @return array|null
+     * @return array|null [[float, float], [float, float]] or [distance => float, lat => float, lng => float], bounds the viewport must included when entering the tour, calculated in constructor
      */
     public function getStartingBounds() { return $this->starting_bounds; }
     /**
-     * @return array
+     * @return array [map_on_right, show_map_location_in_url], set of two bools
      */
     public function getOverrides() { return $this->overrides; }
     /**
-     * @return array
+     * @return array [north, south, east, west], set of four strings/floats
      */
     public function getMaxBounds() { return $this->max_bounds; }
     /**
-     * @return array
+     * @return array [key => value]
      */
     public function getExtras() { return $this->extras; }
     /**

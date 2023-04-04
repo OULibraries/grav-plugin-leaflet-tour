@@ -1,5 +1,5 @@
 <div id="{{ view.header.id }}">
-    {{ view.content|raw }}
+    {{ view.content|raw }} {# Uses modular/view.html.twig #}
     {% set popups_list = view_obj.getPopupButtonsList() %}
     {% if popups_list|length > 0 %}
         <ul class="list-unstyled" role="list">

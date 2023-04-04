@@ -4,8 +4,6 @@ namespace Grav\Plugin;
 use Composer\Autoload\ClassLoader;
 use Grav\Common\Grav;
 use Grav\Common\Plugin;
-// use Grav\Common\Data\Data;
-// use Grav\Common\Page\Header;
 use RocketTheme\Toolbox\Event\Event;
 use Grav\Plugin\LeafletTour\LeafletTour;
 use Grav\Plugin\LeafletTour\Utils;
@@ -135,12 +133,6 @@ class LeafletTourPlugin extends Plugin {
                 case 'shape_dataset':
                     LeafletTour::handleDatasetDeletion($obj);
                     break;
-                // case 'tour':
-                //     LeafletTour::handleTourDeletion($obj);
-                //     break;
-                // case 'modular/view':
-                //     LeafletTour::handleViewDeletion($obj);
-                //     break;
             }
         }
     }

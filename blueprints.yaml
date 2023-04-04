@@ -320,13 +320,6 @@ form:
               type: hidden
               default: 'none'
 
-            # update_cols:
-            #   type: columns
-            #   fields:
-            #     col1:
-            #       type: column
-            #       fields:
-
             update.confirm:
               type: toggle
               label: Confirm Update
@@ -337,21 +330,6 @@ form:
                 1: PLUGIN_ADMIN.ENABLED
               validate:
                 type: bool
-
-                # col2:
-                #   type: column
-                #   fields:
-
-                #     update.cancel:
-                #       type: toggle
-                #       label: Cancel Update
-                #       highlight: 1
-                #       default: 0
-                #       options:
-                #         0: PLUGIN_ADMIN.DISABLED
-                #         1: PLUGIN_ADMIN.ENABLED
-                #       validate:
-                #         type: bool
 
             update.file:
               type: file
@@ -373,7 +351,6 @@ form:
               type: select_optgroup
               label: Property from Dataset
               description: Select a property from the dataset that can be used to match features in the dataset to features in the dataset file. Read the documentation for a complete description.
-              # This is required for everything but a total replacement update, and is still recommended for most total replacement updates.
               data-options@: 'Grav\Plugin\LeafletTourPlugin::getUpdatePropertiesList'
 
             update.file_prop:
@@ -382,11 +359,9 @@ form:
               description: Input the property from the uploaded file that corresponds to the dataset property. If you have selected coordinates or none, or if the property names are the same, leave this field empty.
 
             update_info:
-            # TODO: Best info to put here...
               type: display
               label: Choosing an Update Type
               content: "- Standard: Allows modifying, adding, and/or removing features.\r\n- Removal: Removes any features found in the upload from the dataset.\r\n\r\nRead the documentation for a more detailed description of the update types."
-              # \r\n- Replacement: Replaces all features in the dataset with the features in the upload.
               style: vertical
               markdown: true
 
@@ -396,7 +371,6 @@ form:
               options:
                 standard: Standard
                 removal: Removal
-                # replacement: Replacement
 
             standard_update_section:
               type: section
@@ -439,14 +413,3 @@ form:
                 1: PLUGIN_ADMIN.DISABLED
               validate:
                 type: bool
-
-            # update.overwrite:
-            #   type: toggle
-            #   label: Overwrite Empty Properties
-            #   highlight: 1
-            #   default: 0
-            #   options:
-            #     0: PLUGIN_ADMIN.DISABLED
-            #     1: PLUGIN_ADMIN.ENABLED
-            #   validate:
-            #     type: bool
