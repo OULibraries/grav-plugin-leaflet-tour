@@ -328,7 +328,7 @@ body {
     border-left: none;
   }
 
-  .has-dialog #map-nav, .has-dialog .zoom-btns {
+  .has-dialog #map-nav, .has-dialog .zoom-btns, .has-dialog #back-to-top {
     display: none;
   }
   .has-dialog .modal-popup.active {
