@@ -337,8 +337,11 @@ body {
         }
     }
     .has-dialog {
-        #map-nav, #map, .zoom-btns {
+        #map-nav, .zoom-btns {
             display: none;
+        }
+        .modal-popup.active {
+            z-index: 800;
         }
     }
     .modal-popup [role="dialog"] {

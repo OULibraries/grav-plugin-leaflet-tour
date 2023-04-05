@@ -328,8 +328,11 @@ body {
     border-left: none;
   }
 
-  .has-dialog #map-nav, .has-dialog #map, .has-dialog .zoom-btns {
+  .has-dialog #map-nav, .has-dialog .zoom-btns {
     display: none;
+  }
+  .has-dialog .modal-popup.active {
+    z-index: 800;
   }
 
   .modal-popup [role=dialog] {
