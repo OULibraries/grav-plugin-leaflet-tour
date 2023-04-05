@@ -46,13 +46,23 @@ body {
   align-items: center;
   padding: 5px 0;
 }
-.legend-wrapper li img, .legend-wrapper li svg, .legend-wrapper label img, .legend-wrapper label svg {
-  margin: 10px;
+.legend-wrapper li input, .legend-wrapper label input {
+  flex-shrink: 0;
+}
+.legend-wrapper li svg, .legend-wrapper label svg {
+  margin: 5px;
   background-color: #fff;
   flex-shrink: 0;
 }
-.legend-wrapper li img.basemap, .legend-wrapper label img.basemap {
-  max-width: 20%;
+.legend-wrapper li .legend-icon-wrapper, .legend-wrapper label .legend-icon-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  width: 28px;
+  margin: 5px;
+}
+.legend-wrapper li img, .legend-wrapper label img {
+  margin: 0px auto;
 }
 .legend-wrapper li img.round, .legend-wrapper label img.round {
   border-radius: 50%;
@@ -62,6 +72,10 @@ body {
 }
 .legend-wrapper h3 {
   font-size: 22px;
+}
+.legend-wrapper .legend-basemaps li .legend-icon-wrapper {
+  width: 20%;
+  margin: 10px;
 }
 
 #map {
