@@ -225,7 +225,7 @@ class LeafletTour {
         self::createDatasetPages($obj->get('data_files'), Utils::getArr(self::getConfig(), 'data_files'));
         // make sure all basemap files exist
         $obj->set('basemap_files', self::validateFiles($obj->get('basemap_files') ?? []));
-        $obj->set('basemap_info', self::validateBasemapInfo($obj->get('basemap_files'), $obj->get('basemap_info' ?? [])));
+        $obj->set('basemap_info', self::validateBasemapInfo($obj->get('basemap_files'), $obj->get('basemap_info') ?? []));
         // validate tours
         self::validateTourBasemaps($obj->get('basemap_info'), self::getTours());
         // handle dataset updates
