@@ -704,7 +704,9 @@ function toggleDataset(id, datasets, hide) {
 /**
  * Utility "function" to use when needed. Uncomment and paste the function in the console. Whenever the map is clicked, the console will indicate the coordinates of the location clicked.
  */
-// map.on('click', function(ev){
-//     var latlng = map.mouseEventToLatLng(ev.originalEvent);
-//     console.log(latlng.lat + ', ' + latlng.lng);
+// map.on('click', function(e) {
+//     let latlng = map.mouseEventToLatLng(e.originalEvent);
+//     let lat = Math.round((latlng.lat + Number.EPSILON) * 10000) / 10000;
+//     let lng = Math.round((latlng.lng + Number.EPSILON) * 10000) / 10000;
+//     console.log('[' + lng + ',' + lat + ']');
 // });
