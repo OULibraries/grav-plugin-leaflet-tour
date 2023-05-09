@@ -1,18 +1,15 @@
 name: Leaflet Tour
 slug: leaflet-tour
 type: plugin
-version: 0.2.0
-description: in development
+version: 1.0.0
+description: "Uses scrollytelling and leaflet to help users build accessible websites that tell stories with maps"
 icon: map-signs
 author:
   name: Theo Acker/University of Oklahoma Libraries
-  email: theoacker@ou.edu
-  url: https://libraries.ou.edu/users/theo-acker
-homepage: https://github.com/TheoAcker12/grav-plugin-leaflet-tour
-demo:
-keywords:
-bugs: https://github.com/TheoAcker12/grav-plugin-leaflet-tour/issues
-docs: https://github.com/TheoAcker12/grav-plugin-leaflet-tour/blob/main/README.md
+homepage: https://leaflet-tour.oucreate.com
+demo: https://leaflet-tour.oucreate.com/plugin-demo
+bugs: https://github.com/oulibraries/grav-plugin-leaflet-tour/issues
+docs: https://github.com/oulibraries/grav-plugin-leaflet-tour/blob/main/README.md
 license: MIT
 
 dependencies:
