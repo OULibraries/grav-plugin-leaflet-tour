@@ -6,12 +6,12 @@
 
 Note: For small screens/mobile it is impractical to display both the narrative content and map at once, so this is handled differently.
 
-Check out the [demo site](https://theoacker.oucreate.com/leaflet-tour/plugin-demo) to see how the plugin works in action.
+Check out the [demo site](https://leaflet-tour.oucreate.com/plugin-demo) to see how the plugin works in action.
 
 <h2 id="features">Features</h2>
 
 - Create interactive content and maps without working directly with any HTML or JavaScript
-- Create websites that are accessible to people with disabilities (instructions for what users need to do to ensure this are included in the [accessibility page of the Leaflet Tour documentation](https://theoacker.oucreate.com/leaflet-tour/accessibility))
+- Create websites that are accessible to people with disabilities (instructions for what users need to do to ensure this are included in the [accessibility page of the Leaflet Tour documentation](https://leaflet-tour.oucreate.com/accessibility))
 - Lots of customization options
 - Add popup content to geographic features, and use provided shortcodes to easily insert buttons for that content within the page
 - Customize the map by choosing one of many included tile servers
@@ -19,7 +19,7 @@ Check out the [demo site](https://theoacker.oucreate.com/leaflet-tour/plugin-dem
 <h2 id="requirements">Requirements</h2>
 
 - A Grav site running Grav version 1.7.0 or higher
-- [Digital Scholarship theme](https://github.com/TheoAcker12/grav-theme-digital-scholarship) (The theme must be enabled)
+- [Digital Scholarship theme](https://github.com/oulibraries/grav-theme-digital-scholarship) (The theme must be enabled)
 - [Admin Panel plugin](https://github.com/getgrav/grav-plugin-admin) - Note: May be installed automatically when you install Grav (for example, if you use Reclaim Hosting)
 - [Shortcode Core plugin](https://github.com/getgrav/grav-plugin-shortcode-core)
 
@@ -37,7 +37,7 @@ Alternatively, you can install this plugin using your system's terminal or comma
 
 To install this plugin manually:
 
-1. Download the zip file from the [plugin repository](https://github.com/TheoAcker12/grav-plugin-leaflet-tour) or by finding the files on the [GetGrav website](https://getgrav.org/downloads/plugins).
+1. Download the zip file from the [plugin repository](https://github.com/oulibraries/grav-plugin-leaflet-tour) or by finding the files on the [GetGrav website](https://getgrav.org/downloads/plugins).
 2. Upload the file to `your-site/grav/user/plugins`.
 3. Unzip/extract the file.
 4. Rename the folder to `leaflet-tour`.
@@ -68,7 +68,7 @@ Note: If you are using the admin panel, there is also a button to clear the cach
 
 <h2 id="usage">Usage</h2>
 
-Check out the information on the [documentation site](https://theoacker.oucreate.com/leaflet-tour) for full usage instructions. These instructions will also include what you need to know in order to make your site accessible to people with disabilities.
+Check out the information on the [documentation site](https://leaflet-tour.oucreate.com) for full usage instructions. These instructions will also include what you need to know in order to make your site accessible to people with disabilities.
 
 A brief overview of a standard workflow:
 
@@ -87,6 +87,6 @@ The plugin uses JavaScript libraries [Leaflet](https://leafletjs.com/) and [Scro
 
 <h2 id="contributing">Contributing</h2>
 
-If you encounter any errors/bugs or would like to request a feature, please [open an issue on GitHub](https://github.com/TheoAcker12/grav-plugin-leaflet-tour/issues) or send an email to theoacker@ou.edu. You can also send an email to provide any other feedback you have. More information about collaboration options can be found on the [collaboration section of the documentation site](https://theoacker.oucreate.com/leaflet-tour/home#collaboration).
+If you encounter any errors/bugs or would like to request a feature, please [open an issue on GitHub](https://github.com/oulibraries/grav-plugin-leaflet-tour/issues) or send an email to theoacker@ou.edu. You can also send an email to provide any other feedback you have. More information about collaboration options can be found on the [collaboration section of the documentation site](https://leaflet-tour.oucreate.com/home#collaboration).
 
 This plugin uses the MIT license. Feel free to modify, remix, and/or redistribute the code as long as you provide attribution to the original.
