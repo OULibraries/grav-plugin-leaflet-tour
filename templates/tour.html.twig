@@ -11,7 +11,6 @@
     {{ parent() }}
     {# Set some important map data #}
     <script>
-        {# let tour_padding = '{{ plugin_config.fly_to_padding ?? header.fly_to_padding }}'; #}
         const tour_options = {{ tour.getTourData()|json_encode|raw }};
         let tour_basemaps = {{ tour.getBasemapData()|json_encode|raw }};
         let tour_datasets = new Map(Object.entries({{ tour.getDatasetData()|json_encode|raw }}));
@@ -47,7 +46,6 @@
 
     {% do assets.addJs('https://unpkg.com/intersection-observer', {group:'bottom'}) %}
     {% do assets.addJs('https://unpkg.com/scrollama', {group:'bottom'}) %}
-    {% do assets.addJs('https://stamen-maps.a.ssl.fastly.net/js/tile.stamen.js?v1.3.0', {group:'bottom'}) %}
     {% do assets.addJs('https://cdnjs.cloudflare.com/ajax/libs/leaflet-providers/1.13.0/leaflet-providers.min.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/tour-functions.js', {group:'bottom'}) %}
     {% do assets.addJs('plugin://leaflet-tour/assets/tour.js', {group:'bottom'}) %}
@@ -57,7 +55,7 @@
 <body id="body" class="{{ tour.getBodyClasses() }}">
     <a href="#main" id="main-skip-link" class="skip-link">Skip to Content</a>
     <div id="tour-wrapper" class="tour-wrapper">
-        <header id="top">
+        <header id="top" tabindex="-1">
             <div class="header">{% block header %}{{ parent() }}{% endblock %}</div>
             {# Options button and modal #}
             <button type="button" id="open-settings-btn" class="tour-desktop-only icon-btn settings-btn dialog-open-btn" aria-haspopup="true" data-opens="settings-modal">
@@ -73,7 +71,6 @@
             <button type="button" id="mobile-map-toggle-btn" aria-expanded="false" aria-controls="map-nav-options" class="map-only icon-btn hamburger-btn dual-bg content-toggle-btn">
                 <i class="fa fa-times" aria-hidden="true"></i>
                 <i class="fa fa-bars" aria-hidden="true"></i>
-                {# TODO: Options or Menu? #}
                 <span class="sr-only">Options</span>
             </button>
             <div id="map-nav-options">
@@ -83,7 +80,7 @@
             </div>
         </nav>
 
-        <main id="main">
+        <main id="main" tabindex="-1">
             <div class="dialog-backdrop">
                 <div role="dialog" id="settings-modal" aria-labelledby="settings-label" aria-modal="true" class="hidden">
                     <div class="dialog-top">
@@ -127,7 +124,6 @@
                     {{ content|raw }}
                     {% if tour.getFeaturePopups()|length > 0 %}
                         <div>
-                            {# TODO: Clearer indication of what this is/does or something #}
                             <a href="{{ page.url }}/popups">All popup content</a>
                         </div>
                     {% endif %}
@@ -141,7 +137,7 @@
                 {% include 'partials/tour-attribution.html.twig' with {'tour':tour} %}
             </div>
             <div id="map-wrapper" role="region" aria-label="Map">
-                <a href="#map-end" id="skip-map-link" class="skip-link tour-desktop-only">Skip Map</a>
+                <a href="#footer" id="skip-map-link" class="skip-link tour-desktop-only">Skip Map</a>
                 {# Zoom Buttons #}
                 <div class="zoom-btns">
                     <button type="button" class="icon-btn dual-bg" id="zoom-in-btn">
@@ -156,7 +152,6 @@
                 {# Legend #}
                 {% if has_legend %}{% include 'partials/legend.html.twig' with {'tour':tour, 'datasets':datasets, 'basemaps':basemaps} %}{% endif %}
                 <div id="map"></div>
-                <div id="map-end"></div>
                 <button data-view="" id="back-to-view-btn" class="skip-link tour-desktop-only">Back to View</button>
             </div>
             {# feature modal popups #}
@@ -165,7 +160,8 @@
             {% endfor %}
         </main>
 
-        {% block footer_wrapper %}{{ parent() }}{% endblock %}
+        {% block footer_wrapper %}{% endblock %}
+        {% block footer %}<footer id="footer" tabindex="-1">{{ parent() }}</footer>{% endblock %}
         {% block back_to_top %}{{ parent() }}{% endblock %}
     </div>
     {% block bottom %}{{ parent() }}{% endblock %}

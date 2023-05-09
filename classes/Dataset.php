@@ -7,25 +7,27 @@ use RocketTheme\Toolbox\File\MarkdownFile;
 use RocketTheme\Toolbox\File\File;
 
 /**
- * @property MarkdownFile|null $file
- * @property string $type
- * @property string $id
- * @property string|null $title
- * @property string|null $upload_file_path
- * @property string|null $attribution
- * @property string|null $name_property
- * @property int $feature_count
- * @property bool $ready_for_update
- * @property array $legend
- * @property array $features
- * @property array $properties
- * @property array $auto_popup_properties
- * @property array $icon
- * @property array $path
- * @property array $active_path
- * @property array $border
- * @property array $active_border
- * @property array $extras
+ * @property MarkdownFile|null $file The dataset page
+ * @property string $type Point, LineString, MultiLineString, Polygon, or MultiPolygon
+ * @property string $id Unique identifier for the dataset
+ * @property string|null $title Name of the dataset
+ * @property string|null $upload_file_path Path to the original uploaded file (only if the dataset was automatically generated from an uploaded file)
+ * @property string|null $attribution Attribution for the source of the dataset
+ * @property string|null $name_property Which property to use for generating default feature names
+ * @property int $feature_count Used for generating new feature ids - may not actually track the number of features, since features may be deleted
+ * @property bool $ready_for_update Indicates if dataset is set to be updated by file upload in the plugin config, will be set to false if the dataset page is saved since new settings might interfere with the prepared update
+ * @property array $legend ['text' => string, 'summary' => string, 'symbol_alt' => string], text is displayed in the legend; summary is added to feature alt text; symbol_alt is used as alt text for the dataset symbol in the legend (but not for symbols on the map); not all fields may be set
+ * @property array $features [id => Feature]
+ * @property array $properties [string] Properties that all features can have
+ * @property array $auto_popup_properties [string] Can only include values from $properties; indicates which properties should be added to automatically generated feature popup content
+ * @property array $icon - ['file' => string, 'rounding' => bool, 'width' => int, 'height' => int, 'anchor_x' => int, 'anchor_y' => int, 'tooltip_anchor_x' => int, 'tooltip_anchor_y' => int, 'shadow' => string, 'shadow_width' => int, 'shadow_height' => int, 'shadow_anchor_x' => int, 'shadow_anchor_y' => int, 'class' => string, 'retina' => string]
+ * - also accepts items in the form of Leaflet icon options, e.g. 'iconSize' => [int, int] instead of 'height' and 'width'
+ * - not all fields may be set
+ * @property array $path ['stroke' => bool, 'color' => string, 'weight' => int, 'opacity' => float, 'lineCap' => string, 'lineJoin' => string, 'dashArray' => string, 'dashOffset' => int, 'fill' => bool, 'fillColor' => string, 'fillOpacity' => float], options correspond to Leaflet path options, not all fields may be set
+ * @property array $active_path same options as $path
+ * @property array $border same options as $path, except no fill, fillColor, or fillOpacity
+ * @property array $active_border same options as $border
+ * @property array $extras [key => value]
  */
 class Dataset {
 
@@ -84,7 +86,7 @@ class Dataset {
      * - Sets and validates file (if provided)
      * - Sets any extra values to allow additional customization
      * 
-     * @param $options Original dataset yaml, possibly with file
+     * @param array $options Original dataset yaml, possibly with file
      */
     private function __construct($options) {
         // Validate file - probably a better way in the future
@@ -395,46 +397,6 @@ class Dataset {
         return new Dataset($options);
     }
     /**
-     * Creates a new dataset with most settings from the old dataset but features from the new dataset. Matched features retain some values.
-     * - Replaces existing features with features from new/update dataset
-     * - Places all features, matched or not, in the same order as from the update dataset (not the original)
-     * - Retains values from matched features - id, some properties, custom name, etc. (updates coordinates and properties)
-     * - Creates new unique ids for new non-matched features (and updates feature_count to match)
-     * - Merges original and update properties lists
-     * - Does not modify anything else besides features, feature_count, and properties
-     * 
-     * @param array $matches List of all matches: [update_id => old_id] where update_id identifies the new feature data in the update dataset and old_id identifies the existing feature in the old dataset, order does not matter
-     * @param Dataset $old_dataset The existing dataset to be updated
-     * @param Dataset $update_dataset A temporary dataset containing update options
-     * @return Dataset
-     */
-    public static function fromUpdateReplace($matches, $old_dataset, $update_dataset) {
-        $features = [];
-        $feature_count = $old_dataset->getFeatureCount();
-        // keep features in the order they have in replacement file, but treat new features and existing (matched) features differently
-        foreach ($update_dataset->getFeatures() as $update_id => $update_feature) {
-            // match feature will have id in matches
-            if (($old_id = Utils::get($matches, $update_id)) && ($old_feature = Utils::get($old_dataset->getFeatures(), $old_id))) {
-                // preserve everything except coordinates and properties (and partially preserve properties)
-                $features[] = array_merge($old_feature->toYaml(), [
-                    'coordinates' => $update_feature->getYamlCoordinates(),
-                    'properties' => array_merge($old_feature->getProperties(), $update_feature->getProperties()),
-                ]);
-            } else {
-                // create new feature id
-                // get the correct feature count for the new id - no need to pass in the ids of any other new features, since feature count is being incremented, meaning there is no danger of duplication
-                $feature_count = self::nextFeatureCount($old_dataset->getId(), array_keys($old_dataset->getFeatures()), $feature_count);
-                $id = $old_dataset->getId() . "--$feature_count";
-                $features[] = array_merge($update_feature->toYaml(), ['id' => $id]);
-            }
-        }
-        return new Dataset(array_merge($old_dataset->toYaml(), [
-            'features' => $features,
-            'feature_count' => $feature_count,
-            'properties' => array_unique(array_merge($old_dataset->getProperties(), $update_dataset->getProperties())),
-        ]));
-    }
-    /**
      * Creates a new dataset with only those features that do not have matches
      * - Removes all/only matching features from dataset features list
      * - Changes nothing besides features list
@@ -519,7 +481,7 @@ class Dataset {
      * - Includes name_property if set and invalid
      * 
      * @param array $yaml
-     * @return array
+     * @return array [$prop => $prop]
      */
     public static function getBlueprintPropertyList($yaml) {
         $props = Utils::getArr($yaml, 'properties');
@@ -534,7 +496,7 @@ class Dataset {
      * Get all properties for a given dataset as text input fields
      * 
      * @param array $yaml
-     * @return array
+     * @return array [.$prop => [type, label]]
      */
     public static function getBlueprintPropertiesFields($yaml) {
         $fields = [];
@@ -616,7 +578,7 @@ class Dataset {
      * - Returns features as unindexed yaml (instead of indexed Feature objects)
      * - Returns extras merged, not as separate array
      * 
-     * @return array
+     * @return array dataset yaml
      */
     public function toYaml() {
         return array_merge($this->getExtras(), [
@@ -695,7 +657,7 @@ class Dataset {
      * 
      * Includes extra options but not unused yaml options - The yaml keys will not be included in the returned array (i.e. iconSize will be included, but not 'height' or 'width'). Any values set that are not in the leaflet or blueprint/yaml keys will be added to the returned array, allowing for potential additional customization.
      * 
-     * @return array
+     * @return array ['iconUrl' => string, 'iconSize' => [int, int], 'iconAnchor' => [int, int], 'tooltipAnchor' => [int, int], 'shadowUrl' => string, 'shadowSize' => [int, int], 'shadowAnchor' => [int, int], 'iconRetinaUrl' => string, 'className' => string]
      */
     public function getIconOptions() {
         $icon = $this->getIcon(); // icon options as provided by user
@@ -790,7 +752,7 @@ class Dataset {
      * - If feature has border, this includes a 'path' array with border and fill options (and 'active_path'); a 'stroke' (and 'active_stroke') array is included with stroke options only (the switcharound is necessary for appropriate layering on the map)
      * - Otherwise if feature has no border, this includes a 'path' array with stroke and fill options (and 'active_path')
      * 
-     * @return array
+     * @return array [] or ['path' => array, 'active_path' => array, 'stroke' => array|unset, 'active_stroke' => array|unset]
      */
     public function getShapeOptions() {
         if ($this->getType() === 'Point') return [];
@@ -813,7 +775,7 @@ class Dataset {
      * - Uses validation function to set opacity, weight, color, and fill (with defaults from the default_path constant)
      * - Adds extras - uses function
      * 
-     * @return array
+     * @return array ['stroke' => bool, 'opacity' => float, 'weight' => int, 'color' => string, 'fill' => false], plus possible extra key-value pairs
      */
     public function getStrokeOptions() {
         $path = $this->getPath();
@@ -830,7 +792,7 @@ class Dataset {
      * - Uses validation function to set opacity, weight, color, and fill (with defaults from the stroke options)
      * - Adds extras - uses function (includes values from stroke options)
      * 
-     * @return array
+     * @return array ['stroke' => bool, 'opacity' => float, 'weight' => int, 'color' => string, 'fill' => false], plus possible extra key-value pairs
      */
     public function getActiveStrokeOptions() {
         $path = $this->getActivePath();
@@ -848,7 +810,7 @@ class Dataset {
      * 
      * @param array $path
      * @param array $default Must have valid values for stroke, opacity, weight, and color
-     * @return array
+     * @return array ['opacity' => float, 'weight' => int, 'color' => string, 'fill' => false]
      */
     public static function validateStrokeOptions($path, $default) {
         return [
@@ -866,7 +828,7 @@ class Dataset {
      * - Validates fillColor: Must be string, replaces invalid with value from stroke options
      * - Does not include any stroke settings, but does include any additional settings added by the user
      * 
-     * @return array
+     * @return array [] or ['fill' => bool, 'fillOpacity' => float, 'fillColor' => string] plus possible extra key-value pairs
      */
     public function getFillOptions() {
         // empty array if line
@@ -894,7 +856,7 @@ class Dataset {
      * - Validates fillColor: Must be string, replaces invalid with path fillColor if set, otherwise color from active stroke options
      * - Does not include any stroke settings, but does include any additional settings added by the user
      * 
-     * @return array
+     * @return array [] or ['fill' => bool, 'fillOpacity' => float, 'fillColor' => string] plus possible extra key-value pairs
      */
     public function getActiveFillOptions() {
         // empty array if line
@@ -921,7 +883,7 @@ class Dataset {
      * - Sets 'fill' to false
      * - Does not include other fill options, but does include any additional settings added by the user
      * 
-     * @return array
+     * @return array [] or ['stroke' => true, 'color' => string, 'opacity' => float, 'weight' => int, 'fill' => false] plust possible extra key-value pairs
      */
     public function getBorderOptions() {
         $border = $this->getBorder();
@@ -952,7 +914,7 @@ class Dataset {
      * - Sets 'fill' to false
      * - Does not include other fill options, but does include any additional settings added by the user
      * 
-     * @return array
+     * @return array [] or ['stroke' => true, 'color' => string, 'opacity' => float, 'weight' => int, 'fill' => false] plust possible extra key-value pairs
      */
     public function getActiveBorderOptions() {
         $border_options = $this->getBorderOptions();
@@ -987,7 +949,7 @@ class Dataset {
      * - Returns null if key is provided but does not exist or is not a string
      * 
      * @param string|null $key
-     * @return array|mixed
+     * @return array|mixed ['text' => string, 'summary' => string, 'symbol_alt' => string], not all values may be set
      */
     public function getLegend($key = null) {
         if ($key) return Utils::getStr($this->legend, $key, null);
@@ -996,75 +958,77 @@ class Dataset {
 
     // ordinary getters - no logic, just to prevent directy interaction with object properties
     /**
-     * @return MarkdownFile|null
+     * @return MarkdownFile|null The dataset page
      */
     public function getFile() { return $this->file; }
     /**
-     * @return string
+     * @return string Point, LineString, MultiLineString, Polygon, or MultiPolygon
      */
     public function getType() { return $this->type; }
     /**
-     * @return string
+     * @return string Unique identifier for the dataset
      */
     public function getId() { return $this->id; }
     /**
-     * @return string|null
+     * @return string|null Name of the dataset
      */
     public function getTitle() { return $this->title; }
     /**
-     * @return string|null
+     * @return string|null Path to the original uploaded file (only if the dataset was automatically generated from an uploaded file)
      */
     public function getUploadFilePath() { return $this->upload_file_path; }
     /**
-     * @return string|null
+     * @return string|null Attribution for the source of the dataset
      */
     public function getAttribution() { return $this->attribution; }
     /**
-     * @return string|null
+     * @return string|null Which property to use for generating default feature names
      */
     public function getNameProperty() { return $this->name_property; }
     /**
+     * Used for generating new feature ids - may not actually track the number of features, since features may be deleted
      * @return int
      */
     public function getFeatureCount() { return $this->feature_count; }
     /**
+     * Indicates if dataset is set to be updated by file upload in the plugin config, will be set to false if the dataset page is saved since new settings might interfere with the prepared update
      * @return bool
      */
     public function isReadyForUpdate() { return $this->ready_for_update; }
     /**
-     * @return array
+     * @return array [id => Feature]
      */
     public function getFeatures() { return $this->features; }
     /**
-     * @return array
+     * @return array [string] Properties that all features can have
      */
     public function getProperties() { return $this->properties; }
     /**
-     * @return array
+     * @return array [string] Can only include values from $properties; indicates which properties should be added to automatically generated feature popup content
      */
     public function getAutoPopupProperties() { return $this->auto_popup_properties; }
     /**
-     * @return array
+     * @return array ['file' => string, 'rounding' => bool, 'width' => int, 'height' => int, 'anchor_x' => int, 'anchor_y' => int, 'tooltip_anchor_x' => int, 'tooltip_anchor_y' => int, 'shadow' => string, 'shadow_width' => int, 'shadow_height' => int, 'shadow_anchor_x' => int, 'shadow_anchor_y' => int, 'class' => string, 'retina' => string]
      */
     public function getIcon() { return $this->icon; }
     /**
-     * @return array
+     * @return array ['stroke' => bool, 'color' => string, 'weight' => int, 'opacity' => float, 'lineCap' => string, 'lineJoin' => string, 'dashArray' => string, 'dashOffset' => int, 'fill' => bool, 'fillColor' => string, 'fillOpacity' => float], options correspond to Leaflet path options, not all fields may be set
      */
     public function getPath() { return $this->path; }
     /**
-     * @return array
+     * @return array ['stroke' => bool, 'color' => string, 'weight' => int, 'opacity' => float, 'lineCap' => string, 'lineJoin' => string, 'dashArray' => string, 'dashOffset' => int, 'fill' => bool, 'fillColor' => string, 'fillOpacity' => float], options correspond to Leaflet path options, not all fields may be set
      */
     public function getActivePath() { return $this->active_path; }
     /**
-     * @return array
+     * @return array ['stroke' => bool, 'color' => string, 'weight' => int, 'opacity' => float, 'lineCap' => string, 'lineJoin' => string, 'dashArray' => string, 'dashOffset' => int], options correspond to Leaflet path options, not all fields may be set
      */
     public function getBorder() { return $this->border; }
     /**
-     * @return array
+     * @return array ['stroke' => bool, 'color' => string, 'weight' => int, 'opacity' => float, 'lineCap' => string, 'lineJoin' => string, 'dashArray' => string, 'dashOffset' => int], options correspond to Leaflet path options, not all fields may be set
      */
     public function getActiveBorder() { return $this->active_border; }
     /**
-     * @return array
+     * @return array [key => value]
      */
     public function getExtras() { return $this->extras; }
 
@@ -1077,7 +1041,7 @@ class Dataset {
      * - Sets 'type' to 'FeatureCollection'
      * 
      * @param array $yaml
-     * @return array
+     * @return array ['type' => 'FeatureCollection', 'name' => string, 'features' => array]
      */
     public static function createExport($yaml) {
         // create array of geojson features

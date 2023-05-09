@@ -1,15 +1,23 @@
-// tour state
+/**
+ * global variable that will hold all relevant tour information, including basemaps, datasets, features, and views
+ */
 var tour = {
     tile_layer: null,
     feature_layer: null,
 }
+/**
+ * global variable that will indicate the state of the page - current scroll position and whether or not the scroll position should be updated whenever a change is detected
+ */
 var page_state = {
     save_scroll_pos: true, // save the (vertical) scroll position
     scroll_pos: 0, // the saved (vertical) scroll position
 }
+/**
+ * global variable that will indicate the state of the tour - whether or not the map should be adjusted when switched to (only relevant for mobile view), whether or not views should be entered by scrolling, the current view, and any currently active basemaps
+ */
 var tour_state = {
     map_needs_adjusting: true,
-    animation: true,
+    animation: true, // enter views by scrolling
     view: null,
     basemaps: [], // active basemaps
 }
@@ -22,12 +30,11 @@ map.addLayer(tour.tile_layer);
 tour.basemaps = createBasemaps(tour_basemaps);
 tour.datasets = tour_datasets;
 tour.features = tour_features;
-// map.createPane('featurePane');
 tour.features.forEach(createFeature);
 tour.views = tour_views;
 setupViews(tour.views, tour.features, tour.basemaps);
 
-// ---------- Scrollama ---------- //
+// ---------- Scrollama Initialization ---------- //
 let scrolly_temp_view = null;
 // for some reason scrollama is triggered twice at the beginning, needs to be ignored both times
 let scrolly_wait = 2;
@@ -53,8 +60,9 @@ if ($("#scrolly .step").length > 0) {
     });
 }
 
+// ---------- Set up everything else ---------- //
 map.on("zoomend", handleMapZoom);
-map.on("movend", handleMapMove);
+map.on("moveend", handleMapMove);
 
 let window_scroll_tick = false;
 
@@ -66,21 +74,18 @@ $(document).ready(function() {
 
     // set tile server attribution if needed
     setTileServerAttr($("#server-attribution"), tour.tile_layer);
-    // let section = $("#server-attribution");
-    // if (!section.html()) {
-    //     let a = tour.tile_layer.options.attribution;
-    //     if (a) section.html("<span>Tile Server: </span>" + a);
-    // }
+    /**
+     * For desktop view (i.e. both column and map are displayed side by side), make sure that the initial "tour" view can be entered by scrolling up from view 1 and that the final view can be entered by scrolling down (adds whitespace where needed)
+     */
     if (!isMobile()) {
-        // make sure "tour" size and last view size are sufficient for all views to be enterable via scrollama
-        // "tour" view
+        // "tour" view - add space to the bottom if it is not long enough to be entered by scrolling up from view 1
         let top_height = document.getElementById("top").offsetHeight + document.getElementById("main-nav").offsetHeight + document.getElementById("tour").offsetHeight;
         let target = (window.innerHeight * 2) / 5;
         let diff = target - top_height;
         if (diff > 0) {
-            $("#tour").css("padding-bottom", diff + "px");
+            $("#tour .bottom-step").css("height", (diff + 30) + "px");
         }
-        // last view
+        // last view - add space to bottom if it + the rest of the column content together is not long enough for the view to be entered by scrolling down
         let last_height = Array.from(document.getElementsByClassName("step")).pop().offsetHeight;
         for (let id of ['attribution', 'footer']) {
             let el = document.getElementById(id);
@@ -93,13 +98,13 @@ $(document).ready(function() {
         }
     }
 
-    // return to previous scroll position if applicable
+    // return to previous scroll position if applicable - this typically happens automatically on page refresh, but because of the way the tour is setup, it needs to be handled manually, instead
     let scroll_top = sessionStorage.getItem(loc + '_scroll_top');
     document.getElementById("tour-wrapper").scrollTop = scroll_top ?? 0;
     // check for saved view, use '_tour' if no valid view is saved
     let view_id = sessionStorage.getItem('tour_view') ?? '_tour';
     if (!tour.views.get(view_id)) view_id = '_tour';
-    // go to view bounds or saved bounds - need to set map center and zoom before modifying features
+    // go to view bounds or saved bounds
     if (lng && lat) {
         if (!zoom) zoom = map.getZoom();
         map.flyTo([lat, lng], zoom, { animate: false });
@@ -109,10 +114,7 @@ $(document).ready(function() {
         if (zoom) map.setZoom(zoom, { animate: false });
     }
 
-    // modify features
-    // tour.features.forEach(feature => feature.modify());
-
-    // set view - no flyTo, but need to handle other aspects of setting view
+    // set view - no flyTo (map bounds were set above and should not be adjusted), but need to handle other aspects of setting view
     enterView(view_id, false);
 
     // move map controls for more sensible DOM order
@@ -122,11 +124,14 @@ $(document).ready(function() {
 
     // interaction
     // map and nav
+    // click event toggles nav menu (set in theme); because the map toggle button (if visible) is below the nav and should only be given a fixed location once it is passed (i.e. it should be "sticky"), it is necessary to check and possibly update its status whenever the nav is expanded or collapsed
     $("#nav-toggle-btn").on("click", checkMapToggleScroll);
+    // toggle between map view and content view (mobile only)
     $("#map-toggle-btn").on("click", function() {
         if (this.getAttribute("data-map-active") === "false") switchToMap(this.id);
         else switchToContent();
     });
+    // update ARIA, set and store state - indicated whether or not views should be entered by scrolling (i.e. whether or not the map will animate when the user scrolls)
     $("#map-animation-toggle").on("click", function() {
         let checked = this.getAttribute("aria-checked") === 'true' ? false : true;
         this.setAttribute("aria-checked", checked);
@@ -135,7 +140,7 @@ $(document).ready(function() {
     });
     // load animation settings
     if (sessionStorage.getItem('animation') === 'false') $("#map-animation-toggle").click();
-    // legend (and zoom buttons)
+    // zoom buttons - zoom the map in or out when clicked
     $("#zoom-out-btn").on("click", function() {
         map.zoomOut();
     });
@@ -144,15 +149,20 @@ $(document).ready(function() {
     });
 
     // legend
+    // expand/collapse the legend (desktop only)
     $("#legend-toggle-btn").on("click", function() {
         $("#" + this.getAttribute("aria-controls")).toggleClass("minimized");
         toggleExpanded(this);
     });
+    // show the legend (mobile only)
     $("#mobile-legend-btn").on("click", toggleMobileLegend);
+    // hide the legend (mobile only)
     $("#legend-close-btn").on("click", toggleMobileLegend);
+    // toggle feature visibility whenever a dataset in the legend is toggled
     $(".legend-checkbox").on("input", function() {
         toggleDataset(this.value, tour.datasets, !this.checked);
     });
+    // expand/collapse the basemaps section of the legend (desktop only)
     $("#legend-basemaps-toggle").on("click", function() {
         this.parentElement.parentElement.classList.toggle("expanded");
         toggleExpanded(this);
@@ -160,49 +170,49 @@ $(document).ready(function() {
 
     // features
     // focus element
-    // move focus to feature to activate
+    // feature receives focus - activate feature
     $(".leaflet-pane .focus-el").on("focus", function(e) {
         e.stopPropagation();
         tour.features.get(this.getAttribute("data-feature")).activate(map, e);
     })
-    // move focus away to deactivate
+    // feature loses focus - deactivate feature
     .on("blur", function(e) {
         e.stopPropagation();
         tour.features.get(this.getAttribute("data-feature")).deactivate();
     })
-    // "click" button (native html) to open popup
+    // feature focus element is "clicked" - open popup (if applicable)
     .on("click", function(e) {
         e.stopPropagation();
         tour.features.get(this.getAttribute("data-feature")).click();
     });
     // hover element
-    // hover over feature to activate
+    // feature receives hover - activate feature
     $(".leaflet-pane .hover-el").on("mouseover", function(e) {
         e.stopPropagation();
         tour.features.get(this.getAttribute("data-feature")).activate(map, e);
     })
-    // remove hover from feature to deactivate
+    // feature loses hover - maybe deactivate feature (function will check if tooltip is hovered over or feature has focus)
     .on("mouseout", function(e) {
         e.stopPropagation();
         tour.features.get(this.getAttribute("data-feature")).mouseoutFeature();
     })
-    // click feature to open popup or activate/give focus
+    // hover element is clicked - open popup (if applicable), otherwise give feature focus
     .on("click", function(e) {
         e.stopPropagation();
         tour.features.get(this.getAttribute("data-feature")).click();
     });
     // tooltip
-    // remove hover from tooltip to deactivate
+    // tooltip loses hover - maybe deactivate feature (function will check if hover element is hovered over or feature has focus)
     $(".leaflet-pane .leaflet-tooltip").on("mouseout", function(e) {
         e.stopPropagation();
         tour.features.get(this.getAttribute("data-feature")).mouseoutTooltip();
     })
-    // click tooltip to open popup or activate/give focus
+    // tooltip is clicked - open popup (if applicable), otherwise give feature focus
     .on("click", function(e) {
         e.stopPropagation();
         tour.features.get(this.getAttribute("data-feature")).click();
     });
-    // esc key hides any active tooltips
+    // Esc is pressed - hide any active tooltips (tooltips should be dismissable without removing hover or focus)
     $(document).on("keyup", function(e) {
         if ((e.which || e.keyCode) === aria.KeyCode.ESC) {
             $(".leaflet-tooltip:not(.hide)").addClass("tmp-hide");
@@ -210,11 +220,12 @@ $(document).ready(function() {
     });
 
     // views
-    // click show view button to enter view
+    // "show view" button is clicked - enter that view
     $(".show-view-btn").on("click", function() {
         enterView(this.getAttribute("data-view"));
     });
-    // click go to view button to move focus to map
+    // "go to view" button is clicked (mobile) - enter that view and switch to map view ("show view" button does not exist)
+    // "go to view" button is clicked (desktop) - move focus to map and set hidden "skip link" at end of map so keyboard users can easily return
     $(".go-to-view-btn").on("click", function() {
         if (isMobile()) {
             enterView(this.getAttribute("data-view"));
@@ -225,32 +236,24 @@ $(document).ready(function() {
             $("#map").focus();
         }
     });
-    // click back to view button to return focus to go to view button
+    // "back to view" (skip link) is clicked - return focus to previously clicked "go to view" button
     $("#back-to-view-btn").on("click", function() {
         this.classList.remove("active");
         $("#" + this.getAttribute("data-view")).focus();
     });
 
     // other
-    // click reset button to reset the (tour) view
+    // reset button clicked - reset the default/tour view
     $(".reset-view-btn").on("click", function() {
         enterView('_tour');
     });
-    // click popup button to open modal dialog
+    // popup button clicked - open the corresponding popup
     $(".view-popup-btn").on("click", function() {
         let feature_id = this.getAttribute("data-feature");
         openDialog(feature_id + "-popup", this);
-        // $(this).one("focus", function(e) {
-        //     // when focus returns, make sure the feature is activated
-        //     tour.features.get(this.getAttribute("data-feature")).activate(map, e);
-        //     $(this).one("blur", function() {
-        //         // when focus leaves deactivate the feature
-        //         tour.features.get(this.getAttribute("data-feature")).deactivateCheck();
-        //     });
-        // });
     });
 
-    // scrolling (desktop)
+    // scrolling (desktop) - make sure the modified doWindowScrollAction function is used and set scrolly_wait so it doesn't interfere with entering views (deals with initial triggering of scrollama, which is why it exists at all)
     $("#tour-wrapper").on("scroll", function() {
         if (!window_scroll_tick) {
             setTimeout(function() {
@@ -265,18 +268,23 @@ $(document).ready(function() {
     // call theme method (there may be new links to modify)
     modifyLinks();
 });
-
+/**
+ * Toggles classes to show/hide various non-legend elements and to show/hide the legend (on mobile).
+ */
 function toggleMobileLegend() {
     $("body").toggleClass("legend-active");
     $("#legend-wrapper").toggleClass("tour-desktop-only");
 }
 
 // Modify window.onscroll function from theme
+/**
+ * Modifies function from theme. Saves scroll position for mobile so that switching to map view doesn't reset the scroll position from content view and for both mobile and desktop so that refreshing the page doesn't reset scroll position.
+ */
 function doWindowScrollAction() {
     let scroll_top = document.getElementById("tour-wrapper").scrollTop;
     if (isMobile()) {
         if (page_state.save_scroll_pos) {
-            // save scroll position for mobile
+            // save scroll position for mobile (will be preserved when switching to map view and back)
             page_state.scroll_pos = scroll_top;
             checkMapToggleScroll();
         } else return;
@@ -287,8 +295,10 @@ function doWindowScrollAction() {
     sessionStorage.setItem(window.location.pathname + '_scroll_top', scroll_top);
 }
 
+/**
+ * The map-nav (toggle to switch to map view on mobile) should behave like a sticky element, but CSS "sticky" doesn't work. Whenever scroll changes (or the y-location of the default button position changes due to the nav being expanded/collapsed), check to see if the map-nav should be in its normal default position or absolute.
+ */
 function checkMapToggleScroll() {
-    // make sure that map-nav does not become sticky/absolute until the main navigation has been passed (whether or not main nav is expanded)
     let height = $("header").get(0).offsetHeight + parseFloat($(".tour-wrapper").first().css("padding-top")) + document.getElementById("main-nav").offsetHeight;
     if (page_state.scroll_pos >= height) {
         $("#map-nav").addClass('scrolled');
@@ -302,13 +312,12 @@ function expandNav() {
 
 /**
  * For mobile, switch to viewing the leaflet map. Called by the content toggle button and any show view buttons.
- * 
- * @param focus_id - (String) The id of the element calling the function, which will be saved so that focus can be returned to that element when switching back to content.
+ * @param {String} focus_id - The id of the element calling the function, which will be saved so that focus can be returned to that element when switching back to content.
  */
 function switchToMap(focus_id) {
     $("body").addClass("map-active");
     page_state.save_scroll_pos = false; // don't want scrolling to affect position when returning to content
-    $("#map").focus(); // TODO: Ensure that this is the sensible/expected decision
+    $("#map").focus();
     $("#map-toggle-btn").attr("data-focus", focus_id).attr("data-map-active", "true").text("Leave Map");
     if (tour_state.map_needs_adjusting) {
         adjustMap();
@@ -334,6 +343,7 @@ function switchToContent() {
     btn2.removeAttr("aria-expanded");
 }
 
+// quick check for whether the page should be considered in "mobile" or "desktop" view
 function isMobile() {
     return (window.innerWidth < 799);
 }

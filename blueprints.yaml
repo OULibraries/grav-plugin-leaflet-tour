@@ -1,18 +1,15 @@
 name: Leaflet Tour
 slug: leaflet-tour
 type: plugin
-version: 0.2.0
-description: in development
+version: 1.0.0
+description: "Uses scrollytelling and leaflet to help users build accessible websites that tell stories with maps"
 icon: map-signs
 author:
   name: Theo Acker/University of Oklahoma Libraries
-  email: theoacker@ou.edu
-  url: https://libraries.ou.edu/users/theo-acker
-homepage: https://github.com/TheoAcker12/grav-plugin-leaflet-tour
-demo:
-keywords:
-bugs: https://github.com/TheoAcker12/grav-plugin-leaflet-tour/issues
-docs: https://github.com/TheoAcker12/grav-plugin-leaflet-tour/blob/main/README.md
+homepage: https://leaflet-tour.oucreate.com
+demo: https://leaflet-tour.oucreate.com/plugin-demo
+bugs: https://github.com/oulibraries/grav-plugin-leaflet-tour/issues
+docs: https://github.com/oulibraries/grav-plugin-leaflet-tour/blob/main/README.md
 license: MIT
 
 dependencies:
@@ -232,6 +229,11 @@ form:
                   description: Choose an icon to represent the basemap in a map legend. If no icon is provided, a small version or a portion of the original basemap will be used instead.
                   preview_images: true
                   folder: 'user://data/leaflet-tour/images/basemaps/icons'
+                
+                .legend_alt:
+                  type: text
+                  label: Legend Alternative Text
+                  description: Alternative text that will be applied to the basemap image/icon displayed in the legend
 
                 .attribution:
                   type: text
@@ -241,7 +243,7 @@ form:
                 .bounds_section:
                   type: section
                   title: Bounds (required)
-                  text: Provide latitude and longitude values (in degrees) to position the basemap. Do not use more than seven decimal places.
+                  text: Provide latitude and longitude values (in degrees) to position the basemap.
                   underline: false
 
                 .bounds.north:
@@ -315,13 +317,6 @@ form:
               type: hidden
               default: 'none'
 
-            # update_cols:
-            #   type: columns
-            #   fields:
-            #     col1:
-            #       type: column
-            #       fields:
-
             update.confirm:
               type: toggle
               label: Confirm Update
@@ -332,21 +327,6 @@ form:
                 1: PLUGIN_ADMIN.ENABLED
               validate:
                 type: bool
-
-                # col2:
-                #   type: column
-                #   fields:
-
-                #     update.cancel:
-                #       type: toggle
-                #       label: Cancel Update
-                #       highlight: 1
-                #       default: 0
-                #       options:
-                #         0: PLUGIN_ADMIN.DISABLED
-                #         1: PLUGIN_ADMIN.ENABLED
-                #       validate:
-                #         type: bool
 
             update.file:
               type: file
@@ -367,7 +347,7 @@ form:
             update.dataset_prop:
               type: select_optgroup
               label: Property from Dataset
-              description: Select a property from the dataset that can be used to match features in the dataset to features in the dataset file. This is required for everything but a total replacement update, and is still recommended for most total replacement updates. Read the documentation for a complete description.
+              description: Select a property from the dataset that can be used to match features in the dataset to features in the dataset file. Read the documentation for a complete description.
               data-options@: 'Grav\Plugin\LeafletTourPlugin::getUpdatePropertiesList'
 
             update.file_prop:
@@ -376,10 +356,9 @@ form:
               description: Input the property from the uploaded file that corresponds to the dataset property. If you have selected coordinates or none, or if the property names are the same, leave this field empty.
 
             update_info:
-            # TODO: Best info to put here...
               type: display
               label: Choosing an Update Type
-              content: "- Standard: Allows modifying, adding, and/or removing features.\r\n- Removal: Removes any features found in the upload from the dataset.\r\n- Replacement: Replaces all features in the dataset with the features in the upload.\r\n\r\nRead the documentation for a more detailed description of the update types."
+              content: "- Standard: Allows modifying, adding, and/or removing features.\r\n- Removal: Removes any features found in the upload from the dataset.\r\n\r\nRead the documentation for a more detailed description of the update types."
               style: vertical
               markdown: true
 
@@ -389,12 +368,11 @@ form:
               options:
                 standard: Standard
                 removal: Removal
-                replacement: Replacement
 
             standard_update_section:
               type: section
               title: Standard Update Options
-              text: These options only apply to standard updates, not replacement or removal updates.
+              text: These options only apply to standard updates, not removal updates.
               underline: false
 
             update.modify:
@@ -428,18 +406,7 @@ form:
               highlight: 1
               default: 0
               options:
-                0: PLUGIN_ADMIN.ENABLED
-                1: PLUGIN_ADMIN.DISABLED
+                1: PLUGIN_ADMIN.ENABLED
+                0: PLUGIN_ADMIN.DISABLED
               validate:
                 type: bool
-
-            # update.overwrite:
-            #   type: toggle
-            #   label: Overwrite Empty Properties
-            #   highlight: 1
-            #   default: 0
-            #   options:
-            #     0: PLUGIN_ADMIN.DISABLED
-            #     1: PLUGIN_ADMIN.ENABLED
-            #   validate:
-            #     type: bool

@@ -186,8 +186,6 @@ form:
                   text: Choose one of the tile servers from the dropdown menu, or input the URL and attribution for a tile server of your choice. You can also select additional basemaps to add. The tile server options will override the defaults from the plugin configuration.
                   underline: true
 
-                # TODO: Change default?
-                # TODO: Add more description regarding the Leaflet Providers options
                 header.tile_server.select:
                   type: select
                   label: Select a Tile Server
@@ -246,7 +244,7 @@ form:
                 header.start_fieldset:
                   type: fieldset
                   title: Starting Tour Position
-                  # Don't love this, but fieldset text does not seem to be working
+                  # text does not seem to be working, so using info
                   info: By default, starting bounds will be determined by all included features. Here you can override that behavior.
                   # text: "By default, the starting bounds for the tour will be determined by all included features. You can override this by providing bounds manually or by choosing a center and a distance from that center. You can choose a Point feature from any dataset included in the tour as the center, or you can set the latitude and longitude manually."
                   name: name

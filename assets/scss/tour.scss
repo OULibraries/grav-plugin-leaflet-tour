@@ -3,7 +3,9 @@ $min-col-width: 320px;
 
 // anything that is completely unaffected by mobile vs. desktop view
 body {
-    overflow-y: hidden; // scroll set for narrative column specifically
+    position: fixed;
+    height: 100%;
+    width: 100%; // causes problems in mobile map view otherwise
 }
 #tour-wrapper {
     height: 100vh;
@@ -45,13 +47,23 @@ body {
         flex-wrap: nowrap;
         align-items: center;
         padding: 5px 0;
-        img, svg {
-            margin: 10px;
+        input {
+            flex-shrink: 0;
+        }
+        svg {
+            margin: 5px;
             background-color: #fff;
             flex-shrink: 0;
         }
-        img.basemap {
-            max-width: 20%;
+        .legend-icon-wrapper {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            width: 28px;
+            margin: 5px;
+        }
+        img {
+            margin: 0px auto;
         }
         img.round {
             border-radius: 50%;
@@ -62,6 +74,10 @@ body {
     }
     h3 {
         font-size: 22px;
+    }
+    .legend-basemaps li .legend-icon-wrapper {
+        width: 20%;
+        margin: 10px;
     }
 }
 #map {
@@ -92,7 +108,7 @@ body {
             &:hover, &:focus-visible, &.active {
                 border: 2px solid #000;
                 box-shadow: 0 0 2px 2px #fff inset;
-                z-index: 1000 !important; // have to use this because leaflet modifies the html element's "style" attribute
+                z-index: 1000 !important; // have to use !important because leaflet modifies the html element's "style" attribute
             }
         }
         .focus-el {
@@ -120,12 +136,11 @@ body {
             .tooltip {
                 padding: 6px;
                 background-color: #fff;
-                border: 1px solid #fff; // but what is the purpose?
+                border: 1px solid #fff;
                 border-radius: 3px;
                 color: #333;
-                white-space: nowrap; // TODO: Change this?
+                white-space: nowrap; // causes problems if the text is too long...
                 box-shadow: 0 1px 3px rgb(0 0 0 / 40%);
-                // TODO: pointer events, user select?
                 &::before {
                     position: absolute;
                     border: 6px solid transparent;
@@ -204,10 +219,6 @@ body {
     margin: 5px 0;
 }
 
-// .la-times-circle {
-//     font-size: 44px;
-// }
-
 // mobile
 @media(max-width: ($mobile - 1)) {
     .tour-desktop-only {
@@ -282,7 +293,6 @@ body {
                 #map-nav-options {
                     display: flex;
                     flex-direction: column;
-                    // TODO: Could do much nicer styling, but this is good enough for now
                     button {
                         margin: 0;
                     }
@@ -327,8 +337,11 @@ body {
         }
     }
     .has-dialog {
-        #map-nav, #map, .zoom-btns {
+        #map-nav, .zoom-btns, #back-to-top {
             display: none;
+        }
+        .modal-popup.active {
+            z-index: 800;
         }
     }
     .modal-popup [role="dialog"] {

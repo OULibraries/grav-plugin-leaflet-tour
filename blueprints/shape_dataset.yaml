@@ -51,22 +51,17 @@ form:
               markdown: true
               style: vertical
 
-            header.path.stroke:
-              data-type@: ['Grav\Plugin\LeafletTourPlugin::getShapeFillType', 'toggle']
-              label: Draw Stroke (Outline)
-              description: Whether to draw the outline or border for a polygon feature.
-              highlight: 1
-              default: 1
-              options:
-                1: PLUGIN_ADMIN.ENABLED
-                0: PLUGIN_ADMIN.DISABLED
-              validate:
-                type: bool
-
             header.path.color:
               type: colorpicker
               label: Stroke Color
               default: "#0051C2"
+
+            header.path.weight:
+              type: number
+              label: Stroke Width (pixels)
+              default: 3
+              validate:
+                min: 1
 
             border_cols:
               type: columns
@@ -97,23 +92,6 @@ form:
                     header.border.weight:
                       type: hidden
                       default: 2
-
-            header.path.weight:
-              type: number
-              label: Stroke Width (pixels)
-              default: 3
-              validate:
-                min: 1
-
-            # header.path.opacity:
-            #   type: number
-            #   label: Stroke Opacity
-            #   description: "A number from 0 (completely transparent) to 1 (completely opaque). Can take up to two decimal places."
-            #   default: 1.0
-            #   validate:
-            #     min: 0
-            #     max: 1
-            #     step: 0.01
 
             header.path.opacity:
               type: hidden
@@ -179,17 +157,6 @@ form:
               validate:
                 min: 1
 
-            # header.active_path.opacity:
-            #   type: number
-            #   label: Stroke Opacity
-            #   description: "A number from 0 (completely transparent) to 1 (completely opaque). Can take up to two decimal places."
-            #   toggleable: true
-            #   default: 1.0
-            #   validate:
-            #     min: 0
-            #     max: 1
-            #     step: 0.01
-
             active_path_fill_display:
               data-type@: ['Grav\Plugin\LeafletTourPlugin::getShapeFillType', 'fieldset']
               title: Fill Options
@@ -207,7 +174,7 @@ form:
                   label: Fill Opacity (active)
                   description:  A number from 0 (completely transparent) to 1 (completely opaque). Can take up to two decimal places.
                   toggleable: true
-                  default: 0.2
+                  default: 0.4
                   validate:
                     min: 0
                     max: 1
@@ -216,5 +183,3 @@ form:
             header.active_border.weight:
               type: hidden
               default: 4
-            
-            # Note: Additional Leaflet options: lineCap, lineJoin, dashArray, dashOffset

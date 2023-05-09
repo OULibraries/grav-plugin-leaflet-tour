@@ -1,74 +1,62 @@
 # Leaflet Tour Plugin
 
-<!-- TODO: Plugin screenshot -->
+![Webpage with a column containing heading, nav, and other content on the left and a map with a legend on the right](./screenshot.jpg)
 
-**Leaflet Tour** is a plugin for the [Grav](https://learn.getgrav.org) CMS (content management system) designed to help content creators tell stories with maps. It uses scrollytelling, a narrative format in which scrolling through the content causes changes on the page. In this case, a column of content is provided on one side of the page, and scrolling through the content causes changes in the map on the other side of the page (such as panning to a given location).
+**Leaflet Tour** is a plugin for the [Grav](https://learn.getgrav.org) CMS (content management system) designed to help content creators build accessible websites that tell stories with maps. It uses scrollytelling, a narrative format in which scrolling through the content causes changes on the page. In this case, a column of content is provided on one side of the page, and scrolling through the content causes changes in the map on the other side of the page (such as panning the map to a given location).
 
 Note: For small screens/mobile it is impractical to display both the narrative content and map at once, so this is handled differently.
 
-The plugin was initially developed as part of a pilot [Digital Scholarship Fellowship program](https://libraries.ou.edu/content/digital-scholarship-fellowship) offered by The University of Oklahoma Libraries in the 2020-2021 academic year. The motivation/goals focused on:
+Check out the [demo site](https://leaflet-tour.oucreate.com/plugin-demo) to see how the plugin works in action.
 
-- Making it easy for content creators to build and customize pages (called "tours") without having to work directly with HTML or JavaScript.
-- Providing as accessible a website as possible (including the interactive map). It can be difficult to find accessible options for website creation, especially when complex features (like maps) are involved.
-- Using open source tools like QGIS, Leaflet, and Grav instead of proprietary software like ArcGIS.
+<h2 id="features">Features</h2>
 
-<!-- Note: Different content for website vs. readme -->
+- Create interactive content and maps without working directly with any HTML or JavaScript
+- Create websites that are accessible to people with disabilities (instructions for what users need to do to ensure this are included in the [accessibility page of the Leaflet Tour documentation](https://leaflet-tour.oucreate.com/accessibility))
+- Lots of customization options
+- Add popup content to geographic features, and use provided shortcodes to easily insert buttons for that content within the page
+- Customize the map by choosing one of many included tile servers
 
-Check out the [demo site](todo:link) for a demonstration of the plugin in action as well as detailed instructions and additional documentation.
-
-<!-- Check out the other pages on this site for a [demonstration of the plugin in action](/demo) as well as detailed instructions and additional documentation.
- -->
-
-## <span id="requirements">Requirements</span>
-
-<!-- TODO: Include requirement for PHP version 7.4 or higher? Might be intimidating for people unfamiliar with servers/PHP... -->
+<h2 id="requirements">Requirements</h2>
 
 - A Grav site running Grav version 1.7.0 or higher
-- [Grav Theme Basic](https://github.com/TheoAcker12/grav-theme-basic) (The theme must be enabled)
+- [Digital Scholarship theme](https://github.com/oulibraries/grav-theme-digital-scholarship) (The theme must be enabled)
 - [Admin Panel plugin](https://github.com/getgrav/grav-plugin-admin) - Note: May be installed automatically when you install Grav (for example, if you use Reclaim Hosting)
 - [Shortcode Core plugin](https://github.com/getgrav/grav-plugin-shortcode-core)
 
-## <span id="installation">Installation</span>
-
-<!-- TODO: Develop skeleton and provide instructions on setting up the skeleton -->
+<h2 id="installation">Installation</h2>
 
 Installing the Leaflet Tour plugin can be done in one of two ways. The [Grav Package Manager (GPM)](https://learn.getgrav.org/cli-console/grav-cli-gpm) installation method enables you to install the plugin with the admin panel or a terminal command, while the manual method enables you to do so via a zip file.
 
-<!-- TODO: Add to GPM and remove this statement -->
-Note that the GPM method will not be available until the plugin has actually been released publicly and added to the GPM.
-
-### <span id="gpm-installation">GPM Installation (Preferred)</span>
+<h3 id="gpm-installation">GPM Installation (Preferred)</h3>
 
 The simplest way to install this plugin is via the admin panel, especially since the admin plugin is a requirement. To install, go to the Plugins tab on your dashboard, click the **Add** button, look up this plugin, and then click **Install**.
 
 Alternatively, you can install this plugin using your system's terminal or command line. From the root of your Grav directory type `bin/gpm install leaflet-tour`. This will install the Leaflet Tour plugin into your `/user/plugins` directory within Grav. Its files will be found under `your-site/grav/user/plugins/leaflet-tour`.
 
-### <span id="manual-installation">Manual Installation</span>
+<h3 id="manual-installation">Manual Installation</h3>
 
 To install this plugin manually:
 
-<!-- TODO: possibly link to getgrav website -->
-
-1. Download the zip file from the [plugin repository](https://github.com/TheoAcker12/grav-plugin-leaflet-tour) or by finding the files on the GetGrav website.
+1. Download the zip file from the [plugin repository](https://github.com/oulibraries/grav-plugin-leaflet-tour) or by finding the files on the [GetGrav website](https://getgrav.org/downloads/plugins).
 2. Upload the file to `your-site/grav/user/plugins`.
 3. Unzip/extract the file.
 4. Rename the folder to `leaflet-tour`.
 
 The filepath to the plugin should now be `your-site/grav/user/plugins/leaflet-tour`.
 
-## <span id="updating">Updating</span>
+<h2 id="updating">Updating</h2>
 
 Updates to the Leaflet Tour plugin may be published in the future. As with installation, you can update the plugin through the Grav Package Manager (via the admin panel or your system's terminal) or manually.
 
 Please note: Any changes you have made to any of the files in the plugin will be overwritten. Any files located elsewhere (for example, a .yaml settings file placed in `user/config/plugins`) will remain intact. Therefore, it is strongly discouraged to make any changes directly to plugin files.
 
-### <span id="gpm-update">GPM Update (Preferred)</span>
+<h3 id="gpm-update">GPM Update (Preferred)</h3>
 
 The simplest way to update this plugin is via the admin panel. To do this, go to the Plugins tab on your dashboard and check for updates. The dashboard will indicate if any plugins have available updates and will allow you to update them individually or all at once.
 
 Alternatively, you can update this plugin using your system's terminal or command line. From the root of your Grav directory type `bin/gpm update leaflet-tour`. This will check if the Leaflet Tour plugin has any updates. If it does, you will be asked whether or not you wish to update. To continue, type `y` and hit enter.
 
-### <span id="manual-update">Manual Update</span>
+<h3 id="manual-update">Manual Update</h3>
 
 To update this plugin manually:
 
@@ -78,41 +66,27 @@ To update this plugin manually:
 
 Note: If you are using the admin panel, there is also a button to clear the cache in the navigation sidebar.
 
-## <span id="usage">Usage</span>
+<h2 id="usage">Usage</h2>
 
-This is a very brief overview. Check out the [Getting Started](https://theoacker.oucreate.com/leaflet-tour/getting-started) page on the demo site for usage instructions.
+Check out the information on the [documentation site](https://leaflet-tour.oucreate.com) for full usage instructions. These instructions will also include what you need to know in order to make your site accessible to people with disabilities.
 
-The standard workflow will look something like this:
+A brief overview of a standard workflow:
 
-1. Add datasets (either by uploading dataset files via the plugin configuration or creating new dataset pages manually).
-2. Create one or more tours using those datasets.
-3. Populate tours with views.
+1. Customize plugin options
+2. Add (and customize) datasets (either by uploading files or creating new pages)
+3. Create (and customize) one or more tours using created datasets
+4. Add (and customize) views for each tour
 
-### <span id="features">Features</span>
-
-<!-- TODO: Include this section? Anything else to add in this section? Include links to the relevant information for each listed feature? -->
-
-- Customize your site with lots of configuration options (for theme, plugin, datasets, tours, and views).
-- Add popup content to features on the map.
-- Use shortcodes to insert buttons for feature popup content within tour/view content.
-- Customize the map by choosing one of the many tile servers included in leaflet providers.
-
-## <span id="credits">Credits</span>
+<h2 id="credits">Credits</h2>
 
 - The original DS Fellowship team: Tara Carlisle, Theo Acker, Dr. Zenobie Garrett, Dr. John Stewart working with fellowship recipients Dr. Asa Randall and Laura Pott
 - Primary developer: Theo Acker
-- Science Gateways Community Institute (SGCI) for user experience consulting
+- [Science Gateways Community Institute (SGCI)](https://sciencegateways.org/) for user experience consulting
 
 The plugin uses JavaScript libraries [Leaflet](https://leafletjs.com/) and [Scrollama](https://github.com/russellgoldenberg/scrollama).
 
-<!-- TODO: libraries used (leaflet, scrollama), other inspiration/code used? -->
+<h2 id="contributing">Contributing</h2>
 
-<!-- TODO: Link to SGCI -->
-
-## <span id="contributing">Contributing</span>
-
-If you encounter any errors or bugs or would like to request a feature, please [open an issue on GitHub](https://github.com/TheoAcker12/grav-plugin-leaflet-tour/issues) or send an email to digitalscholarship@ou.edu.
-
-<!-- TODO: pull requests -->
+If you encounter any errors/bugs or would like to request a feature, please [open an issue on GitHub](https://github.com/oulibraries/grav-plugin-leaflet-tour/issues) or send an email to theoacker@ou.edu. You can also send an email to provide any other feedback you have. More information about collaboration options can be found on the [collaboration section of the documentation site](https://leaflet-tour.oucreate.com/home#collaboration).
 
 This plugin uses the MIT license. Feel free to modify, remix, and/or redistribute the code as long as you provide attribution to the original.
