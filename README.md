@@ -1,6 +1,6 @@
 # Leaflet Tour Plugin
 
-![Webpage with a column containing heading, nav, and other content on the left and a map with a legend on the right](./screenshot.png)
+![Webpage with a column containing heading, nav, and other content on the left and a map with a legend on the right](./screenshot.jpg)
 
 **Leaflet Tour** is a plugin for the [Grav](https://learn.getgrav.org) CMS (content management system) designed to help content creators build accessible websites that tell stories with maps. It uses scrollytelling, a narrative format in which scrolling through the content causes changes on the page. In this case, a column of content is provided on one side of the page, and scrolling through the content causes changes in the map on the other side of the page (such as panning the map to a given location).
 
