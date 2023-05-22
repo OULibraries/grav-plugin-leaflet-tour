@@ -662,12 +662,15 @@ class Dataset {
     public function getIconOptions() {
         $icon = $this->getIcon(); // icon options as provided by user
         $route = Utils::ICON_ROUTE;
+        // necessary to generate top-level folder of the site (i.e. where the pages, user, etc. folders are contained) and place it in front of the url - otherwise url will not work for tours that are not top-level
+        $page = Grav::instance()['page'];
+        $full_route = str_replace($page->route(), '', $page->url()) . '/' . Utils::ICON_ROUTE;
         $defaults = []; // fallback values for invalid/null values in icon, needs to be set
         $options = []; // icon options to return
         // determine correct defaults to use and set icon url
         if (($file = Utils::getStr($icon, 'file')) && File::instance("$route/$file")->exists()) {
             // valid icon file provided by user
-            $options['iconUrl'] = "$route/$file";
+            $options['iconUrl'] = "$full_route/$file";
             $defaults = self::CUSTOM_MARKER_FALLBACKS;
         } else if ($url = Utils::getStr($icon, 'iconUrl')) {
             // iconUrl set by user
@@ -678,9 +681,9 @@ class Dataset {
             $options['iconUrl'] = $defaults['iconUrl'];
         }
         // retina and shadow urls
-        if (($file = Utils::getStr($icon, 'retina')) && File::instance("$route/$file")->exists()) $options['iconRetinaUrl'] = "$route/$file";
+        if (($file = Utils::getStr($icon, 'retina')) && File::instance("$route/$file")->exists()) $options['iconRetinaUrl'] = "$full_route/$file";
         else if ($url = Utils::getStr($icon, 'iconRetinaUrl') ?: Utils::getStr($defaults, 'iconRetinaUrl')) $options['iconRetinaUrl'] = $url;
-        if (($file = Utils::getStr($icon, 'shadow')) && File::instance("$route/$file")->exists()) $options['shadowUrl'] = "$route/$file";
+        if (($file = Utils::getStr($icon, 'shadow')) && File::instance("$route/$file")->exists()) $options['shadowUrl'] = "$full_route/$file";
         else if ($url = Utils::getStr($icon, 'shadowUrl') ?: Utils::getStr($defaults, 'shadowUrl')) $options['shadowUrl'] = $url;
         // icon size can be set directly, only use if neither height nor width is set
         if (!isset($icon['height']) && !isset($icon['width']) && ($size = Utils::get($icon, 'iconSize')) && is_array($size) && (count($size) === 2) && is_int($size[0]) && is_int($size[1]) && $size[0] >= 0 && $size[1] >= 0) $options['iconSize'] = $size;
