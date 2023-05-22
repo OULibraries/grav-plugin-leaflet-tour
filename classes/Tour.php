@@ -3,6 +3,7 @@
 namespace Grav\Plugin\LeafletTour;
 
 use Grav\Common\Grav;
+use Grav\Common\Uri;
 use RocketTheme\Toolbox\File\MarkdownFile;
 use RocketTheme\Toolbox\File\File;
 
@@ -1252,8 +1253,10 @@ class Tour {
      */
     public function getBasemapData() {
         return array_filter(array_map(function($info) {
+            $page = Grav::instance()['page']; // necessary to generate addition to url - providing url starting with user/ does not work when tours are not top level
             if ($bounds = Utils::getBounds(Utils::getArr($info, 'bounds'))) return [
-                'url' => Utils::BASEMAP_ROUTE . '/' . $info['file'],
+                // place the top-level folder of the site (i.e. where the pages, user, etc. folders are contained) in front of the url (see note above for $page)
+                'url' => str_replace($page->route(), '', $page->url()) . '/' . Utils::BASEMAP_ROUTE . '/' . $info['file'],
                 'bounds' => Utils::getBounds(Utils::getArr($info, 'bounds')),
                 'options' => [
                     'max_zoom' => Utils::getType($info, 'max_zoom', 'is_int'),
