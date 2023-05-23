@@ -87,6 +87,18 @@ class Utils {
     }
 
     /**
+     * When generating paths to images from other folders, need to make sure the path is absolute, not relative. Relative paths beginning with 'user/data' will only work when the page in question is a top-level page.
+     * 
+     * @return string '/top-level-folder' or '' (top-level-folder is where the pages, user, etc. folders are contained, assuming they are stored in their own folder)
+     */
+    public static function getRoot() {
+        $page = Grav::instance()['page'];
+        $root = str_replace($page->route(), '', $page->url());
+        if ($root !== '/') return $root;
+        else return '';
+    }
+
+    /**
      * Search a directory recursively for any files that have routes ending with the provided key.
      * - Result includes all files ending with the input key (and nothing else)
      * 

@@ -3,6 +3,7 @@
 namespace Grav\Plugin\LeafletTour;
 
 use Grav\Common\Grav;
+use Grav\Common\Uri;
 use RocketTheme\Toolbox\File\MarkdownFile;
 use RocketTheme\Toolbox\File\File;
 
@@ -1218,7 +1219,7 @@ class Tour {
                     $info = [
                         'file' => $file,
                         'text' => $text,
-                        'icon' => Utils::BASEMAP_ROUTE,
+                        'icon' => Utils::getRoot() . '/' . Utils::BASEMAP_ROUTE,
                         'class' => 'basemap',
                         'symbol_alt' => Utils::getStr($basemap, 'legend_alt'),
                     ];
@@ -1253,7 +1254,7 @@ class Tour {
     public function getBasemapData() {
         return array_filter(array_map(function($info) {
             if ($bounds = Utils::getBounds(Utils::getArr($info, 'bounds'))) return [
-                'url' => Utils::BASEMAP_ROUTE . '/' . $info['file'],
+                'url' => Utils::getRoot() . '/' . Utils::BASEMAP_ROUTE . '/' . $info['file'],
                 'bounds' => Utils::getBounds(Utils::getArr($info, 'bounds')),
                 'options' => [
                     'max_zoom' => Utils::getType($info, 'max_zoom', 'is_int'),
