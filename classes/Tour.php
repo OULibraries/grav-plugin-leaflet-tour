@@ -1219,7 +1219,7 @@ class Tour {
                     $info = [
                         'file' => $file,
                         'text' => $text,
-                        'icon' => Utils::BASEMAP_ROUTE,
+                        'icon' => Utils::getRoot() . '/' . Utils::BASEMAP_ROUTE,
                         'class' => 'basemap',
                         'symbol_alt' => Utils::getStr($basemap, 'legend_alt'),
                     ];
@@ -1253,10 +1253,8 @@ class Tour {
      */
     public function getBasemapData() {
         return array_filter(array_map(function($info) {
-            $page = Grav::instance()['page']; // necessary to generate addition to url - providing url starting with user/ does not work when tours are not top level
             if ($bounds = Utils::getBounds(Utils::getArr($info, 'bounds'))) return [
-                // place the top-level folder of the site (i.e. where the pages, user, etc. folders are contained) in front of the url (see note above for $page)
-                'url' => str_replace($page->route(), '', $page->url()) . '/' . Utils::BASEMAP_ROUTE . '/' . $info['file'],
+                'url' => Utils::getRoot() . '/' . Utils::BASEMAP_ROUTE . '/' . $info['file'],
                 'bounds' => Utils::getBounds(Utils::getArr($info, 'bounds')),
                 'options' => [
                     'max_zoom' => Utils::getType($info, 'max_zoom', 'is_int'),

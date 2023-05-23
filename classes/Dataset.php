@@ -661,10 +661,8 @@ class Dataset {
      */
     public function getIconOptions() {
         $icon = $this->getIcon(); // icon options as provided by user
-        $route = Utils::ICON_ROUTE;
-        // necessary to generate top-level folder of the site (i.e. where the pages, user, etc. folders are contained) and place it in front of the url - otherwise url will not work for tours that are not top-level
-        $page = Grav::instance()['page'];
-        $full_route = str_replace($page->route(), '', $page->url()) . '/' . Utils::ICON_ROUTE;
+        $route = Utils::ICON_ROUTE; // route for checking if file exists
+        $full_route = Utils::getRoot() . "/$route"; // route for accessing file from frontend
         $defaults = []; // fallback values for invalid/null values in icon, needs to be set
         $options = []; // icon options to return
         // determine correct defaults to use and set icon url
