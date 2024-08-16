@@ -6,12 +6,12 @@
 
 Note: For small screens/mobile it is impractical to display both the narrative content and map at once, so this is handled differently.
 
-Check out the [demo site](https://leaflet-tour.oucreate.com/plugin-demo) to see how the plugin works in action.
+Check out the [demo site](https://leaflet-tour.reclaim.hosting/plugin-demo) to see how the plugin works in action.
 
 <h2 id="features">Features</h2>
 
 - Create interactive content and maps without working directly with any HTML or JavaScript
-- Create websites that are accessible to people with disabilities (instructions for what users need to do to ensure this are included in the [accessibility page of the Leaflet Tour documentation](https://leaflet-tour.oucreate.com/accessibility))
+- Create websites that are accessible to people with disabilities (instructions for what users need to do to ensure this are included in the [accessibility page of the Leaflet Tour documentation](https://leaflet-tour.reclaim.hosting/accessibility))
 - Lots of customization options
 - Add popup content to geographic features, and use provided shortcodes to easily insert buttons for that content within the page
 - Customize the map by choosing one of many included tile servers
@@ -68,7 +68,7 @@ Note: If you are using the admin panel, there is also a button to clear the cach
 
 <h2 id="usage">Usage</h2>
 
-Check out the information on the [documentation site](https://leaflet-tour.oucreate.com) for full usage instructions. These instructions will also include what you need to know in order to make your site accessible to people with disabilities.
+Check out the information on the [documentation site](https://leaflet-tour.reclaim.hosting) for full usage instructions. These instructions will also include what you need to know in order to make your site accessible to people with disabilities.
 
 A brief overview of a standard workflow:
 
@@ -87,6 +87,6 @@ The plugin uses JavaScript libraries [Leaflet](https://leafletjs.com/) and [Scro
 
 <h2 id="contributing">Contributing</h2>
 
-If you encounter any errors/bugs or would like to request a feature, please [open an issue on GitHub](https://github.com/oulibraries/grav-plugin-leaflet-tour/issues) or send an email to theoacker@ou.edu. You can also send an email to provide any other feedback you have. More information about collaboration options can be found on the [collaboration section of the documentation site](https://leaflet-tour.oucreate.com/home#collaboration).
+If you encounter any errors/bugs or would like to request a feature, please [open an issue on GitHub](https://github.com/oulibraries/grav-plugin-leaflet-tour/issues) or send an email to theoacker@ou.edu. You can also send an email to provide any other feedback you have. More information about collaboration options can be found on the [collaboration section of the documentation site](https://leaflet-tour.reclaim.hosting/home#collaboration).
 
 This plugin uses the MIT license. Feel free to modify, remix, and/or redistribute the code as long as you provide attribution to the original.
